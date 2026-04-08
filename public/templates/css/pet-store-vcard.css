@@ -1,0 +1,2332 @@
+/*
+ |--------------------------------------------------------------------------
+ | GoBiz vCard SaaS
+ |--------------------------------------------------------------------------
+ | Developed by NativeCode © 2021 - https://nativecode.in
+ | All rights reserved
+ | Unauthorized distribution is prohibited
+ |--------------------------------------------------------------------------
+*/
+
+:root {
+    --primary-rgb: 255, 123, 84;
+    --primary: rgb(var(--primary-rgb));
+    --primary-light: rgba(var(--primary-rgb), 0.1);
+    --primary-mid: rgba(var(--primary-rgb), 0.3);
+
+    /* Bento Box Theme Colors */
+    --bg-wrapper: #f0f2f5;
+    --bg-bento: #ffffff;
+    --bg-input: #f7f9fa;
+    --bg-black: #1f2937;
+    --text-white: #ffffff;
+    --text-dark: #1f2937;
+    --text-muted: #6b7280;
+
+    /* Bento Layout Variables */
+    --bento-radius: 24px;
+    --bento-gap: 16px;
+    --bento-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "DM Sans", sans-serif;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background-color: #e5e7eb;
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+    overflow-x: hidden;
+    color: var(--text-dark);
+}
+
+/* Mobile Wrapper */
+.vcard-container {
+    width: 100%;
+    max-width: 500px;
+    background-color: var(--bg-wrapper);
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.1);
+    position: relative;
+    padding-bottom: 100px;
+    overflow: hidden;
+}
+
+/* Password Screen */
+#password-screen {
+    width: 100%;
+    max-width: 500px;
+    background: var(--bg-wrapper);
+    border-radius: 36px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    text-align: center;
+    height: 100%;
+    position: absolute;
+}
+
+#password-screen h2 {
+    font-family: "Outfit", sans-serif;
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--text-dark);
+    text-transform: capitalize;
+}
+
+#password-screen p {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-top: 8px;
+}
+
+#password-screen input {
+    width: 100%;
+    max-width: 240px;
+    padding: 16px;
+    margin: 25px 0;
+    border: none;
+    border-radius: 50px;
+    text-align: center;
+    font-size: 20px;
+    font-family: "Outfit", sans-serif;
+    letter-spacing: 12px;
+    outline: none;
+    transition: 0.3s;
+    background: var(--bg-bento);
+    color: var(--text-dark);
+    box-shadow: var(--bento-shadow);
+}
+
+#password-screen .btn-primary {
+    width: 100%;
+    max-width: 240px;
+    padding: 16px;
+    background: var(--text-dark);
+    color: #fff;
+    border-radius: 50px;
+    font-family: "Outfit", sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.password-icon {
+    font-size: 50px;
+    color: var(--primary);
+    margin-bottom: 20px;
+}
+
+.error-message {
+    background: rgb(var(--primary-rgb));
+    color: var(--text-white);
+    padding: 12px 16px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+/* Header & Media Cover */
+.bento-cover {
+    position: relative;
+    margin: var(--bento-gap);
+    margin-bottom: 0;
+    height: 220px;
+    border-radius: var(--bento-radius);
+    overflow: hidden;
+    background: var(--bg-bento);
+    box-shadow: var(--bento-shadow);
+    z-index: 2;
+}
+
+.cover-media-item {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: none;
+    object-fit: cover;
+}
+
+.cover-media-item.active {
+    display: block;
+}
+
+.cover-media-item#cover-img {
+    background: url("https://images.unsplash.com/photo-1548681528-6a5c45b66b42?auto=format&fit=crop&w=800&q=80")
+        center/cover;
+}
+
+/* Switchers */
+.theme-switcher {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    display: flex;
+    gap: 8px;
+    z-index: 20;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(5px);
+    padding: 8px;
+    border-radius: 20px;
+}
+
+.color-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+}
+
+.lang-switcher {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--text-dark);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    z-index: 20;
+}
+
+.media-switcher {
+    position: absolute;
+    top: 60px;
+    right: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 20;
+}
+
+.media-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    color: var(--text-muted);
+    font-size: 14px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.media-btn.active {
+    background: var(--primary);
+    color: #fff;
+}
+
+/* General Bento Box Styles */
+.bento-box {
+    background: var(--bg-bento);
+    margin: var(--bento-gap);
+    padding: 24px;
+    border-radius: var(--bento-radius);
+    box-shadow: var(--bento-shadow);
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.bento-header {
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.bento-title {
+    font-family: "Outfit", sans-serif;
+    font-size: 22px;
+    color: var(--text-dark);
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Decorative Background Icons */
+.decor-icon {
+    position: absolute;
+    color: var(--primary);
+    opacity: 0.05;
+    z-index: 0;
+    pointer-events: none;
+    right: -10px;
+    bottom: -10px;
+    font-size: 80px;
+    transform: rotate(-15deg);
+}
+
+.anim-float {
+    animation: gentleFloat 4s ease-in-out infinite;
+}
+
+@keyframes gentleFloat {
+    0%,
+    100% {
+        transform: translateY(0) rotate(-15deg);
+    }
+    50% {
+        transform: translateY(-8px) rotate(-10deg);
+    }
+}
+
+/* Profile Block */
+.profile-box {
+    text-align: center;
+    padding-top: 75px;
+    z-index: 3;
+    overflow: visible;
+}
+
+.profile-img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 6px solid var(--bg-bento);
+    background: var(--bg-wrapper);
+    position: absolute;
+    top: -60px;
+    left: 50%;
+    transform: translateX(-50%);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+}
+
+.name {
+    font-family: "Outfit", sans-serif;
+    font-size: 28px;
+    color: var(--text-dark);
+    font-weight: 800;
+}
+
+.title {
+    font-size: 13px;
+    color: var(--primary);
+    font-weight: 700;
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.desc {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-top: 12px;
+    line-height: 1.6;
+}
+
+/* Quick Actions */
+.quick-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.action-btn {
+    flex: 1;
+    height: 60px;
+    border-radius: 16px;
+    background-color: var(--bg-input);
+    color: var(--text-dark);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-decoration: none;
+    font-size: 22px;
+    transition: 0.3s ease;
+}
+
+.action-btn:hover {
+    background-color: var(--primary);
+    color: #fff;
+}
+
+/* Highlighted Booking Box */
+.highlight-box {
+    background: var(--primary);
+    color: #fff;
+}
+
+.highlight-box .bento-title {
+    color: #fff;
+}
+
+.highlight-box .decor-icon {
+    color: #fff;
+    opacity: 0.15;
+}
+
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    position: relative;
+    z-index: 1;
+}
+
+.grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    position: relative;
+    z-index: 1;
+}
+
+.inner-card {
+    background: var(--bg-bento);
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 20px;
+    padding: 0;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+    text-align: center;
+    transition:
+        transform 0.3s ease,
+        box-shadow 0.3s ease;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.inner-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.08);
+}
+
+.inner-card h4 {
+    font-family: "Outfit", sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text-dark);
+    margin: 16px 15px 0 15px;
+    line-height: 1.3;
+}
+
+.inner-card p {
+    font-family: "DM Sans", sans-serif;
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin: 0 15px 16px 15px;
+}
+
+.inner-card i.icon-main {
+    font-size: 40px;
+    color: var(--primary);
+    margin: 25px auto 10px;
+    display: block;
+}
+
+/* Social Cards */
+.social-card {
+    background: var(--bg-input);
+    padding: 16px 10px;
+    text-align: center;
+    text-decoration: none;
+    border-radius: 16px;
+}
+
+.social-card i {
+    font-size: 22px;
+}
+
+.social-card span {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+/* Product Cards */
+.product-card {
+    background: var(--bg-bento);
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 16px;
+    text-align: left;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+    transition:
+        transform 0.3s ease,
+        box-shadow 0.3s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.08);
+}
+
+.product-image-wrapper {
+    position: relative;
+    width: 100%;
+    margin-bottom: 16px;
+}
+
+.product-card img {
+    width: 100%;
+    height: 130px;
+    object-fit: cover;
+    border-radius: 10px;
+    display: block;
+}
+
+.product-card .product-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 2;
+    background-color: var(--primary);
+    color: #ffffff;
+    font-family: "Outfit", sans-serif;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.product-card h4 {
+    font-family: "Outfit", sans-serif;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--text-dark);
+    margin: 0 0 6px 0;
+    line-height: 1.3;
+}
+
+.product-card p {
+    font-family: "DM Sans", sans-serif;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 0 0 12px 0;
+    line-height: 1.5;
+}
+
+.product-card .price,
+.price {
+    font-family: "Outfit", sans-serif;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--primary);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.product-card .price-old {
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: line-through;
+    color: var(--primary);
+    opacity: 0.6;
+}
+
+.product-card .stock-status {
+    font-family: "Outfit", sans-serif;
+    font-size: 13px;
+    font-weight: 800;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-top: auto;
+    margin-bottom: 10px;
+    display: block;
+    text-align: center;
+    width: 100%;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.product-card .in-stock {
+    background-color: #def7ec;
+    color: #03543f;
+    border: 1px solid #bcf0da;
+}
+
+.product-card .out-stock {
+    background-color: #fde8e8;
+    color: #9b1c1c;
+    border: 1px solid #fbd5d5;
+}
+
+.product-card .btn-primary {
+    background-color: rgb(var(--primary-rgb)) !important;
+    color: var(--text-white) !important;
+    border: none !important;
+    width: 100%;
+    padding: 12px 0 !important;
+    font-family: "Outfit", sans-serif;
+    font-size: 14px !important;
+    font-weight: 700;
+    border-radius: 8px !important;
+    text-align: center;
+    display: block;
+    transition: opacity 0.2s ease;
+}
+
+.product-card .btn-primary:hover {
+    opacity: 0.85;
+}
+
+.product-card .btn-outline {
+    background-color: #f3f4f6 !important;
+    color: #9ca3af !important;
+    cursor: not-allowed;
+}
+
+/* Gallery */
+.gallery-item-wrapper {
+    position: relative;
+    width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    transition:
+        transform 0.3s ease,
+        box-shadow 0.3s ease;
+}
+
+.gallery-item-wrapper:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.gallery-item-wrapper .gallery-img,
+.gallery-img {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    display: block;
+    border-radius: 0;
+    transition: transform 0.5s ease;
+}
+
+.gallery-item-wrapper .gallery-caption {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 10px;
+    background: linear-gradient(
+        to top,
+        rgba(0, 0, 0, 0.7) 0%,
+        transparent 100%
+    );
+    color: #ffffff;
+    font-family: "DM Sans", sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Forms & Buttons */
+.btn-primary {
+    width: 100%;
+    padding: 14px;
+    background: var(--text-dark);
+    color: #fff;
+    border-radius: 16px;
+    font-family: "Outfit", sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: 0.3s;
+    border: none;
+}
+
+.btn-primary:hover {
+    background: var(--primary);
+}
+
+.highlight-box .btn-primary {
+    background: #fff;
+    color: var(--primary);
+}
+
+.form-control {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    margin-bottom: 12px;
+    background: var(--bg-input);
+    color: var(--text-dark);
+    outline: none;
+    border: 1px solid transparent;
+    transition: 0.3s;
+}
+
+.form-control:focus {
+    box-shadow: 0 0 0 3px var(--primary-light);
+    border-color: var(--primary);
+}
+
+.highlight-box .form-control {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+.hour-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--bg-input);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.pay-links {
+    display: flex;
+    justify-content: flex-start;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.pay-btn {
+    padding: 10px 16px;
+    background: var(--bg-input);
+    border-radius: 12px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* Service Image */
+.service-image-wrapper {
+    width: 100%;
+    height: 150px;
+    margin-bottom: 0;
+}
+
+.service-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+}
+
+.inner-card:hover .service-image {
+    transform: scale(1.05);
+}
+
+.service-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background-color: rgb(var(--primary-rgb));
+    color: #ffffff;
+    padding: 12px;
+    margin: 0 15px 20px 15px;
+    width: calc(100% - 30px);
+    border-radius: 12px;
+    font-family: "Outfit", sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+}
+
+.service-btn:hover {
+    background-color: #2f855a;
+    color: #ffffff;
+}
+
+.service-btn i {
+    font-size: 16px;
+}
+
+/* Testimonials */
+.testimonial-item-card {
+    background: var(--bg-input);
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    height: 100%;
+}
+
+.testimonial-review {
+    font-family: "DM Sans", sans-serif;
+    font-size: 14px;
+    font-style: italic;
+    color: var(--text-dark);
+    margin-bottom: 15px;
+    line-height: 1.6;
+    flex-grow: 1;
+}
+
+.reviewer-image-wrapper {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin: 0 auto 10px auto;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.testimonial-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.testimonial-name {
+    font-family: "Outfit", sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 4px;
+    display: block;
+}
+
+.testimonial-position {
+    font-family: "DM Sans", sans-serif;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 0;
+    display: block;
+}
+
+/* Video */
+.videoSwiper {
+    padding: 10px 0;
+}
+
+.video-grid-item-card {
+    background: var(--bg-bento);
+    border-radius: 12px;
+    padding: 6px;
+}
+
+.video-frame {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.video-frame iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.video-type {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 6px;
+}
+
+.video-label {
+    display: inline-block;
+    font-size: 15px;
+    font-weight: 600;
+    background: rgb(var(--primary-rgb));
+    color: var(--text-white);
+    padding: 8px 14px;
+    border-radius: 10px;
+    margin-top: 12px;
+    font-family: "DM Sans", sans-serif;
+}
+
+/* Iframe */
+.iframe-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: relative;
+    z-index: 1;
+}
+
+.iframe-item-card {
+    background: var(--bg-input);
+    border-radius: 16px;
+    padding: 12px;
+    text-align: left;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+    overflow: hidden;
+    transition:
+        transform 0.3s ease,
+        box-shadow 0.3s ease;
+}
+
+.iframe-item-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.08);
+}
+
+.iframe-item-card iframe {
+    width: 100%;
+    height: 180px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.iframe-item-card .iframe-title {
+    display: inline-block;
+    font-size: 15px;
+    font-weight: 600;
+    background: rgb(var(--primary-rgb));
+    color: var(--text-white);
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-family: "DM Sans", sans-serif;
+}
+
+/* --- Location Section Specific Styles --- */
+/* (The main bento-box styling applies to the outer div) */
+
+/* Map Card Wrapper */
+.location-map-card {
+    background: var(--bg-input); /* Light background behind map */
+    border-radius: var(
+        --bento-radius
+    ); /* Rounded corners for the entire map block */
+    overflow: hidden; /* Ensures map image respects radius */
+    padding: 10px; /* Padding inside the map card */
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.05); /* Subtle inner shadow for depth */
+}
+
+.location-map-card iframe {
+    width: 100%;
+    height: 180px; /* Taller map as seen in screenshot */
+    border-radius: var(
+        --bento-radius-small,
+        16px
+    ); /* Slightly smaller radius for iframe itself */
+    margin-bottom: 12px; /* Space between map and address text */
+    display: block;
+}
+
+.location-map-card .location-address {
+    font-family: "DM Sans", sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    background: rgb(var(--primary-rgb));
+    color: var(--text-white);
+    text-align: center;
+    line-height: 1.6;
+    margin-top: 10px;
+    padding: 12px 14px;
+    border-radius: 12px;
+}
+
+/* --- Business Hours Section --- */
+.business-hours-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0; /* No gap between rows, use padding within rows */
+}
+
+.hour-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0; /* Padding inside each row */
+    border-bottom: 1px solid var(--bg-input); /* Subtle separator line */
+    font-family: "DM Sans", sans-serif;
+    font-size: 14px;
+    color: var(--text-dark);
+}
+
+.hour-row:last-child {
+    border-bottom: none; /* No border for the last row */
+}
+
+.hour-row .day-name {
+    font-weight: 500;
+    color: var(--text-dark);
+}
+
+.hour-row .day-hours {
+    font-weight: 700;
+    color: var(--text-dark);
+}
+
+.hour-row.always-open {
+    flex-direction: column; /* Stack text for always open */
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.hour-row .day-name-highlight {
+    font-family: "Outfit", sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary); /* Highlight color */
+}
+
+.hour-row .day-hours-subtext {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* --- Service Booking Section Specific Styles --- */
+
+/* Form labels */
+.form-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 6px;
+    display: block; /* Ensures label is on its own line */
+    text-align: left;
+}
+
+/* Form input fields */
+.form-control {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    margin-bottom: 12px; /* Consistent spacing */
+    background: var(--bg-input);
+    color: var(--text-dark);
+    outline: none;
+    border: 1px solid transparent; /* Subtle border for a clean look */
+    transition: 0.3s;
+}
+
+/* Styling for Error/Success Messages */
+.form-alert-error {
+    background-color: #fde8e8; /* Light red */
+    color: #c81e1e; /* Dark red text */
+    font-size: 13px;
+    font-weight: 500;
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    border: 1px solid #fbd5d5;
+}
+.form-alert-success {
+    background-color: #def7ec; /* Light green */
+    color: #046c4e; /* Dark green text */
+    font-size: 13px;
+    font-weight: 500;
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    border: 1px solid #bcf0da;
+}
+
+/* Submit button for service booking */
+#serviceBookingForm .btn-primary {
+    background: var(--primary); /* Primary theme color */
+    color: #fff;
+    border-radius: 16px;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    box-shadow: 0 5px 15px var(--primary-light); /* Soft shadow */
+    margin-top: 10px; /* Space above button */
+}
+#serviceBookingForm .btn-primary:hover {
+    background: var(--text-dark); /* Darker on hover */
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Swiper */
+.swiper {
+    width: 100%;
+    padding-bottom: 30px !important;
+    z-index: 1;
+}
+
+.product-swiper,
+.serviceSwiper,
+.testimonialSwiper {
+    width: 100%;
+    padding-bottom: 45px !important;
+    padding-top: 10px;
+}
+
+.swiper-slide,
+.serviceSwiper .swiper-slide {
+    height: auto;
+}
+
+.swiper-pagination-bullet {
+    background: #cbd5e1;
+    opacity: 1;
+    width: 8px;
+    height: 8px;
+    transition: all 0.3s ease;
+}
+
+.swiper-pagination-bullet-active {
+    background: var(--primary) !important;
+    width: 24px;
+    border-radius: 4px;
+}
+
+/* Floating Bottom Navigation */
+.bottom-nav {
+    position: fixed;
+    bottom: 25px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 360px;
+    background-color: var(--text-dark);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 16px;
+    z-index: 1000;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+    border-radius: 24px;
+}
+
+.nav-item {
+    border: none;
+    background: transparent;
+    color: #9ca3af;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 10px;
+    border-radius: 12px;
+}
+
+.nav-item.active,
+.nav-item:hover {
+    color: var(--bg-bento);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Modals */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(31, 41, 55, 0.7);
+    backdrop-filter: blur(4px);
+    z-index: 1001;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-overlay.hidden {
+    display: none;
+}
+
+.modal-content {
+    background: var(--bg-bento);
+    width: 90%;
+    max-width: 380px;
+    padding: 30px;
+    position: relative;
+    text-align: center;
+    border-radius: var(--bento-radius);
+    animation: modalPop 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes modalPop {
+    0% {
+        transform: scale(0.9) translateY(20px);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
+}
+
+.close-modal {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 20px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.close-modal:hover {
+    color: var(--text-dark);
+}
+
+.gsap-bento {
+    opacity: 0;
+    visibility: hidden;
+}
+
+/* Message Boxes */
+.message-box {
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: 1px solid;
+    border-left-width: 4px;
+}
+
+.message-error {
+    color: #dc2626;
+    background-color: #fef2f2;
+    border-color: #fecaca;
+    border-left-color: #dc2626;
+}
+
+.message-success {
+    color: #16a34a;
+    background-color: #f0fdf4;
+    border-color: #bbf7d0;
+    border-left-color: #16a34a;
+}
+
+.message-warning {
+    color: #d97706;
+    background-color: #fffbeb;
+    border-color: #fde68a;
+    border-left-color: #d97706;
+}
+
+.message-info {
+    color: #2563eb;
+    background-color: #eff6ff;
+    border-color: #bfdbfe;
+    border-left-color: #2563eb;
+}
+
+.dark .message-error {
+    color: #fca5a5;
+    background-color: rgba(127, 29, 29, 0.2);
+    border-color: #991b1b;
+    border-left-color: #991b1b;
+}
+
+.dark .message-success {
+    color: #86efac;
+    background-color: rgba(20, 83, 45, 0.2);
+    border-color: #166534;
+    border-left-color: #166534;
+}
+
+.dark .message-warning {
+    color: #fbbf24;
+    background-color: rgba(120, 53, 15, 0.2);
+    border-color: #92400e;
+    border-left-color: #92400e;
+}
+
+.dark .message-info {
+    color: #93c5fd;
+    background-color: rgba(30, 58, 138, 0.2);
+    border-color: #1e40af;
+    border-left-color: #1e40af;
+}
+
+/* Utility Classes */
+.flex {
+    display: flex;
+}
+
+.flex-col {
+    flex-direction: column;
+}
+
+.justify-center {
+    justify-content: center;
+}
+
+.justify-between {
+    justify-content: space-between;
+}
+
+.items-center {
+    align-items: center;
+}
+
+.gap-3 {
+    gap: 0.75rem;
+}
+
+.mt-6 {
+    margin-top: 1.5rem;
+}
+
+.mb-6 {
+    margin-bottom: 1.5rem;
+}
+
+.mb-4 {
+    margin-bottom: 1rem;
+}
+
+.text-left {
+    text-align: left;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.show {
+    display: block !important;
+}
+
+/* Animations */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+.message-box.show {
+    animation: slideDown 0.3s ease-out;
+}
+
+.message-box.hiding {
+    animation: fadeOut 0.3s ease-out;
+}
+
+/* Flatpickr Placeholder */
+.flatpickr-input::placeholder,
+.flatpickr-input::-webkit-input-placeholder,
+.flatpickr-input::-moz-placeholder,
+.flatpickr-input:-ms-input-placeholder {
+    color: #ffffff;
+    opacity: 1;
+}
+
+.dark .flatpickr-input::placeholder {
+    color: #ffffff;
+}
+
+.flatpickr-input:focus::placeholder {
+    color: #ffffff;
+}
+
+/* Desktop View */
+@media (min-width: 769px) {
+    body {
+        padding: 40px 20px;
+    }
+
+    .vcard-container {
+        border-radius: 36px;
+        border: 8px solid #ffffff;
+        padding-bottom: 30px !important;
+    }
+
+    .bottom-nav {
+        display: none !important;
+    }
+
+    .decor-icon {
+        display: none;
+    }
+
+    .desktop-background {
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        overflow: hidden;
+        background-color: #e5e7eb;
+    }
+
+    .desktop-background span {
+        position: absolute;
+        color: #cbd5e1;
+        display: block;
+        list-style: none;
+        bottom: -150px;
+        animation: animate-background 25s linear infinite;
+    }
+
+    .desktop-background span:nth-child(1) {
+        left: 25%;
+        width: 80px;
+        height: 80px;
+        animation-delay: 0s;
+    }
+
+    .desktop-background span:nth-child(2) {
+        left: 10%;
+        width: 20px;
+        height: 20px;
+        animation-delay: 2s;
+        animation-duration: 12s;
+    }
+
+    .desktop-background span:nth-child(3) {
+        left: 70%;
+        width: 20px;
+        height: 20px;
+        animation-delay: 4s;
+    }
+
+    .desktop-background span:nth-child(4) {
+        left: 40%;
+        width: 60px;
+        height: 60px;
+        animation-delay: 0s;
+        animation-duration: 18s;
+    }
+
+    .desktop-background span:nth-child(5) {
+        left: 65%;
+        width: 20px;
+        height: 20px;
+        animation-delay: 0s;
+    }
+
+    .desktop-background span:nth-child(6) {
+        left: 75%;
+        width: 110px;
+        height: 110px;
+        animation-delay: 3s;
+    }
+
+    .desktop-background span:nth-child(7) {
+        left: 35%;
+        width: 150px;
+        height: 150px;
+        animation-delay: 7s;
+    }
+
+    .desktop-background span:nth-child(8) {
+        left: 50%;
+        width: 25px;
+        height: 25px;
+        animation-delay: 15s;
+        animation-duration: 45s;
+    }
+
+    .desktop-background span:nth-child(9) {
+        left: 20%;
+        width: 15px;
+        height: 15px;
+        animation-delay: 2s;
+        animation-duration: 35s;
+    }
+
+    .desktop-background span:nth-child(10) {
+        left: 85%;
+        width: 150px;
+        height: 150px;
+        animation-delay: 0s;
+        animation-duration: 11s;
+    }
+
+    @keyframes animate-background {
+        0% {
+            transform: translateY(0) rotate(0deg);
+            opacity: 1;
+            border-radius: 0;
+        }
+        100% {
+            transform: translateY(-1000px) rotate(720deg);
+            opacity: 0;
+            border-radius: 50%;
+        }
+    }
+}
+
+@media (max-width: 991px) {
+    .desktop-background {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .desktop-background {
+        display: none;
+    }
+
+    .message-box {
+        font-size: 0.813rem;
+        padding: 0.625rem;
+    }
+}
+
+/* --- Contact Form Section Specific Styles --- */
+
+/* Override default centered title for this section header */
+.bento-box .bento-header .bento-title {
+    justify-content: flex-start; /* Aligns title to the left */
+    padding-left: 0;
+}
+
+/* Form labels (shared with service booking) */
+.form-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 6px;
+    display: block;
+    text-align: left;
+}
+
+/* Form input fields (shared with service booking) */
+.form-control {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    margin-bottom: 12px;
+    background: var(--bg-input);
+    color: var(--text-dark);
+    outline: none;
+    border: 1px solid transparent;
+    transition: 0.3s;
+}
+.form-control:focus {
+    box-shadow: 0 0 0 3px var(--primary-light);
+    border-color: var(--primary);
+}
+
+/* --- Form Alert Styling (for Session messages) --- */
+.form-alert-error {
+    background-color: #fde8e8; /* Light red */
+    color: #c81e1e; /* Dark red text */
+    font-size: 13px;
+    font-weight: 500;
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    border: 1px solid #fbd5d5;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+.form-alert-success {
+    background-color: #def7ec; /* Light green */
+    color: #046c4e; /* Dark green text */
+    font-size: 13px;
+    font-weight: 500;
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    border: 1px solid #bcf0da;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+.form-alert-error i,
+.form-alert-success i {
+    font-size: 16px;
+    line-height: 1.5; /* Align icon with text */
+}
+
+/* Submit button for contact form */
+.bento-box #contact-section .btn-primary {
+    background: var(
+        --text-dark
+    ); /* Dark button background for outline version */
+    color: var(--text-white);
+    border: none;
+    border-radius: 16px;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 700;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    margin-top: 10px;
+}
+.bento-box #contact-section .btn-primary:hover {
+    background: var(--primary);
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px var(--primary-light);
+}
+
+/* The btn-outline specific to this form */
+.bento-box #contact-section .btn-outline {
+    background: var(--bg-input); /* Light background for outline */
+    color: var(--text-dark); /* Dark text for outline */
+    border: 1px solid var(--border); /* Subtle border for outline */
+    box-shadow: none;
+}
+.bento-box #contact-section .btn-outline:hover {
+    background: var(--primary); /* Primary color background on hover */
+    color: #fff;
+    border-color: var(--primary);
+    box-shadow: 0 5px 15px var(--primary-light);
+}
+
+/* --- Payments Section Specific Styles --- */
+
+/* Override default centered title for this section header */
+.bento-box .bento-header .bento-title {
+    justify-content: flex-start; /* Aligns title to the left */
+    padding-left: 0;
+}
+
+/* Container for payment buttons/cards - enables wrapping */
+.pay-links {
+    display: flex;
+    flex-wrap: wrap; /* Allows items to wrap to the next line */
+    justify-content: flex-start; /* Aligns items to the left */
+    gap: 10px; /* Space between items */
+    position: relative;
+    z-index: 1;
+}
+
+/* --- Payment Info Card Styling (for 'text' type payments like SBI) --- */
+.payment-info-card {
+    background: var(--bg-input); /* Light grey background for the card */
+    border: 1px solid var(--border); /* Subtle border */
+    border-radius: 12px; /* Rounded corners */
+    padding: 12px; /* Internal padding */
+    width: 100%; /* Full width within the pay-links container */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+    display: flex;
+    flex-direction: column; /* Stack header and details */
+    align-items: flex-start; /* Align contents to the left */
+    gap: 8px; /* Space between header and text details */
+}
+
+.payment-info-card .payment-info-header {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Space between icon and label */
+}
+
+.payment-info-card .payment-icon-large {
+    /* Styling for FontAwesome icons in info cards */
+    font-size: 18px; /* Larger icon size */
+    color: var(--text-dark); /* Dark icon color */
+    line-height: 1;
+}
+
+.payment-info-card .payment-label-large {
+    font-family: "Outfit", sans-serif;
+    font-size: 14px; /* Larger, bolder label */
+    font-weight: 700;
+    color: var(--text-dark);
+    line-height: 1;
+}
+
+.payment-info-card .payment-details-text {
+    font-family: "DM Sans", sans-serif;
+    font-size: 12px; /* Smaller, detailed text */
+    color: var(--text-muted);
+    line-height: 1.5;
+    word-break: break-all; /* Ensures long text breaks correctly */
+    padding-left: 4px; /* Slight indent to align with text */
+}
+
+/* --- NEW: Payment Image Card Styling (for 'image' type payment like the business card) --- */
+.payment-image-card {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px; /* Padding around the image */
+    width: calc(50% - 5px); /* About half width, leaving space for gap */
+    flex-shrink: 0; /* Prevents it from shrinking in flex container */
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start; /* Align content to top-left */
+    gap: 8px;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+}
+
+.payment-image-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+.payment-image-card .payment-card-img {
+    width: 100%;
+    height: 90px; /* Fixed height for image (adjust as needed) */
+    object-fit: contain; /* Ensures the whole image is visible without cropping */
+    border-radius: 8px;
+    display: block;
+}
+
+.payment-image-card .payment-card-label {
+    font-family: "DM Sans", sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-dark);
+    text-align: left;
+    margin-top: 4px; /* Space below image */
+}
+
+.payment-image-card .payment-card-placeholder {
+    width: 100%;
+    height: 90px;
+    background-color: #f0f2f5;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 14px;
+    gap: 5px;
+}
+.payment-image-card .payment-card-placeholder i {
+    font-size: 24px;
+}
+
+/* --- Payment Button Styling (for URL/UPI types) --- */
+.pay-btn {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    text-decoration: none;
+    color: var(--text-dark);
+    font-family: "DM Sans", sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+    /* For smaller buttons, allow them to wrap */
+    flex-shrink: 0; /* Prevents button from being squished */
+    flex-grow: 1; /* Allows it to grow to fill space somewhat, but with flex-wrap */
+    flex-basis: calc(50% - 5px); /* Tries to fit two per row initially */
+    max-width: calc(50% - 5px); /* Ensure it doesn't grow beyond half */
+    justify-content: center; /* Center content horizontally */
+}
+
+.pay-btn:hover {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+}
+
+.pay-btn i {
+    font-size: 16px;
+    line-height: 1;
+}
+
+.pay-btn span {
+    line-height: 1;
+}
+
+/* Ensure image icons from partial are properly styled */
+.payment-icon-image {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    vertical-align: middle;
+}
+
+/* --- Google Wallet Section Specific Styles --- */
+
+/* Override default centered title for this section header */
+.bento-box .bento-header .bento-title {
+    justify-content: flex-start; /* Aligns title to the left */
+    padding-left: 0;
+}
+
+.google-wallet-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center content horizontally */
+    text-align: center; /* Center text */
+    gap: 15px; /* Space between description and button */
+    position: relative;
+    z-index: 1;
+}
+
+.google-wallet-desc {
+    font-family: "DM Sans", sans-serif;
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin-bottom: 0; /* Clear default paragraph margin */
+}
+
+.google-wallet-btn-wrapper {
+    width: 100%;
+    max-width: 250px; /* Constrain button width as in many app UIs */
+    margin-top: 10px; /* Space above the button */
+    position: relative;
+    z-index: 1;
+}
+
+.google-wallet-link {
+    display: block; /* Ensure the link behaves as a block */
+    text-decoration: none;
+    transition: transform 0.2s ease;
+}
+
+.google-wallet-link:hover {
+    transform: translateY(-2px); /* Slight lift on hover */
+}
+
+.google-wallet-img {
+    width: 100%;
+    height: auto; /* Maintain aspect ratio */
+    object-fit: contain;
+    border-radius: 8px; /* Slightly rounded corners for the button image */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Soft shadow */
+}
+
+/* --- Branding Section Specific Styles --- */
+
+.branding-content {
+    text-align: center; /* Center the text */
+    padding: 5px 0; /* Minimal padding */
+    position: relative;
+    z-index: 1;
+}
+
+.branding-text {
+    font-family: "DM Sans", sans-serif;
+    font-size: 12px; /* Small, subtle text */
+    color: var(--text-muted); /* Muted grey for subtle branding */
+    line-height: 1.5;
+}
+
+.branding-link {
+    color: var(--primary); /* Primary theme color for the link */
+    text-decoration: none; /* No underline by default */
+    font-weight: 600; /* Slightly bolder */
+    transition: color 0.2s ease;
+}
+
+.branding-link:hover {
+    color: var(--text-dark); /* Darken on hover for contrast */
+    text-decoration: underline; /* Underline on hover */
+}
+
+/* --- Share Modal Specific Styles --- */
+/* (The modal-overlay, modal-content, and bento-box classes provide the base styling) */
+
+#shareModal .bento-header .bento-title,
+#whatsappModal .bento-header .bento-title,
+#scanModal .bento-header .bento-title {
+    justify-content: center; /* Center align title in modals */
+    font-size: 22px; /* Slightly smaller title for modals */
+}
+
+#shareModal .bento-header i,
+#whatsappModal .bento-header i,
+#scanModal .bento-header i {
+    filter: drop-shadow(
+        0 0 5px rgba(var(--primary-rgb), 0.3)
+    ); /* Add subtle glow to modal icons */
+}
+
+/* Social sharing buttons */
+.share-social-btn {
+    width: 50px; /* Fixed width for uniform circular icons */
+    height: 50px; /* Fixed height */
+    border-radius: 50%; /* Circular shape */
+    background: var(--bg-input); /* Light background */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--text-dark); /* Dark icon color */
+    font-size: 24px; /* Icon size */
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* Subtle shadow */
+    text-decoration: none;
+}
+
+.share-social-btn:hover {
+    background: var(--primary); /* Primary color on hover */
+    color: #fff; /* White icon on hover */
+    transform: translateY(-3px); /* Slight lift */
+    box-shadow: 0 5px 15px var(--primary-light);
+}
+
+/* --- WhatsApp Modal Specific Styles --- */
+/* The input field and button will inherit from form-control and btn-primary/btn-outline */
+
+#whatsappModal .form-label {
+    text-align: center; /* Center label for WhatsApp input */
+    margin-bottom: 8px;
+}
+
+/* --- Scan QR Code Modal Specific Styles --- */
+#scanModal #scanQrCodeCanvas {
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* Shadow for QR code canvas */
+}
+
+/* =========================================
+   BULLETPROOF NEWSLETTER MODAL 
+   ========================================= */
+
+/* The dark background overlay */
+#newsletterModal {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background-color: rgba(
+        31,
+        41,
+        55,
+        0.8
+    ) !important; /* Slightly darker overlay to make orange pop */
+    z-index: 99999 !important; /* Ensure it is above EVERYTHING */
+
+    /* Flexbox perfectly centers the box */
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    /* Animation */
+    opacity: 0;
+    visibility: hidden;
+    transition:
+        opacity 0.3s ease-in-out,
+        visibility 0.3s ease-in-out;
+}
+
+#newsletterModal.is-active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* The Orange Box */
+#customNewsBox {
+    background-color: var(
+        --primary,
+        #ff7b54
+    ) !important; /* Forces primary color background */
+    width: 90% !important;
+    max-width: 360px !important;
+    padding: 35px 25px !important;
+    border-radius: 24px !important;
+    text-align: center !important;
+    position: relative !important;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4) !important;
+    margin: 0 !important; /* Removes any conflicting margins */
+
+    /* Pop-up animation */
+    transform: scale(0.9);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#newsletterModal.is-active #customNewsBox {
+    transform: scale(1);
+}
+
+/* Close Icon */
+.custom-news-close {
+    position: absolute !important;
+    top: 15px !important;
+    right: 20px !important;
+    background: transparent !important;
+    border: none !important;
+    font-size: 20px !important;
+    color: rgba(255, 255, 255, 0.7) !important; /* Faded white */
+    cursor: pointer !important;
+    padding: 0 !important;
+    transition: color 0.2s ease !important;
+}
+.custom-news-close:hover {
+    color: #ffffff !important;
+}
+
+/* Inside Elements */
+.custom-news-icon {
+    font-size: 45px !important;
+    color: #ffffff !important;
+    margin-bottom: 15px !important;
+    display: block !important;
+}
+
+.custom-news-title {
+    font-family: "Outfit", sans-serif !important;
+    font-size: 26px !important;
+    font-weight: 800 !important;
+    color: #ffffff !important;
+    margin: 0 0 10px 0 !important;
+}
+
+.custom-news-desc {
+    font-family: "DM Sans", sans-serif !important;
+    font-size: 14px !important;
+    color: rgba(
+        255,
+        255,
+        255,
+        0.9
+    ) !important; /* Slightly faded white for reading */
+    line-height: 1.5 !important;
+    margin: 0 0 25px 0 !important;
+}
+
+/* Input Field */
+.custom-news-input {
+    width: 100% !important;
+    background-color: rgba(
+        255,
+        255,
+        255,
+        0.15
+    ) !important; /* Semi-transparent white */
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    color: #ffffff !important;
+    padding: 14px !important;
+    border-radius: 12px !important;
+    font-family: "DM Sans", sans-serif !important;
+    font-size: 14px !important;
+    margin-bottom: 15px !important;
+    outline: none !important;
+    transition: all 0.3s ease !important;
+    text-align: center !important;
+}
+
+.custom-news-input::placeholder {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.custom-news-input:focus {
+    background-color: rgba(255, 255, 255, 0.25) !important;
+    border-color: #ffffff !important;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Button */
+.custom-news-btn {
+    display: inline-block !important;
+    width: 100% !important;
+    background-color: #ffffff !important; /* White Button */
+    color: var(--primary, #ff7b54) !important; /* Orange Text */
+    padding: 14px 0 !important;
+    font-family: "Outfit", sans-serif !important;
+    font-size: 15px !important;
+    font-weight: 800 !important;
+    border-radius: 12px !important;
+    border: none !important;
+    text-decoration: none !important;
+    cursor: pointer !important;
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1) !important;
+}
+
+.custom-news-btn:hover {
+    background-color: #1f2937 !important; /* Dark Grey on Hover */
+    color: #ffffff !important; /* White Text on Hover */
+}
+
+.news-message {
+    display: none;
+    font-size: 13px;
+    margin-bottom: 10px;
+    padding: 10px 12px;
+    color: #fff;
+    border-radius: 5px;
+}
+
+.news-error {
+    background-color: #000000;
+}
+
+.news-success {
+    background-color: #15cf01;
+}
+
+/* =========================================
+   CUSTOM ORANGE INFO MODAL 
+   ========================================= */
+
+/* The dark background overlay */
+#customInfoOverlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background-color: rgba(
+        43,
+        52,
+        64,
+        0.85
+    ) !important; /* Dark blue/grey overlay */
+    z-index: 99999 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    /* Animation */
+    opacity: 0;
+    visibility: hidden;
+    transition:
+        opacity 0.3s ease-in-out,
+        visibility 0.3s ease-in-out;
+}
+
+#customInfoOverlay.hidden {
+    display: none !important;
+}
+
+#customInfoOverlay.is-active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* The Solid Orange Box */
+#customInfoBox {
+    background-color: #ff764d !important; /* The specific orange color */
+    width: 90% !important;
+    max-width: 360px !important;
+    padding: 35px 25px 25px 25px !important;
+    border-radius: 20px !important;
+    text-align: center !important;
+    position: relative !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2) !important;
+    margin: 0 !important;
+
+    /* Pop-up animation */
+    transform: scale(0.95) translateY(10px);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#customInfoOverlay.is-active #customInfoBox {
+    transform: scale(1) translateY(0);
+}
+
+/* Close Icon (Top Right) */
+.custom-info-close {
+    position: absolute !important;
+    top: 15px !important;
+    right: 15px !important;
+    background: transparent !important;
+    border: none !important;
+    font-size: 18px !important;
+    color: #ffffff !important; /* Solid white */
+    opacity: 0.8;
+    cursor: pointer !important;
+    padding: 0 !important;
+    transition: opacity 0.2s ease !important;
+}
+.custom-info-close:hover {
+    opacity: 1;
+}
+
+/* Image & Icon Styling */
+.custom-info-img {
+    width: 70px !important;
+    height: 70px !important;
+    border-radius: 12px !important;
+    object-fit: cover !important;
+    margin: 0 auto 15px auto !important;
+    display: block !important;
+    border: 2px solid rgba(255, 255, 255, 0.5) !important; /* White border to separate image from orange bg */
+}
+
+.custom-info-icon {
+    font-size: 45px !important;
+    color: #ffffff !important;
+    margin-bottom: 15px !important;
+    display: block !important;
+}
+
+/* Typography */
+.custom-info-title {
+    font-family: "Fredoka", sans-serif !important;
+    font-size: 26px !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    margin: 0 0 12px 0 !important;
+}
+
+/* Scrollable Description Area */
+.custom-info-desc-wrapper {
+    max-height: 40vh !important;
+    overflow-y: auto !important;
+    margin-bottom: 25px !important;
+    padding: 0 10px !important;
+}
+
+.custom-info-desc {
+    font-family: "DM Sans", sans-serif !important;
+    font-size: 14px !important;
+    color: #ffffff !important;
+    line-height: 1.5 !important;
+    margin: 0 !important;
+}
+
+/* Customize Scrollbar for white/orange theme */
+.custom-info-desc-wrapper::-webkit-scrollbar {
+    width: 4px;
+}
+.custom-info-desc-wrapper::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+.custom-info-desc-wrapper::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 4px;
+}
+
+/* The Solid White Action Button */
+.custom-info-btn {
+    display: inline-block !important;
+    width: 100% !important;
+    background-color: #ffffff !important; /* White Button */
+    color: #ff764d !important; /* Orange Text to match background */
+    padding: 14px 0 !important;
+    font-family: "Fredoka", sans-serif !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    border-radius: 12px !important;
+    border: none !important;
+    text-decoration: none !important;
+    cursor: pointer !important;
+    transition:
+        transform 0.2s ease,
+        opacity 0.2s ease !important;
+}
+
+.custom-info-btn:active {
+    transform: scale(0.98);
+    opacity: 0.9;
+}
+
+/* --- Custom Feature Links (Mixed Layout) Specific Styles --- */
+
+/* Ensure the title is left-aligned */
+.bento-box .bento-header .bento-title {
+    justify-content: flex-start;
+    padding-left: 0;
+}
+
+/* --- Styles for 'Text' and 'Address' Types --- */
+.feature-content-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 12px; /* Space between multiple text/address cards */
+}
+
+.feature-content-card {
+    background: var(--bg-input); /* Light background */
+    border-radius: 12px;
+    padding: 16px;
+    text-align: left;
+    border: 1px solid var(--border);
+}
+
+.feature-content-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.feature-content-header i {
+    font-size: 16px;
+    color: var(--text-dark); /* Icon colored with primary theme color */
+}
+
+.feature-content-header span {
+    font-family: "Outfit", sans-serif;
+    font-size: 15px;
+    color: var(--text-dark);
+}
+
+.feature-content-text {
+    font-family: "DM Sans", sans-serif;
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin: 0;
+    /* Preserve line breaks if content contains them */
+    white-space: pre-wrap;
+}
+
+/* --- Styles for Icon-Only Types --- */
+.icon-grid {
+    display: flex;
+    flex-wrap: wrap; /* Allow wrapping */
+    justify-content: flex-start; /* Align left */
+    gap: 12px; /* Space between icons */
+}
+
+.feature-icon-btn {
+    width: 48px;
+    height: 48px;
+    background-color: var(--bg-input);
+    color: var(--text-dark);
+    border-radius: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-decoration: none;
+    font-size: 20px;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+}
+
+.feature-icon-btn:hover {
+    background-color: var(--primary);
+    color: #ffffff;
+    transform: translateY(-3px);
+    border-color: var(--primary);
+    box-shadow: 0 5px 15px var(--primary-light);
+}

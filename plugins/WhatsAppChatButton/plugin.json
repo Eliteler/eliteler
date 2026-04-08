@@ -1,0 +1,8 @@
+{
+    "plugin_id": "WhatsAppChatButton",
+    "name": "WhatsApp Chat Button",
+    "description": "WhatsApp Chat Button in your website.",
+    "version": "1.0.0",
+    "img": "whatsapp.png",
+    "main_route": "admin.plugin.whatsapp_chat_button.settings"
+}

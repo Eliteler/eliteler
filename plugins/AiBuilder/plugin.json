@@ -1,0 +1,9 @@
+{
+    "plugin_id": "AiBuilder",
+    "name": "AI Builder",
+    "description": "Generate a digital vCard instantly by scanning your paper business card with AI.",
+    "version": "1.0.0",
+    "img": "aibuilder.png",
+    "main_route": "admin.plugin.aibuilder",
+    "platform": "gobiz"
+}

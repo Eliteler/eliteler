@@ -1,0 +1,2031 @@
+<!doctype html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- CSRF Token -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    @if (isset($business_card_details->seo_configurations) &&
+            json_decode($business_card_details->seo_configurations)->favicon != null)
+        <link rel="icon" href="{{ url(json_decode($business_card_details->seo_configurations)->favicon) }}"
+            sizes="512x512" type="image/png" />
+        <link rel="apple-touch-icon" href="{{ url(json_decode($business_card_details->seo_configurations)->favicon) }}">
+    @else
+        <link rel="icon" href="{{ url($business_card_details->profile) }}" sizes="512x512" type="image/png" />
+        <link rel="apple-touch-icon" href="{{ url($business_card_details->profile) }}">
+    @endif
+
+    <meta name="theme-color" content="#EFFAF4" />
+
+    <!-- Add to homescreen for Chrome on Android -->
+    <meta name="application-name" content="{{ $card_details->title }}">
+
+    <!-- Add to homescreen for Safari on iOS -->
+    <meta name="apple-mobile-web-app-title" content="{{ $card_details->title }}">
+
+    <!-- Tile for Win8 -->
+    <meta name="msapplication-TileColor" content="#EFFAF4">
+    <meta name="msapplication-TileImage" content="{{ url($business_card_details->profile) }}">
+
+    {!! SEOMeta::generate() !!}
+    {!! OpenGraph::generate() !!}
+    {!! Twitter::generate() !!}
+    {!! JsonLd::generate() !!}
+
+    <!-- Tailwind CSS -->
+    <link rel="stylesheet" href="{{ url('templates/css/yacht.css') }}">
+    {{-- Swiper CSS --}}
+    <link rel="stylesheet" href="{{ url('css/swiper-bundle.min.css') }}">
+    {{-- Fontawesome CSS --}}
+    <link rel="stylesheet" href="{{ url('css/fontawesome.min.css') }}" />
+
+    {{-- Google Fonts: Gloock --}}
+    <link href="https://fonts.googleapis.com/css2?family=Gloock&display=swap" rel="stylesheet" />
+
+    {{-- Google Fonts: Rethink Sans --}}
+    <link href="https://fonts.googleapis.com/css2?family=Rethink+Sans:ital,wght@0,400..800;1,400..800&display=swap"
+        rel="stylesheet" />
+
+    <!-- Include the qrious library -->
+    <script src="{{ url('js/qrious.min.js') }}"></script>
+
+    <style>
+        body {
+            font-family: "Rethink Sans", sans-serif;
+        }
+
+        .custom-head {
+            font-family: "Gloock", serif;
+        }
+    </style>
+
+    <!-- Flatpickr CSS -->
+    <link href="{{ url('css/flatpickr.min.css') }}" rel="stylesheet">
+    {{-- Check business details --}}
+    @if ($business_card_details != null)
+        @php
+            $custom_css = $business_card_details->custom_css;
+            $custom_js = $business_card_details->custom_js;
+
+            // Ensure <style> tags for custom CSS
+            if (strpos($custom_css, '<style>') === false && strpos($custom_css, '</style>') === false) {
+                $custom_css = "<style>" . $custom_css . "</style>";
+            }
+
+            // Ensure <script> tags for custom JS
+            if (strpos($custom_js, '<script>') === false && strpos($custom_js, '</script>') === false) {
+                $custom_js = "<script>" . $custom_js . "</script>";
+            }
+        @endphp
+
+        {!! $custom_css !!}
+        {!! $custom_js !!}
+
+        {{-- Theme CSS --}}
+        @if(!empty($business_card_details->theme_css))
+            <style>
+                {!! $business_card_details->theme_css !!}
+            </style>
+        @endif
+
+        {{-- Theme JS --}}
+        @if(!empty($business_card_details->theme_js))
+            <script>
+                {!! $business_card_details->theme_js !!}
+            </script>
+        @endif
+    @endif
+
+    {{-- Check PWA --}}
+    @if ($plan_details != null)
+        @if ($plan_details['pwa'] == 1 && $business_card_details->is_enable_pwa == 1)
+            @laravelPWA
+
+            <!-- Web Application Manifest -->
+            <link rel="manifest" href="{{ $manifest }}">
+        @endif
+    @endif
+</head>
+
+@php
+    use Illuminate\Support\Facades\Session;
+@endphp
+
+<body class="bg-[#F5F5F4] min-h-screen"
+    dir="{{ App::isLocale('ar') || App::isLocale('ur') || App::isLocale('he') ? 'rtl' : 'ltr' }}">
+    <div class="container max-w-2xl mx-auto relative">
+
+        {{-- Start Check password protected --}}
+        @if ($business_card_details->password == null || Session::get('password_protected') == true)
+            {{-- Check business details --}}
+            @if ($business_card_details != null)
+                <div class="bg-white shadow-[0_0_4px_rgba(0,0,0,0.1)] overflow-hidden">
+                    <!-- Start Cover Image Section -->
+                    @if ($business_card_details->cover_type == 'none')
+                        <div class="lg:h-80 h-60 relative" id="profile">
+                            {{-- Cover Image --}}
+                            <img src="{{ url('img/templates/yacht/banner.png') }}"
+                                alt="{{ $business_card_details->title }}" class="w-full h-full object-cover" />
+                        </div>
+                    @endif
+                    <!-- End Cover Image Section -->
+
+                    <!-- Start Cover Image Section -->
+                    @if ($business_card_details->cover_type == 'photo')
+                        <div class="lg:h-80 h-60 relative" id="profile">
+                            {{-- Cover Image --}}
+                            <img src="{{ $business_card_details->cover ? url($business_card_details->cover) : asset('images/default-cover.png') }}"
+                                alt="{{ $business_card_details->title }}" class="w-full h-full object-cover" />
+                        </div>
+                    @endif
+                    <!-- End Cover Image Section -->
+
+                    <!-- Start Cover Video Section (Vimeo AP) -->
+                    @if ($business_card_details->cover_type == 'vimeo-ap')
+                        <div class="relative w-full" style="padding-top: 56.25%;" id="profile">
+                            {{-- Cover Video --}}
+                            <iframe referrerpolicy="strict-origin-when-cross-origin"
+                                src="https://player.vimeo.com/video/{{ $business_card_details->cover }}?autoplay=1&loop=1&autopause=0&muted=1&controls=0"
+                                id="vid-player" frameborder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowfullscreen class="absolute top-0 left-0 w-full h-full">
+                            </iframe>
+                        </div>
+                    @endif
+                    <!-- End Cover Video Section (Vimeo AP) -->
+
+                    <!-- Start Cover Video Section (Vimeo) -->
+                    @if ($business_card_details->cover_type == 'vimeo')
+                        <div class="relative w-full" style="padding-top: 56.25%;" id="profile">
+                            {{-- Cover Video --}}
+                            <iframe referrerpolicy="strict-origin-when-cross-origin"
+                                src="https://player.vimeo.com/video/{{ $business_card_details->cover }}?autoplay=0&loop=1&autopause=0&muted=0&controls=1"
+                                id="vid-player" frameborder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowfullscreen class="absolute top-0 left-0 w-full h-full">
+                            </iframe>
+                        </div>
+                    @endif
+                    <!-- End Cover Video Section (Vimeo) -->
+
+                    <!-- Start Cover Video Section (Youtube AP) -->
+                    @if ($business_card_details->cover_type == 'youtube-ap')
+                        <div class="relative w-full" style="padding-top: 56.25%;" id="profile">
+                            {{-- Cover Video --}}
+                            <iframe referrerpolicy="strict-origin-when-cross-origin"
+                                src="https://www.youtube.com/embed/{{ $business_card_details->cover }}?autoplay=1&mute=1&controls=0&loop=1&playlist={{ $business_card_details->cover }}"
+                                id="vid-player" frameborder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowfullscreen class="absolute top-0 left-0 w-full h-full">
+                            </iframe>
+                        </div>
+                    @endif
+                    <!-- End Cover Video Section (Youtube AP) -->
+
+                    <!-- Start Cover Video Section -->
+                    @if ($business_card_details->cover_type == 'youtube')
+                        <div class="relative w-full" style="padding-top: 56.25%;" id="profile">
+                            {{-- Cover Video --}}
+                            <iframe referrerpolicy="strict-origin-when-cross-origin"
+                                src="https://www.youtube.com/embed/{{ $business_card_details->cover }}?autoplay=0&mute=1&controls=0&loop=1&playlist={{ $business_card_details->cover }}"
+                                id="vid-player" frameborder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowfullscreen class="absolute top-0 left-0 w-full h-full">
+                            </iframe>
+                        </div>
+                    @endif
+                    <!-- End Cover Video Section -->
+
+                    {{-- Language Switcher --}}
+                    @if ($business_card_details->is_enable_language_switcher == 1 && is_array(config('app.languages')) && count(config('app.languages')) > 1)
+                    @include('templates.includes.language-switcher')
+                    @endif
+
+                    <!-- Profile Info -->
+                    <div class="relative px-6 -mt-0.5 pb-32 lg:p-6">
+                        <!-- Start Profile Info -->
+
+                        {{-- Profile Image --}}
+                        <div class="flex justify-center">
+                            <img src="{{ url($business_card_details->profile) }}"
+                                alt="{{ $business_card_details->title }}"
+                                class="w-36 h-36 rounded-full lg:-mt-[93px] -mt-[70px] z-20 bg-transparent object-cover" />
+                        </div>
+
+                        {{-- Background Image --}}
+                        <div class="text-center mt-4 relative -mx-6">
+                            <img src="{{ url('img/templates/yacht/bg.png') }}"
+                                alt="{{ $business_card_details->title }}"
+                                class="w-full object-cover absolute -top-[89px] z-10 opacity-90" />
+                            <div class="relative z-10">
+                                {{-- Name --}}
+                                <h1 class="lg:text-5xl text-3xl font-medium text-[#121212] custom-head">
+                                    {{ $business_card_details->title }}
+                                </h1>
+                                {{-- Job Title --}}
+                                <p class="text-purple-800 font-bold mt-2 text-md">
+                                    {{ $card_details->sub_title }}
+                                </p>
+                                {{-- About --}}
+                                @if ($business_card_details->description != null)
+                                    <div class="mt-4 text-sm leading-relaxed font-medium lg:px-40 px-16">
+                                        {!! $business_card_details->description !!}
+                                    </div>
+                                @endif
+
+                            </div>
+                        </div>
+                        <!-- End Profile Info -->
+
+                        <!-- Start Quick Contact -->
+                        @if (count($feature_details) > 0)
+                            <div class="flex justify-center gap-4 mt-6 z-20">
+                                {{-- Loop through the feature_details array and display the icons --}}
+                                @foreach ($feature_details as $feature)
+                                    @if (in_array($feature->type, ['tel', 'email', 'instagram', 'snapchat', 'address']))
+                                        {{-- Phone --}}
+                                        @if ($feature->type == 'tel')
+                                            <a href="tel:{{ $feature->content }}"
+                                                class="bg-purple-50 p-4 rounded-full text-purple-800 hover:bg-purple-100 transition-colors border border-purple-100 z-20">
+                                                <i class="{{ $feature->icon }} fa-xl text-purple-800"></i>
+                                            </a>
+                                        @endif
+
+                                        {{-- Email --}}
+                                        @if ($feature->type == 'email')
+                                            <a href="mailto:{{ $feature->content }}"
+                                                class="bg-purple-50 h-14 w-14 flex justify-center items-center rounded-full text-purple-800 hover:bg-purple-100 border border-purple-100 z-20">
+                                                <i class="{{ $feature->icon }} fa-xl text-purple-800"></i>
+                                            </a>
+                                        @endif
+
+                                        {{-- Location --}}
+                                        @if ($feature->type == 'address')
+                                            <a href="#location"
+                                                class="bg-purple-50 h-14 w-14 flex justify-center items-center rounded-full text-purple-800 hover:bg-purple-100 border border-purple-100 z-20">
+                                                <i class="{{ $feature->icon }} fa-xl text-purple-800"></i>
+                                            </a>
+                                        @endif
+
+                                        {{-- Snapchat --}}
+                                        @if ($feature->type == 'snapchat')
+                                            <a href="{{ $feature->content }}" target="_blank"
+                                                class="bg-purple-50 h-14 w-14 flex justify-center items-center rounded-full text-purple-800 hover:bg-purple-100 border border-purple-100 z-20">
+                                                <i class="{{ $feature->icon }} fa-xl text-purple-800"></i>
+                                            </a>
+                                        @endif
+
+                                        {{-- Instagram --}}
+                                        @if ($feature->type == 'instagram')
+                                            <a href="{{ $feature->content }}" target="_blank"
+                                                class="bg-purple-50 h-14 w-14 flex justify-center items-center rounded-full text-purple-800 hover:bg-purple-100 border border-purple-100 z-20">
+                                                <i class="{{ $feature->icon }} fa-xl text-purple-800"></i>
+                                            </a>
+                                        @endif
+                                    @endif
+                                @endforeach
+                            </div>
+                        @endif
+                        {{-- End Quick Contact --}}
+
+                        <!-- Start Location Section -->
+                        @if (count($feature_details) > 0)
+                            @foreach ($feature_details as $feature)
+                                @if (in_array($feature->type, ['address']))
+                                    <div class="grid grid-cols-1 gap-4 relative">
+                                        <div
+                                            class="mt-8 bg-purple-50 hover:bg-purple-100 transition-colors rounded-2xl border border-purple-100 w-full">
+                                            <!-- Font Awesome Icon -->
+                                            <a href="https://www.google.com/maps/place/{{ urlencode($feature->content) }}"
+                                                target="_blank"
+                                                class="px-6 py-4 text-purple-800 flex flex-col justify-center">
+                                                <!-- Font Awesome Icon -->
+                                                <i
+                                                    class="{{ $feature->icon }} fa-xl text-purple-800 text-2xl py-4"></i>
+                                                <!-- Title -->
+                                                <h2 class="text-purple-800 text-md font-semibold">
+                                                    {{ $feature->label }}
+                                                </h2>
+                                                <!-- Description -->
+                                                <p class="text-gray-600 text-sm flex items-center">
+                                                    {{ $feature->content }}
+                                                </p>
+                                            </a>
+                                        </div>
+                                    </div>
+                                @endif
+                            @endforeach
+                        @endif
+                        {{-- End Location Section --}}
+
+                        <!-- Start contact with icon, title and description -->
+                        @if (!empty($feature_details) && count($feature_details) > 0)
+                            @php
+                                // List of excluded feature types
+                                $excludedTypes = [
+                                    'email',
+                                    'tel',
+                                    'instagram',
+                                    'snapchat',
+                                    'address',
+                                    'map',
+                                    'iframe',
+                                    'youtube',
+                                ];
+
+                                // Filter the features to include only valid ones
+                                $validFeatures = collect($feature_details)->filter(function ($feature) use (
+                                    $excludedTypes,
+                                ) {
+                                    return isset($feature->type) && !in_array($feature->type, $excludedTypes);
+                                });
+                            @endphp
+
+                            @if ($validFeatures->isNotEmpty())
+                                <div class="relative">
+                                    <h2
+                                        class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative custom-head">
+                                        {{ __($feature_details[0]->title) }}
+                                    </h2>
+                                    <img src="{{ url('img/templates/yacht/1.png') }}" alt=""
+                                        class="w-36 absolute -top-0 -right-[88px] scale-x-[-1] -rotate-12 opacity-90" />
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        @foreach ($validFeatures as $feature)
+                                            {{-- Generate href value dynamically --}}
+                                            @php
+                                                $href = $feature->content;
+                                                if ($feature->type == 'wa') {
+                                                    $href = 'https://wa.me/' . $feature->content;
+                                                } elseif ($feature->type == 'email') {
+                                                    $href = 'mailto:' . $feature->content;
+                                                } elseif ($feature->type == 'text') {
+                                                    $href = 'javascript:void(0);';
+                                                }
+                                            @endphp
+                                            <!-- {{ $feature->label }} -->
+                                            <a href="{{ $href }}" target="_blank"
+                                                class="p-4 text-purple-800 bg-purple-50 hover:bg-purple-100 transition-colors rounded-2xl flex flex-col border border-purple-100">
+                                                <!-- Font Awesome Icon -->
+                                                <i
+                                                    class="{{ $feature->icon }} text-purple-800 text-2xl -mt-1 mb-1"></i>
+                                                <!-- Title -->
+                                                <h2 class="text-purple-800 text-md font-semibold">
+                                                    {{ $feature->label }}
+                                                </h2>
+                                                <!-- Description -->
+                                                <p class="text-gray-600 text-sm truncate">
+                                                    {{ $feature->content }}
+                                                </p>
+                                            </a>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+                        @endif
+                        <!-- End contact with icon, title and description -->
+
+                        <!-- Start Services Section -->
+                        @if (count($service_details) > 0)
+                            <div class="relative">
+                                <h2
+                                    class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative custom-head">
+                                    {{ __($service_details[0]->title) }}
+                                </h2>
+                                <img src="{{ url('img/templates/yacht/4.png') }}" alt=""
+                                        class="w-32 absolute top-2 -left-[85px] rotate-12" />
+                                <swiper-container
+                                    breakpoints='{
+                                    "640": { "slidesPerView": 1 }, 
+                                    "1024": { "slidesPerView": 2 } 
+                                    }'
+                                    space-between="20" class="mySwiper" autoplay-delay="2500"
+                                    autoplay-disable-on-interaction="false" loop="true">
+                                    {{-- All services --}}
+                                    @foreach ($service_details as $service_detail)
+                                        <swiper-slide class="p-0.5">
+                                            <!-- Service -->
+                                            <div
+                                                class="flex flex-col p-6 rounded-2xl shadow-[0_0_4px_rgba(0,0,0,0.1)]">
+                                                {{-- Image --}}
+                                                <img class="w-full h-full object-cover rounded-2xl mb-2"
+                                                    src="{{ url($service_detail->service_image) }}"
+                                                    alt="{{ $service_detail->service_name }}" />
+                                                {{-- Name --}}
+                                                <h2 class="text-gray-600 text-md font-semibold">
+                                                    {{ $service_detail->service_name }}
+                                                </h2>
+                                                {{-- Description --}}
+                                                <p class="text-gray-600 text-sm mt-2">
+                                                    {{ $service_detail->service_description }}
+                                                </p>
+                                                <!-- Price & Booking Section -->
+
+                                                <!-- Enquiry Button -->
+                                                @if ($enquiry_button != null)
+                                                    @if ($whatsAppNumberExists == true && $whatsAppNumberExists == true && $service_detail->enable_enquiry == 'Enabled')
+                                                        <a href="https://wa.me/{{ $enquiry_button }}?text={{ __('Hi, I am interested in your product/service:') }} {{ $service_detail->service_name }}. {{ __('Please provide more details.') }}"
+                                                            target="_blank"
+                                                            class="text-purple-800 text-center text-sm font-semibold mt-4 bg-transparent border border-purple-800 py-2.5 px-4 rounded-lg hover:bg-purple-800 hover:text-white focus:outline-none">
+                                                            {{ __('Enquire') }}
+                                                        </a>
+                                                    @endif
+                                                @endif
+
+
+                                                <!-- End Price & Booking Section -->
+                                            </div>
+                                        </swiper-slide>
+                                    @endforeach
+                                </swiper-container>
+                            </div>
+                        @endif
+                        <!-- End Services Section -->
+
+                        <!-- Start Products Section -->
+                        @if (count($product_details) > 0)
+                            <div class="relative">
+                                <h2
+                                    class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative custom-head">
+
+                                    {{ __($product_details[0]->title) }}
+                                </h2>
+                                <img src="{{ url('img/templates/yacht/2.png') }}" alt=""
+                                        class="w-36 absolute -top-0 -right-[88px] -rotate-12 opacity-90" />
+                                <swiper-container
+                                    breakpoints='{
+                                        "640": { "slidesPerView": 1 }, 
+                                        "1024": { "slidesPerView": 2 } 
+                                    }'
+                                    space-between="20" class="mySwiper" autoplay-delay="2500"
+                                    autoplay-disable-on-interaction="false" loop="true">
+                                    {{-- All products --}}
+                                    @foreach ($product_details as $product_detail)
+                                        <swiper-slide class="p-0.5">
+                                            <!-- Product -->
+                                            <div
+                                                class="flex flex-col p-6 rounded-2xl shadow-[0_0_4px_rgba(0,0,0,0.1)]">
+                                                {{-- Badge --}}
+                                                @if (!empty($product_detail->badge))
+                                                    <p
+                                                        class="absolute top-9 right-9 font-medium text-white bg-purple-800 px-4 py-1.5 rounded-full">
+                                                        {{ $product_detail->badge }}
+                                                    </p>
+                                                @endif
+                                                {{-- Image --}}
+                                                <img class="w-full h-full object-cover rounded-2xl mb-2"
+                                                    src="{{ url($product_detail->product_image) }}"
+                                                    alt="{{ $product_detail->product_name }}" />
+                                                {{-- Name --}}
+                                                <h2 class="text-gray-600 text-md font-semibold">
+                                                    {{ $product_detail->product_name }}
+                                                </h2>
+                                                {{-- Description --}}
+                                                <p class="text-gray-600 text-sm mt-2 ">
+                                                    {{ $product_detail->product_description }}
+                                                </p>
+
+                                                <!-- Price & Booking Section -->
+                                                <div class="flex-flex-col mt-2">
+                                                    <!-- Price -->
+                                                    <div class="flex flex-col mb-4">
+                                                        @if ($product_detail->sales_price != 0)
+                                                        <div>
+                                                            <h4 class="text-[#121212] text-md font-bold">
+                                                                {{ __('Price:') }}
+                                                                <span class="text-gray-500 font-bold text-base ml-1">
+                                                                    {{ formatCurrencyVcard($product_detail->sales_price, $product_detail->currency) }}</span>
+                                                                {{-- Check regular price is exists --}}
+                                                                @if ($product_detail->sales_price != $product_detail->regular_price)
+                                                                    <span
+                                                                        class="line-through ml-1 text-gray-500 text-sm font-normal">
+                                                                        {{ formatCurrencyVcard($product_detail->regular_price, $product_detail->currency) }}</span>
+                                                                @endif
+                                                            </h4>
+                                                        </div>
+                                                        @endif
+
+                                                        @if ($product_detail->product_status != 'null')
+                                                        <div>
+                                                            <h4 class="text-[#121212] text-md font-bold">
+                                                                {{ __('Stock:') }}
+                                                                <span
+                                                                    class="text-{{ $product_detail->product_status == 'instock' ? 'purple-800' : 'red-500' }} font-medium">{{ $product_detail->product_status == 'outstock' ? __('Out of Stock') : __('In Stock') }}</span>
+                                                            </h4>
+                                                        </div>
+                                                        @endif
+                                                    </div>
+
+                                                    <!-- Enquire -->
+                                                    @if ($enquiry_button != null)
+                                                        @if ($whatsAppNumberExists == true)
+                                                            <a href="https://wa.me/{{ $enquiry_button }}?text={{ __('Hi, I am interested in your product:') }} {{ $product_detail->product_name }}. {{ __('Please provide more details.') }}"
+                                                                target="_blank"
+                                                                class="text-purple-800 text-sm font-semibold bg-transparent border block text-center border-purple-800 py-2.5 px-4 rounded-lg hover:bg-purple-800 hover:text-white focus:outline-none">
+                                                                {{ __('Enquire') }}
+                                                            </a>
+                                                        @endif
+                                                    @endif
+                                                </div>
+                                                <!-- End Price & Booking Section -->
+                                            </div>
+                                        </swiper-slide>
+                                    @endforeach
+                                </swiper-container>
+                            </div>
+                        @endif
+                        <!-- End Products Section -->
+
+                        <!-- Start Gallery Section with Swiper (Desktop 2 Slides & mobile 1 Slide) -->
+                        @if (count($galleries_details) > 0)
+                            <div class="relative">                                
+                                <h2
+                                    class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative custom-head">
+
+                                    {{ __($galleries_details[0]->title) }}
+                                </h2>
+                                <img src="{{ url('img/templates/yacht/12.png') }}" alt=""
+                                        class="w-36 absolute -top-2 -left-[90px] rotate-12" />
+                                <div>
+                                    <swiper-container slides-per-view="1" class="mySwiper" loop="true"
+                                        autoplay-delay="3000" autoplay-disable-on-interaction="false">
+                                        {{-- Slider images --}}
+                                        @foreach ($galleries_details as $galleries_detail)
+                                            <swiper-slide class="p-0.5">
+                                                <!-- Gallery -->
+                                                <div
+                                                    class="flex flex-col items-center justify-center bg-white p-4 shadow-[0_0_4px_rgba(0,0,0,0.1)] rounded-2xl">
+                                                    @if ($galleries_detail->caption)
+                                                        <h3
+                                                            class="px-2 py-3 bg-purple-50 border border-purple-100 mb-3 text-purple-800 text-lg w-full text-center rounded-2xl">
+                                                            {{ $galleries_detail->caption }}</h3>
+                                                    @endif
+                                                    <img class="w-full h-72 object-cover rounded-2xl"
+                                                        src="{{ url($galleries_detail->gallery_image) }}"
+                                                        alt="{{ $galleries_detail->caption }}" />
+                                                </div>
+                                            </swiper-slide>
+                                        @endforeach
+                                    </swiper-container>
+                                </div>
+                            </div>
+                        @endif
+                        <!-- End Gallery Section -->
+
+                        <!-- Start Youtube Video Section -->
+                        @if ($feature_details->where('type', 'youtube')->count() > 0)
+                            <div class="relative">
+                                <h2
+                                    class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative custom-head">
+
+                                    {{ __('Youtube Videos') }}
+                                </h2>
+                                <img src="{{ url('img/templates/yacht/1.png') }}" alt=""
+                                        class="w-36 absolute -top-0 -right-[88px] scale-x-[-1] -rotate-12 opacity-90" />
+                                <div class="grid sm:grid-cols-2 lg:grid-cols-2 gap-4 items-center ">
+                                    {{-- Videos --}}
+                                    @foreach ($feature_details as $feature)
+                                        @if ($feature->type == 'youtube')
+                                            <!-- Video 1 -->
+                                            <div class="overflow-hidden rounded-2xl">
+                                                {{-- Add Youtube title --}}
+                                                @if ($feature->label != null)
+                                                    <div class="px-4 py-4 bg-black">
+                                                        <div class="text-white font-medium text-lg">
+                                                            {{ $feature->label }}
+                                                        </div>
+                                                    </div>
+                                                @endif
+                                                <iframe referrerpolicy="strict-origin-when-cross-origin" width="100%" height="270"
+                                                    src="https://www.youtube.com/embed/{{ $feature->content }}"
+                                                    title="{{ $feature->label }}" frameborder="0"
+                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                    allowfullscreen></iframe>
+
+                                            </div>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+                        <!-- End Youtube Video Section -->
+
+                        <!-- Start iframe Section -->
+                        @if ($feature_details->where('type', 'iframe')->count() > 0)
+                            <div class="relative">
+                                <h2
+                                    class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative custom-head">
+
+                                    {{ __('Iframe') }}
+                                </h2>
+                                <img src="{{ url('img/templates/yacht/4.png') }}" alt=""
+                                        class="w-32 absolute top-2 -left-[85px] rotate-12" />
+                                <div class="grid grid-cols-1 gap-4 items-center">
+                                    {{-- Iframe --}}
+                                    @foreach ($feature_details as $feature)
+                                        @if ($feature->type == 'iframe')
+                                            <div class="overflow-hidden rounded-2xl">
+                                                <iframe referrerpolicy="strict-origin-when-cross-origin" width="100%" height="270" src="{{ $feature->content }}"
+                                                    title="{{ $feature->label }}" frameborder="0"
+                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                    allowfullscreen></iframe>
+                                                {{-- Add Iframe title --}}
+                                                @if ($feature->label != null)
+                                                    <div class="px-5 py-3 bg-purple-50  ">
+                                                        <div class="text-purple-800 font-semibold text-lg text-center">
+                                                            {{ $feature->label }}
+                                                        </div>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+                        <!-- End iframe Section -->
+
+                        <!-- Start Client Reviews section with Swiper JS -->
+                        @if (count($testimonials) > 0)
+                            <div class="relative">                             
+                                <h2
+                                    class="text-3xl lg:text-4xl font-medium text-gray-800 py-12 text-center relative custom-head">
+
+                                    {{ __($testimonials[0]->title) }}
+                                </h2>
+                                <img src="{{ url('img/templates/yacht/8.png') }}" alt=""
+                                        class="w-32 absolute top-2 -right-[68px] -rotate-12" />
+                                <swiper-container class="mySwiper" autoplay-delay="2000"
+                                    autoplay-disable-on-interaction="false">
+                                    {{-- Client Reviews --}}
+                                    @foreach ($testimonials as $testimonial)
+                                        <!-- Testimonial -->
+                                        <swiper-slide class="p-1">
+                                            <div
+                                                class="mb-2 flex flex-col items-center justify-center bg-white p-6 shadow-[0_0_4px_rgba(0,0,0,0.1)] text-center rounded-2xl">
+                                                {{-- Image --}}
+                                                <img class="w-20 h-20 rounded-full mb-2 object-cover"
+                                                    src="{{ url($testimonial->reviewer_image) }}"
+                                                    alt="{{ $testimonial->reviewer_name }}" />
+                                                {{-- Name --}}
+                                                <h4 class="text-purple-800 font-bold text-center ">
+                                                    {{ $testimonial->reviewer_name }}
+                                                </h4>
+                                                {{-- Position --}}
+                                                @if ($testimonial->review_subtext)
+                                                    <p class="text-gray-400 text-sm text-center ">
+                                                        {{ $testimonial->review_subtext }}</p>
+                                                @endif
+                                                {{-- Review --}}
+                                                <p class="text-gray-600 text-sm italic w-full mt-2">
+                                                    "{{ $testimonial->review }}"
+                                                </p>
+                                            </div>
+                                        </swiper-slide>
+                                    @endforeach
+                                </swiper-container>
+                            </div>
+                        @endif
+                        <!-- End Client Reviews section with Swiper JS -->
+
+                        <!-- Start an Application section -->
+                        @if ($appointmentEnabled == true && isset($plan_details['appointment']) == 1)
+                            <div class="relative">
+                                {{-- Check appointment slots in the calendar --}}
+                                @if ($plan_details['appointment'] == 1)
+                                    @if ($appointment_slots != null)
+                                        <h2
+                                            class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative custom-head">
+
+                                            {{ __(json_decode($appointment_slots, true)['title']) }}
+                                        </h2>
+                                        <img src="{{ url('img/templates/yacht/13.png') }}" alt=""
+                                        class="w-32 absolute -top-2 -left-[65px] rotate-12" />
+
+                                        <div
+                                            class="shadow-[0_0_4px_rgba(0,0,0,0.1)] overflow-hidden border p-8 bg-white rounded-2xl">
+                                            <!-- Error Message (hidden by default) -->
+                                            <div id="errorMessage" class="text-red-500 text-sm my-2 hidden">
+                                                {{ __('Please select a valid date and time slot.') }}</div>
+
+                                            {{-- Success Message (hidden by default) --}}
+                                            <div id="successMessage" class="text-purple-800 text-sm my-2 hidden">
+                                                {{ __('Appointment booked successfully!') }}</div>
+
+                                            <!-- Error Message (hidden by default) -->
+                                            <div id="errorSubmitMessage" class="text-red-500 text-sm my-2 hidden">
+                                                {{ __('Please fill all the fields.') }}</div>
+
+                                            <div
+                                                class="flex flex-col md:flex-row justify-between mb-6 space-y-2 md:space-y-0 md:gap-4">
+                                                <!-- flatpickr Calendar -->
+                                                <input type="text" id="appointment-date"
+                                                    class="flatpickr-input md:w-1/2 rounded-xl w-full px-4 py-2 text-[#121212] bg-white border border-gray-300 focus:outline-none focus:border-gray-200 focus:ring-2 focus:ring-[#121212] focus:ring-opacity-50"
+                                                    placeholder="{{ __('Select a date') }}" />
+                                                <!-- Select time in dropdown -->
+                                                <select id="time-slot-select"
+                                                    class="md:w-1/2 w-full px-4 py-2.5 rounded-xl text-[#121212] bg-white border border-gray-300 focus:outline-none focus:border-gray-200 focus:ring-2 focus:ring-[#121212] focus:ring-opacity-50">
+                                                    <option value="">{{ __('Select a time slot') }}
+                                                    </option>
+                                                </select>
+                                            </div>
+
+                                            <!-- Booking button -->
+                                            <div class="flex justify-center">
+                                                <button id="add-slot-button"
+                                                    class="w-full p-3 bg-purple-800 rounded-xl text-white text-lg text-center font-semibold border border-gray-200"
+                                                    onclick="validateAndShowModal()">
+                                                    {{ __('Book Appointment') }}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    @endif
+                                @endif
+                            </div>
+                        @endif
+                        <!-- End an Application section -->
+
+                        {{-- Start Business Hours --}}
+                        @if ($plan_details['business_hours'] == 1)
+                            @if ($business_hours != null && $business_hours->is_display != 0)
+                                <section class="pt-8 relative">                                    
+                                    <!-- Section Header -->
+                                    <h2
+                                        class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative custom-head">
+
+                                        {{ __($business_hours->title) }}
+                                    </h2>
+                                    <img src="{{ url('img/templates/yacht/13.png') }}" alt=""
+                                        class="w-32 absolute top-2 -right-[65px] scale-x-[-1] -rotate-12" />
+
+                                    <!-- Business Hours Card -->
+                                    <div class="bg-white rounded-lg py-4">
+                                        @if ($business_hours->is_always_open != 'Opening')
+                                            <!-- Days and Hours List -->
+                                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                                @foreach (['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as $day)
+                                                    <div class="flex items-center space-x-4">
+                                                        <!-- Day Icon -->
+                                                        <div
+                                                            class="flex items-center justify-center w-10 h-10 bg-purple-800 text-white rounded-full">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24"
+                                                                height="24" viewBox="0 0 24 24" fill="none"
+                                                                stroke="currentColor" stroke-width="2"
+                                                                stroke-linecap="round" stroke-linejoin="round"
+                                                                class="icon icon-tabler icons-tabler-outline icon-tabler-calendar-clock text-white">
+                                                                <path stroke="none" d="M0 0h24v24H0z"
+                                                                    fill="none" />
+                                                                <path
+                                                                    d="M10.5 21h-4.5a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v3" />
+                                                                <path d="M16 3v4" />
+                                                                <path d="M8 3v4" />
+                                                                <path d="M4 11h10" />
+                                                                <path d="M18 18m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" />
+                                                                <path d="M18 16.5v1.5l.5 .5" />
+                                                            </svg>
+                                                        </div>
+                                                        <!-- Day and Hours -->
+                                                        <div>
+                                                            <p class="text-sm font-semibold text-[#121212] capitalize">
+                                                                {{ __($day) }}</p>
+                                                            <p class="text-base text-gray-500">
+                                                                {{ __($business_hours->$day ?: __('Closed')) }}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        @else
+                                            <!-- Always Open -->
+                                            <div class="flex items-start space-x-4">
+                                                <!-- Animated Icon -->
+                                                <div
+                                                    class="flex items-center justify-center w-12 h-12 bg-purple-100 text-purple-800 rounded-full transform hover:scale-110 transition-transform duration-300 ease-in-out">
+                                                    <svg class="w-6 h-6 animate-pulse" fill="currentColor"
+                                                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                                        <path
+                                                            d="M12 2a10 10 0 100 20 10 10 0 000-20zM10 16l6-4-6-4v8z" />
+                                                    </svg>
+                                                </div>
+                                                <!-- Text -->
+                                                <div>
+                                                    <p class="text-xl font-bold text-[#121212]">
+                                                        {{ __('Always Open') }}</p>
+                                                    <p class="text-sm text-gray-500">
+                                                        {{ __('We’re available 24/7 to serve you!') }}</p>
+                                                </div>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </section>
+                            @endif
+                        @endif
+                        {{-- End Business Hours --}}
+
+                        {{-- Service Service Booking --}}
+                        @if (isset($plan_details['service_booking']) && $plan_details['service_booking'] == 1)
+                            @if (isset($service_booking_details) && $service_booking_details->service_booking == 1)
+                                <div class="relative">
+                                    <h2
+                                            class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative custom-head">
+                                        {{ __($service_booking_details->title) }}
+                                    </h2>
+                                    <img src="{{ url('img/templates/yacht/2.png') }}" alt=""
+                                        class="w-32 absolute top-5 -left-[70px] scale-x-[-1] -rotate-12" />
+
+                                    {{-- Service Booking Form --}}
+                                    <div class="w-full max-w-full shadow-[0_0_4px_rgba(0,0,0,0.1)] p-8 rounded-2xl">
+                                        <!-- Error Message (hidden by default) -->
+                                        <div id="errorMessage1"
+                                            class="bg-red-500 text-sm my-2 hidden p-3 text-white rounded-xl"></div>
+
+                                        {{-- Success Message (hidden by default) --}}
+                                        <div id="successMessage1"
+                                            class="bg-green-500 text-sm my-2 hidden p-3 text-white rounded-xl"></div>
+
+                                        <div class="flex flex-col lg:flex-row lg:gap-4 mb-4">
+                                            {{-- Name --}}
+                                            <div class="flex flex-col w-full lg:w-1/2 mb-4 lg:mb-0">
+                                                <label for="customer_name"
+                                                    class="text-gray-800 font-medium mb-2">{{ __('Name') }}</label>
+                                                <input type="text" name="customer_name" id="customer_name"
+                                                    placeholder="{{ __('Your Name') }}"
+                                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-800 focus:ring-opacity-80" />
+                                            </div>
+                                            {{-- Email --}}
+                                            <div class="flex flex-col w-full lg:w-1/2">
+                                                <label for="customer_email"
+                                                    class="text-gray-800 font-medium mb-2">{{ __('Email') }}</label>
+                                                <input type="email" name="customer_email" id="customer_email"
+                                                    placeholder="{{ __('Your Email') }}"
+                                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-800 focus:ring-opacity-80" />
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-col lg:flex-row lg:gap-4 mb-4">
+                                            {{-- Mobile Number --}}
+                                            <div class="flex flex-col w-full lg:w-1/2 mb-4 lg:mb-0">
+                                                <label for="customer_phone"
+                                                    class="text-gray-800 font-medium mb-2">{{ __('Mobile Number') }}</label>
+                                                <input type="tel" name="customer_phone" id="customer_phone"
+                                                    placeholder="{{ __('Your Mobile Number') }}"
+                                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-800 focus:ring-opacity-80" />
+                                            </div>
+                                            {{-- No. of Person(s) --}}
+                                            <div class="flex flex-col w-full lg:w-1/2">
+                                                <label for="no_of_persons"
+                                                    class="text-gray-800 font-medium mb-2">{{ __('No. of Person(s)') }}</label>
+                                                <input type="number" name="no_of_persons" id="no_of_persons"
+                                                    value="1" step="1"
+                                                    placeholder="{{ __('No. of Person(s)') }}"
+                                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-800 focus:ring-opacity-80" />
+                                            </div>
+                                        </div>
+                                        {{-- Address --}}
+                                        <div class="flex flex-col mb-4">
+                                            <label for="customer_address"
+                                                class="text-gray-800 font-medium mb-2">{{ __('Address') }}</label>
+                                            <textarea name="customer_address" id="customer_address" placeholder="{{ __('Your Address') }}" rows="3"
+                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-800 focus:ring-opacity-80"></textarea>
+                                        </div>
+                                        {{-- Notes --}}
+                                        <div class="flex flex-col mb-4">
+                                            <label for="customer_message"
+                                                class="text-gray-800 font-medium mb-2">{{ __('Notes') }}</label>
+                                            <textarea name="customer_notes" id="customer_notes" placeholder="{{ __('Your Message') }}" rows="3"
+                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-800 focus:ring-opacity-80"></textarea>
+                                        </div>
+                                        {{-- Service Start Datetime --}}
+                                        <div class="flex flex-col mb-4">
+                                            {{-- Date --}}
+                                            <label for="service_start_date"
+                                                class="text-gray-800 font-medium mb-2">{{ __('Service Start DateTime') }}</label>
+                                            <div class="flex flex-row gap-4">
+                                                <div class="flex flex-col w-1/2">
+                                                    <input type="text" id="service_start_date"
+                                                        name="service_start_date"
+                                                        value="{{ $service_booking_details->service_booking_start_date ?? '' }}"
+                                                        placeholder="{{ __('Service Start Date') }}"
+                                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-800 focus:ring-opacity-80" />
+                                                </div>
+                                                {{-- Time --}}
+                                                <div class="flex flex-col w-1/2">
+                                                    <input type="time" name="service_start_time"
+                                                        id="service_start_time"
+                                                        value="{{ $service_booking_details->service_booking_start_time ?? '' }}"
+                                                        placeholder="{{ __('Service Start Time') }}"
+                                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-800 focus:ring-opacity-80 timepicker" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {{-- Service End Datetime --}}
+                                        <div class="flex flex-col mb-4">
+                                            {{-- Date --}}
+                                            <label for="service_end_date"
+                                                class="text-gray-800 font-medium mb-2">{{ __('Service End DateTime') }}</label>
+                                            <div class="flex flex-row gap-4">
+                                                <div class="flex flex-col w-1/2">
+                                                    <input type="date" id="service_end_date" name="service_end_date"
+                                                        placeholder="{{ __('Service End Date') }}"
+                                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-800 focus:ring-opacity-80" />
+                                                </div>
+                                                {{-- Time --}}
+                                                <div class="flex flex-col w-1/2">
+                                                    <input type="time" name="service_end_time" id="service_end_time"
+                                                        placeholder="{{ __('Service End Time') }}"
+                                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-800 focus:ring-opacity-80 timepicker" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-col">
+                                            <button onclick="submitServiceBooking()"
+                                                class="w-full px-4 py-3 bg-purple-800 text-white text-xl font-medium focus:outline-none rounded-xl">
+                                                {{ __('Submit') }}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+                        @endif
+                        {{-- End Service Booking --}}
+
+                        <!-- Start Payment section -->
+                        @if (count($payment_details) > 0)
+                            <div class="relative">
+                                <h2
+                                    class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative custom-head">
+
+                                    {{ __($payment_details[0]->title) }}
+                                </h2>
+                                <img src="{{ url('img/templates/yacht/1.png') }}" alt=""
+                                    class="w-36 absolute top-2 -right-[90px] scale-x-[-1] -rotate-12" />
+                                <div class="grid lg:grid-cols-2 gap-4">
+                                    {{-- Payment options --}}
+                                    @foreach ($payment_details as $payment)
+                                        <!-- {{ $payment->label }} Option -->
+                                        <div class="flex flex-col border border-purple-100 rounded-2xl p-4">
+                                            <div class="flex justify-between items-center">
+                                                {{-- Payment icon/image --}}
+                                                @include('templates.partials.payment-link-image')
+
+                                                <!-- Payment link icon -->
+                                                @if ($payment->type == 'url')
+                                                    <a href="https://{{ str_replace('https://', '', $payment->content) }}"
+                                                        target="_blank" rel="noopener noreferrer">
+                                                        <div
+                                                            class="border border-purple-100 bg-purple-100 rounded-full p-2 flex items-center justify-center">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24"
+                                                                height="24" viewBox="0 0 24 24" fill="none"
+                                                                stroke="currentColor" stroke-width="2"
+                                                                stroke-linecap="round" stroke-linejoin="round"
+                                                                class="icon icon-tabler icons-tabler-outline icon-tabler-external-link text-purple-800 h-6 w-6">
+                                                                <path stroke="none" d="M0 0h24v24H0z"
+                                                                    fill="none" />
+                                                                <path
+                                                                    d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6" />
+                                                                <path d="M11 13l9 -9" />
+                                                                <path d="M15 4h5v5" />
+                                                            </svg>
+                                                        </div>
+                                                    </a>
+                                                @endif
+
+                                                {{-- UPI Payment --}}
+                                                @if ($payment->type == 'upi')
+                                                    <a href="upi://pay?pa={{ $payment->content }}&pn={{ urlencode($payment->label) }}&am=1&cu=INR"
+                                                        target="_blank" rel="noopener noreferrer">
+                                                        <div
+                                                            class="border border-purple-100 bg-purple-100 rounded-full p-2 flex items-center justify-center">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24"
+                                                                height="24" viewBox="0 0 24 24" fill="none"
+                                                                stroke="currentColor" stroke-width="2"
+                                                                stroke-linecap="round" stroke-linejoin="round"
+                                                                class="icon icon-tabler icons-tabler-outline icon-tabler-external-link text-purple-800 h-6 w-6">
+                                                                <path stroke="none" d="M0 0h24v24H0z"
+                                                                    fill="none" />
+                                                                <path
+                                                                    d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6" />
+                                                                <path d="M11 13l9 -9" />
+                                                                <path d="M15 4h5v5" />
+                                                            </svg>
+                                                        </div>
+                                                    </a>
+                                                @endif
+                                            </div>
+                                            <h3
+                                                class="font-medium text-gray-800 {{ $payment->type == 'text' ? 'py-3' : 'pt-3 text-center' }}">
+                                                {{ $payment->label }}</h3>
+                                            <!-- Bank Details (Optional) -->
+                                            @if ($payment->type == 'text')
+                                                <p class="text-gray-600 text-sm break-word text-base">
+                                                    @foreach (explode('.', $payment->content) as $sentence)
+                                                        @if (trim($sentence))
+                                                            <!-- Make sure the sentence is not empty -->
+                                                            {{ trim($sentence) }}
+                                                            <br> <!-- Break the line after each sentence -->
+                                                        @endif
+                                                    @endforeach
+                                                </p>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+                        <!-- End Payment section -->                        
+
+                        <!-- Start Location section -->
+                        @if (count($feature_details) > 0 && $feature_details->contains('type', 'map'))
+                            <div class="relative" id="location">
+                                <h2
+                                    class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative custom-head">
+
+                                    {{ __('Location') }}
+                                </h2>
+                                <img src="{{ url('img/templates/yacht/20.png') }}" alt=""
+                                        class="w-32 absolute -top-0 -left-[70px] rotate-45" />
+                                {{-- Google Maps --}}
+                                @foreach ($feature_details as $feature)
+                                    @if ($feature->type == 'map')
+                                        {{-- Map title --}}
+                                        @if ($feature->label != null)
+                                            <div class="px-5 py-3 bg-purple-50 rounded-t-2xl">
+                                                <div class="text-[#121212] font-semibold text-lg">
+                                                    {{ $feature->label }}
+                                                </div>
+                                            </div>
+                                        @endif
+                                        <iframe referrerpolicy="strict-origin-when-cross-origin" src="https://www.google.com/maps/embed?{!! $feature->content !!}"
+                                            width="100%" height="300" style="border: 0" allowfullscreen=""
+                                            loading="lazy" class="rounded-b-2xl"></iframe>
+                                    @endif
+                                @endforeach
+                            </div>
+                        @endif
+                        <!-- End Location section -->
+
+                        <!-- Start Google Wallet section -->
+                        @if (is_dir(base_path('plugins/GoogleWallet')))
+                            @if (isset($plan_details['google_wallet']) && $plan_details['google_wallet'] == 1 && $business_card_details->is_google_wallet_hidden == 0)
+                                <div class="relative">
+                                    <h2
+                                        class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative custom-head">
+                                        {{ __('Google Wallet') }}
+                                    </h2>
+
+                                    <div class="w-full max-w-full shadow-[0_0_4px_rgba(0,0,0,0.1)] p-8 rounded-2xl">
+                                        {{-- Pass/Ticket Description --}}
+                                        @if ($google_wallet_details->wallet_description != null)
+                                            <div class="text-sm">
+                                                {!! $google_wallet_details->wallet_description ?? '' !!}
+                                            </div>
+                                        @endif
+                                        {{-- Google Wallet Button --}}
+                                        @if ($google_wallet_details->wallet_link != null)
+                                            <div class="flex justify-center mt-6">                                        
+                                                <a href="{{ $google_wallet_details->wallet_link }}" class="w-full lg:w-1/2" target="_blank" rel="noopener noreferrer">
+                                                    <img src="{{ url()->to('/') . '/img/google-wallet-btn.png'}}" alt="" class="w-full object-cover">
+                                                </a>
+                                            </div>
+                                        @endif                                    
+                                    </div>                                
+                                </div>
+                            @endif
+                        @endif
+                        <!-- End Google Wallet section -->
+
+                        <!-- Start Contact form section -->
+                        @if ($plan_details['contact_form'] == 1)
+                            @if ($business_card_details->enquiry_email != null)
+                                <div class="relative">
+                                    <h2
+                                        class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative custom-head">
+
+                                        {{ __($business_card_details->contact_form_title) }}
+                                    </h2>
+                                    <img src="{{ url('img/templates/yacht/18.png') }}" alt=""
+                                        class="w-28 absolute top-5 -right-[55px] -rotate-45" />
+                                    {{-- Message Alert --}}
+                                    @if (Session::has('message'))
+                                        <div class="px-6 py-4 bg-purple-800 shadow-md mb-6">
+                                            <div class="flex items-start">
+                                                <div class="mr-4">
+                                                    <svg class="w-6 h-6 text-white" xmlns="http://www.w3.org/2000/svg"
+                                                        viewBox="0 0 20 20" fill="currentColor">
+                                                        <path
+                                                            d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zm12.73-1.41A8 8 0 1 0 4.34 4.34a8 8 0 0 0 11.32 11.32zM9 11V9h2v6H9v-4zm0-6h2v2H9V5z" />
+                                                    </svg>
+                                                </div>
+                                                <div>
+                                                    <p class="font-semibold text-white">
+                                                        {{ Session::get('message') }}</p>
+                                                    <p class="text-sm text-white">
+                                                        {{ __('Please wait for the reply to be sent.') }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    {{-- Contact Form --}}
+                                    <form class="w-full max-w-full shadow-[0_0_4px_rgba(0,0,0,0.1)] p-8 rounded-2xl"
+                                        action="{{ config('app.url') }}/sent-enquiry" method="POST">
+                                        @csrf
+                                        <input type="hidden" name="card_id"
+                                            value="{{ $business_card_details->card_id }}" />
+                                        <div class="flex flex-col lg:flex-row gap-4 mb-2">
+                                            <div class="flex flex-col w-full lg:w-1/2">
+                                                <label for="name"
+                                                    class="text-gray-800 font-semibold mb-2">{{ __('Name') }}</label>
+                                                <input type="text" name="name"
+                                                    placeholder="{{ __('Your Name') }}"
+                                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-800 focus:ring-opacity-80"
+                                                    required />
+                                            </div>
+                                            <div class="flex flex-col w-full lg:w-1/2">
+                                                <label for="email"
+                                                    class="text-gray-800 font-semibold mb-2">{{ __('Email') }}</label>
+                                                <input type="email" name="email"
+                                                    placeholder="{{ __('Your Email') }}"
+                                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-800 focus:ring-opacity-80"
+                                                    required />
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-col mb-2">
+                                            <label for="phone"
+                                                class="text-gray-800 font-semibold mb-2">{{ __('Mobile Number') }}</label>
+                                            <input type="tel" name="phone"
+                                                placeholder="{{ __('Your Mobile Number') }}"
+                                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-800 focus:ring-opacity-80"
+                                                required />
+                                        </div>
+                                        <div class="flex flex-col mb-4">
+                                            <label for="message"
+                                                class="text-gray-800 font-semibold mb-2">{{ __('Message') }}</label>
+                                            <textarea name="message" placeholder="{{ __('Your Message') }}" rows="5"
+                                                class="w-full px-4 py-2 border border-gray-300 focus:outline-none rounded-lg focus:ring-2 focus:ring-purple-800 focus:ring-opacity-80"
+                                                required></textarea>
+                                        </div>
+
+                                        {{-- ReCaptcha --}}
+                                        @include('templates.includes.recaptcha', [
+                                            'recaptchaId' => 'recaptcha-one',
+                                        ])
+
+                                        <div class="flex flex-col ">
+                                            <button type="submit"
+                                                class="w-full px-4 py-3 bg-purple-800 text-white text-xl font-semibold focus:outline-none rounded-xl">
+                                                {{ __('Send') }}
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            @endif
+                        @endif
+
+                        <!-- Branding Section -->
+                        @if ($plan_details['hide_branding'] == 1)
+                            <div class="pb-1">
+                                <div
+                                    class="flex pt-5 px-3 m-auto font-semibold text-white text-sm flex-col md:flex-row max-w-6xl">
+                                    <div class="mt-2 text-gray-500">
+                                        {{ __('Copyright') }} &copy;
+                                        <a class="text-purple-800" href="{{ url()->current() }}">
+                                            {{ $card_details->title }} </a>
+                                        <span id="year"></span>{{ __('. All Rights Reserved.') }}
+                                    </div>
+                                </div>
+                            </div>
+                        @else
+                            <div class="pb-1">
+                                <div
+                                    class="flexpx-3 m-auto pt-5 font-semibold text-white text-sm flex-col md:flex-row max-w-6xl">
+                                    <div class="mt-2 text-gray-500">
+                                        {{ __('Made with') }}
+                                        <a class="text-purple-800" href="{{ env('APP_URL') }}">
+                                            {{ config('app.name') }} </a>
+                                        <span id="year"></span>{{ __('. All Rights Reserved.') }}
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+                        <!-- Branding Section -->
+                    </div>
+                </div>
+            @endif
+
+            <!-- Start Floating icon button bar section -->
+            <div
+                class="fixed w-11/12 left-1/2 bottom-4 bg-purple-200/40 border border-purple-300 rounded-full backdrop-blur-md py-4 px-3 flex lg:hidden md:hidden transform -translate-x-1/2 z-50">
+                <!-- Profile Icon -->
+                <div class="flex-1 flex items-center justify-center">
+                    <a class="border border-purple-300 p-3 rounded-full bg-purple-200" href="#profile">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round"
+                            class="icon icon-tabler icons-tabler-outline icon-tabler-user text-purple-800 h-6 w-6">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
+                            <path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />
+                        </svg>
+                    </a>
+                </div>
+
+                <!-- Send Icon -->
+                <div class="flex-1 flex items-center justify-center">
+                    <button class="border border-purple-300 p-3 rounded-full bg-purple-200"
+                        onclick="toggleWhatsAppModal(true)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round"
+                            class="icon icon-tabler icons-tabler-outline icon-tabler-send text-purple-800 h-6 w-6">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <path d="M10 14l11 -11" />
+                            <path d="M21 3l-6.5 18a.55 .55 0 0 1 -1 0l-3.5 -7l-7 -3.5a.55 .55 0 0 1 0 -1l18 -6.5" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Download Icon -->
+                <div class="flex-1 flex items-center justify-center">
+                    <a href="{{ config('app.url') }}/download/{{ $business_card_details->card_id }}"
+                        class="border border-purple-300 p-3 rounded-full bg-purple-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round"
+                            class="icon icon-tabler icons-tabler-outline icon-tabler-download text-purple-800 h-6 w-6">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
+                            <path d="M7 11l5 5l5 -5" />
+                            <path d="M12 4l0 12" />
+                        </svg>
+                    </a>
+                </div>
+
+                <!-- Scan Icon -->
+                <div class="flex-1 flex items-center justify-center">
+                    <button class="border border-purple-300 p-3 rounded-full bg-purple-200"
+                        onclick="toggleScanModal(true)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round"
+                            class="icon icon-tabler icons-tabler-outline icon-tabler-line-scan text-purple-800 h-6 w-6">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <path d="M4 8v-2a2 2 0 0 1 2 -2h2" />
+                            <path d="M4 16v2a2 2 0 0 0 2 2h2" />
+                            <path d="M16 4h2a2 2 0 0 1 2 2v2" />
+                            <path d="M16 20h2a2 2 0 0 0 2 -2v-2" />
+                            <path d="M7 12h10" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Share Icon -->
+                <div class="flex-1 flex items-center justify-center">
+                    <button class="border border-purple-300 p-3 rounded-full bg-purple-200"
+                        onclick="shareToggleModal(true)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round"
+                            class="icon icon-tabler icons-tabler-outline icon-tabler-share text-purple-800 h-6 w-6">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <path d="M6 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
+                            <path d="M18 6m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
+                            <path d="M18 18m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
+                            <path d="M8.7 10.7l6.6 -3.4" />
+                            <path d="M8.7 13.3l6.6 3.4" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <!-- End Floating icon button bar section -->
+        @endif
+        {{-- End Check password protected --}}
+
+
+        <!-- Start Apointment Modal (By default hidden) -->
+        <div id="appointmentModal"
+            class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <!-- Modal Content -->
+            <div class="bg-white rounded-xl w-full max-w-md p-6 mx-4 shadow-lg">
+                <!-- Modal Header -->
+                <div class="flex justify-center items-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-800">{{ __('Book Appointment') }}</h2>
+                </div>
+
+                <!-- Appointment Form -->
+                <form id="appointmentForm">
+                    <!-- Name Field -->
+                    <div class="mb-4">
+                        <label for="name"
+                            class="block text-sm font-medium text-gray-700">{{ __('Name') }}</label>
+                        <input type="text" id="name"
+                            class="mt-1 p-2 border border-gray-300 rounded-lg w-full" required>
+                    </div>
+
+                    <!-- Email Field -->
+                    <div class="mb-4">
+                        <label for="email"
+                            class="block text-sm font-medium text-gray-700">{{ __('Email') }}</label>
+                        <input type="email" id="email"
+                            class="mt-1 p-2 border border-gray-300 rounded-lg w-full" required>
+                    </div>
+
+                    <!-- Phone Field -->
+                    <div class="mb-4">
+                        <label for="phone"
+                            class="block text-sm font-medium text-gray-700">{{ __('Phone') }}</label>
+                        <input type="text" id="phone"
+                            class="mt-1 p-2 border border-gray-300 rounded-lg w-full" required>
+                    </div>
+
+                    <!-- Notes Field -->
+                    <div class="mb-4">
+                        <label for="notes"
+                            class="block text-sm font-medium text-gray-700">{{ __('Notes') }}</label>
+                        <textarea id="notes" class="mt-1 p-2 border border-gray-300 rounded-lg w-full" rows="3"></textarea>
+                    </div>
+
+                    <!-- Hidden Price Field -->
+                    <div class="mb-4 hidden">
+                        <label for="price"
+                            class="block text-sm font-medium text-gray-700">{{ __('Price') }}</label>
+                        <input type="text" id="price"
+                            class="mt-1 p-2 border border-gray-300 rounded-lg w-full" disabled>
+                    </div>
+
+                    {{-- ReCaptcha --}}
+                    @include('templates.includes.recaptcha', ['recaptchaId' => 'recaptcha-two'])
+
+                    <!-- Submit and Close Buttons -->
+                    <div class="flex justify-between">
+                        <button type="button" class="bg-gray-500 text-white px-4 py-2.5 rounded-lg"
+                            onclick="validateAndShowModal()">
+                            {{ __('Close') }}
+                        </button>
+                        <button type="submit" id="bookAppointmentButton"
+                            class="bg-purple-800 text-white px-4 py-2.5 rounded-lg">
+                            {{ __('Submit') }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {{-- End Appointment Modal --}}
+
+        <!-- Start Share Modal -->
+        <div id="shareModal"
+            class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden z-50"
+            onclick="shareToggleModal(false)">
+            <!-- Modal content -->
+            <div class="bg-white rounded-xl w-full max-w-md p-6 mx-4 space-y-6" onclick="event.stopPropagation()">
+                <!-- Modal header -->
+                <div class="flex justify-center items-center">
+                    <h2 class="text-2xl text-center font-bold">{{ __('Share on') }}</h2>
+                </div>
+
+                <!-- QR Code Section -->
+                <div class="flex justify-center">
+                    <canvas id="shareQrCode"></canvas>
+                </div>
+
+                <!-- Share via Social Media -->
+                <div class="flex justify-around text-purple-800">
+                    <a href="{{ $shareComponent['facebook'] }}" target="_blank">
+                        <i class="fab fa-facebook fa-2x"></i>
+                    </a>
+                    <a href="{{ $shareComponent['twitter'] }}" target="_blank">
+                        <i class="fab fa-twitter fa-2x"></i>
+                    </a>
+                    <a href="{{ $shareComponent['linkedin'] }}" target="_blank">
+                        <i class="fab fa-linkedin fa-2x"></i>
+                    </a>
+                    <a href="{{ $shareComponent['whatsapp'] }}" target="_blank">
+                        <i class="fab fa-whatsapp fa-2x"></i>
+                    </a>
+                    <a href="{{ $shareComponent['telegram'] }}" target="_blank">
+                        <i class="fab fa-telegram fa-2x"></i>
+                    </a>
+                </div>
+
+                <!-- Copy Link Section -->
+                <div class="flex justify-center">
+                    <button onclick="copyLink()"
+                        class="bg-purple-800 text-white font-bold py-2.5 px-4 rounded-xl w-full">
+                        {{ __('Copy Link') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+        {{-- End Share Modal --}}
+
+        <!-- Start WhatsApp Modal -->
+        <div id="whatsappModal"
+            class="fixed inset-0 bg-gray-800 bg-opacity-60 flex items-center justify-center hidden z-50"
+            onclick="toggleWhatsAppModal(false)">
+            <!-- Modal content (stops propagation to prevent closing when clicking inside) -->
+            <div class="rounded-2xl w-full max-w-md p-6 mx-4 space-y-6 bg-white" onclick="event.stopPropagation()">
+                <!-- Input for WhatsApp number -->
+                <div>
+                    <label for="whatsappNumber"
+                        class="block text-gray-700 font-medium">{{ __('Enter WhatsApp Number') }}:</label>
+                    <input type="text" id="whatsappNumber" placeholder="{{ __('e.g., +919876543210') }}"
+                        class="w-full mt-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring focus:border-purple-100 focus:ring-2 focus:ring-purple-100" />
+                </div>
+
+                <!-- Submit Button -->
+                <div class="flex justify-center">
+                    <button onclick="sendMessage()"
+                        class="bg-purple-800 text-white font-bold py-2.5 px-4 rounded-lg w-full">
+                        {{ __('Send') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- End Whatsapp Modal -->
+
+        <!-- Start Scan QR Code Modal -->
+        <div id="scanModal"
+            class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden z-50 qr-modal"
+            onclick="toggleScanModal(false)">
+            <!-- Modal content (stops propagation to prevent closing when clicking inside) -->
+            <div class="rounded-2xl w-full max-w-md p-6 mx-4 space-y-6 bg-white qr-modal-overlay"
+                onclick="event.stopPropagation()">
+                <!-- Qr Code -->
+                <div class="flex justify-center flex-col items-center">
+                    <div class="qr-code mb-2"></div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="flex justify-center">
+                    <button id="download"
+                        onclick="downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500)"
+                        class="bg-purple-100 border border-purple-100 font-bold p-3 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round"
+                            class="icon icon-tabler icons-tabler-outline icon-tabler-download text-purple-800 h-6 w-6">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
+                            <path d="M7 11l5 5l5 -5" />
+                            <path d="M12 4l0 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- End Scan QR Code Modal -->
+
+        {{-- Start Check password protected Modal --}}
+        @if ($business_card_details->password != null && Session::get('password_protected') == false)
+            <div class="p-4 flex items-center justify-center">
+                <div x-data="{ showModal: true }">
+                    <!-- Modal -->
+                    <div x-show="showModal" class="fixed inset-0 flex items-center justify-center z-50 p-3">
+                        <div class="bg-white p-6 w-96 max-w-full shadow-lg transform transition-all duration-300 rounded-2xl"
+                            x-show.transition.opacity="showModal">
+                            <!-- Modal Header -->
+                            <div class="flex justify-between items-center border-b-2 border-gray-200 pb-4">
+                                <h2 class="text-2xl font-semibold">{{ __('Password Protected') }}</h2>
+                            </div>
+
+                            <!-- Modal Content -->
+                            <div class="mt-6 space-y-4">
+                                <form action="{{ config('app.url') }}/check-password/{{ $business_card_details->card_id }}"
+                                    method="post">
+                                    @csrf
+                                    <p class="text-lg text-gray-900">{{ __('Enter your vcard Password') }}</p>
+                                    <div class="flex">
+                                        <input type="password" name="password"
+                                            class=" bg-gray-100 text-[#121212] block flex-1 min-w-0 w-full text-sm p-2.5 rounded-xl"
+                                            placeholder="{{ __('Password') }}" required autofocus>
+                                    </div>
+
+                                    {{-- Message --}}
+                                    @if (Session::has('message'))
+                                        <div class="flex items-center p-4 my-4 text-sm bg-gray-100" role="alert">
+                                            <svg class="flex-shrink-0 inline w-4 h-4 mr-3 text-red-500"
+                                                aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                                                fill="currentColor" viewBox="0 0 20 20">
+                                                <path
+                                                    d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z" />
+                                            </svg>
+                                            <span class="sr-only">{{ __('Failed') }}</span>
+                                            <div>
+                                                <span
+                                                    class="font-medium text-red-500">{{ Session::get('message') }}</span>
+                                            </div>
+                                        </div>
+                                    @endif
+
+                                    <div class="flex flex-col space-y-4 mt-3">
+                                        <button type="submit"
+                                            class="bg-purple-800 text-white rounded-xl px-4 py-2.5 mt-2 transition duration-300">{{ __('Password') }}</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+        {{-- End Check password protected Modal --}}
+
+        <!-- Include PWA modal -->
+        @if ($plan_details != null)
+            {{-- Check PWA --}}
+            @if ($plan_details['pwa'] == 1 && $business_card_details->is_enable_pwa == 1)
+                @include('vendor.laravelpwa.new_pwa_modal', [
+                    'primary_color' => 'purple',
+                    'img' => $business_card_details->profile,
+                ])
+            @endif
+        @endif
+
+        {{-- Include Newsletter Modal --}}
+        @if ($business_card_details != null)
+            {{-- Check Newsletter --}}
+            @if (!empty($business_card_details->is_newsletter_pop_active) && $business_card_details->is_newsletter_pop_active == 1)
+                @include('templates.includes.old_theme_newsletter_modal', [
+                    'primary_color' => 'purple',
+                ])
+            @endif
+        @endif
+
+        {{-- Include Information Popup Modal --}}
+        @if ($business_card_details != null)
+            {{-- Check Information Popup --}}
+            @if (!empty($business_card_details->is_info_pop_active) && $business_card_details->is_info_pop_active == 1)
+                @include('templates.includes.old_theme_information_popup_modal', [
+                    'primary_color' => 'purple',
+                ])
+            @endif
+        @endif
+    </div>
+
+    {{-- Jquery --}}
+    <script src="{{ url('js/jquery.min.js') }}"></script>
+    {{-- Smooth Scroll --}}
+    <script src="{{ url('js/smooth-scroll.polyfills.min.js') }}"></script>
+    {{-- Other JS --}}
+    <script type="text/javascript" src="{{ url('app/js/footer.js') }}"></script>
+    {{-- Flatpickr JS --}}
+    <script src="{{ url('js/flatpickr.min.js') }}"></script>
+    {{-- Swiper JS --}}
+    <script src="{{ url('js/swiper-element-bundle.min.js') }}"></script>
+    {{-- Custom JS --}}
+    @yield('custom-js')
+
+    @php
+        if (isset($service_booking_details) && $service_booking_details->service_booking == 1) {
+            $service_booking_available_days = json_decode($service_booking_details->service_booking_available_days);
+        }
+    @endphp
+
+    {{-- Flatpickr JS --}}
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/{{ app()->getLocale() }}.js"></script>
+    <script>
+        // Assuming $appointment_slots contains data like: {"monday": [...], "tuesday": [...], ...}
+        const disableSlots = {!! $appointment_slots !!}; // Outputting the time slots
+
+        document.addEventListener('DOMContentLoaded', function() {
+            "use strict";
+
+            // Service Booking allowed days
+            const availableDays = @json($service_booking_available_days ?? '{}');
+            const dayMap = {
+                sunday: 0,
+                monday: 1,
+                tuesday: 2,
+                wednesday: 3,
+                thursday: 4,
+                friday: 5,
+                saturday: 6
+            };
+
+            const allowedDays = Object.keys(availableDays)
+                .filter(day => availableDays[day])
+                .map(day => dayMap[day]);
+
+            flatpickr("#appointment-date", {
+                dateFormat: "Y-m-d",
+                minDate: "today",
+                locale: "{{ app()->getLocale() }}",
+                disable: [
+                    function(date) {
+                        const day = date.toLocaleString("en-us", {
+                            weekday: 'long'
+                        }).toLowerCase();
+                        return !disableSlots[day] || disableSlots[day].length === 0;
+                    }
+                ],
+                onChange: function(selectedDates) {
+                    const selectedDate = selectedDates[0];
+                    const day = selectedDate.toLocaleString("en-us", {
+                        weekday: 'long'
+                    }).toLowerCase();
+                    // Get available time slots in Send data to Laravel route using fetch API
+                    generateOption(selectedDate, day);
+                }
+            });
+
+            flatpickr("#service_start_date", {
+                dateFormat: "Y-m-d",
+                minDate: "today",
+                locale: "{{ app()->getLocale() }}",
+                disable: [
+                    function(date) {
+                        return !allowedDays.includes(date.getDay());
+                    }
+                ],
+            });
+
+            flatpickr("#service_end_date", {
+                dateFormat: "Y-m-d",
+                minDate: "today",
+                locale: "{{ app()->getLocale() }}",
+                disable: [
+                    function(date) {
+                        return !allowedDays.includes(date.getDay());
+                    }
+                ],
+            });
+            
+            // Flatpickr timepicker
+            flatpickr(".timepicker", {
+                enableTime: true,
+                noCalendar: true,
+                dateFormat: "H:i",   // only HH:MM
+                time_24hr: true      // force 24-hour, drop AM/PM
+            });
+        });
+    </script>
+    <script>
+        // Service Booking
+        function submitServiceBooking() {
+            "use strict";
+
+            const customerName = document.getElementById('customer_name').value;
+            const customerEmail = document.getElementById('customer_email').value;
+            const customerPhone = document.getElementById('customer_phone').value;
+            const noOfPersons = document.getElementById('no_of_persons').value;
+            const customerAddress = document.getElementById('customer_address').value;
+            const customerNotes = document.getElementById('customer_notes').value;
+            const serviceStartDate = document.getElementById('service_start_date').value;
+            const serviceStartTime = document.getElementById('service_start_time').value;
+            const serviceEndDate = document.getElementById('service_end_date').value;
+            const serviceEndTime = document.getElementById('service_end_time').value;
+            const errorMessage1 = document.getElementById('errorMessage1');
+            const successMessage1 = document.getElementById('successMessage1');
+
+            errorMessage1.classList.add('hidden');
+            successMessage1.classList.add('hidden');
+
+            if (customerName.length === 0 || customerEmail.length === 0 || customerPhone.length === 0 || noOfPersons
+                .length === 0 || customerAddress.length === 0 || serviceStartDate.length === 0 || serviceStartTime
+                .length === 0 || serviceEndDate.length === 0 || serviceEndTime.length === 0) {
+                errorMessage1.classList.remove('hidden');
+                errorMessage1.innerHTML = '{{ __('Please fill all the fields.') }}';
+                return;
+            }
+
+            const formData = {
+                card: `{{ $business_card_details->card_id }}`,
+                customer_name: customerName,
+                customer_email: customerEmail,
+                customer_phone: customerPhone,
+                no_of_persons: noOfPersons,
+                customer_address: customerAddress,
+                customer_notes: customerNotes,
+                service_start_date: serviceStartDate,
+                service_start_time: serviceStartTime,
+                service_end_date: serviceEndDate,
+                service_end_time: serviceEndTime,
+            };
+
+            // Send data via fetch
+            fetch("{{ config('app.url') }}/book-service", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify(formData)
+                })
+                .then(async response => {
+                    const data = await response.json();
+
+                    console.log(data);
+
+                    if (data.success) {
+                        // Reset form
+                        ['customer_name', 'customer_email', 'customer_phone', 'no_of_persons', 'customer_address', 'customer_notes', 'service_start_date', 'service_start_time', 'service_end_date', 'service_end_time']
+                        .forEach(id => {
+                            document.getElementById(id).value = '';
+                        });
+
+                        errorMessage1.classList.add('hidden');
+                        successMessage1.classList.remove('hidden');
+                        successMessage1.innerHTML = data.message || 'Your service has been successfully booked!';
+                    } else {
+                        successMessage1.classList.add('hidden');
+                        errorMessage1.classList.remove('hidden');
+                        errorMessage1.innerHTML = data.message || 'Something went wrong';
+                    }
+                })
+                .catch(error => {
+                    successMessage1.classList.add('hidden');
+                    errorMessage1.classList.remove('hidden');
+                    errorMessage1.innerHTML = data.message || 'Something went wrong';
+                });
+        }
+
+        // Toggle the modal visibility
+        function toggleModal() {
+            "use strict";
+
+            const modal = document.getElementById('appointmentModal');
+            modal.classList.toggle('hidden');
+        }
+
+        // Validate appointment date and time slot
+        function validateAndShowModal() {
+            "use strict";
+
+            const appointmentDate = document.getElementById('appointment-date').value;
+            const timeSlotSelect = document.getElementById('time-slot-select').value;
+            const errorMessage = document.getElementById('errorMessage');
+            const successMessage = document.getElementById('successMessage');
+
+            if (appointmentDate && timeSlotSelect) {
+                // If both fields are not empty, show the modal
+                toggleModal();
+                errorMessage.classList.add('hidden'); // Hide any previous error message
+            } else {
+                // If either field is empty, show an error message
+                errorMessage.classList.remove('hidden');
+            }
+        }
+
+        // Show reCAPTCHA widget instances globally
+        function onloadCallback() {
+            window.recaptchaWidgets = window.recaptchaWidgets || {};
+
+            // Check if grecaptcha is available
+            if (typeof grecaptcha !== 'undefined' && typeof grecaptcha.render === 'function') {
+
+                // Render 'recaptcha-one'
+                if (!window.recaptchaWidgets['recaptcha-one'] && document.getElementById('recaptcha-one')) {
+                    window.recaptchaWidgets['recaptcha-one'] = grecaptcha.render('recaptcha-one', {
+                        'sitekey': '{{ env('RECAPTCHA_SITE_KEY') }}'
+                    });
+                }
+
+                // Render 'recaptcha-two'
+                if (!window.recaptchaWidgets['recaptcha-two'] && document.getElementById('recaptcha-two')) {
+                    window.recaptchaWidgets['recaptcha-two'] = grecaptcha.render('recaptcha-two', {
+                        'sitekey': '{{ env('RECAPTCHA_SITE_KEY') }}'
+                    });
+                }
+
+            } else {
+                console.error('grecaptcha is not loaded yet.');
+            }
+        }
+
+        // Handle appointment form submission
+        document.getElementById('appointmentForm').addEventListener('submit', function(event) {
+            "use strict";
+
+            event.preventDefault();
+
+            const button = document.getElementById('bookAppointmentButton');
+            const errorSubmitMessage = document.getElementById('errorMessage');
+            const successMessage = document.getElementById('successMessage');
+
+            // Show loader on button
+            button.disabled = true;
+            button.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-loader animate-spin h-5 w-5 text-white inline-block mr-2">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                    <path d="M12 6l0 -3" />
+                    <path d="M16.25 7.75l2.15 -2.15" />
+                    <path d="M18 12l3 0" />
+                    <path d="M16.25 16.25l2.15 2.15" />
+                    <path d="M12 18l0 3" />
+                    <path d="M7.75 16.25l-2.15 2.15" />
+                    <path d="M6 12l-3 0" />
+                    <path d="M7.75 7.75l-2.15 -2.15" />
+                </svg>
+                {{ __('Booking...') }}
+            `;
+
+            // Gather form data
+            const formData = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                notes: document.getElementById('notes').value,
+                date: document.getElementById('appointment-date').value,
+                time_slot: document.getElementById('time-slot-select').value,
+                price: document.getElementById('price').value,
+                card: `{{ $business_card_details->card_id }}`
+            };
+
+            // Add reCAPTCHA response if enabled
+            @if (env('RECAPTCHA_ENABLE') == 'on')
+                formData.g_recaptcha_response = grecaptcha.getResponse(window.recaptchaWidgets['recaptcha-one']);
+
+                if (!formData.g_recaptcha_response) {
+                    // Try second reCAPTCHA widget
+                    formData.g_recaptcha_response = grecaptcha.getResponse(window.recaptchaWidgets[
+                    'recaptcha-two']);
+                }
+            @endif
+
+            // Send data via fetch
+            fetch("{{ config('app.url') }}/book-appointment", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify(formData)
+                })
+                .then(async response => {
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        // Reset form
+                        ['name', 'email', 'phone', 'notes', 'appointment-date', 'time-slot-select', 'price']
+                        .forEach(id => {
+                            document.getElementById(id).value = '';
+                        });
+
+                        generateOption("", "");
+
+                        successMessage.classList.remove('hidden');
+                        errorSubmitMessage.classList.add('hidden');
+
+                        // Reset reCAPTCHA
+                        @if (env('RECAPTCHA_ENABLE') == 'on')
+                            grecaptcha.reset(window.recaptchaWidgets['recaptcha-one']);
+                        @endif
+
+                        toggleModal();
+
+                        // Redirect to whatsapp url
+                        if (data.success && data.whatsapp_url && data.whatsapp_url !== '#') {
+                            setTimeout(() => {
+                                window.location.href = data.whatsapp_url;
+                            }, 3000);
+                        };
+                    } else {
+                        if (data.errors) {
+                            console.error('Validation Errors:', data.errors);
+                        }
+
+                        successMessage.classList.add('hidden');
+                        errorSubmitMessage.classList.remove('hidden');
+                        errorSubmitMessage.innerHTML = data.message || 'Something went wrong';
+
+                        toggleModal();
+                    }
+
+                    button.disabled = false;
+                    button.innerHTML = `{{ __('Book Appointment') }}`;
+                })
+                .catch(error => {
+                    console.error('Request failed:', error);
+                    toggleModal();
+
+                    button.disabled = false;
+                    button.innerHTML = `{{ __('Book Appointment') }}`;
+                });
+        });
+    </script>
+    <script>
+        function generateOption(selectedDate, day) {
+            "use strict";
+
+            fetch('/get-available-time-slots', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    body: JSON.stringify({
+                        card: `{{ $business_card_details->card_id }}`,
+                        choose_date: selectedDate,
+                        day: day
+                    })
+                }).then(response => response.json())
+                .then(data => {
+                    // Check response
+                    if (data.success == true) {
+                        // Set available time slots in select option
+                        document.getElementById('time-slot-select').innerHTML =
+                            `<option value="">{{ __('Select a time slot') }}`;
+                        // Available time slots in JSON.parse(data.available_time_slots)
+                        var available_time_slots = JSON.parse(data.available_time_slots);
+
+                        available_time_slots.forEach(time_slot => {
+                            document.getElementById('time-slot-select').innerHTML +=
+                                `<option value="${time_slot}">${time_slot}</option>`;
+                        });
+
+                        // Set price
+                        const priceElement = document.getElementById('price');
+                        priceElement.value = data.price;
+                    }
+                });
+        }
+    </script>
+    <script>
+        // Generate QR Code and place in shareQrCode using qrious
+        const qr = new QRious({
+            element: document.getElementById('shareQrCode'),
+            value: `{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}`, // Laravel route
+            size: 200,
+            background: 'white', // Background color
+            foreground: 'black', // Foreground (QR code) color
+            level: 'H' // Error correction level
+        });
+
+        // Share Modal
+        function shareToggleModal(show) {
+            "use strict";
+
+            document
+                .getElementById("shareModal")
+                .classList.toggle("hidden", !show);
+        }
+
+        // Function to toggle WhatsApp modal visibility
+        function toggleScanModal(show) {
+            "use strict";
+
+            document
+                .getElementById("scanModal")
+                .classList.toggle("hidden", !show);
+        }
+
+        // Generate QR Code
+        window.onload = function() {
+            "use strict";
+
+            updateQr(`{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}`);
+        };
+
+        // Copy Link
+        function copyLink() {
+            "use strict";
+
+            // From browser url to clipboard
+            navigator.clipboard.writeText(
+                `{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}`);
+            alert("Link copied to clipboard!");
+        }
+
+        // Function to toggle WhatsApp modal visibility
+        function toggleWhatsAppModal(show) {
+            "use strict";
+
+            document
+                .getElementById("whatsappModal")
+                .classList.toggle("hidden", !show);
+        }
+
+        // Function to send WhatsApp message
+        function sendMessage() {
+            "use strict";
+
+            const phoneNumber = document
+                .getElementById("whatsappNumber")
+                .value.trim();
+            const whatsappModal = document.getElementById("whatsappModal");
+
+            if (phoneNumber) {
+                const message = `{{ $shareContent }}`;
+                const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
+                // Open the URL in a new tab
+                window.open(whatsappUrl, "_blank");
+                whatsappModal.classList.add("hidden"); // Close the modal
+                // Reset the input field
+                document.getElementById("whatsappNumber").value = "";
+            } else {
+                alert(`{{ __('Please enter a valid WhatsApp number.') }}`);
+            }
+        }
+    </script>
+    <script>
+        // Initialize smooth scroll
+        const scroll = new SmoothScroll('a[href*="#"]', {
+            speed: 300, // Duration of scroll in milliseconds
+            offset: 50, // Offset in pixels from the top
+            easing: "easeInOutCubic", // Scroll easing function
+        });
+    </script>
+</body>
+
+</html>

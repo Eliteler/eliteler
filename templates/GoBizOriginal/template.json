@@ -1,0 +1,8 @@
+{
+    "template_id": "GoBizOriginal",
+    "template_image": "gobiz_original_assets/images/gobiz-original.png",
+    "name": "GoBiz Original",
+    "main_route": "admin.web-template.gobiz-original",
+    "config_route": "admin.web-template.gobiz-original.config",
+    "version": "1.0.0"
+}

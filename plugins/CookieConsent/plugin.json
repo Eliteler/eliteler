@@ -1,0 +1,8 @@
+{
+    "plugin_id": "CookieConsent",
+    "name": "Cookie Consent",
+    "description": "Manage user consent for cookies to ensure privacy compliance and enhance user experience.",
+    "version": "1.0.0",
+    "img": "cookie-consent.png",
+    "main_route": "admin.plugin.cookie-consent"
+}    

@@ -1,0 +1,8 @@
+{
+    "plugin_id": "SubDomain",
+    "name": "Sub Domain",
+    "description": "Enable users to access their store/vcard through personalized subdomains for a branded experience.",
+    "version": "1.0.0",
+    "img": "sub-domain.png",
+    "main_route": "admin.plugin.sub-domain"
+}    

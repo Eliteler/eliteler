@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "lib": ["DOM", "ESNext"],
+    "types": ["vite/client"],
+
+    "allowJs": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+
+    "strict": true,
+    "noImplicitAny": false,
+    "skipLibCheck": true,
+
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./plugins/ModernDashboard/Views/js/*"],
+      "ziggy-js": ["./vendor/tightenco/ziggy/dist/vue.m"]
+    }
+  },
+  "include": [
+    "plugins/ModernDashboard/Views/js"
+  ]
+}

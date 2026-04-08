@@ -1,0 +1,75 @@
+/* GoBiz vCard SaaS
+ |--------------------------------------------------------------------------
+ | Designed by NativeCode - https://nativecode.in
+ | All rights reserved
+ |--------------------------------------------------------------------------
+*/
+
+#auth {
+    margin-top: 10rem;
+}
+.badge {
+    margin-bottom: 6px;
+}
+button.vcard-info-items-delete {
+    float: right;
+    margin-top: -13.8px;
+}
+
+/* Custom Logo */
+.custom-logo {
+    height: 3rem !important;
+}
+
+/*----------------------- Preloader -----------------------*/
+body.preloader-site {
+    overflow: hidden;
+}
+
+.preloader-wrapper {
+    height: 100%;
+    width: 100%;
+    background: #fff;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 9999999;
+}
+
+.preloader-wrapper .preloader {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    -webkit-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+    width: 120px;
+}
+
+.alert {
+    border-radius: 16px;
+}
+
+/* Tablet + Desktop (up to 32-inch) */
+@media (min-width: 768px) and (max-width: 3840px) {
+    html[dir="rtl"] .ts-wrapper {
+        direction: rtl;
+    }
+
+    html[dir="rtl"] .ts-dropdown.multi {
+        right: auto !important;
+        left: 2.5rem !important;
+        transform: translateX(0) !important;
+    }
+}
+
+/* Mobile */
+@media (max-width: 767px) {
+    html[dir="rtl"] .ts-wrapper {
+        direction: rtl;
+    }
+
+    html[dir="rtl"] .ts-dropdown.multi {
+        right: 2rem !important;
+        left: 0 !important;
+    }
+}

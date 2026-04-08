@@ -1,0 +1,8 @@
+{
+    "plugin_id": "MaintenanceMode",
+    "name": "Maintenance Mode",
+    "description": "Temporarily take your site offline for updates or maintenance while displaying a message to visitors.",
+    "version": "1.0.0",
+    "img": "maintenance-mode.png",
+    "main_route": "admin.plugin.maintenance-mode"
+}    

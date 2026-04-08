@@ -1,0 +1,8 @@
+{
+    "plugin_id": "WebTools",
+    "name": "Web Tools",
+    "description": "The GoBiz Web Tools Plugin provides HTML, CSS, and JS beautification and minification utilities.",
+    "version": "1.0.0",
+    "img": "webtools.png",
+    "main_route": "admin.plugin.webtools"
+}
