@@ -122,6 +122,7 @@ class DuplicateController extends Controller
             $duplicateCard->title2 = $businessCard->title2;
             $duplicateCard->sub_title = $businessCard->sub_title;
             $duplicateCard->subtitle2 = $businessCard->subtitle2;
+            $duplicateCard->copyright = $businessCard->copyright;
             $duplicateCard->description = $businessCard->description;
             $duplicateCard->enquiry_email = $businessCard->enquiry_email;
             $duplicateCard->appointment_receive_email = $businessCard->appointment_receive_email;

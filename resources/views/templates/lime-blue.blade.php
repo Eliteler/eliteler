@@ -240,14 +240,13 @@
 
                                     <div class="inline">
 
-                                        <h3 class="font-bold inline heading text-gray-800 text-2xl mb-1">
-@if(!empty($business_card_details->title2))
-                                            {{ $business_card_details->title2 }} <br>
+                                        <h3 class="font-bold inline heading text-gray-800 text-2xl mb-1">@if(!empty($business_card_details->title2))
+                                    {{ $business_card_details->title2 }} <br>
 @endif
 @if(!empty($business_card_details->subtitle2))
-                                            {{ $business_card_details->subtitle2 }} <br>
+                                    {{ $business_card_details->subtitle2 }} <br>
 @endif
-                                            {{ $business_card_details->title }}
+                                    {{ $business_card_details->title }}
 
                                         </h3>
 
@@ -1037,15 +1036,7 @@
                                     class="flex pb-5 px-3 m-auto pt-5 font-semibold text-dark text-sm flex-col md:flex-row max-w-6xl">
                                     <div class="mt-2">
                                         {{ __('Copyright') }} &copy;
-                                        <a class="text-{{ $business_card_details->theme_color }}"
-@if(!empty($card_details->title2))
-                                            href="{{ url()->current() }}"> {{ $card_details->title2 }} <br>
-@endif
-@if(!empty($card_details->subtitle2))
-                                            href="{{ url()->current() }}"> {{ $card_details->subtitle2 }} <br>
-@endif
-                                            href="{{ url()->current() }}"> {{ $card_details->title }}
-                                        </a>
+                                        <a class="text-{{ $business_card_details->{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}</a>
                                         <span id="year"></span>{{ __('. All Rights Reserved.') }}
                                     </div>
                                 </div>

@@ -225,8 +225,7 @@
                                 class="w-full object-cover absolute -top-[90px] z-10" />
                             <div class="relative z-10">
                                 {{-- Name --}}
-                                <h1 class="lg:text-5xl text-3xl text-[#121212] head">
-@if(!empty($business_card_details->title2))
+                                <h1 class="lg:text-5xl text-3xl text-[#121212] head">@if(!empty($business_card_details->title2))
                                     {{ $business_card_details->title2 }} <br>
 @endif
 @if(!empty($business_card_details->subtitle2))
@@ -1173,14 +1172,7 @@
                                     class="flex pt-5 px-3 m-auto font-semibold text-white text-sm flex-col md:flex-row max-w-6xl">
                                     <div class="mt-2 text-gray-500">
                                         {{ __('Copyright') }} &copy;
-                                        <a class="text-[#9A502D]" href="{{ url()->current() }}">
-@if(!empty($card_details->title2))
-                                            {{ $card_details->title2 }}</a><span id="year"></span>{{ __('. All Rights Reserved.') }} <br>
-@endif
-@if(!empty($card_details->subtitle2))
-                                            {{ $card_details->subtitle2 }}</a><span id="year"></span>{{ __('. All Rights Reserved.') }} <br>
-@endif
-                                            {{ $card_details->title }}</a><span id="year"></span>{{ __('. All Rights Reserved.') }}
+                                        <a class="text-[#9A502D]" href="{{ url()->current() }}">{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}</a><span id="year"></span>{{ __('. All Rights Reserved.') }}
                                     </div>
                                 </div>
                             </div>
@@ -1190,8 +1182,7 @@
                                     class="flexpx-3 m-auto pt-5 font-semibold text-white text-sm flex-col md:flex-row max-w-6xl">
                                     <div class="mt-2 text-gray-500">
                                         {{ __('Made with') }}
-                                        <a class="text-[#9A502D]" href="{{ env('APP_URL') }}">
-                                            {{ config('app.name') }} </a>
+                                        <a class="text-[#9A502D]" href="{{ env('APP_URL') }}">{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}</a>
                                         <span id="year"></span>{{ __('. All Rights Reserved.') }}
                                     </div>
                                 </div>

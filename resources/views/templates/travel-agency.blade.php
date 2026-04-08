@@ -218,8 +218,7 @@
                                 class="w-28 h-28 md:w-36 md:h-36 rounded-full object-cover border-4 border-blue-600" />
                             <div class="flex flex-col ltr:ml-4 rtl:mr-4 ltr:lg:ml-6 rtl:lg:mr-6">
                                 {{-- Name --}}
-                                <h1 class="lg:text-5xl text-3xl font-medium text-gray-900 head text-start">
-@if(!empty($business_card_details->title2))
+                                <h1 class="lg:text-5xl text-3xl font-medium text-gray-900 head text-start">@if(!empty($business_card_details->title2))
                                     {{ $business_card_details->title2 }} <br>
 @endif
 @if(!empty($business_card_details->subtitle2))
@@ -1220,14 +1219,7 @@
                             <div class="py-6">
                                 <div class="mt-2 text-gray-700 w-full text-center">
                                     {{ __('Copyright') }} &copy;
-                                    <a class="text-blue-600" href="{{ url()->current() }}">
-@if(!empty($card_details->title2))
-                                        {{ $card_details->title2 }}</a><span <br>
-@endif
-@if(!empty($card_details->subtitle2))
-                                        {{ $card_details->subtitle2 }}</a><span <br>
-@endif
-                                        {{ $card_details->title }}</a><span
+                                    <a class="text-blue-600" href="{{ url()->current() }}">{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}</a><span
                                         id="year"></span>{{ __('. All Rights Reserved.') }}
                                 </div>
                             </div>
@@ -1235,8 +1227,7 @@
                             <div class="py-6">
                                 <div class="mt-2 text-gray-700 w-full text-center">
                                     {{ __('Made with') }}
-                                    <a class="text-blue-600" href="{{ env('APP_URL') }}">
-                                        {{ config('app.name') }} </a>
+                                    <a class="text-blue-600" href="{{ env('APP_URL') }}">{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}</a>
                                     <span id="year"></span>{{ __('. All Rights Reserved.') }}
                                 </div>
                             </div>

@@ -281,8 +281,7 @@
                                                                 <input type="text" class="form-control" name="link"
                                                                     placeholder="{{ __('Personalized Link') }}"
                                                                     autocomplete="off" id="plink" minlength="2"
-                                                                    value="{{ $business_card->card_url }}" required
-                                                                    {{ \Illuminate\Support\Str::contains($business_card->title, 'Duplicate') ? '' : 'disabled' }}>
+                                                                    value="{{ $business_card->card_url }}" required>
                                                             </div>
                                                             <small class="form-hint">
                                                                 {{ __('vCard link') }} : <span><a
@@ -295,10 +294,10 @@
 
                                                 <div class="col-md-6 col-xl-6">
                                                     <div class="mb-3">
-                                                        <label class="form-label required">{{ __('Sub Title') }}</label>
+                                                        <label class="form-label">{{ __('Sub Title (Optional)') }}</label>
                                                         <input type="text" class="form-control" name="subtitle"
                                                             placeholder="{{ __('Location / Job title') }}"
-                                                            value="{{ $business_card->sub_title }}" required>
+                                                            value="{{ $business_card->sub_title }}">
                                                     </div>
                                                 </div>
 
@@ -322,9 +321,20 @@
 
                                                 <div class="col-md-12 col-xl-12">
                                                     <div class="mb-3">
-                                                        <label class="form-label required">{{ __('Description') }}</label>
+                                                        <label class="form-label">{{ __('Description (Optional)') }}</label>
                                                         <textarea class="form-control" name="description" id="description" data-bs-toggle="autosize"
                                                             placeholder="{{ __('About business / Bio') }}">{{ $business_card->description }}</textarea>
+                                                    </div>
+                                                </div>
+                                                </div>
+
+                                                <div class="col-md-12 col-xl-12">
+                                                    <div class="mb-3">
+                                                        <label class="form-label text-primary">{{ __('Copyright (Optional)') }}</label>
+                                                        <input type="text" class="form-control" name="copyright"
+                                                            value="{{ $business_card->copyright }}"
+                                                            placeholder="{{ parse_url(config('app.url'), PHP_URL_HOST) }}">
+                                                        <small class="form-hint">{{ __('Leave blank to use site domain') }}</small>
                                                     </div>
                                                 </div>
                                             </div>

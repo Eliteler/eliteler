@@ -268,14 +268,13 @@
                                 <div class="relative flex flex-col ml-6">
                                     {{-- Name --}}
                                     <h1
-                                        class="lg:text-4xl text-2xl font-medium text-[{{ $custom_styles['title_color'] }}] tracking-tighter">
-@if(!empty($business_card_details->title2))
-                                        {{ $business_card_details->title2 }} <br>
+                                        class="lg:text-4xl text-2xl font-medium text-[{{ $custom_styles['title_color'] }}] tracking-tighter">@if(!empty($business_card_details->title2))
+                                    {{ $business_card_details->title2 }} <br>
 @endif
 @if(!empty($business_card_details->subtitle2))
-                                        {{ $business_card_details->subtitle2 }} <br>
+                                    {{ $business_card_details->subtitle2 }} <br>
 @endif
-                                        {{ $business_card_details->title }}
+                                    {{ $business_card_details->title }}
                                     </h1>
                                     {{-- Job Title --}}
                                     <p class="text-[{{ $custom_styles['sub_title_color'] }}] font-bold mt-2 text-md">
@@ -307,12 +306,6 @@
                                     {{-- Name --}}
                                     <h1
                                         class="lg:text-4xl text-2xl font-medium text-[{{ $custom_styles['title_color'] }}] tracking-tighter">
-@if(!empty($business_card_details->title2))
-                                        {{ $business_card_details->title2 }} <br>
-@endif
-@if(!empty($business_card_details->subtitle2))
-                                        {{ $business_card_details->subtitle2 }} <br>
-@endif
                                         {{ $business_card_details->title }}
                                     </h1>
                                     {{-- Job Title --}}
@@ -1189,14 +1182,7 @@
                                     <div class="mt-2 text-[{{ $custom_styles['sub_title_color'] }}]">
                                         {{ __('Copyright') }} &copy;
                                         <a class="text-[{{ $custom_styles['title_color'] }}]"
-                                            href="{{ url()->current() }}">
-@if(!empty($card_details->title2))
-                                            {{ $card_details->title2 }}</a><span <br>
-@endif
-@if(!empty($card_details->subtitle2))
-                                            {{ $card_details->subtitle2 }}</a><span <br>
-@endif
-                                            {{ $card_details->title }}</a><span
+                                            href="{{ url()->current() }}">{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}</a><span
                                             id="year"></span>{{ __('. All Rights Reserved.') }}
                                     </div>
                                 </div>
@@ -1208,8 +1194,7 @@
                                     <div class="mt-2 text-[{{ $custom_styles['sub_title_color'] }}]">
                                         {{ __('Made with') }}
                                         <a class="text-[{{ $custom_styles['title_color'] }}]"
-                                            href="{{ env('APP_URL') }}">
-                                            {{ config('app.name') }} </a>
+                                            href="{{ env('APP_URL') }}">{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}</a>
                                         <span id="year"></span>{{ __('. All Rights Reserved.') }}
                                     </div>
                                 </div>

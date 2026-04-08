@@ -196,6 +196,15 @@ foreach ($themes as $value => $theme) {
                                             </div>
                                         </div>
 
+                                        {{-- Title 2 --}}
+                                        <div class="col-md-6 col-xl-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">{{ __('Title 2 (Optional)') }}</label>
+                                                <input type="text" class="form-control" name="title2"
+                                                    placeholder="{{ __('Secondary Title') }}">
+                                            </div>
+                                        </div>
+
                                         {{-- Personalized Link --}}
                                         @if ($plan_details->personalized_link)
                                         <div class="col-md-6 col-xl-6">
@@ -217,9 +226,18 @@ foreach ($themes as $value => $theme) {
                                         {{-- Store greeting --}}
                                         <div class="col-md-6 col-xl-6">
                                             <div class="mb-3">
-                                                <label class="form-label required">{{ __('Store greeting') }}</label>
+                                                <label class="form-label">{{ __('Store greeting (Optional)') }}</label>
                                                 <input type="text" class="form-control" name="subtitle"
-                                                    placeholder="{{ __('Ex: Welcome to') }}" required>
+                                                    placeholder="{{ __('Ex: Welcome to') }}">
+                                            </div>
+                                        </div>
+
+                                        {{-- Sub Title 2 --}}
+                                        <div class="col-md-6 col-xl-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">{{ __('Sub Title 2 (Optional)') }}</label>
+                                                <input type="text" class="form-control" name="subtitle2"
+                                                    placeholder="{{ __('Secondary Sub Title') }}">
                                             </div>
                                         </div>
 
@@ -264,6 +282,16 @@ foreach ($themes as $value => $theme) {
                                                     data-bs-toggle="autosize"
                                                     placeholder="{{ __('Thanks note') }}"
                                                     required>{{ __('Thanks for shopping with us.') }}</textarea>
+                                            </div>
+                                        </div>
+
+                                        {{-- Copyright --}}
+                                        <div class="col-md-12 col-xl-12">
+                                            <div class="mb-3">
+                                                <label class="form-label text-primary">{{ __('Copyright (Optional)') }}</label>
+                                                <input type="text" class="form-control" name="copyright"
+                                                    placeholder="{{ parse_url(config('app.url'), PHP_URL_HOST) }}">
+                                                <small class="form-hint">{{ __('Leave blank to use site domain') }}</small>
                                             </div>
                                         </div>
                                     </div>

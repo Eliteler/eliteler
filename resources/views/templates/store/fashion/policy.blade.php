@@ -210,18 +210,10 @@
                                         <span class="text-muted">
                                             {{ __('Copyright') }} &copy;
                                             <span id="year"></span>
-                                            <a href="{{ url($business_card_details->card_url) }}" class="text-dark fw-semibold">
-@if(!empty($card_details->title2))
-                                                {{ $card_details->title2 }} <br>
-@endif
-@if(!empty($card_details->subtitle2))
-                                                {{ $card_details->subtitle2 }} <br>
-@endif
-                                                {{ $card_details->title }}
-                                            </a>.
+                                            <a href="{{ url($business_card_details->{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}</a>.
                                             {{ __('All rights reserved.') }} <br>
                                             @if (!isset($plan_details['hide_branding']) || $plan_details['hide_branding'] != 1)
-                                                {{ __('Made with') }} <i class="ti ti-heart text-danger"></i> {{ config('app.name') }}
+                                                {{ __('Made with') }} <i class="ti ti-heart text-danger"></i> {{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}
                                             @endif
                                         </span>
                                     </div>

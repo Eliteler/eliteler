@@ -299,10 +299,10 @@
                                             <div
                                                 class="{{ $type != 'custom' ? 'col-md-6 col-xl-6' : 'col-md-4 col-xl-4' }}">
                                                 <div class="mb-3">
-                                                    <label class="form-label required">{{ __('Sub Title') }}</label>
+                                                    <label class="form-label">{{ __('Sub Title (Optional)') }}</label>
                                                     <input type="text" class="form-control" name="subtitle"
                                                         value="{{ old('subtitle') }}"
-                                                        placeholder="{{ __('Location / Job title') }}" required>
+                                                        placeholder="{{ __('Location / Job title') }}">
                                                 </div>
                                             </div>
 
@@ -328,9 +328,20 @@
 
                                             <div class="col-md-12 col-xl-12">
                                                 <div class="mb-3">
-                                                    <label class="form-label required">{{ __('Description') }}</label>
+                                                    <label class="form-label">{{ __('Description (Optional)') }}</label>
                                                     <textarea class="form-control" name="description" id="description" data-bs-toggle="autosize"
                                                         placeholder="{{ __('About business / Bio') }}">{{ old('description') }}</textarea>
+                                                </div>
+                                            </div>
+                                            </div>
+
+                                            <div class="col-md-12 col-xl-12">
+                                                <div class="mb-3">
+                                                    <label class="form-label text-primary">{{ __('Copyright (Optional)') }}</label>
+                                                    <input type="text" class="form-control" name="copyright"
+                                                        value="{{ old('copyright') }}"
+                                                        placeholder="{{ parse_url(config('app.url'), PHP_URL_HOST) }}">
+                                                    <small class="form-hint">{{ __('Leave blank to use site domain') }}</small>
                                                 </div>
                                             </div>
                                         </div>

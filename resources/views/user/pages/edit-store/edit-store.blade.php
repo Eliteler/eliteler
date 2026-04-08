@@ -211,6 +211,16 @@ foreach ($themes as $theme) {
                                                 </div>
                                             </div>
 
+                                            {{-- Title 2 --}}
+                                            <div class="col-md-6 col-xl-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">{{ __('Title 2 (Optional)') }}</label>
+                                                    <input type="text" class="form-control" name="title2"
+                                                        placeholder="{{ __('Secondary Title') }}"
+                                                        value="{{ $business_card->title2 }}">
+                                                </div>
+                                            </div>
+
                                             {{-- Personalized Link --}}
                                             @if ($plan_details->personalized_link)
                                             <div class="col-md-6 col-xl-6">
@@ -222,8 +232,7 @@ foreach ($themes as $theme) {
                                                         </span>
                                                         <input type="text" class="form-control" name="link"
                                                             placeholder="{{ __('Personalized Link') }}" autocomplete="off"
-                                                            id="plink" minlength="3"
-                                                            value="{{ $business_card->card_url }}" required {{ \Illuminate\Support\Str::contains($business_card->title, 'Duplicate') ? '' : 'disabled' }}>
+                                                            value="{{ $business_card->card_url }}" required>
                                                     </div>
                                                     <small class="form-hint">
                                                         {{ __('Store link') }} : <span><a href="{{ url($business_card->card_url) }}" target="_blank">{{ url($business_card->card_url) }}</a></span>
@@ -235,10 +244,20 @@ foreach ($themes as $theme) {
                                             {{-- Store greeting --}}
                                             <div class="col-md-6 col-xl-6">
                                                 <div class="mb-3">
-                                                    <label class="form-label required">{{ __('Store greeting') }}</label>
+                                                    <label class="form-label">{{ __('Store greeting (Optional)') }}</label>
                                                     <input type="text" class="form-control" name="subtitle"
                                                         placeholder="{{ __('Store greeting') }}"
-                                                        value="{{ $business_card->sub_title }}" required>
+                                                        value="{{ $business_card->sub_title }}">
+                                                </div>
+                                            </div>
+
+                                            {{-- Sub Title 2 --}}
+                                            <div class="col-md-6 col-xl-6">
+                                                <div class="mb-3">
+                                                    <label class="form-label">{{ __('Sub Title 2 (Optional)') }}</label>
+                                                    <input type="text" class="form-control" name="subtitle2"
+                                                        placeholder="{{ __('Secondary Sub Title') }}"
+                                                        value="{{ $business_card->subtitle2 }}">
                                                 </div>
                                             </div>
 
@@ -278,6 +297,17 @@ foreach ($themes as $theme) {
                                                     <textarea class="form-control" name="whatsapp_msg" id="whatsapp_msg"
                                                         cols="10" rows="3"
                                                         placeholder="{{ __('Thanks note') }}">{{ $store_details->whatsapp_msg }}</textarea>
+                                                </div>
+                                            </div>
+
+                                            {{-- Copyright --}}
+                                            <div class="col-md-12 col-xl-12">
+                                                <div class="mb-3">
+                                                    <label class="form-label text-primary">{{ __('Copyright (Optional)') }}</label>
+                                                    <input type="text" class="form-control" name="copyright"
+                                                        value="{{ $business_card->copyright }}"
+                                                        placeholder="{{ parse_url(config('app.url'), PHP_URL_HOST) }}">
+                                                    <small class="form-hint">{{ __('Leave blank to use site domain') }}</small>
                                                 </div>
                                             </div>
                                         </div>

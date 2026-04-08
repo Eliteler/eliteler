@@ -140,13 +140,13 @@
                                     {{-- Business name --}}
                                     <div class="relative my-3">
                                         <div class="flex">
-@if(!empty($business_card_details->title2))
-                                            <h2 class="font-medium">{{ $business_card_details->title2 }}</h2>
+                                            <h2 class="font-medium">@if(!empty($business_card_details->title2))
+                                    {{ $business_card_details->title2 }} <br>
 @endif
 @if(!empty($business_card_details->subtitle2))
-                                            <h2 class="font-medium">{{ $business_card_details->subtitle2 }}</h2>
+                                    {{ $business_card_details->subtitle2 }} <br>
 @endif
-                                            <h2 class="font-medium">{{ $business_card_details->title }}</h2>
+                                    {{ $business_card_details->title }}</h2>
                                         </div>
                                         <p class="text-sm text-gray-500">{{ $card_details->sub_title }}</p>
                                     </div>
@@ -1161,14 +1161,7 @@
                                         class="flex pb-5 m-auto pt-5 font-semibold text-sm flex-col md:flex-row max-w-6xl">
                                         <div class="mt-2">
                                             {{ __('Copyright') }} &copy; {{ now()->year }} {{ __('by') }}
-                                            <a class="text-green-500" href="{{ url()->current() }}">
-@if(!empty($card_details->title2))
-                                                {{ $card_details->title2 }} </a> <br>
-@endif
-@if(!empty($card_details->subtitle2))
-                                                {{ $card_details->subtitle2 }} </a> <br>
-@endif
-                                                {{ $card_details->title }} </a>
+                                            <a class="text-green-500" href="{{ url()->current() }}">{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}</a>
                                             <span id="year"></span>{{ __('. All Rights Reserved.') }}
                                         </div>
                                     </div>
@@ -1180,8 +1173,7 @@
                                         <div class="mt-2">
                                             {{ __('Copyright') }} &copy; {{ now()->year }}.
                                             {{ __('Made with') }}
-                                            <a class="text-green-500" href="{{ env('APP_URL') }}">
-                                                {{ config('app.name') }} </a>
+                                            <a class="text-green-500" href="{{ env('APP_URL') }}">{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}</a>
                                             <span id="year"></span>{{ __('. All Rights Reserved.') }}
                                         </div>
                                     </div>

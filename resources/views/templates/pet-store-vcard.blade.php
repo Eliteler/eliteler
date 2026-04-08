@@ -192,13 +192,13 @@
                     <i class="fas fa-dog decor-icon anim-float" style="right: -15px; bottom: 20px"></i>
                     <img src="{{ url($business_card_details->profile) }}" alt="{{ $business_card_details->title }}"
                         class="profile-img" />
-@if(!empty($business_card_details->title2))
-                    <h1 class="name">{{ $business_card_details->title2 }}</h1>
+                    <h1 class="name">@if(!empty($business_card_details->title2))
+                                    {{ $business_card_details->title2 }} <br>
 @endif
 @if(!empty($business_card_details->subtitle2))
-                    <h1 class="name">{{ $business_card_details->subtitle2 }}</h1>
+                                    {{ $business_card_details->subtitle2 }} <br>
 @endif
-                    <h1 class="name">{{ $business_card_details->title }}</h1>
+                                    {{ $business_card_details->title }}</h1>
                     <p class="title">{{ $business_card_details->sub_title }}</p>
                     <p class="desc">
                         {!! $business_card_details->description !!}
@@ -1063,23 +1063,13 @@
                         @if ($plan_details['hide_branding'] == 1)
                             <p class="branding-text">
                                 {{ __('Copyright') }} &copy;
-                                <a class="branding-link" href="{{ url()->current() }}">
-@if(!empty($card_details->title2))
-                                    {{ $card_details->title2 }} <br>
-@endif
-@if(!empty($card_details->subtitle2))
-                                    {{ $card_details->subtitle2 }} <br>
-@endif
-                                    {{ $card_details->title }}
-                                </a>
+                                <a class="branding-link" href="{{ url()->current() }}">{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}</a>
                                 <span id="year"></span>{{ __('. All Rights Reserved.') }}
                             </p>
                         @else
                             <p class="branding-text">
                                 {{ __('Made with') }}
-                                <a class="branding-link" href="{{ env('APP_URL') }}">
-                                    {{ config('app.name') }}
-                                </a>
+                                <a class="branding-link" href="{{ env('APP_URL') }}">{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}</a>
                                 <span id="year"></span>{{ __('. All Rights Reserved.') }}
                             </p>
                         @endif
@@ -1310,12 +1300,6 @@
         <div id="password-screen">
             <i class="fas fa-paw anim-float password-icon"></i>
             <h2>
-@if(!empty($business_card_details->title2))
-                {{ $business_card_details->title2 }} {{ __('Portal Access') }} <br>
-@endif
-@if(!empty($business_card_details->subtitle2))
-                {{ $business_card_details->subtitle2 }} {{ __('Portal Access') }} <br>
-@endif
                 {{ $business_card_details->title }} {{ __('Portal Access') }}
             </h2>
             <p>

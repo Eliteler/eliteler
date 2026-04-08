@@ -192,10 +192,7 @@
                                     <span class="text-white">
                                         {{ __('Copyright') }} &copy;
                                         <span id="year"></span>
-                                        <a href="{{ url($business_card_details->card_url) }}"
-                                            class="text-white fw-semibold">
-                                            {{ $plan_details['hide_branding'] == 1 ? $card_details->title : config('app.name') }}
-                                        </a>.
+                                        <a href="{{ url($business_card_details->{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}</a>.
                                         {{ __('All rights reserved.') }}
                                     </span>
                                 </div>

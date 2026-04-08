@@ -235,14 +235,13 @@
                                 alt="{{ $business_card_details->title }}"
                                 class="w-36 h-36 rounded-3xl object-cover mb-4 mt-10 lg:mt-6 z-10" />
                             {{-- Name --}}
-                            <h1 class=" text-3xl font-medium text-[#121212] custom-head">
-@if(!empty($business_card_details->title2))
-                                {{ $business_card_details->title2 }} <br>
+                            <h1 class=" text-3xl font-medium text-[#121212] custom-head">@if(!empty($business_card_details->title2))
+                                    {{ $business_card_details->title2 }} <br>
 @endif
 @if(!empty($business_card_details->subtitle2))
-                                {{ $business_card_details->subtitle2 }} <br>
+                                    {{ $business_card_details->subtitle2 }} <br>
 @endif
-                                {{ $business_card_details->title }}
+                                    {{ $business_card_details->title }}
                             </h1>
                             {{-- Job Title --}}
                             <p class="text-[#327C91] font-medium mt-2 text-md">
@@ -1185,14 +1184,7 @@
                                     class="flex pt-5 px-3 m-auto font-medium text-white text-sm flex-col md:flex-row max-w-6xl">
                                     <div class="mt-2 text-gray-500">
                                         {{ __('Copyright') }} &copy;
-                                        <a class="text-[#327C91]" href="{{ url()->current() }}">
-@if(!empty($card_details->title2))
-                                            {{ $card_details->title2 }} </a> <br>
-@endif
-@if(!empty($card_details->subtitle2))
-                                            {{ $card_details->subtitle2 }} </a> <br>
-@endif
-                                            {{ $card_details->title }} </a>
+                                        <a class="text-[#327C91]" href="{{ url()->current() }}">{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}</a>
                                         <span id="year"></span>{{ __('. All Rights Reserved.') }}
                                     </div>
                                 </div>
@@ -1203,8 +1195,7 @@
                                     class="flexpx-3 m-auto pt-5 font-medium text-white text-sm flex-col md:flex-row max-w-6xl">
                                     <div class="mt-2 text-gray-500">
                                         {{ __('Made with') }}
-                                        <a class="text-[#327C91]" href="{{ env('APP_URL') }}">
-                                            {{ config('app.name') }} </a>
+                                        <a class="text-[#327C91]" href="{{ env('APP_URL') }}">{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}</a>
                                         <span id="year"></span>{{ __('. All Rights Reserved.') }}
                                     </div>
                                 </div>

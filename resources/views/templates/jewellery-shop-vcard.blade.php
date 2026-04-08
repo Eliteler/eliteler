@@ -158,13 +158,13 @@
                             alt="{{ $business_card_details->title }}" class="profile-img gsap-scale" />
                         <div class="profile-img-shine"></div>
                     </div>
-@if(!empty($business_card_details->title2))
-                    <h1 class="name gsap-slide-up">{{ $business_card_details->title2 }}</h1>
+                    <h1 class="name gsap-slide-up">@if(!empty($business_card_details->title2))
+                                    {{ $business_card_details->title2 }} <br>
 @endif
 @if(!empty($business_card_details->subtitle2))
-                    <h1 class="name gsap-slide-up">{{ $business_card_details->subtitle2 }}</h1>
+                                    {{ $business_card_details->subtitle2 }} <br>
 @endif
-                    <h1 class="name gsap-slide-up">{{ $business_card_details->title }}</h1>
+                                    {{ $business_card_details->title }}</h1>
                     <div class="name-rule gsap-slide-up">
                         <span class="name-rule__line"></span>
                         <span class="name-rule__diamond"></span>
@@ -749,16 +749,10 @@
                 <div class="section branding-footer">
                     @if ($plan_details['hide_branding'] == 1)
                         {{ __('Copyright') }} &copy; <a
-@if(!empty($card_details->title2))
-                            href="{{ url()->current() }}">{{ $card_details->title2 }}</a> <span <br>
-@endif
-@if(!empty($card_details->subtitle2))
-                            href="{{ url()->current() }}">{{ $card_details->subtitle2 }}</a> <span <br>
-@endif
-                            href="{{ url()->current() }}">{{ $card_details->title }}</a> <span
+                            href="{{ url()->current() }}">{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}</a> <span
                             id="year"></span>{{ __('. All Rights Reserved.') }}
                     @else
-                        {{ __('Made with') }} <a href="{{ env('APP_URL') }}">{{ config('app.name') }}</a> <span
+                        {{ __('Made with') }} <a href="{{ env('APP_URL') }}">{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}</a> <span
                             id="year"></span>{{ __('. All Rights Reserved.') }}
                     @endif
                 </div>

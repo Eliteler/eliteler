@@ -82,8 +82,8 @@ class EditCardController extends Controller
             'card_lang' => 'required',
             'title' => 'required',
             'cover_type' => 'required',
-            'subtitle' => 'required',
-            'description' => 'required',
+            'subtitle' => 'nullable',
+            'description' => 'nullable',
         ]);
 
         // Validate alert
@@ -182,6 +182,7 @@ class EditCardController extends Controller
                     'title2' => $request->title2,
                     'sub_title' => $request->subtitle,
                     'subtitle2' => $request->subtitle2,
+                    'copyright' => $request->copyright,
                     'description' => $request->description
                 ]);
 

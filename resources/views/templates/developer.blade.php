@@ -227,13 +227,13 @@
                             <img src="{{ url($business_card_details->profile) }}" alt="{{ $business_card_details->title }}" class="h-36 w-36 rounded-full object-cover z-20 m-10" />
                             <div class="flex flex-col justify-center items-center z-20 -mt-3">
                                 {{-- Name --}}
-@if(!empty($business_card_details->title2))
-                                <h1 class="text-4xl font-medium text-center">{{ $business_card_details->title2 }}</h1>
+                                <h1 class="text-4xl font-medium text-center">@if(!empty($business_card_details->title2))
+                                    {{ $business_card_details->title2 }} <br>
 @endif
 @if(!empty($business_card_details->subtitle2))
-                                <h1 class="text-4xl font-medium text-center">{{ $business_card_details->subtitle2 }}</h1>
+                                    {{ $business_card_details->subtitle2 }} <br>
 @endif
-                                <h1 class="text-4xl font-medium text-center">{{ $business_card_details->title }}</h1>
+                                    {{ $business_card_details->title }}</h1>
                                 {{-- Position --}}
                                 <p class="text-orange-400 font-bold text-md mt-2">{{ $card_details->sub_title }}</p>
                                 {{-- About --}}
@@ -1096,14 +1096,7 @@
                                     class="flex pt-5 px-3 m-auto font-semibold text-white text-sm flex-col md:flex-row max-w-6xl">
                                     <div class="mt-2 text-gray-500">
                                         {{ __('Copyright') }} &copy;
-                                        <a class="text-orange-500" href="{{ url()->current() }}">
-@if(!empty($card_details->title2))
-                                            {{ $card_details->title2 }}</a><span id="year"></span>{{ __('. All Rights Reserved.') }} <br>
-@endif
-@if(!empty($card_details->subtitle2))
-                                            {{ $card_details->subtitle2 }}</a><span id="year"></span>{{ __('. All Rights Reserved.') }} <br>
-@endif
-                                            {{ $card_details->title }}</a><span id="year"></span>{{ __('. All Rights Reserved.') }}
+                                        <a class="text-orange-500" href="{{ url()->current() }}">{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}</a><span id="year"></span>{{ __('. All Rights Reserved.') }}
                                     </div>
                                 </div>
                             </div>
@@ -1113,8 +1106,7 @@
                                     class="flexpx-3 m-auto pt-5 font-semibold text-white text-sm flex-col md:flex-row max-w-6xl">
                                     <div class="mt-2 text-gray-500">
                                         {{ __('Made with') }}
-                                        <a class="text-orange-500" href="{{ env('APP_URL') }}">
-                                            {{ config('app.name') }} </a>
+                                        <a class="text-orange-500" href="{{ env('APP_URL') }}">{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}</a>
                                         <span id="year"></span>{{ __('. All Rights Reserved.') }}
                                     </div>
                                 </div>

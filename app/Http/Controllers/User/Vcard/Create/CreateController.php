@@ -86,8 +86,8 @@ class CreateController extends Controller
             'logo'        => 'required',
             'title'       => 'required',
             'cover_type'  => 'required',
-            'subtitle'    => 'required',
-            'description' => 'required',
+            'subtitle'    => 'nullable',
+            'description' => 'nullable',
         ]);
 
         // Validate alert
@@ -205,6 +205,7 @@ class CreateController extends Controller
                     $card->title2      = $request->title2;
                     $card->sub_title   = $request->subtitle;
                     $card->subtitle2   = $request->subtitle2;
+                    $card->copyright   = $request->copyright;
                     $card->description = $request->description;
 
                     if ($request->type == 'custom') {

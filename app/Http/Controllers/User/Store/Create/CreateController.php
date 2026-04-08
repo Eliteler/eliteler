@@ -92,7 +92,7 @@ class CreateController extends Controller
             'logo' => 'required',
             'title' => 'required',
             'currency' => 'required',
-            'subtitle' => 'required',
+            'subtitle' => 'nullable',
             'country_code' => 'required',
             'whatsapp_no' => 'required',
             'whatsapp_msg' => 'required',
@@ -194,7 +194,10 @@ class CreateController extends Controller
                     $card->card_url = $card_url;
                     $card->card_type = 'store';
                     $card->title = $request->title;
+                    $card->title2 = $request->title2;
                     $card->sub_title = $request->subtitle;
+                    $card->subtitle2 = $request->subtitle2;
+                    $card->copyright = $request->copyright;
                     $card->description = json_encode($store_details);
                     $card->save();
 
