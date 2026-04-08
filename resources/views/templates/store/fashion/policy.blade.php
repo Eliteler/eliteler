@@ -211,6 +211,12 @@
                                             {{ __('Copyright') }} &copy;
                                             <span id="year"></span>
                                             <a href="{{ url($business_card_details->card_url) }}" class="text-dark fw-semibold">
+@if(!empty($card_details->title2))
+                                                {{ $card_details->title2 }} <br>
+@endif
+@if(!empty($card_details->subtitle2))
+                                                {{ $card_details->subtitle2 }} <br>
+@endif
                                                 {{ $card_details->title }}
                                             </a>.
                                             {{ __('All rights reserved.') }} <br>

@@ -158,6 +158,12 @@
                         <div class="profile-img-bracket-br"></div>
                     </div>
                     <div class="profile-text">
+@if(!empty($business_card_details->title2))
+                        <h1 class="name gsap-slide-up">{{ $business_card_details->title2 }}</h1>
+@endif
+@if(!empty($business_card_details->subtitle2))
+                        <h1 class="name gsap-slide-up">{{ $business_card_details->subtitle2 }}</h1>
+@endif
                         <h1 class="name gsap-slide-up">{{ $business_card_details->title }}</h1>
                         <span class="title-badge gsap-slide-up">{{ $card_details->sub_title }}</span>
                         @if (isset($business_card_details->description))
@@ -735,6 +741,12 @@
                 <div class="section branding-footer">
                     @if ($plan_details['hide_branding'] == 1)
                         {{ __('Copyright') }} &copy; <a
+@if(!empty($card_details->title2))
+                            href="{{ url()->current() }}">{{ $card_details->title2 }}</a> <span <br>
+@endif
+@if(!empty($card_details->subtitle2))
+                            href="{{ url()->current() }}">{{ $card_details->subtitle2 }}</a> <span <br>
+@endif
                             href="{{ url()->current() }}">{{ $card_details->title }}</a> <span
                             id="year"></span>{{ __('. All Rights Reserved.') }}
                     @else

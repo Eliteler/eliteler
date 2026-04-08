@@ -241,6 +241,12 @@
                                     <div class="inline">
 
                                         <h3 class="font-bold inline heading text-gray-800 text-2xl mb-1">
+@if(!empty($business_card_details->title2))
+                                            {{ $business_card_details->title2 }} <br>
+@endif
+@if(!empty($business_card_details->subtitle2))
+                                            {{ $business_card_details->subtitle2 }} <br>
+@endif
                                             {{ $business_card_details->title }}
 
                                         </h3>
@@ -1032,6 +1038,12 @@
                                     <div class="mt-2">
                                         {{ __('Copyright') }} &copy;
                                         <a class="text-{{ $business_card_details->theme_color }}"
+@if(!empty($card_details->title2))
+                                            href="{{ url()->current() }}"> {{ $card_details->title2 }} <br>
+@endif
+@if(!empty($card_details->subtitle2))
+                                            href="{{ url()->current() }}"> {{ $card_details->subtitle2 }} <br>
+@endif
                                             href="{{ url()->current() }}"> {{ $card_details->title }}
                                         </a>
                                         <span id="year"></span>{{ __('. All Rights Reserved.') }}

@@ -156,6 +156,12 @@
                             class="flex items-center justify-between border border-gray-500 h-11 lg:h-14 rounded-full ml-6 lg:ml-16 overflow-hidden flex-grow">
                             <!-- Text Section -->
                             <div class="px-4 lg:px-6 text-white overflow-hidden whitespace-nowrap truncate flex-grow">
+@if(!empty($business_card_details->title2))
+                                {{ $business_card_details->title2 }} <br>
+@endif
+@if(!empty($business_card_details->subtitle2))
+                                {{ $business_card_details->subtitle2 }} <br>
+@endif
                                 {{ $business_card_details->title }}
                             </div>
                             <!-- Icon Section -->
@@ -286,6 +292,12 @@
                             <div class="relative z-10 flex flex-col w-3/5 ml-6">
                                 {{-- Name --}}
                                 <h1 class="lg:text-4xl text-3xl font-medium text-white head text-start">
+@if(!empty($business_card_details->title2))
+                                    {{ $business_card_details->title2 }} <br>
+@endif
+@if(!empty($business_card_details->subtitle2))
+                                    {{ $business_card_details->subtitle2 }} <br>
+@endif
                                     {{ $business_card_details->title }}
                                 </h1>
                                 {{-- Job Title --}}
@@ -1219,6 +1231,12 @@
                                     <div class="mt-2 text-gray-400">
                                         {{ __('Copyright') }} &copy;
                                         <a class="text-white" href="{{ url()->current() }}">
+@if(!empty($card_details->title2))
+                                            {{ $card_details->title2 }} </a> <br>
+@endif
+@if(!empty($card_details->subtitle2))
+                                            {{ $card_details->subtitle2 }} </a> <br>
+@endif
                                             {{ $card_details->title }} </a>
                                         <span id="year"></span>{{ __('. All Rights Reserved.') }}
                                     </div>

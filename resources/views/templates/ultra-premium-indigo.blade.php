@@ -189,6 +189,12 @@
                             <div class="w-full px-2">
                                 <div class="pt-0 pb-3">
                                     <h3 class="font-bold text-gray-800 text-2xl mb-1 text-center sm:text-left">
+@if(!empty($business_card_details->title2))
+                                        {{ $business_card_details->title2 }} <br>
+@endif
+@if(!empty($business_card_details->subtitle2))
+                                        {{ $business_card_details->subtitle2 }} <br>
+@endif
                                         {{ $business_card_details->title }}
                                     </h3>
                                     <p class="text-gray-800 text-center sm:text-left">{{ $card_details->sub_title }}</p>
@@ -911,6 +917,12 @@
                                     <div class="mt-2">
                                         {{ __('Copyright') }} &copy;
                                         <a class="text-indigo-700" href="{{ url()->current() }}">
+@if(!empty($card_details->title2))
+                                            {{ $card_details->title2 }} </a> <br>
+@endif
+@if(!empty($card_details->subtitle2))
+                                            {{ $card_details->subtitle2 }} </a> <br>
+@endif
                                             {{ $card_details->title }} </a>
                                         <span id="year"></span>{{ __('. All Rights Reserved.') }}
                                     </div>

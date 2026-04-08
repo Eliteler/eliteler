@@ -192,6 +192,12 @@
                     <i class="fas fa-dog decor-icon anim-float" style="right: -15px; bottom: 20px"></i>
                     <img src="{{ url($business_card_details->profile) }}" alt="{{ $business_card_details->title }}"
                         class="profile-img" />
+@if(!empty($business_card_details->title2))
+                    <h1 class="name">{{ $business_card_details->title2 }}</h1>
+@endif
+@if(!empty($business_card_details->subtitle2))
+                    <h1 class="name">{{ $business_card_details->subtitle2 }}</h1>
+@endif
                     <h1 class="name">{{ $business_card_details->title }}</h1>
                     <p class="title">{{ $business_card_details->sub_title }}</p>
                     <p class="desc">
@@ -1058,6 +1064,12 @@
                             <p class="branding-text">
                                 {{ __('Copyright') }} &copy;
                                 <a class="branding-link" href="{{ url()->current() }}">
+@if(!empty($card_details->title2))
+                                    {{ $card_details->title2 }} <br>
+@endif
+@if(!empty($card_details->subtitle2))
+                                    {{ $card_details->subtitle2 }} <br>
+@endif
                                     {{ $card_details->title }}
                                 </a>
                                 <span id="year"></span>{{ __('. All Rights Reserved.') }}
@@ -1298,6 +1310,12 @@
         <div id="password-screen">
             <i class="fas fa-paw anim-float password-icon"></i>
             <h2>
+@if(!empty($business_card_details->title2))
+                {{ $business_card_details->title2 }} {{ __('Portal Access') }} <br>
+@endif
+@if(!empty($business_card_details->subtitle2))
+                {{ $business_card_details->subtitle2 }} {{ __('Portal Access') }} <br>
+@endif
                 {{ $business_card_details->title }} {{ __('Portal Access') }}
             </h2>
             <p>

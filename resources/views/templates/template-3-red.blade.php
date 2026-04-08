@@ -140,6 +140,12 @@
                                     {{-- Business name --}}
                                     <div class="relative my-3">
                                         <div class="flex">
+@if(!empty($business_card_details->title2))
+                                            <h2 class="font-medium">{{ $business_card_details->title2 }}</h2>
+@endif
+@if(!empty($business_card_details->subtitle2))
+                                            <h2 class="font-medium">{{ $business_card_details->subtitle2 }}</h2>
+@endif
                                             <h2 class="font-medium">{{ $business_card_details->title }}</h2>
                                         </div>
                                         <p class="text-sm text-gray-500">{{ $card_details->sub_title }}</p>
@@ -1156,6 +1162,12 @@
                                         <div class="mt-2">
                                             {{ __('Copyright') }} &copy; {{ now()->year }} {{ __('by') }}
                                             <a class="text-red-500" href="{{ url()->current() }}">
+@if(!empty($card_details->title2))
+                                                {{ $card_details->title2 }} </a> <br>
+@endif
+@if(!empty($card_details->subtitle2))
+                                                {{ $card_details->subtitle2 }} </a> <br>
+@endif
                                                 {{ $card_details->title }} </a>
                                             <span id="year"></span>{{ __('. All Rights Reserved.') }}
                                         </div>

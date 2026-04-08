@@ -202,7 +202,9 @@ class CreateController extends Controller
                     $card->card_url    = $card_url;
                     $card->card_type   = 'vcard';
                     $card->title       = $request->title;
+                    $card->title2      = $request->title2;
                     $card->sub_title   = $request->subtitle;
+                    $card->subtitle2   = $request->subtitle2;
                     $card->description = $request->description;
 
                     if ($request->type == 'custom') {

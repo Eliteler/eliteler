@@ -179,7 +179,9 @@ class EditCardController extends Controller
                     'card_lang' => $request->card_lang,
                     'card_url' => $personalized_link,
                     'title' => $request->title,
+                    'title2' => $request->title2,
                     'sub_title' => $request->subtitle,
+                    'subtitle2' => $request->subtitle2,
                     'description' => $request->description
                 ]);
 

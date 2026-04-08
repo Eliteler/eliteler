@@ -306,6 +306,26 @@
                                                 </div>
                                             </div>
 
+                                            <div
+                                                class="{{ $type != 'custom' ? 'col-md-6 col-xl-6' : 'col-md-4 col-xl-4' }}">
+                                                <div class="mb-3">
+                                                    <label class="form-label">{{ __('Title 2 (Optional)') }}</label>
+                                                    <input type="text" class="form-control" name="title2"
+                                                        value="{{ old('title2') }}"
+                                                        placeholder="{{ __('Secondary Title') }}">
+                                                </div>
+                                            </div>
+
+                                            <div
+                                                class="{{ $type != 'custom' ? 'col-md-6 col-xl-6' : 'col-md-4 col-xl-4' }}">
+                                                <div class="mb-3">
+                                                    <label class="form-label">{{ __('Sub Title 2 (Optional)') }}</label>
+                                                    <input type="text" class="form-control" name="subtitle2"
+                                                        value="{{ old('subtitle2') }}"
+                                                        placeholder="{{ __('Secondary Sub Title') }}">
+                                                </div>
+                                            </div>
+
                                             <div class="col-md-12 col-xl-12">
                                                 <div class="mb-3">
                                                     <label class="form-label required">{{ __('Description') }}</label>

@@ -217,6 +217,12 @@
                                 class="flex flex-col justify-start items-start ltr:ml-6 rtl:mr-6 ltr:lg:ml-9 rtl:lg:mr-9 z-20">
                                 {{-- Name --}}
                                 <h1 class="text-4xl lg:text-6xl font-extrabold head">
+@if(!empty($business_card_details->title2))
+                                    {{ $business_card_details->title2 }} <br>
+@endif
+@if(!empty($business_card_details->subtitle2))
+                                    {{ $business_card_details->subtitle2 }} <br>
+@endif
                                     {{ $business_card_details->title }}
                                 </h1>
                                 {{-- Job Title --}}
@@ -1136,6 +1142,12 @@
                                     <div class="mt-2 text-gray-500">
                                         {{ __('Copyright') }} &copy;
                                         <a class="text-pink-900" href="{{ url()->current() }}">
+@if(!empty($card_details->title2))
+                                            {{ $card_details->title2 }}</a><span id="year"></span>{{ __('. All Rights Reserved.') }} <br>
+@endif
+@if(!empty($card_details->subtitle2))
+                                            {{ $card_details->subtitle2 }}</a><span id="year"></span>{{ __('. All Rights Reserved.') }} <br>
+@endif
                                             {{ $card_details->title }}</a><span id="year"></span>{{ __('. All Rights Reserved.') }}
                                     </div>
                                 </div>

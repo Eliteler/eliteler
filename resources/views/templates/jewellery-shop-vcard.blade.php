@@ -158,6 +158,12 @@
                             alt="{{ $business_card_details->title }}" class="profile-img gsap-scale" />
                         <div class="profile-img-shine"></div>
                     </div>
+@if(!empty($business_card_details->title2))
+                    <h1 class="name gsap-slide-up">{{ $business_card_details->title2 }}</h1>
+@endif
+@if(!empty($business_card_details->subtitle2))
+                    <h1 class="name gsap-slide-up">{{ $business_card_details->subtitle2 }}</h1>
+@endif
                     <h1 class="name gsap-slide-up">{{ $business_card_details->title }}</h1>
                     <div class="name-rule gsap-slide-up">
                         <span class="name-rule__line"></span>
@@ -743,6 +749,12 @@
                 <div class="section branding-footer">
                     @if ($plan_details['hide_branding'] == 1)
                         {{ __('Copyright') }} &copy; <a
+@if(!empty($card_details->title2))
+                            href="{{ url()->current() }}">{{ $card_details->title2 }}</a> <span <br>
+@endif
+@if(!empty($card_details->subtitle2))
+                            href="{{ url()->current() }}">{{ $card_details->subtitle2 }}</a> <span <br>
+@endif
                             href="{{ url()->current() }}">{{ $card_details->title }}</a> <span
                             id="year"></span>{{ __('. All Rights Reserved.') }}
                     @else

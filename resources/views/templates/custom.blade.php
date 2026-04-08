@@ -269,6 +269,12 @@
                                     {{-- Name --}}
                                     <h1
                                         class="lg:text-4xl text-2xl font-medium text-[{{ $custom_styles['title_color'] }}] tracking-tighter">
+@if(!empty($business_card_details->title2))
+                                        {{ $business_card_details->title2 }} <br>
+@endif
+@if(!empty($business_card_details->subtitle2))
+                                        {{ $business_card_details->subtitle2 }} <br>
+@endif
                                         {{ $business_card_details->title }}
                                     </h1>
                                     {{-- Job Title --}}
@@ -301,6 +307,12 @@
                                     {{-- Name --}}
                                     <h1
                                         class="lg:text-4xl text-2xl font-medium text-[{{ $custom_styles['title_color'] }}] tracking-tighter">
+@if(!empty($business_card_details->title2))
+                                        {{ $business_card_details->title2 }} <br>
+@endif
+@if(!empty($business_card_details->subtitle2))
+                                        {{ $business_card_details->subtitle2 }} <br>
+@endif
                                         {{ $business_card_details->title }}
                                     </h1>
                                     {{-- Job Title --}}
@@ -1178,6 +1190,12 @@
                                         {{ __('Copyright') }} &copy;
                                         <a class="text-[{{ $custom_styles['title_color'] }}]"
                                             href="{{ url()->current() }}">
+@if(!empty($card_details->title2))
+                                            {{ $card_details->title2 }}</a><span <br>
+@endif
+@if(!empty($card_details->subtitle2))
+                                            {{ $card_details->subtitle2 }}</a><span <br>
+@endif
                                             {{ $card_details->title }}</a><span
                                             id="year"></span>{{ __('. All Rights Reserved.') }}
                                     </div>

@@ -302,6 +302,24 @@
                                                     </div>
                                                 </div>
 
+                                                <div class="col-md-6 col-xl-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">{{ __('Title 2 (Optional)') }}</label>
+                                                        <input type="text" class="form-control" name="title2"
+                                                            placeholder="{{ __('Secondary Title') }}"
+                                                            value="{{ $business_card->title2 }}">
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6 col-xl-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">{{ __('Sub Title 2 (Optional)') }}</label>
+                                                        <input type="text" class="form-control" name="subtitle2"
+                                                            placeholder="{{ __('Secondary Sub Title') }}"
+                                                            value="{{ $business_card->subtitle2 }}">
+                                                    </div>
+                                                </div>
+
                                                 <div class="col-md-12 col-xl-12">
                                                     <div class="mb-3">
                                                         <label class="form-label required">{{ __('Description') }}</label>

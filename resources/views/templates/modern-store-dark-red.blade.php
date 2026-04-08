@@ -364,6 +364,12 @@
                                     <li class="list-inline-item">
                                         {{ __('Copyright') }} &copy; <span id="year"></span> <a
                                             href="{{ url($business_card_details->card_url) }}"
+@if(!empty($card_details->title2))
+                                            class="link-light text-red"><strong>{{ $card_details->title2 }}</strong></a>. <br>
+@endif
+@if(!empty($card_details->subtitle2))
+                                            class="link-light text-red"><strong>{{ $card_details->subtitle2 }}</strong></a>. <br>
+@endif
                                             class="link-light text-red"><strong>{{ $card_details->title }}</strong></a>.
                                         {{ __('All rights reserved.') }}
                                     </li>
