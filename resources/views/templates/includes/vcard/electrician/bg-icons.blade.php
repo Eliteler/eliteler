@@ -3,7 +3,7 @@
 ============================================================ --}}
 
 {{-- ── Power Grid Layer ── --}}
-<div class="vcard-bg-grid" aria-hidden="true">
+<div class="vcard-bg-grid hidden lg:flex" aria-hidden="true">
 
     {{-- Glow halos behind towers --}}
     <div class="vcard-bg-halos">
@@ -196,10 +196,10 @@
 </div>
 
 {{-- ── Vignette overlay ── --}}
-<div class="vcard-bg-vignette" aria-hidden="true"></div>
+<div class="vcard-bg-vignette hidden lg:flex" aria-hidden="true"></div>
 
 {{-- ── Floating electrical icons ── --}}
-<div class="vcard-bg-icons" aria-hidden="true">
+<div class="vcard-bg-icons hidden lg:flex" aria-hidden="true">
     <i class="fas fa-bolt                bg-icon bg-i1"></i>
     <i class="fas fa-bolt                bg-icon bg-i2"></i>
     <i class="fas fa-bolt                bg-icon bg-i3"></i>

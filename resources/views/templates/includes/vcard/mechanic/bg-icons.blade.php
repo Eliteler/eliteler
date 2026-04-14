@@ -3,10 +3,10 @@
 ============================================================ --}}
 
 {{-- ── Animated red glow ── --}}
-<div class="vcard-bg-glow" aria-hidden="true"></div>
+<div class="vcard-bg-glow hidden lg:flex" aria-hidden="true"></div>
 
 {{-- ── Scrolling MECHANIC text rows ── --}}
-<div class="vcard-bg-text-wrap" aria-hidden="true">
+<div class="vcard-bg-text-wrap hidden lg:flex" aria-hidden="true">
 
     {{-- Row 1 — scrolls left, normal --}}
     <div class="bg-text-row">
@@ -113,13 +113,13 @@
 </div>
 
 {{-- ── Dark vignette overlay ── --}}
-<div class="vcard-bg-vignette" aria-hidden="true"></div>
+<div class="vcard-bg-vignette hidden lg:flex" aria-hidden="true"></div>
 
 {{-- ── Scan-lines texture ── --}}
-<div class="vcard-bg-scanlines" aria-hidden="true"></div>
+<div class="vcard-bg-scanlines hidden lg:flex" aria-hidden="true"></div>
 
 {{-- ── Floating Icons ── --}}
-<div class="vcard-bg-icons" aria-hidden="true">
+<div class="vcard-bg-icons hidden lg:flex" aria-hidden="true">
     <i class="fas fa-wrench         bg-icon bg-i1"></i>
     <i class="fas fa-screwdriver    bg-icon bg-i2"></i>
     <i class="fas fa-wrench         bg-icon bg-i3"></i>

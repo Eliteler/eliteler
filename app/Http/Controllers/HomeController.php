@@ -12,6 +12,7 @@
 
 namespace App\Http\Controllers;
 
+use App\BusinessCard;
 use App\Plan;
 use App\Setting;
 use App\Currency;

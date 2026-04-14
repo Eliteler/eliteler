@@ -10,8 +10,6 @@
  |--------------------------------------------------------------------------
 */
 
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
@@ -23,7 +21,6 @@ use App\Http\Controllers\WebToolsController;
 use App\Http\Controllers\SubdomainController;
 use App\Http\Controllers\User\CardController;
 use App\Http\Controllers\Admin\DemoController;
-use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\PlanController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\LoginController;
@@ -52,7 +49,6 @@ use App\Http\Controllers\Admin\CronJobController;
 use App\Http\Controllers\Admin\MailgunController;
 use App\Http\Controllers\Admin\SitemapController;
 use App\Http\Controllers\Payment\PaytrController;
-use App\Http\Controllers\User\CategoryController;
 use App\Http\Controllers\User\CheckOutController;
 use App\Http\Controllers\User\EditCardController;
 use App\Http\Controllers\Admin\CampaignController;
@@ -90,14 +86,12 @@ use App\Http\Controllers\Admin\NfcCardOrderController;
 use App\Http\Controllers\Admin\TransactionsController;
 use App\Http\Controllers\User\ConnectDomainController;
 use App\Http\Controllers\User\ManageNfcCardController;
-use App\Http\Controllers\User\VerifiedEmailController;
 use App\Http\Controllers\Admin\EmailTemplateController;
 use App\Http\Controllers\Admin\GoogleSettingController;
 use App\Http\Controllers\Admin\NfcCardDesignController;
 use App\Http\Controllers\Admin\PaymentMethodController;
 use App\Http\Controllers\Payment\FlutterwaveController;
 use App\Http\Controllers\Payment\MercadoPagoController;
-use App\Http\Controllers\Payment\TwoCheckoutController;
 use App\Http\Controllers\User\ServiceBookingController;
 use App\Http\Controllers\WebsiteNFCCardOrderController;
 use App\Http\Controllers\Admin\CreateCustomerController;
@@ -105,11 +99,10 @@ use App\Http\Controllers\Admin\InAppPurchasesController;
 use App\Http\Controllers\Admin\PaymentSettingController;
 use App\Http\Controllers\Admin\WebsiteSettingController;
 use App\Http\Controllers\User\ActivateNfcCardController;
-use SebastianBergmann\CodeCoverage\Report\Html\Dashboard;
 use App\Http\Controllers\Admin\SubdomainSettingController;
-use App\Http\Controllers\Admin\SupportActivatorController;
 use App\Http\Controllers\Payment\NFC\NFCIyzipayController;
 use App\Http\Controllers\Admin\BlogController as AdminBlog;
+use App\Http\Controllers\Admin\BusinessCardIntrosController;
 use App\Http\Controllers\Admin\MarketingCustomerController;
 use App\Http\Controllers\Auth\PublicVerificationController;
 use App\Http\Controllers\User\ManageOrderNfcCardController;
@@ -125,9 +118,7 @@ use App\Http\Controllers\Admin\NfcCardKeyGenerationController;
 use App\Http\Controllers\User\Store\Edit\StoreOrderController;
 use App\Http\Controllers\User\AccountController as userAccount;
 use App\Http\Controllers\User\Vcard\Edit\EditBookingController;
-use App\Http\Controllers\Admin\ApplicationHealthCheckController;
 use App\Http\Controllers\User\Vcard\Create\SocialLinkController;
-use Plugins\ReferralSystem\Controllers\ReferralSystemController;
 use App\Http\Controllers\Admin\NfcCardOrderTransactionController;
 use App\Http\Controllers\User\Vcard\Create\AppointmentController;
 use App\Http\Controllers\User\Vcard\Create\ContactFormController;
@@ -136,7 +127,6 @@ use App\Http\Controllers\User\Vcard\Create\TestimonialController;
 use App\Http\Controllers\User\Store\Edit\UpdateStoreSeoController;
 use App\Http\Controllers\User\Vcard\Create\BusinessHourController;
 use App\Http\Controllers\User\Vcard\Create\SectionTitleController;
-use App\Http\Controllers\Admin\EnableDisableNFCCardOrderController;
 use App\Http\Controllers\Admin\ReferralWithdrawalRequestController;
 use App\Http\Controllers\User\DashboardController as userDashboard;
 use App\Http\Controllers\User\PlanController as UserPlanController;
@@ -190,6 +180,7 @@ use App\Http\Controllers\User\Store\Create\ProductController as CreateStoreProdu
 use App\Http\Controllers\User\Vcard\Edit\BusinessHourController as EditBusinessHourController;
 use App\Http\Controllers\User\Vcard\Edit\SectionTitleController as EditSectionTitleController;
 use App\Http\Controllers\User\Vcard\Edit\AdvancedSettingController as EditAdvancedSettingController;
+use App\Http\Controllers\User\IntroScreenController;
 
 /*
 |--------------------------------------------------------------------------
@@ -354,6 +345,12 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::get('update-theme-status', [ThemeController::class, 'updateThemeStatus'])->name('update.theme.status')->middleware(['user.page.permission:themes', 'demo.mode']);
         Route::get('search/{status}', [ThemeController::class, 'searchTheme'])->name('search.theme')->middleware(['user.page.permission:themes', 'demo.mode']);
 
+        // Business Card Intros
+        Route::get('business-card-intros', [BusinessCardIntrosController::class, 'index'])->name('business-card-intros');
+        Route::get('business-card-intros/edit/{id}', [BusinessCardIntrosController::class, 'edit'])->name('edit.business-card-intro');
+        Route::post('business-card-intros/update/{id}', [BusinessCardIntrosController::class, 'update'])->name('update.business-card-intro');
+        Route::get('business-card-intros/status/{id}', [BusinessCardIntrosController::class, 'status'])->name('business-card-intro.status');
+
         // Add CSS and JS in Themes
         Route::get('add-theme-css/{id}', [ThemeController::class, 'addThemeCss'])->name('add.theme.css')->middleware(['user.page.permission:themes', 'demo.mode']);
         Route::post('update-theme-css', [ThemeController::class, 'updateThemeCss'])->name('update.theme.css')->middleware(['user.page.permission:themes', 'demo.mode']);
@@ -385,18 +382,18 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::get('delete-customer', [CustomerController::class, 'deleteCustomer'])->name('delete.customer')->middleware(['user.page.permission:customers', 'demo.mode']);
         Route::get('login-as/{id}', [CustomerController::class, 'authAs'])->name('login-as.customer')->middleware('user.page.permission:customers');
 
-        // Unverified Customers
-        Route::get('unverified/customers', [CustomerController::class, 'unverifiedCustomers'])->name('unverified.customers')->middleware('user.page.permission:customers');
+        // // Unverified Customers
+        // Route::get('unverified/customers', [CustomerController::class, 'unverifiedCustomers'])->name('unverified.customers')->middleware('user.page.permission:customers');
 
-        // Banned Customers
-        Route::get('banned/customers', [CustomerController::class, 'bannedCustomers'])->name('banned.customers')->middleware('user.page.permission:customers');
+        // // Banned Customers
+        // Route::get('banned/customers', [CustomerController::class, 'bannedCustomers'])->name('banned.customers')->middleware('user.page.permission:customers');
 
-        // Customer verified / unverified / banned
-        Route::get('customer-verified', [CustomerController::class, 'customerVerified'])->name('customer.verified')->middleware(['user.page.permission:customers']);
+        // // Customer verified / unverified / banned
+        // Route::get('customer-verified', [CustomerController::class, 'customerVerified'])->name('customer.verified')->middleware(['user.page.permission:customers']);
 
-        // Deleted Customers
-        Route::get('deleted/customers', [CustomerController::class, 'deletedCustomers'])->name('deleted.customers')->middleware('user.page.permission:customers');
-        Route::get('undelete-customer', [CustomerController::class, 'undeleteCustomer'])->name('undelete.customer')->middleware(['user.page.permission:customers', 'demo.mode']);
+        // // Deleted Customers
+        // Route::get('deleted/customers', [CustomerController::class, 'deletedCustomers'])->name('deleted.customers')->middleware('user.page.permission:customers');
+        // Route::get('undelete-customer', [CustomerController::class, 'undeleteCustomer'])->name('undelete.customer')->middleware(['user.page.permission:customers', 'demo.mode']);
 
         // Create Customer
         Route::get('create-customer', [CreateCustomerController::class, 'createCustomer'])->name('create.customer')->middleware('user.page.permission:customers');
@@ -755,6 +752,10 @@ Route::group(['middleware' => 'Installer'], function () {
         // Section Title
         Route::get('section-title/{id}', [SectionTitleController::class, 'sectionTitle'])->name('section.title');
         Route::post('save-section-title/{id}', [SectionTitleController::class, 'saveSectionTitle'])->name('save.section.title')->middleware('scriptsanitizer');
+
+        // Intro Screen
+        Route::get('edit-intro-screen/{id}', [IntroScreenController::class, 'introScreen'])->name('edit.intro-screen');
+        Route::post('update-intro-screen/{id}', [IntroScreenController::class, 'updateIntroScreen'])->name('update.intro-screen');
 
         // Inquiries
         Route::get('inquiries/{id}', [InquiryController::class, 'index'])->name('enquiries');

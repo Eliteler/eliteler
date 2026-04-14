@@ -3,6 +3,7 @@
     use App\Services\GoBizCommonService;
     use App\Transaction;
     use Carbon\Carbon;
+    use App\User;
 
     // Config
     $config = GoBizCommonService::config();
@@ -30,14 +31,15 @@
         'referral_system' => 1,
         'in_app_purchases' => 1,
         'vcard_store' => 1,
+        'business_card_intros' => 1,
     ];
 
     // Merge permissions
     $mergedPermissions = array_merge($defaultPermissions, $allowedPermissions);
 
     // Update only if changed
-    if ($mergedPermissions !== $allowedPermissions) {
-        $user->update([
+    if ($mergedPermissions != $allowedPermissions) {
+        User::where('id', $user->id)->update([
             'permissions' => json_encode($mergedPermissions),
             'updated_at' => Carbon::now(),
         ]);
@@ -193,6 +195,31 @@
                             </span>
                             <span class="nav-link-title">
                                 {{ __('Themes') }}
+                            </span>
+                        </a>
+                    </li>
+                @endif
+
+                {{-- Business Card Intros --}}
+                @if ($allowedPermissions['business_card_intros'])
+                    <li class="nav-item {{ request()->is('admin/business-card-intros*') ? 'active' : '' }}">
+                        <a class="nav-link" href="{{ route('admin.business-card-intros') }}">
+                            <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round"
+                                    class="icon icon-tabler icons-tabler-outline icon-tabler-polaroid">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path
+                                        d="M4 6a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2l0 -12" />
+                                    <path d="M4 16l16 0" />
+                                    <path d="M4 12l3 -3c.928 -.893 2.072 -.893 3 0l4 4" />
+                                    <path d="M13 12l2 -2c.928 -.893 2.072 -.893 3 0l2 2" />
+                                    <path d="M14 7l.01 0" />
+                                </svg>
+                            </span>
+                            <span class="nav-link-title">
+                                {{ __('Business Card Intros') }}
                             </span>
                         </a>
                     </li>

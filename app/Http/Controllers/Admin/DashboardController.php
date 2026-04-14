@@ -158,7 +158,7 @@ class DashboardController extends Controller
         if ($resp_data && isset($resp_data['support_remaining_days']) && $resp_data['support_remaining_days'] <= 0) {
             session()->flash(
                 'support_status_message',
-                '<a href="https://store.nativecode.in" target="_blank" class="text-white">
+                '<a href="https://store.nativecode.in/checkout/buy/0f1f87da-5adc-443d-947f-17db72d9f3a2" target="_blank" class="text-white">
                 Your support plan has ended!
                 <span style="position:absolute;right:7.5vh;">Renew</span>
             </a>'

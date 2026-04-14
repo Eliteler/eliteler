@@ -1082,7 +1082,7 @@ class ProfileController extends Controller
         ];
 
         foreach ($fill['icons'] as $size => $file) {
-            $fileInfo                 = pathinfo($file['path']);
+            $fileInfo = pathinfo($file['path']);
             $basicManifest['icons'][] = [
                 'src'     => $file['path'],
                 'type'    => 'image/' . $fileInfo['extension'],

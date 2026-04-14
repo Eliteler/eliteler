@@ -8,7 +8,7 @@
         height: 100%;
         background: rgba(31, 41, 55, 0.7);
         backdrop-filter: blur(4px);
-        z-index: 1001;
+        z-index: 50;
         display: none;
     }
 

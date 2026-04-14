@@ -84,7 +84,7 @@ class UpdateController extends Controller
                     <h2 class="mb-1">' . trans('Your support plan has ended!') . '</h2>
                     <p>' . trans('Renew now to continue enjoying priority support, updates, and uninterrupted access to exclusive features.') . '</p>
                     <div class="btn-list">
-                        <a href="https://store.nativecode.in?ref=' . urlencode(config("app.url")) . '&size=source" target="_blank" class="btn btn-xs btn-light">' . trans('Renew Now') . '</a>
+                        <a href="https://store.nativecode.in/checkout/buy/0f1f87da-5adc-443d-947f-17db72d9f3a2?ref=' . urlencode(config("app.url")) . '&size=source" target="_blank" class="btn btn-xs btn-light">' . trans('Renew Now') . '</a>
                     </div>
                     <a class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
                 </div>';
@@ -117,6 +117,13 @@ class UpdateController extends Controller
 
         // Email
         $email = $config[99]->config_value;
+
+        // Update email
+        $email = $request->email;
+
+        DB::table('config')->where('config_key', 'activation_email_address')->update([
+            'config_value' => $email,
+        ]);
 
         // Default message
         $resp_data = [];
@@ -153,7 +160,7 @@ class UpdateController extends Controller
                         <h2 class="mb-1">' . trans('Your support plan has ended!') . '</h2>
                         <p>' . trans('Renew now to continue enjoying priority support, updates, and uninterrupted access to exclusive features.') . '</p>
                         <div class="btn-list">
-                            <a href="https://store.nativecode.in?ref=' . urlencode(config("app.url")) . '&size=source" target="_blank" class="btn btn-xs btn-light">' . trans('Renew Now') . '</a>
+                            <a href="https://store.nativecode.in/checkout/buy/0f1f87da-5adc-443d-947f-17db72d9f3a2?ref=' . urlencode(config("app.url")) . '&size=source" target="_blank" class="btn btn-xs btn-light">' . trans('Renew Now') . '</a>
                         </div>
                         <a class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
                     </div>';

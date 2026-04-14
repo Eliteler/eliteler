@@ -1,5 +1,5 @@
 {{-- Background floating icons on the page itself --}}
-<div class="vcard-bg-icons" aria-hidden="true">
+<div class="vcard-bg-icons hidden lg:flex" aria-hidden="true">
 
     {{-- GEMS / DIAMONDS (7 icons) --}}
     <i class="far fa-gem   bg-icon bg-i1"></i>

@@ -52,7 +52,7 @@
     </div>
 
     {{-- Enable confetti effect --}}
-    @if ($confetti_effect == 1)
+    @if ($confetti_effect == 1 && $introScreen == null)
         <script src="{{ asset('js/confetti.browser.min.js') }}"></script>
         <script>
             function getRandomColor() {

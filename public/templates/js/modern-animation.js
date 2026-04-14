@@ -1,7 +1,5 @@
-document.addEventListener("DOMContentLoaded", () => {
-    // animation
-    const textMultipleElements = document.querySelectorAll(".custom-head");
-    gsap.registerPlugin(ScrollTrigger, SplitText);
+document.addEventListener("DOMContentLoaded", () => {    
+    gsap.registerPlugin(ScrollTrigger);
 
     // audio
     const audioToggle = document.getElementById("audio-toggle");
@@ -65,14 +63,11 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         // blur effect
-        gsap.to("#content-screen", {
-            filter: "blur(100px)",
-            duration: 0.7,
-            ease: "power2.out",
+        gsap.to("#content-screen", {            
             scrollTrigger: {
                 trigger: "body",
                 start: "top top",
-                end: "9% top",
+                end: "6% top",
                 scrub: true,
                 onLeave: () => {
                     gsap.set("#content-screen", {
@@ -148,7 +143,7 @@ document.addEventListener("DOMContentLoaded", () => {
         ScrollTrigger.create({
             trigger: "body",
             start: "top top",
-            end: "10% top",
+            end: "6% top",
             scrub: 1,
             refreshPriority: -1, // Lower priority to ensure it runs after refresh
             onRefresh: () => {
@@ -313,70 +308,5 @@ document.addEventListener("DOMContentLoaded", () => {
             });
             isPlaying = !isPlaying;
         }
-    });
-
-    // Text Effect
-    textMultipleElements.forEach((textElement) => {
-        // Use SplitText plugin for better performance and control
-        const splitText = new SplitText(textElement, {
-            type: "chars",
-            charsClass: "wave-char",
-        });
-
-        const chars = splitText.chars;
-
-        // Set initial state
-        gsap.set(chars, {
-            y: 20,
-            opacity: 0,
-        });
-
-        // Create a timeline for this element
-        const tl = gsap.timeline({ paused: true });
-
-        // Define the entrance animation
-        tl.to(chars, {
-            y: 0,
-            opacity: 1,
-            color: "#000000",
-            duration: 0.5,
-            ease: "back.out(1.2)",
-            stagger: {
-                amount: 0.8,
-                from: "start",
-            },
-        });
-
-        // Create ScrollTrigger with better sync
-        ScrollTrigger.create({
-            trigger: textElement,
-            start: "top 80%",
-            end: "bottom 15%",
-            animation: tl,
-            toggleActions: "play none none reverse",
-            // Remove scrub to prevent conflict with toggleActions
-            // scrub: 1,
-
-            // Optional: Add refresh on update to handle fast scrolling
-            refreshPriority: -1,
-
-            // Ensure proper cleanup and state management
-            onToggle: (self) => {
-                if (self.isActive) {
-                    // Ensure we're in the correct state when entering
-                    gsap.set(chars, {
-                        y: 20,
-                        opacity: 0,
-                    });
-                    tl.restart();
-                } else {
-                    // Ensure we're in the correct state when leaving
-                    tl.reverse();
-                }
-            },
-
-            // Handle fast scrolling edge cases
-            onUpdate: (self) => {},
-        });
-    });
+    });   
 });

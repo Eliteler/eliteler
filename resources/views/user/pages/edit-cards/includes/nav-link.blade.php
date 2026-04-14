@@ -127,4 +127,6 @@
         <a href="{{ route('user.edit.google-wallet', Request::segment(3)) }}"
             class="list-group-item list-group-item-action d-flex align-items-center {{ $link == 'google-wallet' ? 'active' : '' }}">{{ __('Google Wallet') }}</a>
     @endif
+    <a href="{{ route('user.edit.intro-screen', Request::segment(3)) }}"
+        class="list-group-item list-group-item-action d-flex align-items-center {{ $link == 'intro-screen' ? 'active' : '' }}">{{ __('Intro Screen') }}</a>
 @endif
