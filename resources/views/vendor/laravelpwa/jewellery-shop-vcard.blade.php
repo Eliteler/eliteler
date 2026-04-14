@@ -40,8 +40,7 @@
      }
 
      // Close on X and Cancel
-     document.getElementById('closePwaModal').addEventListener('click', hidePwaPrompt);
-     document.getElementById('closeModal').addEventListener('click', hidePwaPrompt);
+     document.getElementById('closeModal').addEventListener('click', hidePwaPrompt());
 
      // Close on backdrop click
      document.getElementById('pwaModal').addEventListener('click', function(e) {

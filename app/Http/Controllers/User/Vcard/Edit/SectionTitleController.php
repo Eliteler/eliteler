@@ -154,7 +154,7 @@ class SectionTitleController extends Controller
         if (isset($plan_details->google_wallet) && $plan_details->google_wallet == 1 && is_dir(base_path('plugins/GoogleWallet'))) {
             return redirect()->route('user.edit.google-wallet', $id);
         } else {
-            return redirect()->route('user.cards')->with('success', trans('Your virtual business card is ready.'));
+            return redirect()->route('user.edit.intro-screen', $id);
         }
     }
 }

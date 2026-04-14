@@ -34,7 +34,7 @@ class GenerateWithAI
         $companyName = $business_card_data['company_name'] ?? 'Business Card';
 
         // sub title
-        $subTitle = $business_card_data['tagline_or_slogan'] ?? null;
+        $subTitle = $business_card_data['tagline_or_slogan'] ?? 'Business Card';
 
         // get theme
         $themeId = detectTheme($companyName, $subTitle);

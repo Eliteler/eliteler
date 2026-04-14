@@ -142,7 +142,7 @@
                     {{-- Themes --}}
                     @if (count($themes) > 0)
                         @foreach ($themes as $theme)
-                            <div class="col-6 col-lg-2">
+                            <div class="col-6 col-sm-4 col-md-2">
                                 <div class="card card-sm">
                                     <a href="{{ asset('img/vCards/' . $theme['theme_thumbnail']) }}"
                                         data-fslightbox="gallery" class="d-block">

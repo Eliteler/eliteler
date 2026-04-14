@@ -1,34 +1,3 @@
-<!-- Include PWA modal -->
-@if ($plan_details != null)
-    {{-- Check PWA --}}
-    @if ($plan_details['pwa'] == 1 && $business_card_details->is_enable_pwa == 1)
-        @include('vendor.laravelpwa.new_pwa_modal', [
-            'primary_color' => 'green',
-            'img' => $business_card_details->profile,
-        ])
-    @endif
-@endif
-
-{{-- Include Newsletter Modal --}}
-@if ($business_card_details != null)
-    {{-- Check Newsletter --}}
-    @if (!empty($business_card_details->is_newsletter_pop_active) && $business_card_details->is_newsletter_pop_active == 1)
-        @include('templates.includes.old_theme_newsletter_modal', [
-            'primary_color' => 'green',
-        ])
-    @endif
-@endif
-
-{{-- Include Information Popup Modal --}}
-@if ($business_card_details != null)
-    {{-- Check Information Popup --}}
-    @if (!empty($business_card_details->is_info_pop_active) && $business_card_details->is_info_pop_active == 1)
-        @include('templates.includes.old_theme_information_popup_modal', [
-            'primary_color' => 'green',
-        ])
-    @endif
-@endif
-
 <!-- Start Apointment Modal (By default hidden) -->
 <div id="appointmentModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50 hidden">
     <!-- Modal Content -->
@@ -249,5 +218,36 @@
             </div>
         </div>
     </div>
+@else   
+    <!-- Include PWA modal -->
+    @if ($plan_details != null)
+        {{-- Check PWA --}}
+        @if ($plan_details['pwa'] == 1 && $business_card_details->is_enable_pwa == 1)
+            @include('vendor.laravelpwa.new_pwa_modal', [
+                'primary_color' => 'green',
+                'img' => $business_card_details->profile,
+            ])
+        @endif
+    @endif
+
+    {{-- Include Newsletter Modal --}}
+    @if ($business_card_details != null)
+        {{-- Check Newsletter --}}
+        @if (!empty($business_card_details->is_newsletter_pop_active) && $business_card_details->is_newsletter_pop_active == 1)
+            @include('templates.includes.old_theme_newsletter_modal', [
+                'primary_color' => 'green',
+            ])
+        @endif
+    @endif
+
+    {{-- Include Information Popup Modal --}}
+    @if ($business_card_details != null)
+        {{-- Check Information Popup --}}
+        @if (!empty($business_card_details->is_info_pop_active) && $business_card_details->is_info_pop_active == 1)
+            @include('templates.includes.old_theme_information_popup_modal', [
+                'primary_color' => 'green',
+            ])
+        @endif
+    @endif
 @endif
 {{-- End Check password protected Modal --}}

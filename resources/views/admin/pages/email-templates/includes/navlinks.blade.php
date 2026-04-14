@@ -22,7 +22,7 @@
 <a href="{{ route('admin.email.templates.index', ['id' => '584922675217']) }}" class="list-group-item list-group-item-action d-flex align-items-center {{ $link == '584922675217' ? 'active' : '' }}">{{ __('Service Booking (Canceled)') }}</a>
 <a href="{{ route('admin.email.templates.index', ['id' => '584922675218']) }}" class="list-group-item list-group-item-action d-flex align-items-center {{ $link == '584922675218' ? 'active' : '' }}">{{ __('Service Booking (Completed)') }}</a>
 <a href="{{ route('admin.email.templates.index', ['id' => '584922675219']) }}" class="list-group-item list-group-item-action d-flex align-items-center {{ $link == '584922675219' ? 'active' : '' }}">{{ __('Service Booking (Received vCard Owner)') }}</a>
-@if (Illuminate\Support\Facades\File::exists(base_path('plugins/TwoFactorAuthentiation/plugin.json')))
+@if (Illuminate\Support\Facades\File::exists(base_path('plugins/TwoFactorAuthentication/plugin.json')))
     <a href="{{ route('admin.email.templates.index', ['id' => '584922675300']) }}" 
        class="list-group-item list-group-item-action d-flex align-items-center {{ $link == '584922675300' ? 'active' : '' }}">
         {{ __('Two Factor OTP Email') }}

@@ -422,22 +422,17 @@ h4,
     animation: bgFloat 8.8s 4.5s infinite;
 }
 
-/* ── Keep card content above icons ── */
-.vcard-container {
-    position: relative;
-    z-index: 1;
-}
-
 /* ── Container ── */
 .vcard-container {
     width: 100%;
     max-width: 500px;
-    background: var(--bg-card);
+    background: var(--bg-color);
     box-shadow: var(--shadow-lg);
     position: relative;
     padding-bottom: 120px;
     overflow: visible;
     min-height: 100vh;
+    z-index: 50;
 }
 
 @media (min-width: 520px) {
@@ -541,7 +536,7 @@ h4,
     position: absolute;
     top: 16px;
     right: 16px;
-    z-index: 9999;
+    z-index: 50;
     pointer-events: auto;
 }
 
@@ -649,7 +644,6 @@ h4,
 /* ── Profile Section ── */
 .profile-section {
     padding: 0 22px 6px;
-    margin-top: -68px;
     position: relative;
     z-index: 15;
     display: flex;
@@ -664,6 +658,7 @@ h4,
     width: 140px;
     height: 140px;
     flex-shrink: 0;
+    margin-top: -70px;
 }
 
 .profile-img-ring {
@@ -1015,7 +1010,7 @@ h4,
 .item-card img,
 .item-card iframe {
     width: 100%;
-    height: 160px;
+    height: 220px;
     object-fit: cover;
     display: block;
     border: none;
@@ -1087,7 +1082,7 @@ h4,
 
 .gallery-img {
     width: 100%;
-    height: 185px;
+    height: 220px;
     object-fit: cover;
     display: block;
     transition: transform 0.5s ease;
@@ -1592,6 +1587,11 @@ select.form-control option {
 }
 
 /* ── Swiper ── */
+.swiper-slide {
+  width: 100% !important;
+  box-sizing: border-box;
+}
+
 .swiper {
     width: 100%;
     padding-bottom: 40px !important;
@@ -1672,7 +1672,7 @@ select.form-control option {
     justify-content: space-around;
     align-items: center;
     padding: 10px 14px;
-    z-index: 1000;
+    z-index: 50;
     box-shadow:
         0 -4px 30px rgba(0, 0, 0, 0.2),
         0 0 20px rgba(200, 116, 97, 0.06);
@@ -1904,7 +1904,7 @@ select.form-control option {
     background: rgba(30, 26, 24, 0.75);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
-    z-index: 2100;
+    z-index: 50;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2183,7 +2183,7 @@ select.form-control option {
     background: rgba(30, 26, 24, 0.75);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
-    z-index: 2100;
+    z-index: 50;
     display: none;
     align-items: flex-end;
     justify-content: center;
@@ -2863,7 +2863,7 @@ select.form-control option {
     inset: 0;
     background: rgba(30, 26, 24, 0.75);
     backdrop-filter: blur(6px);
-    z-index: 2000;
+    z-index: 50;
     display: none;
 }
 #pwaModal.show {

@@ -165,7 +165,7 @@
                         <!-- Support renewal -->
                         <div class="mb-3">
                             <div class="card-body text-center">
-                                <a href="https://store.nativecode.in?ref={{ urlencode(config('app.url')) }}"
+                                <a href="https://store.nativecode.in/checkout/buy/0f1f87da-5adc-443d-947f-17db72d9f3a2?ref={{ urlencode(config('app.url')) }}"
                                     target="_blank">
                                     <img src="{{ asset('img/in-extended-license.png') }}" class="img-fluid rounded mb-3"
                                         alt="Support">
@@ -192,9 +192,30 @@
             </div>
         </div>
 
+        {{-- Email not fillable modal --}}
+        <div class="modal modal-blur fade" id="emailNotFillableModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-body text-center py-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon mb-2 text-danger icon-lg" width="24"
+                            height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <path d="M12 9v2m0 4v.01" />
+                            <path
+                                d="M5 19h14a2 2 0 0 0 1.84 -2.75l-7.1 -12.25a2 2 0 0 0 -3.5 0l-7.1 12.25a2 2 0 0 0 1.75 2.75" />
+                        </svg>
+                        <h3 class="text-uppercase mb-3">{{ __('Email address required') }}</h3>
+                        <p>{{ __('Please fill the email address.') }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         {{-- Footer --}}
         @include('admin.includes.footer')
     </div>
+
 
     {{-- Custom JS --}}
 @section('scripts')
@@ -252,8 +273,19 @@
 
                 // Validate email and required fields
                 if (!email || !appVersion) {
-                    showAlert('danger',
-                        '{{ __('Please enter your email address and valid purchase code.') }}');
+                    // showAlert('danger',
+                    //     '{{ __('Please enter your email address and valid purchase code.') }}');
+
+                    // Show modal
+                    var modalEl = document.getElementById('emailNotFillableModal');
+                    var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+
+                    modal.show();
+
+                    setTimeout(function() {
+                        modal.hide();
+                    }, 3000);
+
                     return; // Stop execution here
                 }
 

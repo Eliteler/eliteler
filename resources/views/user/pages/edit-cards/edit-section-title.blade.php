@@ -90,7 +90,7 @@
 
                                         {{-- Next link --}}
                                         @php
-                                            $route = route('user.cards');
+                                            $route = route('user.edit.intro-screen', Request::segment(3));
 
                                             if ($plan_details->google_wallet == 1 && is_dir(base_path('plugins/GoogleWallet')) && $business_card->type != 'personal') {
                                                 $route = route('user.edit.google-wallet', Request::segment(3));

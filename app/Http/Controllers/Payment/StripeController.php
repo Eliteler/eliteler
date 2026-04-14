@@ -92,7 +92,7 @@ class StripeController extends Controller
                     $amountToBePaid = ($plan_details->plan_price + $appliedTaxInTotal);
                 }
 
-                $amountToBePaidPaise = $amountToBePaid * 100;
+                $amountToBePaidPaise = (int) $amountToBePaid * 100;
 
                 \Stripe\Stripe::setApiKey($config[10]->config_value);
                 $gobiz_transaction_id = uniqid();

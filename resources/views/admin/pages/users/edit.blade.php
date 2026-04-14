@@ -140,6 +140,7 @@
                                                         'plugins' => __('Plugins'),
                                                         'in_app_purchases' => __('In App Purchases'),
                                                         'vcard_store' => __('Admin vCards & Stores'),
+                                                        'business_card_intros' => __('Business Card Intros'),
                                                     ];
                                                 
                                                     // Decode user permissions safely

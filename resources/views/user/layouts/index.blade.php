@@ -114,7 +114,7 @@
         @endif
 
         {{-- Check email verification --}}
-        @if ($config[43]->config_value == '1' && auth()->user()->email_verified_at == null)
+        @if ($config[43]->config_value == '1' && auth()->check() && auth()->user()->email_verified_at == null)
             <div class="page-wrapper mt-3">
                 @include('auth.verification-notice')
             </div>

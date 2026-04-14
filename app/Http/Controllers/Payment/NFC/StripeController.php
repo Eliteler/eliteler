@@ -94,7 +94,7 @@ class StripeController extends Controller
                     $amountToBePaid = ($nfcDetails->nfc_card_price + $appliedTaxInTotal);
                 }
 
-                $amountToBePaidPaise = $amountToBePaid * 100;
+                $amountToBePaidPaise = (int) $amountToBePaid * 100;
 
                 \Stripe\Stripe::setApiKey($config[10]->config_value);
 

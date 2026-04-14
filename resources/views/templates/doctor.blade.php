@@ -1,6 +1,17 @@
 <!doctype html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
+@php
+    use Illuminate\Support\Facades\Session;
+    use App\BusinessCardIntro;
+
+    if (isset($service_booking_details) && $service_booking_details->service_booking == 1) {
+        $service_booking_available_days = json_decode($service_booking_details->service_booking_available_days);
+    }
+
+    $introScreen = BusinessCardIntro::where('business_card_intro_id', $business_card_details->intro_screen)->where('status', 1)->first();
+@endphp
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -32,6 +43,11 @@
     {!! OpenGraph::generate() !!}
     {!! Twitter::generate() !!}
     {!! JsonLd::generate() !!}
+
+    {{-- Intro Screen CSS --}}
+    @if ($introScreen != null)
+        <link rel="stylesheet" href="{{ asset('templates/css/intros/' . $introScreen->intro_code . '.min.css') }}">
+    @endif
 
     {{-- Fonts --}}
     <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -102,21 +118,33 @@
             <link rel="manifest" href="{{ $manifest }}">
         @endif
     @endif
-
-    @php
-        use Illuminate\Support\Facades\Session;
-    @endphp
 </head>
 
 <body class="bg-blue-50 min-h-screen"
     dir="{{ App::isLocale('ar') || App::isLocale('ur') || App::isLocale('he') ? 'rtl' : 'ltr' }}">
 
+    {{-- Loader --}}
+    @if ($introScreen != null)
+        <!-- Loader -->
+        <div id="loader">
+            <div class="spinner"></div>
+        </div>
+    @endif
+
     {{-- Start Check password protected --}}
     @if ($business_card_details->password == null || Session::get('password_protected') == true)
         {{-- Check business details --}}
         @if ($business_card_details != null)
-            <div class="container max-w-2xl mx-auto relative">
-                <div class="bg-white shadow-[0_0_4px_rgba(0,0,0,0.1)] overflow-hidden mt-0">
+        <div id="smooth-wrapper">        
+            <div id="smooth-content" class="container max-w-2xl mx-auto relative">
+                {{-- Index Screen --}}
+                @if ($introScreen != null)
+                    @include("templates.includes.intros.{$introScreen->intro_code}", [
+                        'theme' => $business_card_details->theme_id
+                    ])
+                @endif 
+
+                <div id="content-screen" class="bg-white shadow-[0_0_4px_rgba(0,0,0,0.1)] overflow-hidden mt-0">
                     <!-- Start Cover Image Section -->
                     @if ($business_card_details->cover_type == 'none')
                         <div class="h-64 lg:h-80 relative" id="profile">
@@ -1475,6 +1503,7 @@
                     </div>
                 </div>
             </div>
+        </div>
         @endif
     @endif
     {{-- End Check password protected --}}
@@ -1531,39 +1560,39 @@
                 </div>
             </div>
         </div>
-    @endif
-    {{-- End Check password protected Modal --}}
+    @else
+        <!-- Include PWA modal -->
+        @if ($plan_details != null)
+            {{-- Check PWA --}}
+            @if ($plan_details['pwa'] == 1 && $business_card_details->is_enable_pwa == 1)
+                @include('vendor.laravelpwa.new_pwa_modal', [
+                    'primary_color' => 'blue',
+                    'img' => $business_card_details->profile
+                ])
+            @endif
+        @endif
 
-    <!-- Include PWA modal -->
-    @if ($plan_details != null)
-    {{-- Check PWA --}}
-    @if ($plan_details['pwa'] == 1 && $business_card_details->is_enable_pwa == 1)
-        @include('vendor.laravelpwa.new_pwa_modal', [
-            'primary_color' => 'blue',
-            'img' => $business_card_details->profile
-        ])
-    @endif
+        {{-- Include Newsletter Modal --}}
+        @if ($business_card_details != null)
+            {{-- Check Newsletter --}}
+            @if (!empty($business_card_details->is_newsletter_pop_active) && $business_card_details->is_newsletter_pop_active == 1)
+                @include('templates.includes.old_theme_newsletter_modal', [
+                    'primary_color' => 'blue'
+                ])
+            @endif
+        @endif
 
-    {{-- Include Newsletter Modal --}}
-    @if ($business_card_details != null)
-        {{-- Check Newsletter --}}
-        @if (!empty($business_card_details->is_newsletter_pop_active) && $business_card_details->is_newsletter_pop_active == 1)
-            @include('templates.includes.old_theme_newsletter_modal', [
-                'primary_color' => 'blue'
-            ])
+        {{-- Include Information Popup Modal --}}
+        @if ($business_card_details != null)
+            {{-- Check Information Popup --}}
+            @if (!empty($business_card_details->is_info_pop_active) && $business_card_details->is_info_pop_active == 1)
+                @include('templates.includes.old_theme_information_popup_modal', [
+                    'primary_color' => 'blue'
+                ])
+            @endif
         @endif
     @endif
-
-    {{-- Include Information Popup Modal --}}
-    @if ($business_card_details != null)
-        {{-- Check Information Popup --}}
-        @if (!empty($business_card_details->is_info_pop_active) && $business_card_details->is_info_pop_active == 1)
-            @include('templates.includes.old_theme_information_popup_modal', [
-                'primary_color' => 'blue'
-            ])
-        @endif
-    @endif
-@endif
+    {{-- End Check password protected Modal --}}    
 
     {{-- Jquery --}}
     <script src="{{ url('js/jquery.min.js') }}"></script>
@@ -1577,11 +1606,6 @@
     <script src="{{ url('js/flatpickr.min.js') }}"></script>
     {{-- Custom JS --}}
     @yield('custom-js')
-    @php
-        if (isset($service_booking_details) && $service_booking_details->service_booking == 1) {
-            $service_booking_available_days = json_decode($service_booking_details->service_booking_available_days);
-        }
-    @endphp
     
     {{-- Flatpickr JS --}}
     <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/{{ app()->getLocale() }}.js"></script>
@@ -2026,6 +2050,14 @@
             offset: 50, // Offset in pixels from the top
             easing: "easeInOutCubic", // Scroll easing function
         });
+
+        @if ($introScreen != null)
+            // Wait until all assets are fully loaded
+            window.addEventListener("load", () => {
+                const loader = document.getElementById("loader");
+                loader.classList.add("hidden");
+            });
+        @endif
     </script>
 </body>
 

@@ -1,5 +1,107 @@
 @extends('admin.layouts.index', ['header' => true, 'nav' => true, 'demo' => true])
 
+{{-- Custom CSS --}}
+@section('css')
+    <style>
+        #uploadLoader {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            z-index: 9999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        #uploadLoader .cube-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 18px);
+            grid-template-rows: repeat(3, 18px);
+            gap: 6px;
+        }
+
+        #uploadLoader .cube {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            background: #4f8ef7;
+            animation: cubeFade 1.4s ease-in-out infinite;
+        }
+
+        #uploadLoader .cube:nth-child(1) {
+            animation-delay: 0.0s;
+        }
+
+        #uploadLoader .cube:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+
+        #uploadLoader .cube:nth-child(3) {
+            animation-delay: 0.2s;
+        }
+
+        #uploadLoader .cube:nth-child(4) {
+            animation-delay: 0.3s;
+        }
+
+        #uploadLoader .cube:nth-child(5) {
+            animation-delay: 0.4s;
+        }
+
+        #uploadLoader .cube:nth-child(6) {
+            animation-delay: 0.5s;
+        }
+
+        #uploadLoader .cube:nth-child(7) {
+            animation-delay: 0.6s;
+        }
+
+        #uploadLoader .cube:nth-child(8) {
+            animation-delay: 0.7s;
+        }
+
+        #uploadLoader .cube:nth-child(9) {
+            animation-delay: 0.8s;
+        }
+
+        #uploadLoader .loader-title {
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 600;
+            font-family: inherit;
+            margin: 0;
+            letter-spacing: 0.04em;
+        }
+
+        #uploadLoader .loader-subtitle {
+            color: rgba(255, 255, 255, 0.45);
+            font-size: 12px;
+            font-family: inherit;
+            margin: 0;
+        }
+
+        @keyframes cubeFade {
+
+            0%,
+            70%,
+            100% {
+                opacity: 0.15;
+                transform: scale(0.85);
+            }
+
+            35% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+    </style>
+@endsection
+
 @section('content')
     <div class="page-wrapper">
         <!-- Page title -->
@@ -222,6 +324,7 @@
         {{-- Footer --}}
         @include('admin.includes.footer')
     </div>
+
     <!-- Confirmation Modal -->
     <div class="modal modal-blur fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel"
         aria-hidden="true">
@@ -241,8 +344,29 @@
             </div>
         </div>
     </div>
+
+    {{-- Upload Loader --}}
+    <div id="uploadLoader">
+        <div class="cube-grid">
+            <div class="cube"></div>
+            <div class="cube"></div>
+            <div class="cube"></div>
+            <div class="cube"></div>
+            <div class="cube"></div>
+            <div class="cube"></div>
+            <div class="cube"></div>
+            <div class="cube"></div>
+            <div class="cube"></div>
+        </div>
+        <p class="loader-title">{{ __('Installing Template...') }}</p>
+        <p class="loader-subtitle">{{ __('Please don\'t close this page') }}</p>
+    </div>
+
 @section('scripts')
     <script type="text/javascript">
+        "use strict";
+
+        // Confirm delete
         function confirmationModel(pluginId) {
             // trugger alert
             // alert(pluginId);
@@ -254,13 +378,14 @@
 
         }
 
+        // Confirm delete
         function confirmDelete(btn) {
             let pluginId = btn.getAttribute('data-plugin-id');
             let form = document.getElementById('deleteForm' + pluginId);
             form.submit();
         }
 
-
+        // Open file manager
         function openFileManager() {
             let input = document.createElement('input');
             input.type = 'file';
@@ -274,9 +399,14 @@
             input.click();
         }
 
+        // Send ZIP file to server
         function sendZipFile(file) {
             let formData = new FormData();
             formData.append('zip_file', file);
+
+            // Show loader
+            let loader = document.getElementById('uploadLoader');
+            loader.style.display = 'flex';
 
             fetch("{{ route('admin.plugin.upload') }}", {
                     method: 'POST',
@@ -287,13 +417,19 @@
                 })
                 .then(response => response.json())
                 .then(data => {
+                    // Hide loader before reload
+                    loader.style.display = 'none';
+
                     if (data.message === 'Plugin installation success!') {
                         window.location.reload(true);
                     } else if (data.message === 'Plugin Installation failed!') {
                         window.location.reload(true);
                     }
                 })
-                .catch(error => {});
+                .catch(error => {
+                    // Hide loader on error too
+                    loader.style.display = 'none';
+                });
         }
     </script>
 @endsection

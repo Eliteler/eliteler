@@ -1,6 +1,17 @@
 <!doctype html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
+@php
+    use Illuminate\Support\Facades\Session;
+    use App\BusinessCardIntro;
+
+    if (isset($service_booking_details) && $service_booking_details->service_booking == 1) {
+        $service_booking_available_days = json_decode($service_booking_details->service_booking_available_days);
+    }
+
+    $introScreen = BusinessCardIntro::where('business_card_intro_id', $business_card_details->intro_screen)->where('status', 1)->first();
+@endphp
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -33,13 +44,18 @@
     {!! Twitter::generate() !!}
     {!! JsonLd::generate() !!}
 
+    {{-- Intro Screen CSS --}}
+    @if ($introScreen != null)
+        <link rel="stylesheet" href="{{ asset('templates/css/intros/' . $introScreen->intro_code . '.min.css') }}">
+    @endif
+
     <!-- Tailwind CSS -->
     <link rel="stylesheet" href="{{ url('templates/css/modern.css') }}">
     {{-- Slick --}}
     <link rel="stylesheet" href="{{ url('css/slick.css') }}" />
     <link rel="stylesheet" href="{{ url('css/slick-theme.css') }}" />
     {{-- Fontawesome CSS --}}
-    <link rel="stylesheet" href="{{ url('css/fontawesome.min.css') }}" />
+    <link rel="stylesheet" href="{{ url('css/fontawesome.min.css') }}" />    
 
     {{-- Google Fonts --}}
     <link
@@ -130,8 +146,7 @@
         .animate-move-y {
             animation: move-y 7s infinite;
         }
-
-
+        
         /* Loader wrapper */
         #loader {
             position: fixed;
@@ -218,21 +233,15 @@
     @endif
 </head>
 
-@php
-    use Illuminate\Support\Facades\Session;
-
-    if (isset($service_booking_details) && $service_booking_details->service_booking == 1) {
-        $service_booking_available_days = json_decode($service_booking_details->service_booking_available_days);
-    }
-@endphp
-
 <body class="bg-green-100 min-h-screen"
     dir="{{ App::isLocale('ar') || App::isLocale('ur') || App::isLocale('he') ? 'rtl' : 'ltr' }}">
 
     <!-- Loader -->
-    <div id="loader">
-        <div class="spinner"></div>
-    </div>
+    @if ($introScreen != null)
+        <div id="loader">
+            <div class="spinner"></div>
+        </div>
+    @endif
 
     {{-- Page Content --}}
     <div id="smooth-wrapper">
@@ -242,8 +251,12 @@
                 {{-- Check business details --}}
                 @if ($business_card_details != null)
                     <div class="bg-white shadow-[0_0_4px_rgba(0,0,0,0.1)] overflow-hidden relative">
-                        {{-- Index 3D --}}
-                        @include('templates.includes.vcard.modern.index')                       
+                        {{-- Index Screen --}}
+                        @if ($introScreen != null)
+                            @include("templates.includes.intros.{$introScreen->intro_code}", [
+                                'theme' => $business_card_details->theme_id
+                            ])
+                        @endif                   
 
                         <div id="content-screen">
                             {{-- Banner Section --}}
@@ -351,11 +364,7 @@
 
     {{-- Jquery --}}
     <script src="{{ url('js/jquery.min.js') }}"></script>
-    {{-- Animation --}}
-    <script src="{{ url('js/gobiz-animation.min.js') }}"></script>
-    <script src="{{ url('js/gobiz-animation-scrolltrigger.min.js') }}"></script>
-    <script src="{{ url('js/gobiz-animation-splittext.js') }}"></script>
-    <script src="{{ url('templates/js/modern-animation.js') }}"></script>
+    
     {{-- Smooth Scroll --}}
     <script src="{{ url('js/smooth-scroll.polyfills.min.js') }}"></script>
     {{-- Other JS --}}
@@ -364,6 +373,11 @@
     <script src="{{ url('js/flatpickr.min.js') }}"></script>
     {{-- Slick --}}
     <script src="{{ url('js/slick.min.js') }}"></script>
+
+    {{-- Animation --}}
+    <script src="{{ url('js/gobiz-animation.min.js') }}"></script>
+    <script src="{{ url('js/gobiz-animation-scrolltrigger.min.js') }}"></script>
+    <script src="{{ url('js/gobiz-animation-splittext.js') }}"></script>
 
     {{-- Custom JS --}}
     @yield('custom-js')
@@ -482,6 +496,75 @@
                 infinite: true,
                 autoplaySpeed: 3000,
                 autoplay: true,
+            });
+
+            // animation
+            gsap.registerPlugin(SplitText);
+            const textMultipleElements = document.querySelectorAll(".custom-head");
+
+            // Text Effect
+            textMultipleElements.forEach((textElement) => {
+            // Use SplitText plugin for better performance and control
+            const splitText = new SplitText(textElement, {
+                type: "chars",
+                charsClass: "wave-char",
+            });
+
+            const chars = splitText.chars;
+
+            // Set initial state
+            gsap.set(chars, {
+                y: 20,
+                opacity: 0,
+            });
+
+            // Create a timeline for this element
+            const tl = gsap.timeline({ paused: true });
+
+            // Define the entrance animation
+            tl.to(chars, {
+                y: 0,
+                opacity: 1,
+                color: "#000000",
+                duration: 0.5,
+                ease: "back.out(1.2)",
+                stagger: {
+                amount: 0.8,
+                from: "start",
+                },
+            });
+
+            // Create ScrollTrigger with better sync
+            ScrollTrigger.create({
+                trigger: textElement,
+                start: "top 80%",
+                end: "bottom 15%",
+                animation: tl,
+                toggleActions: "play none none reverse",
+                // Remove scrub to prevent conflict with toggleActions
+                // scrub: 1,
+
+                // Optional: Add refresh on update to handle fast scrolling
+                refreshPriority: -1,
+
+                // Ensure proper cleanup and state management
+                onToggle: (self) => {
+                if (self.isActive) {
+                    // Ensure we're in the correct state when entering
+                    gsap.set(chars, {
+                    y: 20,
+                    opacity: 0,
+                    });
+                    tl.restart();
+                } else {
+                    // Ensure we're in the correct state when leaving
+                    tl.reverse();
+                }
+                },
+
+                // Handle fast scrolling edge cases
+                onUpdate: (self) => {},
+            });
             });
         });
     </script>
@@ -854,12 +937,13 @@
             easing: "easeInOutCubic", // Scroll easing function
         });
 
-
-        // Wait until all assets are fully loaded
-        window.addEventListener("load", () => {
-            const loader = document.getElementById("loader");
-            loader.classList.add("hidden");
-        });
+        @if ($introScreen != null)
+            // Wait until all assets are fully loaded
+            window.addEventListener("load", () => {
+                const loader = document.getElementById("loader");
+                loader.classList.add("hidden");
+            });
+        @endif
     </script>
 </body>
 

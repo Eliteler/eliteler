@@ -74,6 +74,11 @@ return [
             'root' => public_path('img/vCards'),
         ],
 
+        'intros' => [
+            'driver' => 'local',
+            'root' => public_path('img/intros'),
+        ],
+
     ],
 
     /*

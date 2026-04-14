@@ -31,7 +31,6 @@
                 <i class="fas fa-download"></i> {{ __('Install App') }}
             </button>
         </div>
-
     </div>
 </div>
 

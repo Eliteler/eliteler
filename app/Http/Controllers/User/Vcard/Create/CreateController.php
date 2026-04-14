@@ -238,7 +238,7 @@ class CreateController extends Controller
 
                     $card->save();
 
-                    return redirect()->route('user.social.links', $cardId)->with('success', trans('New Business Card Created Successfully!'));
+                    return redirect()->route('user.edit.social.links', $cardId)->with('success', trans('New Business Card Created Successfully!'));
                 } catch (\Exception $th) {
                     return redirect()->back()->with('failed', trans('Sorry, the personalized link was already registered.'));
                 }
