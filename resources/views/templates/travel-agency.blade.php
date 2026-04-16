@@ -247,18 +247,15 @@
                                         class="w-28 h-28 md:w-36 md:h-36 rounded-full object-cover border-4 border-blue-600" />
                                     <div class="flex flex-col ltr:ml-4 rtl:mr-4 ltr:lg:ml-6 rtl:lg:mr-6">
                                         {{-- Name --}}
-                                        <h1 class="lg:text-5xl text-3xl font-medium text-gray-900 head text-start">
-                                            @if(!empty($business_card_details->title2))
-                                                {{ $business_card_details->title2 }} <br>
-                                            @endif
-                                            @if(!empty($business_card_details->subtitle2))
-                                                {{ $business_card_details->subtitle2 }} <br>
-                                            @endif
-                                            {{ $business_card_details->title }}</h1>
+                                        @if(!empty($business_card_details->title2))
+<h1 class="lg:text-5xl text-3xl font-medium text-gray-900 head text-start" style="margin-bottom: 0px; padding-bottom: 0px;">{{ $business_card_details->title2 }}</h1>
+@endif
+@if(!empty($business_card_details->subtitle2))
+<p class="text-blue-600 text-base font-bold mt-1 text-md text-start" style="margin-bottom: 5px; padding-bottom: 0px;">{{ $business_card_details->subtitle2 }}</p>
+@endif
+<h1 class="lg:text-5xl text-3xl font-medium text-gray-900 head text-start">{{ $business_card_details->title }}</h1>
                                         {{-- Job Title --}}
-                                        <p class="text-blue-600 text-base font-bold mt-1 text-md text-start">
-                                            {{ $card_details->sub_title }}
-                                        </p>
+                                        <p class="text-blue-600 text-base font-bold mt-1 text-md text-start">{{ $card_details->sub_title }}</p>
                                         {{-- About --}}
                                         @if (optional($business_card_details)->description || optional($business_card_details)->address)
                                             <div

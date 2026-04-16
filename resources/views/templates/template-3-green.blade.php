@@ -140,13 +140,13 @@
                                     {{-- Business name --}}
                                     <div class="relative my-3">
                                         <div class="flex">
-                                            <h2 class="font-medium">@if(!empty($business_card_details->title2))
-                                    {{ $business_card_details->title2 }} <br>
+                                            @if(!empty($business_card_details->title2))
+<h2 class="font-medium" style="margin-bottom: 0px; padding-bottom: 0px;">{{ $business_card_details->title2 }}</h2>
 @endif
 @if(!empty($business_card_details->subtitle2))
-                                    {{ $business_card_details->subtitle2 }} <br>
+<p class="text-sm text-gray-500" style="margin-bottom: 5px; padding-bottom: 0px;">{{ $business_card_details->subtitle2 }}</p>
 @endif
-                                    {{ $business_card_details->title }}</h2>
+<h2 class="font-medium">{{ $business_card_details->title }}</h2>
                                         </div>
                                         <p class="text-sm text-gray-500">{{ $card_details->sub_title }}</p>
                                     </div>

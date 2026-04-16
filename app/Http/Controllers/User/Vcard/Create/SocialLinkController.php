@@ -95,11 +95,54 @@ class SocialLinkController extends Controller
                     for ($i = 0; $i < count($request->icon); $i++) {
 
                         // Check dynamic fields
-                        if (isset($request->icon[$i]) && isset($request->label[$i]) && isset($request->value[$i])) {
+                        if (isset($request->icon[$i]) && isset($request->value[$i])) {
 
+                            $type = $request->type[$i];
                             $customContent = $request->value[$i];
-                            // Replace http with https
-                            $customContent = str_replace('http://', 'https://', $customContent);
+
+                            if (!empty($customContent)) {
+                                if (strpos($customContent, 'http://') === 0 || strpos($customContent, 'https://') === 0) {
+                                    $customContent = str_replace('http://', 'https://', $customContent);
+                                } else {
+                                    $baseUrls = [
+                                        'facebook' => 'facebook.com/',
+                                        'instagram' => 'instagram.com/',
+                                        'x-twitter' => 'x.com/',
+                                        'linkedin' => 'linkedin.com/in/',
+                                        'pinterest' => 'pinterest.com/',
+                                        'reddit' => 'reddit.com/user/',
+                                        'tiktok' => 'tiktok.com/@',
+                                        'threads' => 'threads.net/@',
+                                        'snapchat' => 'snapchat.com/add/',
+                                        'telegram' => 't.me/',
+                                        'tumblr' => 'tumblr.com/',
+                                        'quora' => 'quora.com/profile/',
+                                        'wa' => 'wa.me/',
+                                    ];
+
+                                    if (isset($baseUrls[$type])) {
+                                        if (strpos($customContent, $baseUrls[$type]) === false) {
+                                            if (in_array($type, ['tiktok', 'threads']) && strpos($customContent, '@') === 0) {
+                                                $customContent = substr($customContent, 1);
+                                            }
+
+                                            // Handle WhatsApp specifically to remove + or 00
+                                            if ($type == 'wa') {
+                                                $customContent = ltrim($customContent, '+');
+                                                if (strpos($customContent, '00') === 0) {
+                                                    $customContent = substr($customContent, 2);
+                                                }
+                                            }
+
+                                            $customContent = 'https://' . $baseUrls[$type] . ltrim($customContent, '/');
+                                        } else {
+                                            $customContent = 'https://' . ltrim($customContent, '/');
+                                        }
+                                    } elseif ($type == 'url' || $type == 'g-review') {
+                                        $customContent = 'https://' . ltrim($customContent, '/');
+                                    }
+                                }
+                            }
 
                             // YouTube (standard, short, shorts)
                             if ($request->type[$i] == 'youtube') {
@@ -184,7 +227,7 @@ class SocialLinkController extends Controller
                             $field->title = 'Social Links';
                             $field->type = $request->type[$i];
                             $field->icon = $request->icon[$i];
-                            $field->label = $request->label[$i];
+                            $field->label = $request->label[$i] ?? '';
                             $field->content = $customContent;
                             $field->position = $i + 1;
                             $field->save();

@@ -196,14 +196,10 @@
                         <div class="profile-section" id="profile">
                             <img src="{{ url($business_card_details->profile) }}"
                                 alt="{{ $business_card_details->title }}" class="profile-img gsap-scale" />
-                            <h1 class="name gsap-slide-up">
-                                            @if(!empty($business_card_details->title2))
-                                                {{ $business_card_details->title2 }} <br>
-                                            @endif
-                                            @if(!empty($business_card_details->subtitle2))
-                                                {{ $business_card_details->subtitle2 }} <br>
-                                            @endif
-                                            {{ $business_card_details->title }}</h1>
+                            @if(!empty($business_card_details->title2))
+<h1 class="name gsap-slide-up" style="margin-bottom: 0px; padding-bottom: 0px;">{{ $business_card_details->title2 }}</h1>
+@endif
+<h1 class="name gsap-slide-up">{{ $business_card_details->title }}</h1>
                             <span class="title-badge gsap-slide-up">{{ $card_details->sub_title }}</span>
                             @if (isset($business_card_details->description))
                                 <div class="desc gsap-slide-up">{!! $business_card_details->description !!}</div>

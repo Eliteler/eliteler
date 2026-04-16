@@ -29,10 +29,10 @@
     <meta name="theme-color" content="red" />
 
     <!-- Add to homescreen for Chrome on Android -->
-    <meta name="application-name" content="{{ $card_details->title }}">
+    <meta name="application-name" content="{{ $business_card_details->title }}">
 
     <!-- Add to homescreen for Safari on iOS -->
-    <meta name="apple-mobile-web-app-title" content="{{ $card_details->title }}">
+    <meta name="apple-mobile-web-app-title" content="{{ $business_card_details->title }}">
 
     <!-- Tile for Win8 -->
     <meta name="msapplication-TileColor" content="red">
@@ -505,7 +505,7 @@
                                     <span class="text-white">
                                         {{ __('Copyright') }} &copy;
                                         <span id="year"></span>
-                                        <a href="{{ url($business_card_details->{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}</a>.
+                                        <a href="{{ url()->current() }}">{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : $business_card_details->title }}</a>.
                                         {{ __('All rights reserved.') }}
                                     </span>
                                 </div>
@@ -931,7 +931,7 @@
     {{-- WharApp Chat --}}
     @include('templates.includes.whatsapp-float', [
         'businessImage' => $business_card_details->profile,
-        'businessName' => $card_details->title,
+        'businessName' => $business_card_details->title,
         'whatsappNumber' => $enquiry_button,
     ])
 

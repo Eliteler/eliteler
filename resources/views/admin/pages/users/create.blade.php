@@ -70,8 +70,9 @@
                                                 <div class="form-label required">{{ __('Role') }}</div>
                                                 <select class="form-select role" name="role" required>
                                                     <option value="">{{ __('Choose a role') }}</option>
-                                                    <option value="3" selected>{{ __('Administrator') }}</option>
-                                                    <option value="4">{{ __('Manager') }}</option>
+                                                    @foreach($roles as $role)
+                                                        <option value="{{ $role->role_id }}">{{ __($role->role_name) }}</option>
+                                                    @endforeach
                                                 </select>
                                             </div>
                                         </div>

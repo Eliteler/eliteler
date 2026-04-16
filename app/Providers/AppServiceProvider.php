@@ -67,6 +67,12 @@ class AppServiceProvider extends ServiceProvider
         if (App::environment('production')) {
             URL::forceScheme('https');
         }
+
+        // Force root URL to remove /public from generated links
+        if (config('app.url')) {
+            URL::forceRootUrl(config('app.url'));
+        }
+
         Schema::defaultStringLength(191);
 
         DB::listen(function ($query) {

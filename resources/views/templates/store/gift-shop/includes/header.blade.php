@@ -1,7 +1,7 @@
 <header class="navbar navbar-expand m-0 p-0 pb-1">
     {{-- Greeting message --}}
     <h3 class="alert alert-important alert-warning bg-dark">
-        {{ $business_card_details->sub_title }}
+        @if(!empty($business_card_details->subtitle2)){{ $business_card_details->subtitle2 }} <br>@endif{{ $business_card_details->sub_title }}
     </h3>
     <div class="container-xl mx-auto" style="margin-top: -10px;">
         <div class="navbar-brand navbar-brand-autodark d-none-navbar-horizontal pe-0 pe-md-3" style="margin-top: -4px;">

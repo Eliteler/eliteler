@@ -280,18 +280,15 @@
                                 <div class="text-center mt-4 relative -mx-6">
                                     <div class="relative z-10">
                                         {{-- Name --}}
-                                        <h1 class="lg:text-4xl text-3xl font-medium text-[#121212] head tracking-tighter">
-                                            @if(!empty($business_card_details->title2))
-                                                {{ $business_card_details->title2 }} <br>
-                                            @endif
-                                            @if(!empty($business_card_details->subtitle2))
-                                                {{ $business_card_details->subtitle2 }} <br>
-                                            @endif
-                                            {{ $business_card_details->title }}</h1>
+                                        @if(!empty($business_card_details->title2))
+<h1 class="lg:text-4xl text-3xl font-medium text-[#121212] head tracking-tighter" style="margin-bottom: 0px; padding-bottom: 0px;">{{ $business_card_details->title2 }}</h1>
+@endif
+@if(!empty($business_card_details->subtitle2))
+<p class="text-teal-500 font-bold mt-2 text-md" style="margin-bottom: 5px; padding-bottom: 0px;">{{ $business_card_details->subtitle2 }}</p>
+@endif
+<h1 class="lg:text-4xl text-3xl font-medium text-[#121212] head tracking-tighter">{{ $business_card_details->title }}</h1>
                                         {{-- Job Title --}}
-                                        <p class="text-teal-500 font-bold mt-2 text-md">
-                                            {{ $card_details->sub_title }}
-                                        </p>
+                                        <p class="text-teal-500 font-bold mt-2 text-md">{{ $card_details->sub_title }}</p>
                                         {{-- About --}}
                                         @if (isset($business_card_details->description) || isset($business_card_details->address))
                                             <div

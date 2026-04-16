@@ -192,14 +192,13 @@
 
                             <div class="w-full px-2">
                                 <div class="pt-0 pb-3">
-                                    <h3 class="font-bold text-gray-800 text-2xl mb-1 text-center sm:text-left">@if(!empty($business_card_details->title2))
-                                    {{ $business_card_details->title2 }} <br>
+                                    @if(!empty($business_card_details->title2))
+<h3 class="font-bold text-gray-800 text-2xl mb-1 text-center sm:text-left" style="margin-bottom: 0px; padding-bottom: 0px;">{{ $business_card_details->title2 }}</h3>
 @endif
 @if(!empty($business_card_details->subtitle2))
-                                    {{ $business_card_details->subtitle2 }} <br>
+<p class="text-gray-800 text-center sm:text-left" style="margin-bottom: 5px; padding-bottom: 0px;">{{ $business_card_details->subtitle2 }}</p>
 @endif
-                                    {{ $business_card_details->title }}
-                                    </h3>
+<h3 class="font-bold text-gray-800 text-2xl mb-1 text-center sm:text-left">{{ $business_card_details->title }}</h3>
                                     <p class="text-gray-800 text-center sm:text-left">{{ $card_details->sub_title }}</p>
                                 </div>
                             </div>

@@ -13,6 +13,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\User;
+use App\Role;
 use App\Setting;
 use App\Classes\CreateUser;
 use Illuminate\Http\Request;
@@ -46,16 +47,12 @@ class UserController extends Controller
     public function users(Request $request)
     {
         if ($request->ajax()) {
-            $data = User::where('id', '!=', '1')->where('role_id', '!=', '2')->get();
+            $data = User::with('role')->where('id', '!=', '1')->where('role_id', '!=', '2')->get();
 
             return DataTables::of($data)
                 ->addIndexColumn('id')
                 ->addColumn('role', function ($row) {
-                    if ($row->role_id == 3) {
-                        return __('Administrator');
-                    } else {
-                        return __('Manager');
-                    }
+                    return $row->role ? __($row->role->role_name) : __('No Role');
                 })
                 ->addColumn('name', function ($row) {
                     $viewUrl = route('admin.view.user', $row->user_id);
@@ -113,8 +110,9 @@ class UserController extends Controller
         // Queries
         $config = DB::table('config')->get();
         $settings = Setting::where('status', 1)->first();
+        $roles = Role::whereNotIn('role_id', [1, 2])->get();
 
-        return view('admin.pages.users.create', compact('settings', 'config'));
+        return view('admin.pages.users.create', compact('settings', 'config', 'roles'));
     }
 
     // Save User
@@ -164,7 +162,8 @@ class UserController extends Controller
         if ($user_details == null) {
             return redirect()->route('admin.users')->with('failed', trans('Not Found!'));
         } else {
-            return view('admin.pages.users.edit', compact('user_details', 'settings'));
+            $roles = Role::whereNotIn('role_id', [1, 2])->get();
+            return view('admin.pages.users.edit', compact('user_details', 'settings', 'roles'));
         }
     }
 

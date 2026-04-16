@@ -309,7 +309,7 @@
                                             <div
                                                 class="{{ $type != 'custom' ? 'col-md-6 col-xl-6' : 'col-md-4 col-xl-4' }}">
                                                 <div class="mb-3">
-                                                    <label class="form-label">{{ __('Title 2 (Optional)') }}</label>
+                                                    <label class="form-label">{{ __('Title in another language (Optional)') }}</label>
                                                     <input type="text" class="form-control" name="title2"
                                                         value="{{ old('title2') }}"
                                                         placeholder="{{ __('Secondary Title') }}">
@@ -319,7 +319,7 @@
                                             <div
                                                 class="{{ $type != 'custom' ? 'col-md-6 col-xl-6' : 'col-md-4 col-xl-4' }}">
                                                 <div class="mb-3">
-                                                    <label class="form-label">{{ __('Sub Title 2 (Optional)') }}</label>
+                                                    <label class="form-label">{{ __('Subtitle in another language (Optional)') }}</label>
                                                     <input type="text" class="form-control" name="subtitle2"
                                                         value="{{ old('subtitle2') }}"
                                                         placeholder="{{ __('Secondary Sub Title') }}">
@@ -595,6 +595,11 @@
                                 </button>
                             </div>
                             <div class="col">
+                                <a class="btn btn-success w-100" id="coverUploadOriginal">
+                                    {{ __('No Crop') }}
+                                </a>
+                            </div>
+                            <div class="col">
                                 <a class="btn btn-danger w-100" id="coverCrop">
                                     {{ __('Crop') }}
                                 </a>
@@ -603,7 +608,7 @@
                     </div>
                 </div>
             </div>
-        </div> 
+        </div>
     </div>
 
     {{-- Custom JS --}}
@@ -727,115 +732,116 @@
             });
         </script>
 
-        {{-- Profile cover image cropping --}}
+        {{-- Profile cover image cropping (optional) --}}
         <script>
             $(document).ready(function() {
-                var cropper;
+                var coverCropper;
                 var uploadedCoverImageURL;
-
-                var aspectRatio = 16 / 4; // Aspect ratio of : 16:4
-
-                // Update aspect ratio based on theme ID
-                function updateAspectRatio() {
-                    if ( coverThemeId == "588969111167" || coverThemeId == "588969111165" ||
-                        coverThemeId === "588969111164" || coverThemeId === "588969111163" || coverThemeId === "588969111162" || coverThemeId === "588969111161" || 
-                        coverThemeId === "588969111160" || coverThemeId === "588969111153" || coverThemeId === "588969111152" || coverThemeId === "588969111145" || coverThemeId === "588969111144" || coverThemeId === "588969111143" || 
-                        coverThemeId === "588969111142" || coverThemeId === "588969111141" || coverThemeId === "588969111140" || 
-                        coverThemeId === "588969111139" || coverThemeId === "588969111138" || coverThemeId === "588969111137" || 
-                        coverThemeId === "588969111136" || coverThemeId === "588969111135" || coverThemeId === "588969111134" || 
-                        coverThemeId === "588969111133" || coverThemeId === "588969111132" || coverThemeId === "588969111131" || 
-                        coverThemeId === "588969111130" || coverThemeId === "588969111129" || coverThemeId === "588969111128" || 
-                        coverThemeId === '588969111127' || coverThemeId === '588969111125' || coverThemeId === '588969111126') {
-                        aspectRatio = 24 / 12; // Aspect ratio for theme 588969111125: 24:12
-                    } else {
-                        aspectRatio = 24 / 12; // Default aspect ratio
-                    }
-                }
+                var coverFileOriginal; // Store the original file for "upload without cropping"
 
                 // Initialize cropper when modal is shown
                 $('#cropCoverModal').on('shown.bs.modal', function() {
-                    updateAspectRatio
-                        (); // Ensure the aspect ratio is updated based on the current `coverThemeId`
-                    cropper = new Cropper(document.getElementById('croppedCoverImage'), {
-                        aspectRatio: aspectRatio, // Aspect ratio of : 16:4
-                        viewMode: 3, // Set view mode to 3 (restrict the crop box to fit within the container, then scale the result image to fit exactly 512x512 pixels)
-                        autoCropArea: 1, // Auto crop the entire image
-                        cropBoxResizable: false, // Disable crop box resizing
+                    coverCropper = new Cropper(document.getElementById('croppedCoverImage'), {
+                        aspectRatio: NaN,
+                        viewMode: 1,
+                        autoCropArea: 1,
+                        cropBoxResizable: true,
                     });
                 }).on('hidden.bs.modal', function() {
-                    cropper.destroy();
+                    if (coverCropper) coverCropper.destroy();
                 });
 
-                // Handle image upload
+                // Handle image upload — show modal
                 $('#cover').change(function(e) {
                     var files = e.target.files;
-                    var reader = new FileReader();
+                    if (!files || files.length === 0) return;
 
+                    coverFileOriginal = files[0]; // Save original file
+
+                    var reader = new FileReader();
                     reader.onload = function(event) {
                         uploadedCoverImageURL = event.target.result;
                         $('#croppedCoverImage').attr('src', uploadedCoverImageURL);
                         $('#cropCoverModal').modal('show');
                     };
-
                     reader.readAsDataURL(files[0]);
                 });
 
-                // Handle crop button click
-                $('#coverCrop').click(function() {
-                    // Disable the button and add a loader
+                // Handle "Upload without cropping" button
+                $('#coverUploadOriginal').click(function() {
                     var $button = $(this);
                     $button.prop('disabled', true).html(
-                        '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Uploading...'
+                        '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> {{ __("Uploading...") }}'
                     );
 
-                    // Get the original dimensions
-                    const croppedCoverImage = document.getElementById('croppedCoverImage');
-                    const originalWidth = croppedCoverImage.naturalWidth;
-                    const originalHeight = croppedCoverImage.naturalHeight;
+                    var formData = new FormData();
+                    formData.append('croppedImage', coverFileOriginal);
 
-                    var canvas = cropper.getCroppedCanvas({
-                        width: originalWidth,
-                        height: originalHeight,
-                        imageSmoothingEnabled: true, // Enable image smoothing
-                        imageSmoothingQuality: 'high', // Set the image smoothing quality
+                    var csrfToken = $('meta[name="csrf-token"]').attr('content');
+
+                    $.ajax({
+                        url: '{{ route('user.vcard.cropped.image') }}',
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': csrfToken },
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function(response) {
+                            $('#cropCoverModal').modal('hide');
+                            $('input[name="cover"]').val(response.imageUrl);
+
+                            var imgURL = URL.createObjectURL(coverFileOriginal);
+                            $("#coverPreview").css('background-image', 'url(' + imgURL + ')');
+                        },
+                        error: function() {
+                            console.log('Upload error');
+                        },
+                        complete: function() {
+                            $button.prop('disabled', false).html('{{ __("Upload without cropping") }}');
+                        }
+                    });
+                });
+
+                // Handle "Crop" button click
+                $('#coverCrop').click(function() {
+                    var $button = $(this);
+                    $button.prop('disabled', true).html(
+                        '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> {{ __("Uploading...") }}'
+                    );
+
+                    var canvas = coverCropper.getCroppedCanvas({
+                        imageSmoothingEnabled: true,
+                        imageSmoothingQuality: 'high',
                     });
 
                     canvas.toBlob(function(coverBlob) {
                         var formData = new FormData();
                         formData.append('croppedImage', coverBlob);
 
-                        // Include CSRF token in the AJAX request
                         var csrfToken = $('meta[name="csrf-token"]').attr('content');
 
                         $.ajax({
                             url: '{{ route('user.vcard.cropped.image') }}',
                             method: 'POST',
-                            headers: {
-                                'X-CSRF-TOKEN': csrfToken
-                            },
+                            headers: { 'X-CSRF-TOKEN': csrfToken },
                             data: formData,
                             processData: false,
                             contentType: false,
                             success: function(response) {
-                                // Optionally, close the modal after successful upload
                                 $('#cropCoverModal').modal('hide');
-
-                                // Set the imageUrl in the #logo input field
                                 $('input[name="cover"]').val(response.imageUrl);
+
+                                var croppedCoverImageURL = coverCropper.getCroppedCanvas().toDataURL();
+                                $("#coverPreview").css('background-image', 'url(' + croppedCoverImageURL + ')');
                             },
                             error: function() {
                                 console.log('Upload error');
                             },
                             complete: function() {
-                                // Re-enable the button and restore its text
-                                $button.prop('disabled', false).html('Crop');
+                                $button.prop('disabled', false).html('{{ __("Crop") }}');
                             }
                         });
                     });
-
-                    // Display cropped image preview in #coverPreview
-                    var croppedCoverImageURL = cropper.getCroppedCanvas().toDataURL();
-                    $("#coverPreview").css('background-image', 'url(' + croppedCoverImageURL + ')');
                 });
             });
         </script>

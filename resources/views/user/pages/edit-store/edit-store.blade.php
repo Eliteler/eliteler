@@ -214,7 +214,7 @@ foreach ($themes as $theme) {
                                             {{-- Title 2 --}}
                                             <div class="col-md-6 col-xl-6">
                                                 <div class="mb-3">
-                                                    <label class="form-label">{{ __('Title 2 (Optional)') }}</label>
+                                                    <label class="form-label">{{ __('Title in another language (Optional)') }}</label>
                                                     <input type="text" class="form-control" name="title2"
                                                         placeholder="{{ __('Secondary Title') }}"
                                                         value="{{ $business_card->title2 }}">
@@ -254,7 +254,7 @@ foreach ($themes as $theme) {
                                             {{-- Sub Title 2 --}}
                                             <div class="col-md-6 col-xl-6">
                                                 <div class="mb-3">
-                                                    <label class="form-label">{{ __('Sub Title 2 (Optional)') }}</label>
+                                                    <label class="form-label">{{ __('Subtitle in another language (Optional)') }}</label>
                                                     <input type="text" class="form-control" name="subtitle2"
                                                         placeholder="{{ __('Secondary Sub Title') }}"
                                                         value="{{ $business_card->subtitle2 }}">

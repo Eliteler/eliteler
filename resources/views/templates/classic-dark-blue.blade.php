@@ -131,14 +131,13 @@
 
                             <div class="text-center">
                                 <div class="pt-0 pb-3">
-                                    <h3 class="font-bold text-white text-2xl mb-1">@if(!empty($business_card_details->title2))
-                                    {{ $business_card_details->title2 }} <br>
+                                    @if(!empty($business_card_details->title2))
+<h3 class="font-bold text-white text-2xl mb-1" style="margin-bottom: 0px; padding-bottom: 0px;">{{ $business_card_details->title2 }}</h3>
 @endif
 @if(!empty($business_card_details->subtitle2))
-                                    {{ $business_card_details->subtitle2 }} <br>
+<p class="text-white" style="margin-bottom: 5px; padding-bottom: 0px;">{{ $business_card_details->subtitle2 }}</p>
 @endif
-                                    {{ $business_card_details->title }}
-                                    </h3>
+<h3 class="font-bold text-white text-2xl mb-1">{{ $business_card_details->title }}</h3>
                                     <p class="text-white">{{ $card_details->sub_title }}</p>
 
                                     @if ($business_card_details->description != null)

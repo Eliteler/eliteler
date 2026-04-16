@@ -56,6 +56,7 @@ use App\Http\Controllers\Admin\CurrencyController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\PusherNotification;
 use App\Http\Controllers\Admin\ReferralController;
+use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Payment\MollieController;
 use App\Http\Controllers\Payment\PaddleController;
@@ -382,18 +383,18 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::get('delete-customer', [CustomerController::class, 'deleteCustomer'])->name('delete.customer')->middleware(['user.page.permission:customers', 'demo.mode']);
         Route::get('login-as/{id}', [CustomerController::class, 'authAs'])->name('login-as.customer')->middleware('user.page.permission:customers');
 
-        // // Unverified Customers
-        // Route::get('unverified/customers', [CustomerController::class, 'unverifiedCustomers'])->name('unverified.customers')->middleware('user.page.permission:customers');
+        // Unverified Customers
+        Route::get('unverified/customers', [CustomerController::class, 'unverifiedCustomers'])->name('unverified.customers')->middleware('user.page.permission:customers');
 
-        // // Banned Customers
-        // Route::get('banned/customers', [CustomerController::class, 'bannedCustomers'])->name('banned.customers')->middleware('user.page.permission:customers');
+        // Banned Customers
+        Route::get('banned/customers', [CustomerController::class, 'bannedCustomers'])->name('banned.customers')->middleware('user.page.permission:customers');
 
-        // // Customer verified / unverified / banned
-        // Route::get('customer-verified', [CustomerController::class, 'customerVerified'])->name('customer.verified')->middleware(['user.page.permission:customers']);
+        // Customer verified / unverified / banned
+        Route::get('customer-verified', [CustomerController::class, 'customerVerified'])->name('customer.verified')->middleware(['user.page.permission:customers']);
 
-        // // Deleted Customers
-        // Route::get('deleted/customers', [CustomerController::class, 'deletedCustomers'])->name('deleted.customers')->middleware('user.page.permission:customers');
-        // Route::get('undelete-customer', [CustomerController::class, 'undeleteCustomer'])->name('undelete.customer')->middleware(['user.page.permission:customers', 'demo.mode']);
+        // Deleted Customers
+        Route::get('deleted/customers', [CustomerController::class, 'deletedCustomers'])->name('deleted.customers')->middleware('user.page.permission:customers');
+        Route::get('undelete-customer', [CustomerController::class, 'undeleteCustomer'])->name('undelete.customer')->middleware(['user.page.permission:customers', 'demo.mode']);
 
         // Create Customer
         Route::get('create-customer', [CreateCustomerController::class, 'createCustomer'])->name('create.customer')->middleware('user.page.permission:customers');
@@ -456,6 +457,14 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::get('update-user-status', [UserController::class, 'updateUserStatus'])->name('update.user.status')->middleware(['user.page.permission:users', 'demo.mode']);
         Route::get('delete-user', [UserController::class, 'deleteUser'])->name('delete.user')->middleware(['user.page.permission:users', 'demo.mode']);
         Route::get('login-as-user/{id}', [UserController::class, 'authAsUser'])->name('login-as.user')->middleware('user.page.permission:users');
+
+        // Roles
+        Route::get('roles', [RoleController::class, 'index'])->name('roles')->middleware('user.page.permission:users');
+        Route::get('create-role', [RoleController::class, 'createRole'])->name('create.role')->middleware('user.page.permission:users');
+        Route::post('save-role', [RoleController::class, 'saveRole'])->name('save.role')->middleware(['user.page.permission:users', 'demo.mode']);
+        Route::get('edit-role/{id}', [RoleController::class, 'editRole'])->name('edit.role')->middleware('user.page.permission:users');
+        Route::post('update-role', [RoleController::class, 'updateRole'])->name('update.role')->middleware(['user.page.permission:users', 'demo.mode']);
+        Route::get('delete-role', [RoleController::class, 'deleteRole'])->name('delete.role')->middleware(['user.page.permission:users', 'demo.mode']);
 
         // Custom domains
         Route::get('custom-domain-requests/{status}', [CustomDomainRequestsController::class, 'customDomainRequests'])->name('custom.domain.requests')->middleware('user.page.permission:custom_domain');

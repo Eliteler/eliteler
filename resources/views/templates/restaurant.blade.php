@@ -262,18 +262,15 @@
                                     <div
                                         class="flex flex-col justify-start items-start ltr:ml-6 rtl:mr-6 ltr:lg:ml-9 rtl:lg:mr-9 z-20">
                                         {{-- Name --}}
-                                        <h1 class="text-3xl lg:text-4xl font-extrabold head mb-2">
-                                            @if(!empty($business_card_details->title2))
-                                                {{ $business_card_details->title2 }} <br>
-                                            @endif
-                                            @if(!empty($business_card_details->subtitle2))
-                                                {{ $business_card_details->subtitle2 }} <br>
-                                            @endif
-                                            {{ $business_card_details->title }}</h1>
+                                        @if(!empty($business_card_details->title2))
+<h1 class="text-3xl lg:text-4xl font-extrabold head mb-2" style="margin-bottom: 0px; padding-bottom: 0px;">{{ $business_card_details->title2 }}</h1>
+@endif
+@if(!empty($business_card_details->subtitle2))
+<p class="text-black font-semibold text-lg text-[#ed2031]" style="margin-bottom: 5px; padding-bottom: 0px;">{{ $business_card_details->subtitle2 }}</p>
+@endif
+<h1 class="text-3xl lg:text-4xl font-extrabold head mb-2">{{ $business_card_details->title }}</h1>
                                         {{-- Job Title --}}
-                                        <p class="text-black font-semibold text-lg text-[#ed2031]">
-                                            {{ $card_details->sub_title }}
-                                        </p>
+                                        <p class="text-black font-semibold text-lg text-[#ed2031]">{{ $card_details->sub_title }}</p>
                                         {{-- About --}}
                                         @if (isset($business_card_details->description) || isset($business_card_details->address))
                                             <span class="mt-2 text-md text-gray-600 line-clamp-3">

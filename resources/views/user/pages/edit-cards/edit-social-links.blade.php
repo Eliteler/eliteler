@@ -179,20 +179,23 @@
                                                 </div>
                                                 <div class='col-lg-3 col-md-3'>
                                                     <div class='mb-3 mt-2'>
-                                                        <label class='form-label required'>{{ __('Label') }}</label>
+                                                        <label class='form-label'>{{ __('Label') }}</label>
                                                         <input type='text'
                                                             class='lbl{{ $features[$i]->id }} form-control' name='label[]'
                                                             placeholder='{{ __(' Label') }}'
-                                                            value="{{ $features[$i]->label }}" required>
+                                                            value="{{ $features[$i]->label }}">
                                                     </div>
                                                 </div>
                                                 <div class='col-lg-4 col-md-4'>
                                                     <div class='mb-3 mt-2'>
                                                         <label class='form-label required'>{{ __('Content') }}</label>
-                                                        <input type="{{ $features[$i]->type == 'iframe' ? 'url' : 'text' }}"
+                                                        <input type="text"
                                                             class='textlbl{{ $features[$i]->id }} form-control'
                                                             name='value[]' placeholder='{{ __('Content') }}'
                                                             value="{{ $features[$i]->content }}" required>
+                                                        <small class='notelbl{{ $features[$i]->id }} text-danger' style="{{ $features[$i]->type == 'map' ? '' : 'display:none;' }}">
+                                                            {{ __('Please note: You must insert the HTML embed iframe code generated from Google Maps. Standard links will not work.') }}
+                                                        </small>
                                                     </div>
                                                 </div>
                                                 <div class='col-lg-2 col-md-2'>
@@ -363,8 +366,8 @@
 
                                 <div class='col-lg-3 col-md-3'>
                                     <div class='mb-3 mt-2'>
-                                        <label class='form-label required'>{{ __('Label / Title') }}</label>
-                                        <input type='text' class='lbl` + id + ` form-control' name='label[]' placeholder='{{ __('Facebook') }}' value="Facebook" required>
+                                        <label class='form-label'>{{ __('Label / Title') }}</label>
+                                        <input type='text' class='lbl` + id + ` form-control' name='label[]' placeholder='{{ __('Facebook') }}' value="Facebook">
                                     </div>
                                 </div>
 
@@ -372,6 +375,7 @@
                                     <div class='mb-3 mt-2'>
                                         <label class='form-label required'>{{ __('Content') }}</label>
                                         <input type='text' class='textlbl` + id +` form-control' name='value[]' placeholder='{{ __('For ex: https://facebook.com') }}' required>
+                                        <small class='notelbl` + id +` text-danger' style='display:none;'></small>
                                     </div>
                                 </div>
 
@@ -461,6 +465,8 @@
                 let lbl = document.querySelector('.lbl' + id);
                 let textlbl = document.querySelector('.textlbl' + id);
                 let type = document.querySelector('.type' + id).value;
+                let notelbl = $(".notelbl" + id);
+                notelbl.hide();
 
                 if (type == 'address') {
                     label = `{{ __('Address') }}`;
@@ -491,21 +497,21 @@
 
                 } else if (type == 'tel') {
                     label = `{{ __('Phone Number') }}`;
-                    textlabel = `{{ __('For ex: +919876543210') }}`;
+                    textlabel = `{{ __('For ex: +971... or 00971...') }}`;
 
                     icon.value = "fas fa-phone";
                     lbl.value = `{{ __('Phone') }}`;
                     $("#displayIcon" + id).attr("class", "fas fa-phone");
-                    textlbl.type = 'number';
+                    textlbl.type = 'text';
 
                 } else if (type == 'wa') {
                     label = `{{ __('WhatsApp') }}`;
-                    textlabel = `{{ __('For ex: 919876543210') }}`;
+                    textlabel = `{{ __('For ex: +971... or 00971...') }}`;
 
                     icon.value = "fab fa-whatsapp";
                     lbl.value = `{{ __('WhatsApp') }}`;
                     $("#displayIcon" + id).attr("class", "fab fa-whatsapp");
-                    textlbl.type = 'number';
+                    textlbl.type = 'text';
 
                 } else if (type == 'url') {
                     label = `{{ __('Website') }}`;
@@ -514,7 +520,7 @@
                     icon.value = "fas fa-link";
                     lbl.value = `{{ __('Website') }}`;
                     $("#displayIcon" + id).attr("class", "fas fa-link");
-                    textlbl.type = 'url';
+                    textlbl.type = 'text';
 
                 } else if (type == 'youtube') {
                     label = `{{ __('Video Title') }}`;
@@ -523,7 +529,7 @@
                     icon.value = "fab fa-youtube";
                     lbl.value = `{{ __('Youtube') }}`;
                     $("#displayIcon" + id).attr("class", "fab fa-youtube");
-                    textlbl.type = 'url';
+                    textlbl.type = 'text';
 
                 } else if (type == 'map') {
                     label = `{{ __('California') }}`;
@@ -534,33 +540,35 @@
                     lbl.value = `{{ __('Location') }}`;
                     $("#displayIcon" + id).attr("class", "fas fa-location-arrow");
                     textlbl.type = 'text';
+                    notelbl.text("{{ __('Please note: You must add the HTML embed iframe code generated from Google Maps. Standard links will not work.') }}");
+                    notelbl.show();
 
                 } else if (type == 'facebook') {
                     label = `{{ __('Facebook') }}`;
-                    textlabel = `{{ __('For ex: https://facebook.com') }}`;
+                    textlabel = `{{ __('Ex: username or https://facebook.com/username') }}`;
 
                     icon.value = "fab fa-facebook-f";
                     lbl.value = `{{ __('Facebook') }}`;
                     $("#displayIcon" + id).attr("class", "fab fa-facebook-f");
-                    textlbl.type = 'url';
+                    textlbl.type = 'text';
 
                 } else if (type == 'instagram') {
                     label = `{{ __('Instagram') }}`;
-                    textlabel = `{{ __('For ex: https://instagram.com') }}`;
+                    textlabel = `{{ __('Ex: username or https://instagram.com/username') }}`;
 
                     icon.value = "fab fa-instagram";
                     lbl.value = `{{ __('Instagram') }}`;
                     $("#displayIcon" + id).attr("class", "fab fa-instagram");
-                    textlbl.type = 'url';
+                    textlbl.type = 'text';
 
                 } else if (type == 'x-twitter') {
                     label = `{{ __('X (Twitter)') }}`;
-                    textlabel = `{{ __('For ex: https://x.com') }}`;
+                    textlabel = `{{ __('Ex: username or https://x.com/username') }}`;
 
                     icon.value = "fab fa-x-twitter";
                     lbl.value = `{{ __('X (Twitter)') }}`;
                     $("#displayIcon" + id).attr("class", "fab fa-x-twitter");
-                    textlbl.type = 'url';
+                    textlbl.type = 'text';
 
                 } else if (type == 'linkedin') {
                     label = `{{ __('LinkedIn') }}`;
@@ -569,7 +577,7 @@
                     icon.value = "fab fa-linkedin-in";
                     lbl.value = `{{ __('LinkedIn') }}`;
                     $("#displayIcon" + id).attr("class", "fab fa-linkedin-in");
-                    textlbl.type = 'url';
+                    textlbl.type = 'text';
 
                 } else if (type == 'pinterest') {
                     label = `{{ __('Pinterest') }}`;
@@ -578,7 +586,7 @@
                     icon.value = "fab fa-pinterest";
                     lbl.value = `{{ __('Pinterest') }}`;
                     $("#displayIcon" + id).attr("class", "fab fa-pinterest");
-                    textlbl.type = 'url';
+                    textlbl.type = 'text';
 
                 } else if (type == 'reddit') {
                     label = `{{ __('Reddit') }}`;
@@ -587,7 +595,7 @@
                     icon.value = "fab fa-reddit";
                     lbl.value = `{{ __('Reddit') }}`;
                     $("#displayIcon" + id).attr("class", "fab fa-reddit");
-                    textlbl.type = 'url';
+                    textlbl.type = 'text';
 
                 } else if (type == 'tiktok') {
                     label = `{{ __('Tiktok') }}`;
@@ -596,7 +604,7 @@
                     icon.value = "fab fa-tiktok";
                     lbl.value = `{{ __('Tiktok') }}`;
                     $("#displayIcon" + id).attr("class", "fab fa-tiktok");
-                    textlbl.type = 'url';
+                    textlbl.type = 'text';
 
                 } else if (type == 'threads') {
                     label = `{{ __('Threads') }}`;
@@ -605,7 +613,7 @@
                     icon.value = "fab fa-threads";
                     lbl.value = `{{ __('Threads') }}`;
                     $("#displayIcon" + id).attr("class", "fab fa-threads");
-                    textlbl.type = 'url';
+                    textlbl.type = 'text';
 
                 } else if (type == 'snapchat') {
                     label = `{{ __('Snapchat') }}`;
@@ -614,7 +622,7 @@
                     icon.value = "fab fa-snapchat";
                     lbl.value = `{{ __('Snapchat') }}`;
                     $("#displayIcon" + id).attr("class", "fab fa-snapchat");
-                    textlbl.type = 'url';
+                    textlbl.type = 'text';
 
                 } else if (type == 'wechat') {
                     label = `{{ __('WeChat') }}`;
@@ -623,7 +631,7 @@
                     icon.value = "fab fa-weixin";
                     lbl.value = `{{ __('WeChat') }}`;
                     $("#displayIcon" + id).attr("class", "fab fa-weixin");
-                    textlbl.type = 'url';
+                    textlbl.type = 'text';
 
                 } else if (type == 'telegram') {
                     label = `{{ __('Telegram') }}`;
@@ -632,7 +640,7 @@
                     icon.value = "fab fa-telegram";
                     lbl.value = `{{ __('Telegram') }}`;
                     $("#displayIcon" + id).attr("class", "fab fa-telegram");
-                    textlbl.type = 'url';
+                    textlbl.type = 'text';
 
                 } else if (type == 'tumblr') {
                     label = `{{ __('Tumblr') }}`;
@@ -641,7 +649,7 @@
                     icon.value = "fab fa-tumblr";
                     lbl.value = `{{ __('Tumblr') }}`;
                     $("#displayIcon" + id).attr("class", "fab fa-tumblr");
-                    textlbl.type = 'url';
+                    textlbl.type = 'text';
 
                 } else if (type == 'qq') {
                     label = `{{ __('QQ') }}`;
@@ -650,7 +658,7 @@
                     icon.value = "fab fa-qq";
                     lbl.value = `{{ __('QQ') }}`;
                     $("#displayIcon" + id).attr("class", "fab fa-qq");
-                    textlbl.type = 'url';
+                    textlbl.type = 'text';
 
                 } else if (type == 'discord') {
                     label = `{{ __('Discord') }}`;
@@ -659,7 +667,7 @@
                     icon.value = "fab fa-discord";
                     lbl.value = `{{ __('Discord') }}`;
                     $("#displayIcon" + id).attr("class", "fab fa-discord");
-                    textlbl.type = 'url';
+                    textlbl.type = 'text';
 
                 } else if (type == 'quora') {
                     label = `{{ __('Quora') }}`;
@@ -668,7 +676,7 @@
                     icon.value = "fab fa-quora";
                     lbl.value = `{{ __('Quora') }}`;
                     $("#displayIcon" + id).attr("class", "fab fa-quora");
-                    textlbl.type = 'url';
+                    textlbl.type = 'text';
 
                 } else if (type == 'iframe') {
                     label = `{{ __('src Link') }}`;
@@ -677,7 +685,7 @@
                     icon.value = "fas fa-rss";
                     lbl.value = `{{ __('iframe') }}`;
                     $("#displayIcon" + id).attr("class", "fas fa-rss");
-                    textlbl.type = 'url';
+                    textlbl.type = 'text';
                 } else if (type == 'g-review') {
                     label = `{{ __('Google Review') }}`;
                     textlabel = `{{ __('For ex: https://www.google.com/maps/place/data=!4m8!3m7!1s0x3b00ab9baf4b4101:0x9d6d57a812be5cc6!8m2!3d10.3538708!4d77.979598!9m1!1b1!16s%2Fg%2F11k_jzyswz?entry=ttu&g_ep=EgoyMDI1MDYxNS4wIKXMDSoASAFQAw%3D%3D') }}`;
@@ -685,7 +693,7 @@
                     icon.value = "fas fa-star";
                     lbl.value = `{{ __('Google Review') }}`;
                     $("#displayIcon" + id).attr("class", "fas fa-star");
-                    textlbl.type = 'url';
+                    textlbl.type = 'text';
                 }
 
                 lbl.placeholder = label;

@@ -197,14 +197,10 @@
                                     alt="{{ $business_card_details->title }}" class="profile-img gsap-scale" />
                                 <div class="profile-img-shine"></div>
                             </div>
-                            <h1 class="name gsap-slide-up">
-                                            @if(!empty($business_card_details->title2))
-                                                {{ $business_card_details->title2 }} <br>
-                                            @endif
-                                            @if(!empty($business_card_details->subtitle2))
-                                                {{ $business_card_details->subtitle2 }} <br>
-                                            @endif
-                                            {{ $business_card_details->title }}</h1>
+                            @if(!empty($business_card_details->title2))
+<h1 class="name gsap-slide-up" style="margin-bottom: 0px; padding-bottom: 0px;">{{ $business_card_details->title2 }}</h1>
+@endif
+<h1 class="name gsap-slide-up">{{ $business_card_details->title }}</h1>
                             <div class="name-rule gsap-slide-up">
                                 <span class="name-rule__line"></span>
                                 <span class="name-rule__diamond"></span>

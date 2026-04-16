@@ -243,6 +243,86 @@ class EditCustomizationController extends Controller
                     'custom_styles' => json_encode($customStyles),
                 ]);
                 return response()->json(['status' => 'success', 'type' => $request->type]);
+            } elseif ($request->type == 'title_font_size') {
+                $customStyles                    = json_decode(BusinessCard::where('card_id', $request->card_id)->first()->custom_styles, true);
+                $customStyles['title_font_size'] = $request->title_font_size;
+
+                BusinessCard::where('card_id', $request->card_id)->update([
+                    'custom_styles' => json_encode($customStyles),
+                ]);
+                return response()->json(['status' => 'success', 'type' => $request->type]);
+            } elseif ($request->type == 'sub_title_font_size') {
+                $customStyles                        = json_decode(BusinessCard::where('card_id', $request->card_id)->first()->custom_styles, true);
+                $customStyles['sub_title_font_size'] = $request->sub_title_font_size;
+
+                BusinessCard::where('card_id', $request->card_id)->update([
+                    'custom_styles' => json_encode($customStyles),
+                ]);
+                return response()->json(['status' => 'success', 'type' => $request->type]);
+            } elseif ($request->type == 'title2_font_size') {
+                $customStyles                     = json_decode(BusinessCard::where('card_id', $request->card_id)->first()->custom_styles, true);
+                $customStyles['title2_font_size'] = $request->title2_font_size;
+
+                BusinessCard::where('card_id', $request->card_id)->update([
+                    'custom_styles' => json_encode($customStyles),
+                ]);
+                return response()->json(['status' => 'success', 'type' => $request->type]);
+            } elseif ($request->type == 'subtitle2_font_size') {
+                $customStyles                        = json_decode(BusinessCard::where('card_id', $request->card_id)->first()->custom_styles, true);
+                $customStyles['subtitle2_font_size'] = $request->subtitle2_font_size;
+
+                BusinessCard::where('card_id', $request->card_id)->update([
+                    'custom_styles' => json_encode($customStyles),
+                ]);
+                return response()->json(['status' => 'success', 'type' => $request->type]);
+            } elseif ($request->type == 'title_alignment') {
+                $customStyles                     = json_decode(BusinessCard::where('card_id', $request->card_id)->first()->custom_styles, true);
+                $customStyles['title_alignment'] = $request->title_alignment;
+
+                BusinessCard::where('card_id', $request->card_id)->update([
+                    'custom_styles' => json_encode($customStyles),
+                ]);
+                return response()->json(['status' => 'success', 'type' => $request->type]);
+            } elseif ($request->type == 'title2_alignment') {
+                $customStyles                     = json_decode(BusinessCard::where('card_id', $request->card_id)->first()->custom_styles, true);
+                $customStyles['title2_alignment'] = $request->title2_alignment;
+
+                BusinessCard::where('card_id', $request->card_id)->update([
+                    'custom_styles' => json_encode($customStyles),
+                ]);
+                return response()->json(['status' => 'success', 'type' => $request->type]);
+            } elseif ($request->type == 'subtitle_alignment') {
+                $customStyles                       = json_decode(BusinessCard::where('card_id', $request->card_id)->first()->custom_styles, true);
+                $customStyles['subtitle_alignment'] = $request->subtitle_alignment;
+
+                BusinessCard::where('card_id', $request->card_id)->update([
+                    'custom_styles' => json_encode($customStyles),
+                ]);
+                return response()->json(['status' => 'success', 'type' => $request->type]);
+            } elseif ($request->type == 'subtitle2_alignment') {
+                $customStyles                        = json_decode(BusinessCard::where('card_id', $request->card_id)->first()->custom_styles, true);
+                $customStyles['subtitle2_alignment'] = $request->subtitle2_alignment;
+
+                BusinessCard::where('card_id', $request->card_id)->update([
+                    'custom_styles' => json_encode($customStyles),
+                ]);
+                return response()->json(['status' => 'success', 'type' => $request->type]);
+            } elseif ($request->type == 'title2_font_family') {
+                $customStyles                       = json_decode(BusinessCard::where('card_id', $request->card_id)->first()->custom_styles, true);
+                $customStyles['title2_font_family'] = $request->title2_font_family;
+
+                BusinessCard::where('card_id', $request->card_id)->update([
+                    'custom_styles' => json_encode($customStyles),
+                ]);
+                return response()->json(['status' => 'success', 'type' => $request->type]);
+            } elseif ($request->type == 'subtitle2_font_family') {
+                $customStyles                          = json_decode(BusinessCard::where('card_id', $request->card_id)->first()->custom_styles, true);
+                $customStyles['subtitle2_font_family'] = $request->subtitle2_font_family;
+
+                BusinessCard::where('card_id', $request->card_id)->update([
+                    'custom_styles' => json_encode($customStyles),
+                ]);
+                return response()->json(['status' => 'success', 'type' => $request->type]);
             }
         } else {
             return response()->json(['status' => 'failed', 'message' => $validator->errors()->first(), 'type' => $request->type]);

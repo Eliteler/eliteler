@@ -246,17 +246,15 @@
                                 class="h-32 w-32 lg:w-36 lg:h-36 rounded-full object-contain z-20 border-[2px] border-blue-400" />
                             <div class="flex flex-col justify-start items-start ml-4 lg:ml-6 relative z-20 rtl:mr-4">
                                 {{-- Name --}}
-                                <h1 class="text-xl lg:text-4xl font-bold">@if(!empty($business_card_details->title2))
-                                    {{ $business_card_details->title2 }} <br>
+                                @if(!empty($business_card_details->title2))
+<h1 class="text-xl lg:text-4xl font-bold" style="margin-bottom: 0px; padding-bottom: 0px;">{{ $business_card_details->title2 }}</h1>
 @endif
 @if(!empty($business_card_details->subtitle2))
-                                    {{ $business_card_details->subtitle2 }} <br>
+<p class="font-semibold text-md text-blue-500" style="margin-bottom: 5px; padding-bottom: 0px;">{{ $business_card_details->subtitle2 }}</p>
 @endif
-                                    {{ $business_card_details->title }}</h1>
+<h1 class="text-xl lg:text-4xl font-bold">{{ $business_card_details->title }}</h1>
                                 {{-- Position --}}
-                                <p class="font-semibold text-md text-blue-500">
-                                    {{ $card_details->sub_title }}
-                                </p>
+                                <p class="font-semibold text-md text-blue-500">{{ $card_details->sub_title }}</p>
                                 {{-- About --}}
                                 @if ($business_card_details->description != null)
                                     <div class="line-clamp-3 text-gray-500 font-normal text-sm mb-1">

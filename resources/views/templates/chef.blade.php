@@ -241,17 +241,15 @@
                                         class="h-36 w-36 rounded-full object-cover z-20 ml-5" />
                                     <div class="flex flex-col justify-start items-start ml-5 z-20">
                                         {{-- Name --}}
-                                        <h1 class="text-3xl lg:text-4xl font-medium pDetails">
-                                            @if(!empty($business_card_details->title2))
-                                                {{ $business_card_details->title2 }} <br>
-                                            @endif
-                                            @if(!empty($business_card_details->subtitle2))
-                                                {{ $business_card_details->subtitle2 }} <br>
-                                            @endif
-                                            {{ $business_card_details->title }}</h1>
+                                        @if(!empty($business_card_details->title2))
+<h1 class="text-3xl lg:text-4xl font-medium pDetails" style="margin-bottom: 0px; padding-bottom: 0px;">{{ $business_card_details->title2 }}</h1>
+@endif
+@if(!empty($business_card_details->subtitle2))
+<p class="text-[#4CAF50] font-bold text-md pDetails -mt-0.5" style="margin-bottom: 5px; padding-bottom: 0px;">{{ $business_card_details->subtitle2 }}</p>
+@endif
+<h1 class="text-3xl lg:text-4xl font-medium pDetails">{{ $business_card_details->title }}</h1>
                                         {{-- Job Title --}}
-                                        <p class="text-[#4CAF50] font-bold text-md pDetails -mt-0.5">
-                                            {{ $card_details->sub_title }}</p>
+                                        <p class="text-[#4CAF50] font-bold text-md pDetails -mt-0.5">{{ $card_details->sub_title }}</p>
                                         {{-- About --}}
                                         @if ($business_card_details->description != null)
                                             <span class="mt-3 pr-6 text-sm leading-relaxed font-medium line-clamp-3">

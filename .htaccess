@@ -1,8 +1,17 @@
 #disable directory browsing
 Options -Indexes
-RewriteEngine on
-RewriteCond %{REQUEST_URI} !^public
-RewriteRule ^(.*)$ public/$1 [L]
+# Hide /public from URL
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Redirect /public/X to /X
+    RewriteCond %{THE_REQUEST} /public/([^\s?]*) [NC]
+    RewriteRule ^ %1 [L,NE,R=301]
+
+    # Internally rewrite all requests to the public directory
+    RewriteCond %{REQUEST_URI} !^public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
 
 #PROTECT ENV FILE
 <Files .env>

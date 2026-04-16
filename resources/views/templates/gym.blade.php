@@ -239,18 +239,15 @@
                                         class="h-32 w-32 rounded-full object-cover z-20 rtl:ml-4 border-[3px] border-[#505050]" />
                                     <div class="flex flex-col justify-start items-start ml-6 lg:ml:8 z-20">
                                         {{-- Name --}}
-                                        <h1 class="text-xl lg:text-4xl font-extrabold head">
-                                            @if(!empty($business_card_details->title2))
-                                                {{ $business_card_details->title2 }} <br>
-                                            @endif
-                                            @if(!empty($business_card_details->subtitle2))
-                                                {{ $business_card_details->subtitle2 }} <br>
-                                            @endif
-                                            {{ $business_card_details->title }}</h1>
+                                        @if(!empty($business_card_details->title2))
+<h1 class="text-xl lg:text-4xl font-extrabold head" style="margin-bottom: 0px; padding-bottom: 0px;">{{ $business_card_details->title2 }}</h1>
+@endif
+@if(!empty($business_card_details->subtitle2))
+<p class="text-[#121212] font-semibold text-md text-gray-800" style="margin-bottom: 5px; padding-bottom: 0px;">{{ $business_card_details->subtitle2 }}</p>
+@endif
+<h1 class="text-xl lg:text-4xl font-extrabold head">{{ $business_card_details->title }}</h1>
                                         {{-- Job Title --}}
-                                        <p class="text-[#121212] font-semibold text-md text-gray-800">
-                                            {{ $card_details->sub_title }}
-                                        </p>
+                                        <p class="text-[#121212] font-semibold text-md text-gray-800">{{ $card_details->sub_title }}</p>
                                         {{-- About --}}
                                         @if (isset($business_card_details->description) || isset($business_card_details->address))
                                             <span class="mt-2 text-sm text-gray-600 line-clamp-3">

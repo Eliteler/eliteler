@@ -291,7 +291,7 @@
                 @endif
 
                 {{-- Vcard / Store --}}
-                {{-- @if ($allowedPermissions['vcard_store'])
+                @if ($allowedPermissions['vcard_store'])
                     <li
                         class="nav-item dropdown {{ request()->is('admin/vcard-store') || request()->is('admin/create-vcard-store') || request()->is('admin/edit-vcard-store/*') || request()->is('admin/delete-vcard-store') ? 'active' : '' }}">
                         <a class="nav-link dropdown-toggle" href="#navbar-extra" data-bs-toggle="dropdown"
@@ -309,7 +309,7 @@
                                 </svg>
                             </span>
                             <span class="nav-link-title">
-                                {{ __('Admin') }}
+                                {{ __('vCard & Store') }}
                             </span>
                         </a>
                         <div class="dropdown-menu">
@@ -332,7 +332,7 @@
                             </a>
                         </div>
                     </li>
-                @endif --}}
+                @endif
 
                 {{-- Custom domains --}}
                 @if ($allowedPermissions['custom_domain'])
@@ -599,8 +599,9 @@
                 {{-- Users --}}
                 @if ($allowedPermissions['users'])
                     <li
-                        class="nav-item {{ request()->is('admin/users') || request()->is('admin/create-user') || request()->is('admin/view-user/*') || request()->is('admin/edit-user/*') || request()->is('admin/update-user/*') || request()->is('admin/update-user-status/*') || request()->is('admin/delete-user') ? 'active' : '' }}">
-                        <a class="nav-link" href="{{ route('admin.users') }}">
+                        class="nav-item dropdown {{ request()->is('admin/users') || request()->is('admin/roles') || request()->is('admin/create-user') || request()->is('admin/create-role') || request()->is('admin/view-user/*') || request()->is('admin/edit-user/*') || request()->is('admin/edit-role/*') ? 'active' : '' }}">
+                        <a class="nav-link dropdown-toggle" href="#navbar-extra" data-bs-toggle="dropdown"
+                            role="button" aria-expanded="false">
                             <span class="nav-link-icon d-md-none d-lg-inline-block">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-users"
                                     width="24" height="24" viewBox="0 0 24 24" stroke-width="2"
@@ -614,9 +615,17 @@
                                 </svg>
                             </span>
                             <span class="nav-link-title">
-                                {{ __('Users') }}
+                                {{ __('Users & Roles') }}
                             </span>
                         </a>
+                        <div class="dropdown-menu">
+                            <a class="dropdown-item" href="{{ route('admin.users') }}">
+                                {{ __('Users') }}
+                            </a>
+                            <a class="dropdown-item" href="{{ route('admin.roles') }}">
+                                {{ __('Roles') }}
+                            </a>
+                        </div>
                     </li>
                 @endif
 

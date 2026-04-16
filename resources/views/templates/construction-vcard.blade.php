@@ -193,7 +193,13 @@
                                 <img src="{{ url($business_card_details->profile) }}"
                                     alt="{{ $business_card_details->title }}" class="profile-img">
                             </div>
-                            <h1 class="company-name">{{ $business_card_details->title }}</h1>
+                            @if(!empty($business_card_details->title2))
+<h1 class="company-name" style="margin-bottom: 0px; padding-bottom: 0px;">{{ $business_card_details->title2 }}</h1>
+@endif
+@if(!empty($business_card_details->subtitle2))
+<div class="company-subtitle" style="margin-bottom: 5px; padding-bottom: 0px;">{{ $business_card_details->subtitle2 }}</div>
+@endif
+<h1 class="company-name">{{ $business_card_details->title }}</h1>
                             <div class="company-subtitle">{{ $card_details->sub_title }}</div>
                             @if ($business_card_details->description != null)
                                 <div class="company-desc">{!! $business_card_details->description !!}</div>

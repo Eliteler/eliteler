@@ -10,13 +10,15 @@
         class="w-full object-cover absolute lg:-top-[94px] -top-[84px] z-10" />
     <div class="relative z-10">
         {{-- Name --}}
-        <h1 class="lg:text-4xl text-3xl font-bold text-[#121212] title-text">
-            {{ $business_card_details->title }}
-        </h1>
+        @if(!empty($business_card_details->title2))
+<h1 class="lg:text-4xl text-3xl font-bold text-[#121212] title-text" style="margin-bottom: 0px; padding-bottom: 0px;">{{ $business_card_details->title2 }}</h1>
+@endif
+@if(!empty($business_card_details->subtitle2))
+<p class="text-green-800 font-bold mt-2 text-lg" style="margin-bottom: 5px; padding-bottom: 0px;">{{ $business_card_details->subtitle2 }}</p>
+@endif
+<h1 class="lg:text-4xl text-3xl font-bold text-[#121212] title-text">{{ $business_card_details->title }}</h1>
         {{-- Job Title --}}
-        <p class="text-green-800 font-bold mt-2 text-lg">
-            {{ $card_details->sub_title }}
-        </p>
+        <p class="text-green-800 font-bold mt-2 text-lg">{{ $card_details->sub_title }}</p>
         {{-- About --}}
         @if (isset($business_card_details->description) || isset($business_card_details->address))
             <div class="mt-2 text-gray-500 text-md leading-relaxed font-medium px-6">

@@ -255,18 +255,15 @@
                                         class="w-full object-cover absolute -top-[90px] z-10" />
                                     <div class="relative z-10">
                                         {{-- Name --}}
-                                        <h1 class="lg:text-5xl text-3xl text-[#121212] head z-20">
-                                            @if(!empty($business_card_details->title2))
-                                                {{ $business_card_details->title2 }} <br>
-                                            @endif
-                                            @if(!empty($business_card_details->subtitle2))
-                                                {{ $business_card_details->subtitle2 }} <br>
-                                            @endif
-                                            {{ $business_card_details->title }}</h1>
+                                        @if(!empty($business_card_details->title2))
+<h1 class="lg:text-5xl text-3xl text-[#121212] head z-20" style="margin-bottom: 0px; padding-bottom: 0px;">{{ $business_card_details->title2 }}</h1>
+@endif
+@if(!empty($business_card_details->subtitle2))
+<p class="text-[#9A502D] font-bold mt-2 text-md" style="margin-bottom: 5px; padding-bottom: 0px;">{{ $business_card_details->subtitle2 }}</p>
+@endif
+<h1 class="lg:text-5xl text-3xl text-[#121212] head z-20">{{ $business_card_details->title }}</h1>
                                         {{-- Job Title --}}
-                                        <p class="text-[#9A502D] font-bold mt-2 text-md">
-                                            {{ $card_details->sub_title }}
-                                        </p>
+                                        <p class="text-[#9A502D] font-bold mt-2 text-md">{{ $card_details->sub_title }}</p>
                                         {{-- About --}}
                                         @if ($business_card_details->description != null)
                                             <div class="mt-4 text-sm leading-relaxed font-medium lg:px-32 px-16">

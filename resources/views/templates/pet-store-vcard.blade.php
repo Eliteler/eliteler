@@ -233,14 +233,10 @@
                             <i class="fas fa-dog decor-icon anim-float" style="right: -15px; bottom: 20px"></i>
                             <img src="{{ url($business_card_details->profile) }}"
                                 alt="{{ $business_card_details->title }}" class="profile-img" />
-                            <h1 class="name">
-                                            @if(!empty($business_card_details->title2))
-                                                {{ $business_card_details->title2 }} <br>
-                                            @endif
-                                            @if(!empty($business_card_details->subtitle2))
-                                                {{ $business_card_details->subtitle2 }} <br>
-                                            @endif
-                                            {{ $business_card_details->title }}</h1>
+                            @if(!empty($business_card_details->title2))
+<h1 class="name" style="margin-bottom: 0px; padding-bottom: 0px;">{{ $business_card_details->title2 }}</h1>
+@endif
+<h1 class="name">{{ $business_card_details->title }}</h1>
                             <p class="title">{{ $business_card_details->sub_title }}</p>
                             <p class="desc">
                                 {!! $business_card_details->description !!}

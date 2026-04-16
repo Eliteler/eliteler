@@ -230,15 +230,10 @@
 
                                     <div class="inline">
 
-                                        <h3 class="font-bold inline heading text-gray-800 text-2xl mb-1">@if(!empty($business_card_details->title2))
-                                    {{ $business_card_details->title2 }} <br>
+                                        @if(!empty($business_card_details->title2))
+<h3 class="font-bold inline heading text-gray-800 text-2xl mb-1" style="margin-bottom: 0px; padding-bottom: 0px;">{{ $business_card_details->title2 }}</h3>
 @endif
-@if(!empty($business_card_details->subtitle2))
-                                    {{ $business_card_details->subtitle2 }} <br>
-@endif
-                                    {{ $business_card_details->title }}
-
-                                        </h3>
+<h3 class="font-bold inline heading text-gray-800 text-2xl mb-1">{{ $business_card_details->title }}</h3>
 
                                         <img class="inline h-5 w-5 mb-2"
                                             src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAAsTAAALEwEAmpwYAAAEqUlEQVR4nO2Z20+aZxzH3/ZiHmACShFQDjarnduF+wOWmEjVeqoKyFFRwHTJbvYnkIjDQ1cQFZSqYFtbrIebJo12m96ZLNnabBfatOnU9GKRddU168WatfkuD7Or1sPLC7zYC77Jc/1+vg+/53l+vy8UlVZaaSVdirC1Wh5uW5CF27cLw5Zt2U3LQsGkpZp636UI20vkt6x35FPtkIfbIQu3QXbTgsIbFhROtkJ63bwonTR9dtycVOG0Pbdo1t6jnLE9UMzYnyunbVBMW6G4ZcVh8AXXW/5b18yQXjVDOmGCJGR4LgkaV8VBQ7fcbxKkBP709EV50VzHhnLWDuWMHXHDTxghCRkhDhogHjdANKpblwb1MnbpHY6Tyjn7crLh88f0yB/TQTTavEy+wRp/0WyHnT14HURXmiEMaGyswBffvihUzNgibMKLAloIA9qIJGAUJo8c1AnlXIdFMWPbZBv+FFkjGgj96mdCn/qrhMuJHFh2a163H344agB5vibkDTUtC3wNsvivShZum5jhfU3IHWpE7mDjGs9fy/yKLZrr6H0P4CEYaIBg4IKLsQHySKUEflgDoU8N4Q74AfDg99evxGHA/oJ1eL8aEo8aX9zuw2mvHnmDjfvgBd4L4Hnq/mJsQDFte8k2vNjdhPlHP4Do0R9PcHbQjFxvwx54fn89+O66v+MwYH3F6s671fju8Y/Yrfu/PQS/t2YvvKcOPHfdP4zglVPW0lTDvzVQ/S48eO5a8C/Xlsa++1PWb2nhr5ogDZogDcVfNrv18OkTFHsNEHjq98HnXK7Fh5eql2IfRujgQyZ8PNaOL+fdkI0YIBk3JLTzq5F1fNSvPxQ+55saYoAs+qGITFJ08J+O2bD6dCP68aWN+5D5dBCP6lnZ+Zy38OD2nV+gNUDGwKNqXuxvxi+bj/dAfL/2EwoGm5FPoNnZeXD7zoPTW/UnrYGdGfbQAyv2afHzOwbemJAOaCEa0bICz+2tAqencov+F7jROn/kbTNuwCej7f+X0G4trd1DgVcTfV2TWDYg8NyeKnC6K+ZpDZD0gPaqHNOjJNB2oInFtXuQ9mtYgK9Edk9FbMlGwbWWu7T3/BUdSgKWA02QkklW2XDfwLsqF2OC3zFQGtMjFWjGWX8rVn9f3webzJ3nEAPdlbE/ZETSCfOrmF7YYQ2KfS1YOcJEwvCuCmatBJEkZHrJ5IUtHjJjJbLOBjyyu1TMmzlJyPCC0TAy1IQzA8Y9JpIC//U5ZHWdY95Oi4OGB4wnqcFGnPEao00ZWfEeWM5eeGR1qpgPNCTui2sM9DZEW+JoV5kMeKcKGU5VF2MDJKskcV+cM+yBLXE88JnO8l953Z/Hl5uSrJLEfccFn9GpWs5ylBVSCQnUiVPDWotwRLOZKvhMZ/mzDzrLEw+2dovEfXnDmkgK4CNcR1kSo8VdEvrU9hSUjY1iTQ7HSRL3sVnzFJvxOhHJKkncx8Ztk5XwgY1RJKskcR9JzPie+i2+p/Y1c3jV60ynaos8UhnOchfPUcanjltcT01JzqWaO0e1xNldFcf/Jx+dSHpABnBOT9U2p7tqm+OqXIh5GEkrrbQoJvoXZTdWgBhNh8sAAAAASUVORK5CYII=">
@@ -246,7 +241,10 @@
 
                                     </div>
 
-                                    <p class="text-gray-800">{{ $card_details->sub_title }}</p>
+                                    @if(!empty($business_card_details->subtitle2))
+<p class="text-gray-800" style="margin-bottom: 5px; padding-bottom: 0px;">{{ $business_card_details->subtitle2 }}</p>
+@endif
+<p class="text-gray-800">{{ $card_details->sub_title }}</p>
 
                                 </div>
                             </div>

@@ -120,13 +120,13 @@
                                     </div>
 
                                     <div class="text-center mt-4 relative z-20">
-                                        <h2 class="font-medium text-xl">@if(!empty($business_card_details->title2))
-                                    {{ $business_card_details->title2 }} <br>
+                                        @if(!empty($business_card_details->title2))
+<h2 class="font-medium text-xl" style="margin-bottom: 0px; padding-bottom: 0px;">{{ $business_card_details->title2 }}</h2>
 @endif
 @if(!empty($business_card_details->subtitle2))
-                                    {{ $business_card_details->subtitle2 }} <br>
+<p class="text-sm text-gray-500" style="margin-bottom: 5px; padding-bottom: 0px;">{{ $business_card_details->subtitle2 }}</p>
 @endif
-                                    {{ $business_card_details->title }}</h2>
+<h2 class="font-medium text-xl">{{ $business_card_details->title }}</h2>
                                         <p class="text-sm text-gray-500">{{ $card_details->sub_title }}</p>
                                     </div>
 

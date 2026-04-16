@@ -15,6 +15,11 @@
             'Gloock',
             'Pacifico',
             'Playfair Display',
+            'Cairo',
+            'Almarai',
+            'Tajawal',
+            'IBM Plex Sans Arabic',
+            'Readex Pro',
         ];
     @endphp
 
@@ -80,6 +85,26 @@
 
         .times-new-roman {
             font-family: 'Times New Roman', serif;
+        }
+
+        .cairo {
+            font-family: 'Cairo', sans-serif;
+        }
+
+        .almarai {
+            font-family: 'Almarai', sans-serif;
+        }
+
+        .tajawal {
+            font-family: 'Tajawal', sans-serif;
+        }
+
+        .ibm-plex-sans-arabic {
+            font-family: 'IBM Plex Sans Arabic', sans-serif;
+        }
+
+        .readex-pro {
+            font-family: 'Readex Pro', sans-serif;
         }
     </style>
 
@@ -204,6 +229,89 @@
                                             <input type="text" id="colorPickerDescription"
                                                 value="{{ $custom_styles['description_color'] }}" class="form-control" />
                                         </div>
+                                        {{-- Title Font Size --}}
+                                        <div class="mb-4">
+                                            <div class="form-label">{{ __('Title 1 Font Size (px)') }}</div>
+                                            <input type="number" id="titleFontSize" min="10" max="100" value="{{ $custom_styles['title_font_size'] ?? '36' }}" class="form-control" onchange="updateCustomStyle('title_font_size')" onkeyup="updateCustomStyle('title_font_size')" />
+                                        </div>
+                                        {{-- Subtitle Font Size --}}
+                                        <div class="mb-4">
+                                            <div class="form-label">{{ __('Subtitle 1 Font Size (px)') }}</div>
+                                            <input type="number" id="subTitleFontSize" min="10" max="100" value="{{ $custom_styles['sub_title_font_size'] ?? '18' }}" class="form-control" onchange="updateCustomStyle('sub_title_font_size')" onkeyup="updateCustomStyle('sub_title_font_size')" />
+                                        </div>
+                                        {{-- Title in another language Font Size --}}
+                                        <div class="mb-4">
+                                            <div class="form-label">{{ __('Title in another language Font Size (px)') }}</div>
+                                            <input type="number" id="title2FontSize" min="10" max="100" value="{{ $custom_styles['title2_font_size'] ?? '36' }}" class="form-control" onchange="updateCustomStyle('title2_font_size')" onkeyup="updateCustomStyle('title2_font_size')" />
+                                        </div>
+                                        {{-- Subtitle in another language Font Size --}}
+                                        <div class="mb-4">
+                                            <div class="form-label">{{ __('Subtitle in another language Font Size (px)') }}</div>
+                                            <input type="number" id="subtitle2FontSize" min="10" max="100" value="{{ $custom_styles['subtitle2_font_size'] ?? '18' }}" class="form-control" onchange="updateCustomStyle('subtitle2_font_size')" onkeyup="updateCustomStyle('subtitle2_font_size')" />
+                                        </div>
+                                        {{-- Title 1 Alignment --}}
+                                        <div class="mb-4">
+                                            <div class="form-label">{{ __('Title 1 Alignment') }}</div>
+                                            <div class="form-selectgroup">
+                                                @php
+                                                    $alignments = ['left', 'center', 'right'];
+                                                @endphp
+                                                @foreach ($alignments as $alignment)
+                                                    <label class="form-selectgroup-item">
+                                                        <input type="radio" name="title_alignment" value="{{ $alignment }}"
+                                                            onclick="updateCustomStyle('title_alignment')"
+                                                            class="form-selectgroup-input"
+                                                            {{ ($custom_styles['title_alignment'] ?? 'left') == $alignment ? 'checked' : '' }}>
+                                                        <span class="form-selectgroup-label text-capitalize">{{ __($alignment) }}</span>
+                                                    </label>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                        {{-- Title in another language Alignment --}}
+                                        <div class="mb-4">
+                                            <div class="form-label">{{ __('Title in another language Alignment') }}</div>
+                                            <div class="form-selectgroup">
+                                                @foreach ($alignments as $alignment)
+                                                    <label class="form-selectgroup-item">
+                                                        <input type="radio" name="title2_alignment" value="{{ $alignment }}"
+                                                            onclick="updateCustomStyle('title2_alignment')"
+                                                            class="form-selectgroup-input"
+                                                            {{ ($custom_styles['title2_alignment'] ?? 'left') == $alignment ? 'checked' : '' }}>
+                                                        <span class="form-selectgroup-label text-capitalize">{{ __($alignment) }}</span>
+                                                    </label>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                        {{-- Subtitle 1 Alignment --}}
+                                        <div class="mb-4">
+                                            <div class="form-label">{{ __('Subtitle 1 Alignment') }}</div>
+                                            <div class="form-selectgroup">
+                                                @foreach ($alignments as $alignment)
+                                                    <label class="form-selectgroup-item">
+                                                        <input type="radio" name="subtitle_alignment" value="{{ $alignment }}"
+                                                            onclick="updateCustomStyle('subtitle_alignment')"
+                                                            class="form-selectgroup-input"
+                                                            {{ ($custom_styles['subtitle_alignment'] ?? 'left') == $alignment ? 'checked' : '' }}>
+                                                        <span class="form-selectgroup-label text-capitalize">{{ __($alignment) }}</span>
+                                                    </label>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                        {{-- Subtitle in another language Alignment --}}
+                                        <div class="mb-4">
+                                            <div class="form-label">{{ __('Subtitle in another language Alignment') }}</div>
+                                            <div class="form-selectgroup">
+                                                @foreach ($alignments as $alignment)
+                                                    <label class="form-selectgroup-item">
+                                                        <input type="radio" name="subtitle2_alignment" value="{{ $alignment }}"
+                                                            onclick="updateCustomStyle('subtitle2_alignment')"
+                                                            class="form-selectgroup-input"
+                                                            {{ ($custom_styles['subtitle2_alignment'] ?? 'left') == $alignment ? 'checked' : '' }}>
+                                                        <span class="form-selectgroup-label text-capitalize">{{ __($alignment) }}</span>
+                                                    </label>
+                                                @endforeach
+                                            </div>
+                                        </div>
                                     </div>
 
                                     {{-- Body Section --}}
@@ -229,6 +337,11 @@
                                                         'Saira Stencil One',
                                                         'Gloock',
                                                         'Playfair Display',
+                                                        'Cairo',
+                                                        'Almarai',
+                                                        'Tajawal',
+                                                        'IBM Plex Sans Arabic',
+                                                        'Readex Pro',
                                                     ];
 
                                                     $fontClasses = [
@@ -246,6 +359,11 @@
                                                         'Saira Stencil One' => 'saira-stencil-one',
                                                         'Gloock' => 'gloock',
                                                         'Playfair Display' => 'playfair-display',
+                                                        'Cairo' => 'cairo',
+                                                        'Almarai' => 'almarai',
+                                                        'Tajawal' => 'tajawal',
+                                                        'IBM Plex Sans Arabic' => 'ibm-plex-sans-arabic',
+                                                        'Readex Pro' => 'readex-pro',
                                                     ];
                                                 @endphp
 
@@ -263,6 +381,44 @@
                                                 @endforeach
                                             </div>
                                         </div>
+                                        {{-- Title in another language Font --}}
+                                        <div class="mb-4">
+                                            <div class="form-label">{{ __('Title in another language Font') }}</div>
+                                            <div class="form-selectgroup">
+                                                @foreach ($fonts as $font)
+                                                    <label class="form-selectgroup-item">
+                                                        <input type="radio" name="title2_font" value="{{ $font }}"
+                                                            onclick="updateCustomStyle('title2_font_family')"
+                                                            class="form-selectgroup-input"
+                                                            {{ ($custom_styles['title2_font_family'] ?? 'Poppins') == $font ? 'checked' : '' }}>
+                                                        <span
+                                                            class="form-selectgroup-label text-capitalize {{ $fontClasses[$font] ?? '' }}">
+                                                            {{ $font }}
+                                                        </span>
+                                                    </label>
+                                                @endforeach
+                                            </div>
+                                        </div>
+
+                                        {{-- Subtitle in another language Font --}}
+                                        <div class="mb-4">
+                                            <div class="form-label">{{ __('Subtitle in another language Font') }}</div>
+                                            <div class="form-selectgroup">
+                                                @foreach ($fonts as $font)
+                                                    <label class="form-selectgroup-item">
+                                                        <input type="radio" name="subtitle2_font" value="{{ $font }}"
+                                                            onclick="updateCustomStyle('subtitle2_font_family')"
+                                                            class="form-selectgroup-input"
+                                                            {{ ($custom_styles['subtitle2_font_family'] ?? 'Poppins') == $font ? 'checked' : '' }}>
+                                                        <span
+                                                            class="form-selectgroup-label text-capitalize {{ $fontClasses[$font] ?? '' }}">
+                                                            {{ $font }}
+                                                        </span>
+                                                    </label>
+                                                @endforeach
+                                            </div>
+                                        </div>
+
                                         {{-- Background Styles --}}
                                         <div class="mb-4">
                                             <div class="form-label">{{ __('Background Style') }}</div>
@@ -754,6 +910,16 @@
                 var heading_color = $('#colorPickerHeading').val();
                 var card_edge = $('input[name="card_edge"]:checked').val();
                 var bottom_bar_color = $('#colorPickerBottomBar').val();
+                var title_font_size = $('#titleFontSize').val();
+                var sub_title_font_size = $('#subTitleFontSize').val();
+                var title2_font_size = $('#title2FontSize').val();
+                var subtitle2_font_size = $('#subtitle2FontSize').val();
+                var title_alignment = $('input[name="title_alignment"]:checked').val();
+                var title2_alignment = $('input[name="title2_alignment"]:checked').val();
+                var subtitle_alignment = $('input[name="subtitle_alignment"]:checked').val();
+                var subtitle2_alignment = $('input[name="subtitle2_alignment"]:checked').val();
+                var title2_font = $('input[name="title2_font"]:checked').val();
+                var subtitle2_font = $('input[name="subtitle2_font"]:checked').val();
 
                 var formData = new FormData();
                 formData.append('_token', "{{ csrf_token() }}");
@@ -780,6 +946,16 @@
                 formData.append('heading_color', heading_color);
                 formData.append('card_edge', card_edge);
                 formData.append('bottom_bar_color', bottom_bar_color);
+                formData.append('title_font_size', title_font_size);
+                formData.append('sub_title_font_size', sub_title_font_size);
+                formData.append('title2_font_size', title2_font_size);
+                formData.append('subtitle2_font_size', subtitle2_font_size);
+                formData.append('title_alignment', title_alignment);
+                formData.append('title2_alignment', title2_alignment);
+                formData.append('subtitle_alignment', subtitle_alignment);
+                formData.append('subtitle2_alignment', subtitle2_alignment);
+                formData.append('title2_font_family', title2_font);
+                formData.append('subtitle2_font_family', subtitle2_font);
 
                 $.ajax({
                     url: "{{ route('user.update.customization') }}",

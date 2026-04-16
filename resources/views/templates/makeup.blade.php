@@ -241,19 +241,16 @@
                                         class="h-36 lg:h-52 -mt-24 absolute -top-2 rtl:transform rtl:scale-x-[-1]" />
 
                                     {{-- Check title --}}
-                                    <h1 class="text-5xl font-medium" id="pName">
-                                            @if(!empty($business_card_details->title2))
-                                                {{ $business_card_details->title2 }} <br>
-                                            @endif
-                                            @if(!empty($business_card_details->subtitle2))
-                                                {{ $business_card_details->subtitle2 }} <br>
-                                            @endif
-                                            {{ $business_card_details->title }}</h1>
+                                    @if(!empty($business_card_details->title2))
+<h1 class="text-5xl font-medium" id="pName" style="margin-bottom: 0px; padding-bottom: 0px;">{{ $business_card_details->title2 }}</h1>
+@endif
+@if(!empty($business_card_details->subtitle2))
+<p class="text-[#FF0084] font-bold mt-1 text-sm" style="margin-bottom: 5px; padding-bottom: 0px;">{{ $business_card_details->subtitle2 }}</p>
+@endif
+<h1 class="text-5xl font-medium" id="pName">{{ $business_card_details->title }}</h1>
 
                                     {{-- Check sub title --}}
-                                    <p class="text-[#FF0084] font-bold mt-1 text-sm">
-                                        {{ $card_details->sub_title }}
-                                    </p>
+                                    <p class="text-[#FF0084] font-bold mt-1 text-sm">{{ $card_details->sub_title }}</p>
 
                                     {{-- Check description --}}
                                     @if ($business_card_details->description != null)

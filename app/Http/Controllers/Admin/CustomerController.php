@@ -72,7 +72,7 @@ class CustomerController extends Controller
         $config = DB::table('config')->get();
 
         // Allowed statuses
-        $allowedStatuses = ['all', 'verified', 'unverified', 'banned', 'deleted'];
+        $allowedStatuses = ['all', 'active', 'inactive', 'verified', 'unverified', 'banned', 'deleted'];
 
         // Validate status
         if (!in_array($status, $allowedStatuses, true)) {
@@ -91,6 +91,12 @@ class CustomerController extends Controller
             $query = User::where('role_id', 2)->orderBy('id', 'desc');
 
             match ($status) {
+                'active' => $query
+                    ->where('status', 1),
+
+                'inactive' => $query
+                    ->where('status', 0),
+
                 'verified' => $query
                     ->whereNotNull('email_verified_at')
                     ->where('status', 1),

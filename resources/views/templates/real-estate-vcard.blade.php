@@ -218,20 +218,19 @@
                                     alt="{{ $business_card_details->title }}" class="profile-img gsap-scale" />
                                 <div class="profile-img-shine"></div>
                             </div>
-                            <h1 class="name gsap-slide-up">
-                                            @if(!empty($business_card_details->title2))
-                                                {{ $business_card_details->title2 }} <br>
-                                            @endif
-                                            @if(!empty($business_card_details->subtitle2))
-                                                {{ $business_card_details->subtitle2 }} <br>
-                                            @endif
-                                            {{ $business_card_details->title }}</h1>
+                            @if(!empty($business_card_details->title2))
+<h1 class="name gsap-slide-up" style="margin-bottom: 0px; padding-bottom: 0px;">{{ $business_card_details->title2 }}</h1>
+@endif
+<h1 class="name gsap-slide-up">{{ $business_card_details->title }}</h1>
                             <div class="name-divider gsap-slide-up">
                                 <span class="name-divider__line"></span>
                                 <span class="name-divider__diamond">◆</span>
                                 <span class="name-divider__line"></span>
                             </div>
-                            <p class="title-badge gsap-slide-up">{{ $card_details->sub_title }}</p>
+                            @if(!empty($business_card_details->subtitle2))
+<p class="title-badge gsap-slide-up" style="margin-bottom: 5px; padding-bottom: 0px;">{{ $business_card_details->subtitle2 }}</p>
+@endif
+<p class="title-badge gsap-slide-up">{{ $card_details->sub_title }}</p>
                             @if (isset($business_card_details->description))
                                 <div class="desc gsap-slide-up">{!! $business_card_details->description !!}</div>
                             @endif

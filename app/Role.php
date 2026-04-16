@@ -16,6 +16,17 @@ use Illuminate\Database\Eloquent\Model;
 
 class Role extends Model
 {
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array
+     */
+    protected $fillable = [
+        'role_id',
+        'role_name',
+        'role_slug',
+    ];
+
     public function users()
     {
         return $this->hasMany('App\User');

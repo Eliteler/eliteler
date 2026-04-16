@@ -324,18 +324,15 @@
 
                                     <div class="relative z-10 flex flex-col w-3/5 ml-6">
                                         {{-- Name --}}
-                                        <h1 class="lg:text-4xl text-3xl font-medium text-white head text-start">
-                                            @if(!empty($business_card_details->title2))
-                                                {{ $business_card_details->title2 }} <br>
-                                            @endif
-                                            @if(!empty($business_card_details->subtitle2))
-                                                {{ $business_card_details->subtitle2 }} <br>
-                                            @endif
-                                            {{ $business_card_details->title }}</h1>
+                                        @if(!empty($business_card_details->title2))
+<h1 class="lg:text-4xl text-3xl font-medium text-white head text-start" style="margin-bottom: 0px; padding-bottom: 0px;">{{ $business_card_details->title2 }}</h1>
+@endif
+@if(!empty($business_card_details->subtitle2))
+<p class="text-gray-400 font-bold mt-2 text-md text-start" style="margin-bottom: 5px; padding-bottom: 0px;">{{ $business_card_details->subtitle2 }}</p>
+@endif
+<h1 class="lg:text-4xl text-3xl font-medium text-white head text-start">{{ $business_card_details->title }}</h1>
                                         {{-- Job Title --}}
-                                        <p class="text-gray-400 font-bold mt-2 text-md text-start">
-                                            {{ $card_details->sub_title }}
-                                        </p>
+                                        <p class="text-gray-400 font-bold mt-2 text-md text-start">{{ $card_details->sub_title }}</p>
                                         {{-- About --}}
                                         @if (isset($business_card_details->description) || isset($business_card_details->address))
                                             <div

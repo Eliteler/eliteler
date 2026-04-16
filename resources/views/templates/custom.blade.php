@@ -69,6 +69,11 @@
             'Gloock',
             'Pacifico',
             'Playfair Display',
+            'Cairo',
+            'Almarai',
+            'Tajawal',
+            'IBM Plex Sans Arabic',
+            'Readex Pro',
         ];
     @endphp
 
@@ -169,6 +174,13 @@
                 $buttonTextColor = $custom_styles['button_text_color'] ?? '#ffffff';
                 $buttonIconColor = $custom_styles['button_icon_color'] ?? '#ffffff';
                 $buttonEdge = $custom_styles['button_edge'] ?? '#ffffff';
+
+                $title1_align = $custom_styles['title_alignment'] ?? ($custom_styles['layout'] == 'row' ? 'left' : 'center');
+                $title2_align = $custom_styles['title2_alignment'] ?? ($custom_styles['layout'] == 'row' ? 'left' : 'center');
+                $subtitle_align = $custom_styles['subtitle_alignment'] ?? ($custom_styles['layout'] == 'row' ? 'left' : 'center');
+                $subtitle2_align = $custom_styles['subtitle2_alignment'] ?? ($custom_styles['layout'] == 'row' ? 'left' : 'center');
+                $title2_font = $custom_styles['title2_font_family'] ?? 'Poppins';
+                $subtitle2_font = $custom_styles['subtitle2_font_family'] ?? 'Poppins';
             @endphp
             @if ($backgroundType == 'image' && !empty($backgroundImage))
                 <div class="fixed inset-0 z-0 flex justify-center items-start">
@@ -292,19 +304,17 @@
 
                                         <div class="relative flex flex-col ml-6">
                                             {{-- Name --}}
-                                            <h1
-                                                class="lg:text-4xl text-2xl font-medium text-[{{ $custom_styles['title_color'] }}] tracking-tighter">
                                             @if(!empty($business_card_details->title2))
-                                                {{ $business_card_details->title2 }} <br>
+<h1
+                                                class="lg:text-4xl text-2xl font-medium text-[{{ $custom_styles['title_color'] }}] tracking-tighter" style="margin-bottom: 0px; padding-bottom: 0px; font-size: {{ $custom_styles['title2_font_size'] ?? '36' }}px !important; font-family: '{{ $title2_font }}', sans-serif; text-align: {{ $title2_align }};">{{ $business_card_details->title2 }}</h1>
+@endif
+@if(!empty($business_card_details->subtitle2))
+                                                <p class="text-[{{ $custom_styles['sub_title_color'] }}] font-bold mt-2 text-md" style="margin-bottom: 5px; padding-bottom: 0px; font-size: {{ $custom_styles['subtitle2_font_size'] ?? '18' }}px !important; font-family: '{{ $subtitle2_font }}', sans-serif; text-align: {{ $subtitle2_align }};">{{ $business_card_details->subtitle2 }}</p>
                                             @endif
-                                            @if(!empty($business_card_details->subtitle2))
-                                                {{ $business_card_details->subtitle2 }} <br>
-                                            @endif
-                                            {{ $business_card_details->title }}</h1>
+<h1
+                                                class="lg:text-4xl text-2xl font-medium text-[{{ $custom_styles['title_color'] }}] tracking-tighter" style="font-size: {{ $custom_styles['title_font_size'] ?? '36' }}px !important; text-align: {{ $title1_align }};">{{ $business_card_details->title }}</h1>
                                             {{-- Job Title --}}
-                                            <p class="text-[{{ $custom_styles['sub_title_color'] }}] font-bold mt-2 text-md">
-                                                {{ $card_details->sub_title }}
-                                            </p>
+                                            <p class="text-[{{ $custom_styles['sub_title_color'] }}] font-bold mt-2 text-md" style="font-size: {{ $custom_styles['sub_title_font_size'] ?? '18' }}px !important; text-align: {{ $subtitle_align }};">{{ $card_details->sub_title }}</p>
                                             {{-- About --}}
                                             @if (isset($business_card_details->description) || isset($business_card_details->address))
                                                 <div
@@ -329,19 +339,17 @@
 
                                         <div class="relative flex flex-col">
                                             {{-- Name --}}
-                                            <h1
-                                                class="lg:text-4xl text-2xl font-medium text-[{{ $custom_styles['title_color'] }}] tracking-tighter">
                                             @if(!empty($business_card_details->title2))
-                                                {{ $business_card_details->title2 }} <br>
+<h1
+                                                class="lg:text-4xl text-2xl font-medium text-[{{ $custom_styles['title_color'] }}] tracking-tighter w-full" style="margin-bottom: 0px; padding-bottom: 0px; font-size: {{ $custom_styles['title2_font_size'] ?? '36' }}px !important; font-family: '{{ $title2_font }}', sans-serif; text-align: {{ $title2_align }};">{{ $business_card_details->title2 }}</h1>
+@endif
+@if(!empty($business_card_details->subtitle2))
+                                                <p class="text-[{{ $custom_styles['sub_title_color'] }}] font-bold mt-2 text-md w-full" style="margin-bottom: 5px; padding-bottom: 0px; font-size: {{ $custom_styles['subtitle2_font_size'] ?? '18' }}px !important; font-family: '{{ $subtitle2_font }}', sans-serif; text-align: {{ $subtitle2_align }};">{{ $business_card_details->subtitle2 }}</p>
                                             @endif
-                                            @if(!empty($business_card_details->subtitle2))
-                                                {{ $business_card_details->subtitle2 }} <br>
-                                            @endif
-                                            {{ $business_card_details->title }}</h1>
+<h1
+                                                class="lg:text-4xl text-2xl font-medium text-[{{ $custom_styles['title_color'] }}] tracking-tighter w-full" style="font-size: {{ $custom_styles['title_font_size'] ?? '36' }}px !important; text-align: {{ $title1_align }};">{{ $business_card_details->title }}</h1>
                                             {{-- Job Title --}}
-                                            <p class="text-[{{ $custom_styles['sub_title_color'] }}] font-bold mt-2 text-md">
-                                                {{ $card_details->sub_title }}
-                                            </p>
+                                            <p class="text-[{{ $custom_styles['sub_title_color'] }}] font-bold mt-2 text-md w-full" style="font-size: {{ $custom_styles['sub_title_font_size'] ?? '18' }}px !important; text-align: {{ $subtitle_align }};">{{ $card_details->sub_title }}</p>
                                             {{-- About --}}
                                             @if (isset($business_card_details->description) || isset($business_card_details->address))
                                                 <div

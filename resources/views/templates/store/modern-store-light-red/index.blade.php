@@ -29,10 +29,10 @@
     <meta name="theme-color" content="red" />
 
     <!-- Add to homescreen for Chrome on Android -->
-    <meta name="application-name" content="{{ $card_details->title }}">
+    <meta name="application-name" content="{{ $business_card_details->title }}">
 
     <!-- Add to homescreen for Safari on iOS -->
-    <meta name="apple-mobile-web-app-title" content="{{ $card_details->title }}">
+    <meta name="apple-mobile-web-app-title" content="{{ $business_card_details->title }}">
 
     <!-- Tile for Win8 -->
     <meta name="msapplication-TileColor" content="red">
@@ -154,7 +154,13 @@
                     <div class="row pt-6">
                         {{-- Greeting message --}}
                         <div class="col-md-12">
-                            <h3 class="alert alert-important alert-red p-3">{{ $business_card_details->sub_title }}
+                            <h3 class="alert alert-important alert-red p-3">@if(!empty($business_card_details->title2))
+{{ $business_card_details->title2 }} <br>
+@endif
+@if(!empty($business_card_details->subtitle2))
+{{ $business_card_details->subtitle2 }} <br>
+@endif
+{{ $business_card_details->sub_title }}
                             </h3>
                         </div>
 
@@ -480,7 +486,7 @@
                             <span class="text-muted">
                                 {{ __('Copyright') }} &copy;
                                 <span id="year"></span>
-                                <a href="{{ url($business_card_details->{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}</a>.
+                                <a href="{{ url()->current() }}">{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : $business_card_details->title }}</a>.
                                 {{ __('All rights reserved.') }} <br>
                                 @if (!isset($plan_details['hide_branding']) || $plan_details['hide_branding'] != 1)
                                     {{ __('Made with') }} <i class="ti ti-heart text-danger"></i> {{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}
@@ -874,7 +880,7 @@
     @endif
 
     {{-- WharApp Chat --}}
-    @include('templates.includes.whatsapp-float', ['businessImage' => $business_card_details->profile, 'businessName' => $card_details->title, 'whatsappNumber' => $enquiry_button])
+    @include('templates.includes.whatsapp-float', ['businessImage' => $business_card_details->profile, 'businessName' => $business_card_details->title, 'whatsappNumber' => $enquiry_button])
 
     <!-- Core -->
     <script type="text/javascript" src="{{ url('js/tabler.min.js') }}"></script>

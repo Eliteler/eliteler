@@ -53,6 +53,10 @@
                                         <div class="text-muted small">
                                             @if ($status == 'all')
                                                 {{ __('Customers who have been verified and can access the system.') }}
+                                            @elseif ($status == 'active')
+                                                {{ __('Customers who are active and can access the system.') }}
+                                            @elseif ($status == 'inactive')
+                                                {{ __('Customers who are inactive and cannot access the system.') }}
                                             @elseif ($status == 'verified')
                                                 {{ __('Customers who have been verified and can access the system.') }}
                                             @elseif ($status == 'unverified')
@@ -76,6 +80,14 @@
                                                 <a class="dropdown-item {{ $status == 'all' ? 'active' : '' }}"
                                                     href="{{ route('admin.customers', ['status' => 'all']) }}">
                                                     {{ __('All Customers') }}
+                                                </a>
+                                                <a class="dropdown-item {{ $status == 'active' ? 'active' : '' }}"
+                                                    href="{{ route('admin.customers', ['status' => 'active']) }}">
+                                                    {{ __('Active') }}
+                                                </a>
+                                                <a class="dropdown-item {{ $status == 'inactive' ? 'active' : '' }}"
+                                                    href="{{ route('admin.customers', ['status' => 'inactive']) }}">
+                                                    {{ __('Inactive') }}
                                                 </a>
                                                 <a class="dropdown-item {{ $status == 'verified' ? 'active' : '' }}"
                                                     href="{{ route('admin.customers', ['status' => 'verified']) }}">

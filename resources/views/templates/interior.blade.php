@@ -250,18 +250,15 @@
 
                                     <div class="relative z-10">
                                         {{-- Name --}}
-                                        <h1 class="lg:text-5xl text-3xl font-medium text-[#121212] head tracking-tighter">
-                                            @if(!empty($business_card_details->title2))
-                                                {{ $business_card_details->title2 }} <br>
-                                            @endif
-                                            @if(!empty($business_card_details->subtitle2))
-                                                {{ $business_card_details->subtitle2 }} <br>
-                                            @endif
-                                            {{ $business_card_details->title }}</h1>
+                                        @if(!empty($business_card_details->title2))
+<h1 class="lg:text-5xl text-3xl font-medium text-[#121212] head tracking-tighter" style="margin-bottom: 0px; padding-bottom: 0px;">{{ $business_card_details->title2 }}</h1>
+@endif
+@if(!empty($business_card_details->subtitle2))
+<p class="text-teal-600 font-bold mt-2 text-md" style="margin-bottom: 5px; padding-bottom: 0px;">{{ $business_card_details->subtitle2 }}</p>
+@endif
+<h1 class="lg:text-5xl text-3xl font-medium text-[#121212] head tracking-tighter">{{ $business_card_details->title }}</h1>
                                         {{-- Job Title --}}
-                                        <p class="text-teal-600 font-bold mt-2 text-md">
-                                            {{ $card_details->sub_title }}
-                                        </p>
+                                        <p class="text-teal-600 font-bold mt-2 text-md">{{ $card_details->sub_title }}</p>
                                         {{-- About --}}
                                         @if (isset($business_card_details->description) || isset($business_card_details->address))
                                             <div class="mt-4 text-base leading-relaxed font-medium px-12 tracking-tight">
