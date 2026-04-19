@@ -207,6 +207,8 @@ class CreateController extends Controller
                     $card->subtitle2   = $request->subtitle2;
                     $card->copyright   = $request->copyright;
                     $card->description = $request->description;
+                    $card->email_from_name = $request->email_from_name;
+                    $card->email_from_address = $request->email_from_address;
 
                     if ($request->type == 'custom') {
                         $card->custom_styles = json_encode([

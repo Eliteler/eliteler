@@ -53,35 +53,60 @@
                                 @csrf
                                 <div class="card-body">
                                     <h3 class="card-title mb-4">{{ __('Section Titles') }}</h3>
-                                    <div class="row">
-                                        <table id="sectionTable" class="table table-bordered table-striped">
-                                            <thead>
-                                                <tr>
-                                                    {{-- <th style="width:50px;">{{ __('Drag') }}</th> --}}
-                                                    {{-- <th>{{ __('Title') }}</th> --}}
-                                                </tr>
-                                            </thead>
-                                            <tbody id="sortable">
-                                                @foreach ($sectionTitles as $item)
-                                                    <tr></tr>
-                                                    <tr data-id="{{ $item->id }}">
-                                                        {{-- <td class="handle text-center" style="cursor:grab;">☰</td> --}}
-                                                        <td class="border-0">
-                                                            <label class='form-label required'>{{ __($item->label) }}</label>
-                                                            <input 
-                                                                type="text" 
-                                                                name="titles[{{ $item->id }}]" 
-                                                                value="{{ $item->title }}" 
-                                                                class="form-control editable-input"
-                                                                placeholder="{{ __('Enter title') }}"
-                                                                minlength="1" maxlength="20" required
-                                                            >
-                                                        </td>
-                                                    </tr>
-                                                @endforeach
-                                            </tbody>
-                                        </table>
+
+                                    {{-- Column header labels --}}
+                                    <div class="row mb-2">
+                                        <div class="col-12 col-md-6">
+                                            <label class="form-label fw-bold text-muted small">
+                                                🌐 {{ __('Default Title') }}
+                                            </label>
+                                        </div>
+                                        <div class="col-12 col-md-6">
+                                            <label class="form-label fw-bold text-muted small" style="float:right;">
+                                                🇸🇦 {{ __('العنوان بالعربية') }}
+                                            </label>
+                                        </div>
                                     </div>
+
+                                    @foreach ($sectionTitles as $item)
+                                        <div class="row mb-3 align-items-center border-bottom pb-3">
+                                            {{-- Section label --}}
+                                            <div class="col-12 mb-1">
+                                                <span class="badge bg-blue-lt">{{ __($item->label) }}</span>
+                                            </div>
+
+                                            {{-- Default / Primary title --}}
+                                            <div class="col-12 col-md-6">
+                                                <label class="form-label required small text-muted">{{ __('Default Title') }}</label>
+                                                <input
+                                                    type="text"
+                                                    name="titles[{{ $item->id }}]"
+                                                    value="{{ old('titles.' . $item->id, $item->title) }}"
+                                                    class="form-control editable-input"
+                                                    placeholder="{{ __('Enter title') }}"
+                                                    minlength="1" maxlength="100" required
+                                                >
+                                            </div>
+
+                                            {{-- Arabic title --}}
+                                            <div class="col-12 col-md-6">
+                                                <label class="form-label small text-muted" style="float:right; width:100%; text-align:right;">
+                                                    {{ __('العنوان بالعربية') }}
+                                                    <span class="text-muted">({{ __('اختياري') }})</span>
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    name="titles_ar[{{ $item->id }}]"
+                                                    value="{{ old('titles_ar.' . $item->id, $item->title_ar) }}"
+                                                    class="form-control editable-input text-end"
+                                                    placeholder="أدخل العنوان بالعربية"
+                                                    dir="rtl"
+                                                    maxlength="100"
+                                                >
+                                            </div>
+                                        </div>
+                                    @endforeach
+
                                 </div>
                                 <div class="card-footer text-end">
                                     <div class="d-flex">
@@ -118,64 +143,12 @@
     {{-- Custom JS --}}
     @push('custom-js')
         <script>
-            // Init DataTable
-            let table = new DataTable('#sectionTable', {
-                paging: false,
-                searching: false,
-                info: false,
-                order: [[0, 'asc']]
-            });
+            // Init DataTable - disabled since we switched to a simpler list layout
+            // let table = new DataTable('#sectionTable', { ... });
 
-            // Enable drag/drop on tbody
-            let el = document.getElementById('sortable');
-            Sortable.create(el, {
-                animation: 150,
-                handle: '.handle'
-            });
-
-            // // Save order
-            // document.getElementById('saveOrder').addEventListener('click', () => {
-            //     let order = Array.from(document.querySelectorAll('#sortable tr'))
-            //         .map(row => row.getAttribute('data-id'));
-
-            //     fetch("{{ route('user.save.section.title', ['id' => $business_card->card_id]) }}", {
-            //         method: 'POST',
-            //         headers: {
-            //             'Content-Type': 'application/json',
-            //             'X-CSRF-TOKEN': "{{ csrf_token() }}"
-            //         },
-            //         body: JSON.stringify({
-            //             order
-            //         })
-            //     }).then(r => r.json()).then(() => {
-            //         alert('Order saved');
-            //     }).catch(() => alert('Save failed'));
-            // });
-
-            // // Update title on blur
-            // document.querySelectorAll('.editable').forEach(span => {
-            //     span.addEventListener('blur', function() {
-            //         let row = this.closest('tr');
-            //         let id = row.getAttribute('data-id');
-            //         let newTitle = this.textContent.trim();
-
-            //         fetch("", {
-            //             method: 'POST',
-            //             headers: {
-            //                 'Content-Type': 'application/json',
-            //                 'X-CSRF-TOKEN': "{{ csrf_token() }}"
-            //             },
-            //             body: JSON.stringify({
-            //                 id,
-            //                 title: newTitle
-            //             })
-            //         }).then(r => r.json()).then(data => {
-            //             if (data.status !== 'ok') {
-            //                 alert('Failed to update title');
-            //             }
-            //         }).catch(() => alert('Error updating title'));
-            //     });
-            // });
+            // Enable drag/drop on tbody (disabled for now)
+            // let el = document.getElementById('sortable');
+            // Sortable.create(el, { animation: 150, handle: '.handle' });
         </script>
     @endpush
 @endsection

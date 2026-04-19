@@ -68,31 +68,54 @@
                             <div class="card-body">
                                 {{-- Whatapp Chatbot --}}
                                 <div class="row">
-                                    <div class="col-xl-4 col-12">
+                                    <div class="col-12">
                                         <div class="mb-3">
                                             <label class="form-label required"
                                                 for="show_whatsapp_chatbot">{{ __('Want to display whatsapp chat button on website?') }}</label>
                                             <select name="show_whatsapp_chatbot" id="show_whatsapp_chatbot"
                                                 class="form-select show_whatsapp_chatbot" required>
                                                 <option value="1"
-                                                    {{ $whatsapp_settings[40]->config_value == '1' ? 'selected' : '' }}>
+                                                    {{ ($config['show_whatsapp_chatbot'] ?? '0') == '1' ? 'selected' : '' }}>
                                                     {{ __('Yes') }}</option>
                                                 <option value="0"
-                                                    {{ $whatsapp_settings[40]->config_value == '0' ? 'selected' : '' }}>
+                                                    {{ ($config['show_whatsapp_chatbot'] ?? '0') == '0' ? 'selected' : '' }}>
                                                     {{ __('No') }}</option>
                                             </select>
+                                        </div>
+                                    </div>
+
+                                @for($i = 1; $i <= 6; $i++)
+                                    @php
+                                        $numKey = $i == 1 ? 'whatsapp_chatbot_mobile_number' : "whatsapp_chatbot_mobile_number_{$i}";
+                                        $msgKey = $i == 1 ? 'whatsapp_chatbot_message' : "whatsapp_chatbot_message_{$i}";
+                                        $nameKey = "whatsapp_chatbot_name_{$i}";
+                                    @endphp
+                                    <div class="col-12 mb-3 mt-4">
+                                        <h3 class="mb-0">{{ __('WhatsApp Configuration') }} {{ $i }} {{ $i==1 ? '('.__('Primary').')' : '('.__('Optional').')' }}</h3>
+                                    </div>
+
+                                    {{-- WhatsApp Name --}}
+                                    <div class="col-xl-4 col-12">
+                                        <div class="mb-3">
+                                            <label class="form-label {{ $i == 1 ? 'required' : '' }}">{{ __('Department / Name') }}</label>
+                                            <input type="text" class="form-control"
+                                                name="{{ $nameKey }}"
+                                                value="{{ $config[$nameKey] ?? '' }}"
+                                                placeholder="{{ __('e.g. Sales, Support') }}"
+                                                {{ $i == 1 ? 'required' : '' }}>
                                         </div>
                                     </div>
 
                                     {{-- WhatsApp Number --}}
                                     <div class="col-xl-4 col-12">
                                         <div class="mb-3">
-                                            <label class="form-label required">{{ __('WhatsApp Number') }}</label>
+                                            <label class="form-label {{ $i == 1 ? 'required' : '' }}">{{ __('WhatsApp Number') }}</label>
                                             <input type="tel" class="form-control reduce-control"
-                                                name="whatsapp_chatbot_mobile_number"
-                                                value="{{ $whatsapp_settings[41]->config_value }}"
+                                                name="{{ $numKey }}"
+                                                value="{{ $config[$numKey] ?? '' }}"
                                                 placeholder="{{ __('WhatsApp Number') }}"
-                                                oninput="javascript: if (this.value.length > 20) this.value = this.value.slice(0, 20); this.value = this.value.replace(/[^0-9]/g, '');">
+                                                oninput="javascript: if (this.value.length > 20) this.value = this.value.slice(0, 20); this.value = this.value.replace(/[^0-9]/g, '');"
+                                                {{ $i == 1 ? 'required' : '' }}>
                                             <small>{{ __('With Country code (without +)') }}</small>
                                         </div>
                                     </div>
@@ -100,11 +123,13 @@
                                     {{-- Initial Chat Message --}}
                                     <div class="col-xl-4 col-12">
                                         <div class="mb-3">
-                                            <label class="form-label required">{{ __('Initial Chat Message') }}</label>
-                                            <textarea class="form-control" name="whatsapp_chatbot_message" id="whatsapp_chatbot_message" cols="30"
-                                                rows="2" placeholder="{{ __('Initial Chat Message') }}" required>{{ $whatsapp_settings[42]->config_value }}</textarea>
+                                            <label class="form-label {{ $i == 1 ? 'required' : '' }}">{{ __('Initial Chat Message') }}</label>
+                                            <textarea class="form-control" name="{{ $msgKey }}" id="{{ $msgKey }}" cols="30"
+                                                rows="2" placeholder="{{ __('Initial Chat Message') }}" {{ $i == 1 ? 'required' : '' }}>{{ $config[$msgKey] ?? '' }}</textarea>
                                         </div>
                                     </div>
+                                @endfor
+
                                 </div>
                             </div>
                             <div class="card-footer text-end">
@@ -122,10 +147,8 @@
 @section('scripts')
 <script type="text/javascript" src="{{ asset('js/tom-select.base.min.js') }}"></script>
 <script>
-    // Array of element selectors
     var elementSelectors = ['.show_whatsapp_chatbot'];
 
-    // Function to initialize TomSelect on an element
     function initializeTomSelect(el) {
         new TomSelect(el, {
             copyClassesToDropdown: false,
@@ -150,36 +173,12 @@
         });
     }
 
-    // Initialize TomSelect on existing elements
     elementSelectors.forEach(function(selector) {
         var elements = document.querySelectorAll(selector);
         elements.forEach(function(el) {
             initializeTomSelect(el);
         });
     });
-
-    // Observe the document for dynamically added elements
-    var observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            mutation.addedNodes.forEach(function(node) {
-                if (node.nodeType === 1) { // Ensure it's an element node
-                    elementSelectors.forEach(function(selector) {
-                        if (node.matches(selector)) {
-                            initializeTomSelect(node);
-                        }
-                        // Also check if new nodes have children that match
-                        var childElements = node.querySelectorAll(selector);
-                        childElements.forEach(function(childEl) {
-                            initializeTomSelect(childEl);
-                        });
-                    });
-                }
-            });
-        });
-    });
-
-    // Configure the observer
-    observer.observe(document.body, { childList: true, subtree: true });
 </script>
 @endsection
 @endsection

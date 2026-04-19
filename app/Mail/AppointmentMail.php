@@ -34,12 +34,28 @@ class AppointmentMail extends Mailable
         $this->details = $details;
     }
 
-    /**
-     * Get the message envelope.
-     */
     public function envelope(): Envelope
     {
+        $from_address = config('mail.from.address');
+        $from_name = config('mail.from.name');
+ 
+        if (isset($this->details['cardId'])) {
+            $vcard = \App\BusinessCard::where('card_id', $this->details['cardId'])->first();
+            if ($vcard) {
+                if (!empty($vcard->email_from_name)) {
+                    $from_name = $vcard->email_from_name;
+                }
+                if (!empty($vcard->email_from_address)) {
+                    $from_address = $vcard->email_from_address;
+                }
+            }
+        }
+ 
         return new Envelope(
+            from: new \Illuminate\Mail\Mailables\Address($from_address, $from_name),
+            replyTo: [
+                new \Illuminate\Mail\Mailables\Address($from_address, $from_name)
+            ],
             subject: __(strtr($this->details['emailSubject'], [
                 ':appname' => config('app.name'),
                 ':hyperlink' => $hyperlink ?? '',

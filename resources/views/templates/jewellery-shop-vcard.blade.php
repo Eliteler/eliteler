@@ -273,7 +273,7 @@
                         @if ($validFeatures->isNotEmpty())
                             <div class="section gsap-fade">
                                 <div class="section-header">
-                                    <h2 class="section-title">{{ __($feature_details[0]->title) }}</h2>
+                                    <h2 class="section-title">{{ (App::isLocale('ar') && !empty($feature_details[0]->title_ar)) ? $feature_details[0]->title_ar : __($feature_details[0]->title) }}</h2>
                                     <div class="section-deco">
                                         <span class="section-deco__dash"></span>
                                         <span class="section-deco__diamond"></span>
@@ -348,7 +348,7 @@
                                 <i class="far fa-gem decor-icon anim-float"
                                     style="font-size:85px;left:0;top:20px"></i>
                                 <div class="section-header">
-                                    <h2 class="section-title">{{ __($service_details[0]->title) }}</h2>
+                                    <h2 class="section-title">{{ (App::isLocale('ar') && !empty($service_details[0]->title_ar)) ? $service_details[0]->title_ar : __($service_details[0]->title) }}</h2>
                                     <div class="section-deco"><span class="section-deco__dash"></span><span
                                             class="section-deco__diamond"></span><span
                                             class="section-deco__dash"></span>
@@ -384,7 +384,7 @@
                         @if (count($product_details) > 0)
                             <div class="section gsap-fade">
                                 <div class="section-header">
-                                    <h2 class="section-title">{{ __($product_details[0]->title) }}</h2>
+                                    <h2 class="section-title">{{ (App::isLocale('ar') && !empty($product_details[0]->title_ar)) ? $product_details[0]->title_ar : __($product_details[0]->title) }}</h2>
                                     <div class="section-deco"><span class="section-deco__dash"></span><span
                                             class="section-deco__diamond"></span><span
                                             class="section-deco__dash"></span>
@@ -437,7 +437,7 @@
                         @if (count($galleries_details) > 0)
                             <div class="section gsap-fade">
                                 <div class="section-header">
-                                    <h2 class="section-title">{{ __($galleries_details[0]->title) }}</h2>
+                                    <h2 class="section-title">{{ (App::isLocale('ar') && !empty($galleries_details[0]->title_ar)) ? $galleries_details[0]->title_ar : __($galleries_details[0]->title) }}</h2>
                                     <div class="section-deco"><span class="section-deco__dash"></span><span
                                             class="section-deco__diamond"></span><span
                                             class="section-deco__dash"></span>
@@ -532,7 +532,7 @@
                         @if ($plan_details['business_hours'] == 1 && $business_hours != null && $business_hours->is_display != 0)
                             <div class="section gsap-fade">
                                 <div class="section-header">
-                                    <h2 class="section-title">{{ __($business_hours->title) }}</h2>
+                                    <h2 class="section-title">{{ (App::isLocale('ar') && !empty($business_hours->title_ar)) ? $business_hours->title_ar : __($business_hours->title) }}</h2>
                                     <div class="section-deco"><span class="section-deco__dash"></span><span
                                             class="section-deco__diamond"></span><span
                                             class="section-deco__dash"></span>
@@ -624,7 +624,7 @@
                         @if (count($testimonials) > 0)
                             <div class="section gsap-fade">
                                 <div class="section-header">
-                                    <h2 class="section-title">{{ __($testimonials[0]->title) }}</h2>
+                                    <h2 class="section-title">{{ (App::isLocale('ar') && !empty($testimonials[0]->title_ar)) ? $testimonials[0]->title_ar : __($testimonials[0]->title) }}</h2>
                                     <div class="section-deco"><span class="section-deco__dash"></span><span
                                             class="section-deco__diamond"></span><span
                                             class="section-deco__dash"></span>
@@ -661,7 +661,7 @@
                         @if (count($payment_details) > 0)
                             <div class="section gsap-fade">
                                 <div class="section-header">
-                                    <h2 class="section-title">{{ __($payment_details[0]->title) }}</h2>
+                                    <h2 class="section-title">{{ (App::isLocale('ar') && !empty($payment_details[0]->title_ar)) ? $payment_details[0]->title_ar : __($payment_details[0]->title) }}</h2>
                                     <div class="section-deco"><span class="section-deco__dash"></span><span
                                             class="section-deco__diamond"></span><span
                                             class="section-deco__dash"></span>
@@ -789,7 +789,7 @@
                         @if ($plan_details['contact_form'] == 1 && $business_card_details->enquiry_email != null)
                             <div class="section gsap-fade" id="contact-section">
                                 <div class="section-header">
-                                    <h2 class="section-title">{{ __($business_card_details->contact_form_title) }}
+                                    <h2 class="section-title">{{ (App::isLocale('ar') && !empty($business_card_details->contact_form_title_ar)) ? $business_card_details->contact_form_title_ar : __($business_card_details->contact_form_title) }}
                                     </h2>
                                     <div class="section-deco"><span class="section-deco__dash"></span><span
                                             class="section-deco__diamond"></span><span

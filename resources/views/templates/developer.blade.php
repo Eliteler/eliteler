@@ -352,7 +352,7 @@
                                     @if ($validFeatures->isNotEmpty())
                                         <div class="relative">
                                             <h2 class="text-3xl lg:text-4xl font-bold text-gray-800 pt-12 pb-4">
-                                                {{ __($feature_details[0]->title) }}
+                                                {{ (App::isLocale('ar') && !empty($feature_details[0]->title_ar)) ? $feature_details[0]->title_ar : __($feature_details[0]->title) }}
                                             </h2>
 
                                             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -393,7 +393,7 @@
                                     <div class="relative">
                                         <img src="{{ url('img/templates/developer/3.png') }}" alt="" class="w-24 opacity-50 absolute top-4 ltr:-right-12 rtl:-left-14 z-20" />
                                         <h2 class="text-3xl lg:text-4xl font-bold text-gray-800 pt-12 pb-4">
-                                            {{ __($service_details[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($service_details[0]->title_ar)) ? $service_details[0]->title_ar : __($service_details[0]->title) }}
                                         </h2>
                                         <div class="">
                                             <swiper-container slides-per-view="1" class="mySwiper" autoplay-delay="3000"
@@ -442,7 +442,7 @@
                                     <div class="relative">
                                         
                                         <h2 class="text-3xl lg:text-4xl font-bold text-gray-800 pt-12 pb-4">
-                                            {{ __($product_details[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($product_details[0]->title_ar)) ? $product_details[0]->title_ar : __($product_details[0]->title) }}
                                         </h2>
                                         <swiper-container class="mySwiper" autoplay-delay="2500" autoplay-disable-on-interaction="false">
                                             {{-- All products --}}
@@ -520,7 +520,7 @@
                                 @if (count($galleries_details) > 0)
                                     <div class="relative">
                                         <h2 class="text-3xl lg:text-4xl font-bold text-gray-800 pt-12 pb-4">
-                                            {{ __($galleries_details[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($galleries_details[0]->title_ar)) ? $galleries_details[0]->title_ar : __($galleries_details[0]->title) }}
                                         </h2>
                                         <div>
                                             <swiper-container class="mySwiper" autoplay-delay="3000" autoplay-disable-on-interaction="false">
@@ -619,7 +619,7 @@
                                     <div class="relative">
                                         <img src="{{ url('img/templates/developer/4.png') }}" alt="" class="w-20 absolute top-2 ltr:-right-7 rtl:-left-7 opacity-40" />
                                         <h2 class="text-3xl lg:text-4xl font-bold text-gray-800 pt-12 pb-4">
-                                            {{ __($testimonials[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($testimonials[0]->title_ar)) ? $testimonials[0]->title_ar : __($testimonials[0]->title) }}
                                         </h2>
                                         <swiper-container class="mySwiper" autoplay-delay="3000" autoplay-disable-on-interaction="false" loop="true">
                                             {{-- Client Reviews --}}
@@ -707,7 +707,7 @@
                                         <section class="">
                                             <!-- Section Header -->
                                             <h2 class="text-3xl lg:text-4xl font-bold text-gray-800 pt-12 pb-4">
-                                                {{ __($business_hours->title) }}
+                                                {{ (App::isLocale('ar') && !empty($business_hours->title_ar)) ? $business_hours->title_ar : __($business_hours->title) }}
                                             </h2>
 
                                             <!-- Business Hours Card -->
@@ -904,7 +904,7 @@
                                     <div class="relative">
                                         <img src="{{ url('img/templates/developer/5.png') }}" alt="" class="w-16 absolute top-1 ltr:-left-6 rtl:-right-6 opacity-20" />
                                         <h2 class="text-3xl lg:text-4xl font-bold text-gray-800 pt-12 pb-4">
-                                            {{ __($payment_details[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($payment_details[0]->title_ar)) ? $payment_details[0]->title_ar : __($payment_details[0]->title) }}
                                         </h2>
                                         <div class="grid lg:grid-cols-2 gap-4">
                                             {{-- Payment options --}}
@@ -1039,7 +1039,7 @@
                                         <div class="relative pb-14 lg:pb-6">
                                             <img src="{{ url('img/templates/developer/6.png') }}" alt="" class="w-24 absolute top-0 ltr:-right-8 rtl:-left-8 opacity-30" />
                                             <h2 class="text-3xl lg:text-4xl font-bold text-gray-800 pt-12 pb-4">
-                                                {{ __($business_card_details->contact_form_title) }}
+                                                {{ (App::isLocale('ar') && !empty($business_card_details->contact_form_title_ar)) ? $business_card_details->contact_form_title_ar : __($business_card_details->contact_form_title) }}
                                             </h2>
 
                                             {{-- Message Alert --}}

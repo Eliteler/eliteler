@@ -338,7 +338,7 @@
                                     @if ($validFeatures->isNotEmpty())
                                         <div class="pt-6">
                                             <h2 class="text-2xl font-bold text-gray-800">
-                                                {{ __($feature_details[0]->title) }}
+                                                {{ (App::isLocale('ar') && !empty($feature_details[0]->title_ar)) ? $feature_details[0]->title_ar : __($feature_details[0]->title) }}
                                             </h2>
                                         </div>
 
@@ -380,7 +380,7 @@
                                 @if (count($service_details) > 0)
                                     <div class="py-10">
                                         <h2 class="text-2xl font-bold text-gray-800 mb-4 relative">
-                                            {{ __($service_details[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($service_details[0]->title_ar)) ? $service_details[0]->title_ar : __($service_details[0]->title) }}
                                             <img src="{{ asset('img/templates/makeup/3.png') }}" alt=""
                                                 class="lg:w-16 w-14 absolute -top-24 ltr:-left-6 rtl:-right-6 ltr:scale-x-[-1] rtl:scale-x-100" />
                                         </h2>
@@ -424,7 +424,7 @@
                                         <h2 class="text-2xl font-bold text-gray-800 mb-4 relative">
                                             <img src="{{ asset('img/templates/makeup/1.png') }}" alt=""
                                                 class="lg:w-32 w-24 absolute -top-32 ltr:-right-6 rtl:-left-6 ltr:scale-x-[-1] rtl:scale-x-100" />
-                                            {{ __($product_details[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($product_details[0]->title_ar)) ? $product_details[0]->title_ar : __($product_details[0]->title) }}
                                         </h2>
                                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 mt-6">
                                             {{-- All products --}}
@@ -505,7 +505,7 @@
                                     <div class="py-8">
                                         <h2 class="text-2xl font-bold text-gray-800 mb-4 relative">
 
-                                            {{ __($galleries_details[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($galleries_details[0]->title_ar)) ? $galleries_details[0]->title_ar : __($galleries_details[0]->title) }}
                                         </h2>
                                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 mb-10">
                                             <!--Swiper Slider-->
@@ -542,7 +542,7 @@
                                         <h2 class="text-2xl font-bold text-gray-800 mb-4 relative">
                                             <img src="{{ asset('img/templates/makeup/4.png') }}" alt=""
                                                 class="w-16 absolute -top-20 ltr:-left-6 rtl:-right-6 rtl:transform rtl:scale-x-[-1] ltr:scale-x-100" />
-                                            {{ __($testimonials[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($testimonials[0]->title_ar)) ? $testimonials[0]->title_ar : __($testimonials[0]->title) }}
                                         </h2>
                                         <div class="swiper-container">
                                             <div class="swiper-wrapper">
@@ -697,7 +697,7 @@
                                         <section>
                                             <!-- Section Header -->
                                             <h2 class="text-2xl font-bold text-gray-800">
-                                                {{ __($business_hours->title) }}
+                                                {{ (App::isLocale('ar') && !empty($business_hours->title_ar)) ? $business_hours->title_ar : __($business_hours->title) }}
                                             </h2>
 
                                             <!-- Business Hours Card -->
@@ -893,7 +893,7 @@
                                     <div class="py-8">
                                         <h2 class="text-2xl font-bold text-gray-800 mb-4 relative">
 
-                                            {{ __($payment_details[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($payment_details[0]->title_ar)) ? $payment_details[0]->title_ar : __($payment_details[0]->title) }}
                                         </h2>
                                         <div class="grid lg:grid-cols-2 gap-4">
                                             {{-- Payment options --}}
@@ -1037,7 +1037,7 @@
                                             <h2 class="text-3xl font-semibold text-gray-800 mb-6 relative">
                                                 <img src="{{ asset('img/templates/makeup/3.png') }}" alt="Makeup icon"
                                                     class="absolute -top-16 w-24 ltr:-right-6 rtl:-left-6 ltr:scale-x-[-1] ltr:rotate-180 rtl:rotate-180 rtl:scale-x-100" />
-                                                {{ __($business_card_details->contact_form_title) }}
+                                                {{ (App::isLocale('ar') && !empty($business_card_details->contact_form_title_ar)) ? $business_card_details->contact_form_title_ar : __($business_card_details->contact_form_title) }}
                                             </h2>
 
                                             {{-- Message Alert --}}

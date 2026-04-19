@@ -390,7 +390,7 @@
                                             <h2
                                                 class="text-3xl  font-medium text-[#121212] py-12 text-center relative custom-head">
                                                 <div class="absolute bottom-10 left-1/2 h-1 w-14 bg-[#327C91] -mx-6"></div>
-                                                {{ __($feature_details[0]->title) }}
+                                                {{ (App::isLocale('ar') && !empty($feature_details[0]->title_ar)) ? $feature_details[0]->title_ar : __($feature_details[0]->title) }}
                                             </h2>
                                             <img src="{{ url('img/templates/resort/12.png') }}" alt=""
                                                 class="w-36 absolute -top-0 -right-[75px] -rotate-45" />
@@ -435,7 +435,7 @@
                                         <h2
                                             class="text-3xl  font-medium text-[#121212] py-12 text-center relative custom-head">
                                             <div class="absolute bottom-10 left-1/2 h-1 w-14 bg-[#327C91] -mx-6"></div>
-                                            {{ __($service_details[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($service_details[0]->title_ar)) ? $service_details[0]->title_ar : __($service_details[0]->title) }}
                                         </h2>
                                         <img src="{{ url('img/templates/resort/1.png') }}" alt=""
                                             class="w-28 absolute top-5 -left-[35px] " />
@@ -483,7 +483,7 @@
                                         <h2
                                             class="text-3xl  font-medium text-[#121212] py-12 text-center relative custom-head">
                                             <div class="absolute bottom-10 left-1/2 h-1 w-14 bg-[#327C91] -mx-6"></div>
-                                            {{ __($product_details[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($product_details[0]->title_ar)) ? $product_details[0]->title_ar : __($product_details[0]->title) }}
                                         </h2>
                                         <img src="{{ url('img/templates/resort/2.png') }}" alt=""
                                             class="w-24 absolute top-5 -right-[35px] scale-x-[-1] -rotate-12 opacity-90" />
@@ -569,7 +569,7 @@
                                         <h2
                                             class="text-3xl  font-medium text-[#121212] py-12 text-center relative custom-head">
                                             <div class="absolute bottom-10 left-1/2 h-1 w-14 bg-[#327C91] -mx-6"></div>
-                                            {{ __($galleries_details[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($galleries_details[0]->title_ar)) ? $galleries_details[0]->title_ar : __($galleries_details[0]->title) }}
                                         </h2>
                                         <img src="{{ url('img/templates/resort/5.png') }}" alt=""
                                             class="w-28 absolute top-2 -left-[65px] rotate-12" />
@@ -673,7 +673,7 @@
                                     <div class="relative">
                                         <h2 class="text-3xl  font-medium text-gray-800 py-12 text-center relative custom-head">
                                             <div class="absolute bottom-10 left-1/2 h-1 w-14 bg-[#327C91] -mx-6"></div>
-                                            {{ __($testimonials[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($testimonials[0]->title_ar)) ? $testimonials[0]->title_ar : __($testimonials[0]->title) }}
                                         </h2>
                                         <img src="{{ url('img/templates/resort/7.png') }}" alt=""
                                             class="w-28 absolute top-3 -right-[48px] -rotate-12" />
@@ -773,7 +773,7 @@
                                             <h2
                                                 class="text-3xl  font-medium text-[#121212] py-12 text-center relative custom-head">
                                                 <div class="absolute bottom-10 left-1/2 h-1 w-14 bg-[#327C91] -mx-6"></div>
-                                                {{ __($business_hours->title) }}
+                                                {{ (App::isLocale('ar') && !empty($business_hours->title_ar)) ? $business_hours->title_ar : __($business_hours->title) }}
                                             </h2>
                                             <img src="{{ url('img/templates/resort/11.png') }}" alt=""
                                                 class="w-28 absolute top-5 -right-[60px]" />
@@ -974,7 +974,7 @@
                                         <h2
                                             class="text-3xl  font-medium text-[#121212] py-12 text-center relative custom-head">
                                             <div class="absolute bottom-10 left-1/2 h-1 w-14 bg-[#327C91] -mx-6"></div>
-                                            {{ __($payment_details[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($payment_details[0]->title_ar)) ? $payment_details[0]->title_ar : __($payment_details[0]->title) }}
                                         </h2>
                                         <img src="{{ url('img/templates/resort/12.png') }}" alt=""
                                             class="w-36 absolute -top-0 -right-[75px] -rotate-45" />
@@ -1121,7 +1121,7 @@
                                             <h2
                                                 class="text-3xl  font-medium text-[#121212] py-12 text-center relative custom-head">
                                                 <div class="absolute bottom-10 left-1/2 h-1 w-14 bg-[#327C91] -mx-6"></div>
-                                                {{ __($business_card_details->contact_form_title) }}
+                                                {{ (App::isLocale('ar') && !empty($business_card_details->contact_form_title_ar)) ? $business_card_details->contact_form_title_ar : __($business_card_details->contact_form_title) }}
                                             </h2>
                                             <img src="{{ url('img/templates/resort/5.png') }}" alt=""
                                                 class="w-28 absolute top-2 -right-[65px] scale-x-[-1] -rotate-12" />

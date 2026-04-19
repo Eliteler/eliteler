@@ -11,6 +11,8 @@ class ServiceBooking extends Model
         'service_booking_id',
         'user_id',
         'vcard_id',
+        'title',
+        'title_ar',
         'service_booking',
         'service_booking_available_days',
         'service_booking_amount',

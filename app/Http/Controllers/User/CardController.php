@@ -99,6 +99,18 @@ class CardController extends Controller
                         $views = Visitor::where('card_id', $card->card_url)->count();
                         return '<span class="">' . $views . '</span>';
                     })
+                    ->editColumn('card_url', function ($card) use ($config) {
+                        if ($card->custom_domain == null) {
+                            if ($config[46]->config_value == '1') {
+                                $url = route('subdomain.profile', $card->card_url);
+                            } else {
+                                $url = route('profile', $card->card_url);
+                            }
+                        } else {
+                            $url = 'https://www.' . $card->custom_domain;
+                        }
+                        return '<a href="' . $url . '" target="_blank" class="text-primary">' . $card->card_url . '</a>';
+                    })
                     ->editColumn('card_status', function ($card) {
                         return $card->card_status == 'inactive'
                             ? '<span class="badge bg-red text-white text-white">' . __('Disabled') . '</span>'
@@ -193,7 +205,7 @@ class CardController extends Controller
                                 </div>
                             </div>';
                     })
-                    ->rawColumns(['created_at', 'type', 'title', 'views', 'card_status', 'action'])
+                    ->rawColumns(['created_at', 'type', 'title', 'views', 'card_url', 'card_status', 'action'])
                     ->make(true);
             }
 

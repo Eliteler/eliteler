@@ -380,7 +380,7 @@
                                         <div class="relative">
                                             <h2
                                                 class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative custom-head">
-                                                {{ __($feature_details[0]->title) }}
+                                                {{ (App::isLocale('ar') && !empty($feature_details[0]->title_ar)) ? $feature_details[0]->title_ar : __($feature_details[0]->title) }}
                                             </h2>
                                             <img src="{{ url('img/templates/yacht/1.png') }}" alt=""
                                                 class="w-36 absolute -top-0 -right-[88px] scale-x-[-1] -rotate-12 opacity-90" />
@@ -424,7 +424,7 @@
                                     <div class="relative">
                                         <h2
                                             class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative custom-head">
-                                            {{ __($service_details[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($service_details[0]->title_ar)) ? $service_details[0]->title_ar : __($service_details[0]->title) }}
                                         </h2>
                                         <img src="{{ url('img/templates/yacht/4.png') }}" alt=""
                                                 class="w-32 absolute top-2 -left-[85px] rotate-12" />
@@ -482,7 +482,7 @@
                                         <h2
                                             class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative custom-head">
 
-                                            {{ __($product_details[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($product_details[0]->title_ar)) ? $product_details[0]->title_ar : __($product_details[0]->title) }}
                                         </h2>
                                         <img src="{{ url('img/templates/yacht/2.png') }}" alt=""
                                                 class="w-36 absolute -top-0 -right-[88px] -rotate-12 opacity-90" />
@@ -576,7 +576,7 @@
                                         <h2
                                             class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative custom-head">
 
-                                            {{ __($galleries_details[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($galleries_details[0]->title_ar)) ? $galleries_details[0]->title_ar : __($galleries_details[0]->title) }}
                                         </h2>
                                         <img src="{{ url('img/templates/yacht/12.png') }}" alt=""
                                                 class="w-36 absolute -top-2 -left-[90px] rotate-12" />
@@ -685,7 +685,7 @@
                                         <h2
                                             class="text-3xl lg:text-4xl font-medium text-gray-800 py-12 text-center relative custom-head">
 
-                                            {{ __($testimonials[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($testimonials[0]->title_ar)) ? $testimonials[0]->title_ar : __($testimonials[0]->title) }}
                                         </h2>
                                         <img src="{{ url('img/templates/yacht/8.png') }}" alt=""
                                                 class="w-32 absolute top-2 -right-[68px] -rotate-12" />
@@ -787,7 +787,7 @@
                                             <h2
                                                 class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative custom-head">
 
-                                                {{ __($business_hours->title) }}
+                                                {{ (App::isLocale('ar') && !empty($business_hours->title_ar)) ? $business_hours->title_ar : __($business_hours->title) }}
                                             </h2>
                                             <img src="{{ url('img/templates/yacht/13.png') }}" alt=""
                                                 class="w-32 absolute top-2 -right-[65px] scale-x-[-1] -rotate-12" />
@@ -988,7 +988,7 @@
                                         <h2
                                             class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative custom-head">
 
-                                            {{ __($payment_details[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($payment_details[0]->title_ar)) ? $payment_details[0]->title_ar : __($payment_details[0]->title) }}
                                         </h2>
                                         <img src="{{ url('img/templates/yacht/1.png') }}" alt=""
                                             class="w-36 absolute top-2 -right-[90px] scale-x-[-1] -rotate-12" />
@@ -1134,7 +1134,7 @@
                                             <h2
                                                 class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative custom-head">
 
-                                                {{ __($business_card_details->contact_form_title) }}
+                                                {{ (App::isLocale('ar') && !empty($business_card_details->contact_form_title_ar)) ? $business_card_details->contact_form_title_ar : __($business_card_details->contact_form_title) }}
                                             </h2>
                                             <img src="{{ url('img/templates/yacht/18.png') }}" alt=""
                                                 class="w-28 absolute top-5 -right-[55px] -rotate-45" />

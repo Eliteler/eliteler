@@ -116,6 +116,15 @@ class BookAppointmentController extends Controller
                     'customerName' => "",
                     'cardId' => $request->card,
                 ];
+
+                // Dynamically set from address for this mail
+                if ($vcardOwner && !empty($vcardOwner->email_from_address)) {
+                    config(['mail.from.address' => $vcardOwner->email_from_address]);
+                }
+                if ($vcardOwner && !empty($vcardOwner->email_from_name)) {
+                    config(['mail.from.name' => $vcardOwner->email_from_name]);
+                }
+
                 Mail::to($request->email)->send(new \App\Mail\AppointmentMail($details));
             }
 
@@ -132,6 +141,15 @@ class BookAppointmentController extends Controller
                     'customerName' => $request->name,
                     'cardId' => $request->card,
                 ];
+
+                // Dynamically set from address for this mail
+                if ($vcardOwner && !empty($vcardOwner->email_from_address)) {
+                    config(['mail.from.address' => $vcardOwner->email_from_address]);
+                }
+                if ($vcardOwner && !empty($vcardOwner->email_from_name)) {
+                    config(['mail.from.name' => $vcardOwner->email_from_name]);
+                }
+
                 Mail::to($vcardOwnerEmail)->send(new \App\Mail\AppointmentMail($ownerDetails));
             }
 

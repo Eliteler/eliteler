@@ -303,7 +303,8 @@
                                 <i class="fas fa-plug decor-icon anim-flicker"
                                     style="font-size:70px;left:10px;top:40px"></i>
                                 <div class="section-header">
-                                    <h2 class="section-title">{{ __('Network') }}</h2>
+                                    @php $__t_ar = $feature_details[0]->title_ar ?? ''; @endphp
+                                    <h2 class="section-title">{{ (App::isLocale('ar') && !empty($__t_ar)) ? $__t_ar : __($feature_details[0]->title ?? 'Network') }}</h2>
                                 </div>
                                 <div class="grid-3">
                                     @foreach ($socialFeatures as $feature)
@@ -322,7 +323,7 @@
                                 <i class="fas fa-bolt decor-icon anim-flicker"
                                     style="font-size:90px;right:10px;top:10px"></i>
                                 <div class="section-header">
-                                    <h2 class="section-title">{{ __($service_details[0]->title) }}</h2>
+                                    <h2 class="section-title">{{ (App::isLocale('ar') && !empty($service_details[0]->title_ar)) ? $service_details[0]->title_ar : __($service_details[0]->title) }}</h2>
                                 </div>
                                 <div class="swiper serviceSwiper">
                                     <div class="swiper-wrapper">
@@ -353,7 +354,7 @@
                                 <i class="fas fa-tools decor-icon anim-gear"
                                     style="font-size:60px;left:15px;top:-5px"></i>
                                 <div class="section-header">
-                                    <h2 class="section-title">{{ __($galleries_details[0]->title) }}</h2>
+                                    <h2 class="section-title">{{ (App::isLocale('ar') && !empty($galleries_details[0]->title_ar)) ? $galleries_details[0]->title_ar : __($galleries_details[0]->title) }}</h2>
                                 </div>
                                 <div class="grid-2">
                                     @foreach ($galleries_details as $g)
@@ -413,7 +414,7 @@
                                 <i class="fas fa-lightbulb decor-icon anim-flicker"
                                     style="font-size:65px;left:10px;top:-10px"></i>
                                 <div class="section-header">
-                                    <h2 class="section-title">{{ __($product_details[0]->title) }}</h2>
+                                    <h2 class="section-title">{{ (App::isLocale('ar') && !empty($product_details[0]->title_ar)) ? $product_details[0]->title_ar : __($product_details[0]->title) }}</h2>
                                 </div>
                                 <div class="grid-1">
                                     @foreach ($product_details as $p)
@@ -460,7 +461,7 @@
                         @if ($validFeatures->isNotEmpty())
                             <div class="section gsap-fade">
                                 <div class="section-header">
-                                    <h2 class="section-title">{{ __($feature_details[0]->title) }}</h2>
+                                    <h2 class="section-title">{{ (App::isLocale('ar') && !empty($feature_details[0]->title_ar)) ? $feature_details[0]->title_ar : __($feature_details[0]->title) }}</h2>
                                 </div>
                                 <div class="grid-features">
                                     @foreach ($validFeatures as $feature)
@@ -549,7 +550,7 @@
                                 <i class="far fa-clock decor-icon anim-flicker"
                                     style="font-size:70px;left:-10px;top:20px"></i>
                                 <div class="section-header">
-                                    <h2 class="section-title">{{ __($business_hours->title) }}</h2>
+                                    <h2 class="section-title">{{ (App::isLocale('ar') && !empty($business_hours->title_ar)) ? $business_hours->title_ar : __($business_hours->title) }}</h2>
                                 </div>
                                 <div class="tech-card" style="border-left-color:var(--text-dark)">
                                     @if ($business_hours->is_always_open != 'Opening')
@@ -639,7 +640,7 @@
                                 <i class="fas fa-credit-card decor-icon anim-gear"
                                     style="font-size:60px;right:10px;top:10px"></i>
                                 <div class="section-header">
-                                    <h2 class="section-title">{{ __($payment_details[0]->title) }}</h2>
+                                    <h2 class="section-title">{{ (App::isLocale('ar') && !empty($payment_details[0]->title_ar)) ? $payment_details[0]->title_ar : __($payment_details[0]->title) }}</h2>
                                 </div>
                                 <div class="pay-links">
                                     @foreach ($payment_details as $payment)
@@ -675,7 +676,7 @@
                                 <i class="fas fa-thumbs-up decor-icon anim-flicker"
                                     style="font-size:70px;left:0;top:-10px"></i>
                                 <div class="section-header">
-                                    <h2 class="section-title">{{ __($testimonials[0]->title) }}</h2>
+                                    <h2 class="section-title">{{ (App::isLocale('ar') && !empty($testimonials[0]->title_ar)) ? $testimonials[0]->title_ar : __($testimonials[0]->title) }}</h2>
                                 </div>
                                 <div class="swiper testimonialSwiper">
                                     <div class="swiper-wrapper">
@@ -747,7 +748,7 @@
                                     style="font-size:60px;right:-5px;top:10px"></i>
                                 <div class="section-header">
                                     <h2 class="section-title">
-                                        {{ __($business_card_details->contact_form_title) }}
+                                        {{ (App::isLocale('ar') && !empty($business_card_details->contact_form_title_ar)) ? $business_card_details->contact_form_title_ar : __($business_card_details->contact_form_title) }}
                                     </h2>
                                 </div>
                                 @if (Session::has('message'))

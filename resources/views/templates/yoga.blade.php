@@ -368,7 +368,7 @@
                                             <h2
                                                 class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative head">
                                                 <div class="absolute bottom-10 left-1/2 h-0.5 w-14 bg-[#9A502D] -mx-7 "></div>
-                                                {{ __($feature_details[0]->title) }}
+                                                {{ (App::isLocale('ar') && !empty($feature_details[0]->title_ar)) ? $feature_details[0]->title_ar : __($feature_details[0]->title) }}
                                             </h2>
                                             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                                 @foreach ($validFeatures as $feature)
@@ -474,7 +474,7 @@
                                         <h2
                                             class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative head">
                                             <div class="absolute bottom-10 left-1/2 h-0.5 w-14 bg-[#9A502D] -mx-7 "></div>
-                                            {{ __($product_details[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($product_details[0]->title_ar)) ? $product_details[0]->title_ar : __($product_details[0]->title) }}
                                         </h2>
                                         <swiper-container
                                             breakpoints='{
@@ -567,7 +567,7 @@
                                         <h2
                                             class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative head">
                                             <div class="absolute bottom-10 left-1/2 h-0.5 w-14 bg-[#9A502D] -mx-7 "></div>
-                                            {{ __($service_details[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($service_details[0]->title_ar)) ? $service_details[0]->title_ar : __($service_details[0]->title) }}
                                         </h2>
                                         <img src="{{ url('img/templates/yoga/5.png') }}" alt=""
                                             class="lg:w-32 w-28 z-20 absolute lg:top-[9px] top-[21px] -left-6" />
@@ -617,7 +617,7 @@
                                         <h2
                                             class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative head">
                                             <div class="absolute bottom-10 left-1/2 h-0.5 w-14 bg-[#9A502D] -mx-7 "></div>
-                                            {{ __($galleries_details[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($galleries_details[0]->title_ar)) ? $galleries_details[0]->title_ar : __($galleries_details[0]->title) }}
                                         </h2>
                                         <img src="{{ url('img/templates/yoga/6.png') }}" alt=""
                                             class="w-24 lg:w-28 z-20 absolute -top-[7px] -right-5" />
@@ -727,7 +727,7 @@
                                         <h2
                                             class="text-3xl lg:text-4xl font-medium text-gray-800 py-12 text-center relative head">
                                             <div class="absolute bottom-10 left-1/2 h-0.5 w-14 bg-[#9A502D] -mx-7 "></div>
-                                            {{ __($testimonials[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($testimonials[0]->title_ar)) ? $testimonials[0]->title_ar : __($testimonials[0]->title) }}
                                         </h2>
                                         <img src="{{ url('img/templates/yoga/7.png') }}" alt=""
                                             class="w-20 lg:w-24 z-20 absolute top-[20px] -left-6" />
@@ -768,7 +768,7 @@
                                             <h2
                                                 class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative head">
                                                 <div class="absolute bottom-10 left-1/2 h-0.5 w-14 bg-[#9A502D] -mx-7 "></div>
-                                                {{ __($business_hours->title) }}
+                                                {{ (App::isLocale('ar') && !empty($business_hours->title_ar)) ? $business_hours->title_ar : __($business_hours->title) }}
                                             </h2>
 
                                             <!-- Business Hours Card -->
@@ -966,7 +966,7 @@
                                         <h2
                                             class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative head">
                                             <div class="absolute bottom-10 left-1/2 h-0.5 w-14 bg-[#9A502D] -mx-7 "></div>
-                                            {{ __($payment_details[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($payment_details[0]->title_ar)) ? $payment_details[0]->title_ar : __($payment_details[0]->title) }}
                                         </h2>
                                         <div class="grid lg:grid-cols-2 gap-4">
                                             {{-- Payment options --}}
@@ -1082,7 +1082,7 @@
                                             <h2
                                                 class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative head">
                                                 <div class="absolute bottom-10 left-1/2 h-0.5 w-14 bg-[#9A502D] -mx-7 "></div>
-                                                {{ __($business_card_details->contact_form_title) }}
+                                                {{ (App::isLocale('ar') && !empty($business_card_details->contact_form_title_ar)) ? $business_card_details->contact_form_title_ar : __($business_card_details->contact_form_title) }}
                                             </h2>
                                             <img src="{{ url('img/templates/yoga/8.png') }}" alt=""
                                             class="w-24 lg:w-28 z-20 absolute lg:top-[38px] top-[48px] right-2" />

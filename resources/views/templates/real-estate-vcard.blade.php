@@ -307,7 +307,7 @@
                             @if ($validFeatures->isNotEmpty())
                                 <div class="section gsap-fade">
                                     <div class="section-divider">
-                                        <hr><span>{{ __($feature_details[0]->title) }}</span>
+                                        <hr><span>{{ (App::isLocale('ar') && !empty($feature_details[0]->title_ar)) ? $feature_details[0]->title_ar : __($feature_details[0]->title) }}</span>
                                         <hr>
                                     </div>
                                     <div class="grid-features">
@@ -341,7 +341,7 @@
                                 <i class="fas fa-building decor-icon anim-pulse service-icon"
                                     style="font-size:85px;left:0;top:20px"></i>
                                 <div class="section-divider">
-                                    <hr><span>{{ __($service_details[0]->title) }}</span>
+                                    <hr><span>{{ (App::isLocale('ar') && !empty($service_details[0]->title_ar)) ? $service_details[0]->title_ar : __($service_details[0]->title) }}</span>
                                     <hr>
                                 </div>
                                 <div class="swiper serviceSwiper">
@@ -376,7 +376,7 @@
                         @if (count($product_details) > 0)
                             <div class="section gsap-fade">
                                 <div class="section-divider">
-                                    <hr><span>{{ __($product_details[0]->title) }}</span>
+                                    <hr><span>{{ (App::isLocale('ar') && !empty($product_details[0]->title_ar)) ? $product_details[0]->title_ar : __($product_details[0]->title) }}</span>
                                     <hr>
                                 </div>
                                 <div class="swiper productSwiper">
@@ -431,7 +431,7 @@
                                 <i class="far fa-images decor-icon anim-pulse gallery-icon"
                                     style="font-size:60px;left:15px;top:10px"></i>
                                 <div class="section-divider">
-                                    <hr><span>{{ __($galleries_details[0]->title) }}</span>
+                                    <hr><span>{{ (App::isLocale('ar') && !empty($galleries_details[0]->title_ar)) ? $galleries_details[0]->title_ar : __($galleries_details[0]->title) }}</span>
                                     <hr>
                                 </div>
                                 <div class="swiper gallerySwiper">
@@ -526,7 +526,11 @@
                                     <i class="far fa-calendar-check decor-icon anim-glide"
                                         style="font-size:75px;right:10px;top:30px"></i>
                                     <div class="section-divider">
-                                        <hr><span>{{ __(json_decode($appointment_slots, true)['title']) }}</span>
+                                        @php
+                                            $appointment_data = json_decode($appointment_slots, true);
+                                            $appointment_title = (App::isLocale('ar') && !empty($appointment_data['title_ar'])) ? $appointment_data['title_ar'] : __($appointment_data['title']);
+                                        @endphp
+                                        <hr><span>{{ $appointment_title }}</span>
                                         <hr>
                                     </div>
                                     <div class="realtor-card" style="padding:24px">
@@ -564,7 +568,7 @@
                                     <i class="far fa-clock decor-icon anim-pulse"
                                         style="font-size:70px;left:10px;top:20px"></i>
                                     <div class="section-divider">
-                                        <hr><span>{{ __($business_hours->title) }}</span>
+                                        <hr><span>{{ (App::isLocale('ar') && !empty($business_hours->title_ar)) ? $business_hours->title_ar : __($business_hours->title) }}</span>
                                         <hr>
                                     </div>
                                     <div class="realtor-card" style="padding:20px 24px">
@@ -603,7 +607,7 @@
                             @if (isset($service_booking_details) && $service_booking_details->service_booking == 1)
                                 <div class="section gsap-fade">
                                     <div class="section-divider">
-                                        <hr><span>{{ __($service_booking_details->title) }}</span>
+                                        <hr><span>{{ (App::isLocale('ar') && !empty($service_booking_details->title_ar)) ? $service_booking_details->title_ar : __($service_booking_details->title) }}</span>
                                         <hr>
                                     </div>
                                     <div class="realtor-card service-booking-card">
@@ -674,7 +678,7 @@
                                 <i class="fas fa-file-invoice-dollar decor-icon anim-pulse"
                                     style="font-size:60px;left:-5px;top:10px"></i>
                                 <div class="section-divider">
-                                    <hr><span>{{ __($payment_details[0]->title) }}</span>
+                                    <hr><span>{{ (App::isLocale('ar') && !empty($payment_details[0]->title_ar)) ? $payment_details[0]->title_ar : __($payment_details[0]->title) }}</span>
                                     <hr>
                                 </div>
                                 <div class="grid-2">
@@ -715,7 +719,7 @@
                                 <i class="far fa-comments decor-icon anim-pulse"
                                     style="font-size:70px;left:10px;top:-10px"></i>
                                 <div class="section-divider">
-                                    <hr><span>{{ __($testimonials[0]->title) }}</span>
+                                    <hr><span>{{ (App::isLocale('ar') && !empty($testimonials[0]->title_ar)) ? $testimonials[0]->title_ar : __($testimonials[0]->title) }}</span>
                                     <hr>
                                 </div>
                                 <div class="swiper testimonialSwiper">
@@ -814,7 +818,7 @@
                                     <i class="far fa-paper-plane decor-icon anim-glide"
                                         style="font-size:65px;right:-5px;top:10px"></i>
                                     <div class="section-divider">
-                                        <hr><span>{{ __($business_card_details->contact_form_title) }}</span>
+                                        <hr><span>{{ (App::isLocale('ar') && !empty($business_card_details->contact_form_title_ar)) ? $business_card_details->contact_form_title_ar : __($business_card_details->contact_form_title) }}</span>
                                         <hr>
                                     </div>
                                     @if (Session::has('message'))

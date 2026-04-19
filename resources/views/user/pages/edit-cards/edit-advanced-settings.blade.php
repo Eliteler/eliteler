@@ -173,7 +173,7 @@
                                                 </div>
                                             </div>
                                         </div>
-
+ 
                                         {{-- Advanced settings --}}
                                         @if ($plan_details->advanced_settings == 1)
                                             <h2 class="page-title mb-3">

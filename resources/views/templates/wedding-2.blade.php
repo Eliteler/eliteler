@@ -376,7 +376,7 @@
                                     @if ($visibleFeatures->isNotEmpty())
                                         <div class="relative">
                                             <h2 class="text-3xl lg:text-4xl font-regular text-gray-800 py-12 text-center">
-                                                {{ __($feature_details[0]->title) }}
+                                                {{ (App::isLocale('ar') && !empty($feature_details[0]->title_ar)) ? $feature_details[0]->title_ar : __($feature_details[0]->title) }}
                                             </h2>
                                             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                                 @foreach ($visibleFeatures as $feature)
@@ -422,7 +422,7 @@
                                         <img src="{{ asset('img/templates/wedding-2/2.png') }}" alt=""
                                             class="lg:w-32 w-28 absolute lg:top-3 top-2 lg:-left-[80px] -left-[70px] rotate-45 opacity-90" />
                                         <h2 class="text-3xl lg:text-4xl font-regular text-gray-800 py-12 text-center">
-                                            {{ __($service_details[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($service_details[0]->title_ar)) ? $service_details[0]->title_ar : __($service_details[0]->title) }}
                                         </h2>
                                         <div class="slider">
                                             {{-- All services --}}
@@ -468,7 +468,7 @@
                                 @if (count($product_details) > 0)
                                     <div class="relative">
                                         <h2 class="text-3xl lg:text-4xl font-regular text-gray-800 py-12 text-center">
-                                            {{ __($product_details[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($product_details[0]->title_ar)) ? $product_details[0]->title_ar : __($product_details[0]->title) }}
                                         </h2>
                                         <div class="slider">
                                             {{-- All products --}}
@@ -619,7 +619,7 @@
                                         <img src="{{ asset('img/templates/wedding-2/3.png') }}" alt=""
                                             class="lg:w-32 w-28 absolute lg:top-3 top-4 -right-16 opacity-80 -rotate-45" />
                                         <h2 class="text-3xl lg:text-4xl font-regular text-gray-800 py-12 text-center ">
-                                            {{ __($galleries_details[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($galleries_details[0]->title_ar)) ? $galleries_details[0]->title_ar : __($galleries_details[0]->title) }}
                                         </h2>
                                         <div class="w-full slider">
                                             {{-- Slider images --}}
@@ -649,7 +649,7 @@
                                         <section>
                                             <!-- Section Header -->
                                             <h2 class="text-3xl lg:text-4xl font-regular text-gray-800 py-12 text-center">
-                                                {{ __($business_hours->title) }}
+                                                {{ (App::isLocale('ar') && !empty($business_hours->title_ar)) ? $business_hours->title_ar : __($business_hours->title) }}
                                             </h2>
 
                                             <!-- Business Hours Card -->
@@ -847,7 +847,7 @@
                                         <img src="{{ asset('img/templates/wedding-2/4.png') }}" alt=""
                                             class="lg:w-20 w-14 absolute lg:top-6 top-10 lg:-left-8 -left-7 opacity-80 -rotate-12" />
                                         <h2 class="text-3xl lg:text-4xl font-regular text-gray-800 py-12 text-center">
-                                            {{ __($testimonials[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($testimonials[0]->title_ar)) ? $testimonials[0]->title_ar : __($testimonials[0]->title) }}
                                         </h2>
                                         <div class="review-slider">
                                             {{-- Client Reviews --}}
@@ -963,7 +963,7 @@
                                 @if (count($payment_details) > 0)
                                     <div class="relative">
                                         <h2 class="text-3xl lg:text-4xl font-regular text-gray-800 py-12 text-center">
-                                            {{ __($payment_details[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($payment_details[0]->title_ar)) ? $payment_details[0]->title_ar : __($payment_details[0]->title) }}
                                         </h2>
                                         <div class="grid lg:grid-cols-2 gap-4">
                                             {{-- Payment options --}}
@@ -1074,7 +1074,7 @@
                                             <img src="{{ asset('img/templates/wedding-2/6.png') }}" alt=""
                                             class="lg:w-24 w-[80px] absolute lg:top-8 top-8 -left-6 opacity-70 rotate-12" />
                                             <h2 class="text-3xl lg:text-4xl font-regular text-gray-800 py-12 text-center">
-                                                {{ __($business_card_details->contact_form_title) }}
+                                                {{ (App::isLocale('ar') && !empty($business_card_details->contact_form_title_ar)) ? $business_card_details->contact_form_title_ar : __($business_card_details->contact_form_title) }}
                                             </h2>
                                             {{-- Message Alert --}}
                                             @if (Session::has('message'))

@@ -355,7 +355,8 @@
                                             <h2
                                                 class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative head">
                                                 <div class="absolute bottom-10 left-1/2 h-1 w-14 bg-teal-600 -mx-6 "></div>
-                                                {{ __($feature_details[0]->title) }}
+                                                @php $__title_ar = $feature_details[0]->title_ar ?? ''; @endphp
+                                                {{ (App::isLocale('ar') && !empty($feature_details[0]->title_ar)) ? $feature_details[0]->title_ar : __($feature_details[0]->title) }}
                                             </h2>
                                             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                                 @foreach ($validFeatures as $feature)
@@ -458,7 +459,8 @@
                                         <h2
                                             class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative head">
                                             <div class="absolute bottom-10 left-1/2 h-1 w-14 bg-teal-600 -mx-6"></div>
-                                            {{ __($service_details[0]->title) }}
+                                            @php $__title_ar = $service_details[0]->title_ar ?? ''; @endphp
+                                            {{ (App::isLocale('ar') && !empty($service_details[0]->title_ar)) ? $service_details[0]->title_ar : __($service_details[0]->title) }}
                                         </h2>
                                         <swiper-container
                                             breakpoints='{
@@ -514,7 +516,8 @@
                                         <h2
                                             class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative head">
                                             <div class="absolute bottom-10 left-1/2 h-1 w-14 bg-teal-600 -mx-6"></div>
-                                            {{ __($product_details[0]->title) }}
+                                            @php $__title_ar = $product_details[0]->title_ar ?? ''; @endphp
+                                            {{ (App::isLocale('ar') && !empty($product_details[0]->title_ar)) ? $product_details[0]->title_ar : __($product_details[0]->title) }}
                                         </h2>
                                         <swiper-container
                                             breakpoints='{
@@ -609,7 +612,8 @@
                                         <h2
                                             class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative head">
                                             <div class="absolute bottom-10 left-1/2 h-1 w-14 bg-teal-600 -mx-6"></div>
-                                            {{ __($galleries_details[0]->title) }}
+                                            @php $__title_ar = $galleries_details[0]->title_ar ?? ''; @endphp
+                                            {{ (App::isLocale('ar') && !empty($galleries_details[0]->title_ar)) ? $galleries_details[0]->title_ar : __($galleries_details[0]->title) }}
                                         </h2>
                                         <div>
                                             <swiper-container slides-per-view="1" class="mySwiper" loop="true"
@@ -713,7 +717,8 @@
                                             class="w-36 absolute top-[0px] -right-[40px]" />
                                         <h2 class="text-3xl lg:text-4xl font-medium text-gray-800 py-12 text-center relative head">
                                             <div class="absolute bottom-10 left-1/2 h-1 w-14 bg-teal-600 -mx-6"></div>
-                                            {{ __($testimonials[0]->title) }}
+                                            @php $__title_ar = $testimonials[0]->title_ar ?? ''; @endphp
+                                            {{ (App::isLocale('ar') && !empty($testimonials[0]->title_ar)) ? $testimonials[0]->title_ar : __($testimonials[0]->title) }}
                                         </h2>
                                         <swiper-container class="mySwiper" autoplay-delay="2000"
                                             autoplay-disable-on-interaction="false">
@@ -759,7 +764,8 @@
                                             <h2
                                                 class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative head">
                                                 <div class="absolute bottom-10 left-1/2 h-1 w-14 bg-teal-600 -mx-6"></div>
-                                                {{ __($business_hours->title) }}
+                                                @php $__title_ar = $business_hours->title_ar ?? ''; @endphp
+                                                {{ (App::isLocale('ar') && !empty($business_hours->title_ar)) ? $business_hours->title_ar : __($business_hours->title) }}
                                             </h2>
 
                                             <!-- Business Hours Card -->
@@ -835,8 +841,9 @@
                                                 <h2
                                                     class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative head">
                                                     <div class="absolute bottom-10 left-1/2 h-1 w-14 bg-teal-600 -mx-6"></div>
-                                                {{ __($service_booking_details->title) }}
-                                            </h2>
+                                                    @php $__title_ar = $service_booking_details->title_ar ?? ''; @endphp
+                                                    {{ (App::isLocale('ar') && !empty($__title_ar)) ? $__title_ar : __($service_booking_details->title) }}
+                                                </h2>
 
                                             {{-- Service Booking Form --}}
                                             <div class="w-full max-w-full border px-6 pt-9 shadow-[0_0_4px_rgba(0,0,0,0.1)] pb-6 rounded-2xl bg-white relative z-10">
@@ -959,7 +966,8 @@
                                         <h2
                                             class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative head">
                                             <div class="absolute bottom-10 left-1/2 h-1 w-14 bg-teal-600 -mx-6"></div>
-                                            {{ __($payment_details[0]->title) }}
+                                            @php $__title_ar = $payment_details[0]->title_ar ?? ''; @endphp
+                                            {{ (App::isLocale('ar') && !empty($payment_details[0]->title_ar)) ? $payment_details[0]->title_ar : __($payment_details[0]->title) }}
                                         </h2>
                                         <div class="grid lg:grid-cols-2 gap-4">
                                             {{-- Payment options --}}
@@ -1072,7 +1080,8 @@
                                             <h2
                                                 class="text-3xl lg:text-4xl font-medium text-[#121212] py-12 text-center relative head">
                                                 <div class="absolute bottom-10 left-1/2 h-1 w-14 bg-teal-600 -mx-6"></div>
-                                                {{ __($business_card_details->contact_form_title) }}
+                                                @php $__title_ar = $business_card_details->contact_form_title_ar ?? ''; @endphp
+                                                {{ (App::isLocale('ar') && !empty($business_card_details->contact_form_title_ar)) ? $business_card_details->contact_form_title_ar : __($business_card_details->contact_form_title) }}
                                             </h2>
 
                                             {{-- Message Alert --}}

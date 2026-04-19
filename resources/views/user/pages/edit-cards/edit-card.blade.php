@@ -337,6 +337,40 @@
                                                         <small class="form-hint">{{ __('Leave blank to use site domain') }}</small>
                                                     </div>
                                                 </div>
+ 
+                                                <div class="col-md-12 col-xl-12">
+                                                    <h2 class="page-title mb-3 mt-3">
+                                                        {{ __('Email Settings') }}
+                                                    </h2>
+                                                    <div class="row">
+                                                        <div class="col-md-6 col-xl-6">
+                                                            <div class="mb-3">
+                                                                <label class="form-label">{{ __('Custom Email From Name (Optional)') }}
+                                                                   <span class="form-help" data-bs-toggle="popover"
+                                                                   data-bs-placement="top"
+                                                                   data-bs-content="{{ __('This name will appear as the sender when visitors receive emails from your card. (e.g., Dr. Ahmed\'s Clinic)') }}"
+                                                                   data-bs-html="true">?</span>
+                                                                </label>
+                                                                <input type="text" class="form-control" name="email_from_name"
+                                                                    value="{{ $business_card->email_from_name }}"
+                                                                    placeholder="{{ __('Custom Email From Name') }}">
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6 col-xl-6">
+                                                            <div class="mb-3">
+                                                                <label class="form-label">{{ __('Custom Email From Address (Optional)') }}
+                                                                   <span class="form-help" data-bs-toggle="popover"
+                                                                   data-bs-placement="top"
+                                                                   data-bs-content="{{ __('This address will appear as the sender email. If empty, the platform email will be used.') }}"
+                                                                   data-bs-html="true">?</span>
+                                                                </label>
+                                                                <input type="email" class="form-control" name="email_from_address"
+                                                                    value="{{ $business_card->email_from_address }}"
+                                                                    placeholder="{{ __('example@yourdomain.com') }}">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

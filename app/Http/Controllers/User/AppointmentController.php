@@ -116,6 +116,15 @@ class AppointmentController extends Controller
             ];
         }
 
+        // Dynamically set from address for this mail
+        $vcard = \App\BusinessCard::where('card_id', $bookedAppointment->card_id)->first();
+        if ($vcard && !empty($vcard->email_from_address)) {
+            config(['mail.from.address' => $vcard->email_from_address]);
+        }
+        if ($vcard && !empty($vcard->email_from_name)) {
+            config(['mail.from.name' => $vcard->email_from_name]);
+        }
+
         try {
             Mail::to($bookedAppointment->email)->send(new \App\Mail\AppointmentMail($details));
         } catch (\Exception $e) {

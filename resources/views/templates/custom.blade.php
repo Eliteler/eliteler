@@ -465,7 +465,9 @@
                                             <div class="flex items-center my-8">
                                                 <h2
                                                     class="text-3xl lg:text-4xl font-medium text-[{{ $custom_styles['heading_color'] }}]">
-                                                    {{ __($feature_details[0]->title) }}
+                                                    @php $__t_ar = $feature_details[0]->title_ar ?? ''; @endphp
+                                                    {{ (App::isLocale('ar') && !empty($feature_details[0]->title_ar)) ? $feature_details[0]->title_ar : __($feature_details[0]->title) }}
+                                            </h2>
                                             </div>
                                             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                                 @foreach ($validFeatures as $feature)
@@ -508,7 +510,8 @@
                                         <div class="flex items-center my-8">
                                             <h2
                                                 class="text-3xl lg:text-4xl font-medium text-[{{ $custom_styles['heading_color'] }}]">
-                                                {{ __($service_details[0]->title) }}</h2>
+                                                @php $__t_ar = $service_details[0]->title_ar ?? ''; @endphp
+                                                {{ (App::isLocale('ar') && !empty($service_details[0]->title_ar)) ? $service_details[0]->title_ar : __($service_details[0]->title) }}</h2>
                                         </div>
                                         <swiper-container
                                             breakpoints='{
@@ -569,7 +572,8 @@
                                         <div class="flex items-center my-8">
                                             <h2
                                                 class="text-3xl lg:text-4xl font-medium text-[{{ $custom_styles['heading_color'] }}]">
-                                                {{ __($product_details[0]->title) }}</h2>
+                                                @php $__t_ar = $product_details[0]->title_ar ?? ''; @endphp
+                                                {{ (App::isLocale('ar') && !empty($product_details[0]->title_ar)) ? $product_details[0]->title_ar : __($product_details[0]->title) }}</h2>
                                         </div>
                                         <swiper-container
                                             breakpoints='{
@@ -670,7 +674,8 @@
                                         <div class="flex items-center my-8">
                                             <h2
                                                 class="text-3xl lg:text-4xl font-medium text-[{{ $custom_styles['heading_color'] }}]">
-                                                {{ __($galleries_details[0]->title) }}</h2>
+                                                @php $__t_ar = $galleries_details[0]->title_ar ?? ''; @endphp
+                                                {{ (App::isLocale('ar') && !empty($galleries_details[0]->title_ar)) ? $galleries_details[0]->title_ar : __($galleries_details[0]->title) }}</h2>
                                         </div>
                                         <div>
                                             <swiper-container slides-per-view="1" class="mySwiper" loop="true"
@@ -836,7 +841,8 @@
                                         <div class="flex items-center my-8">
                                             <h2
                                                 class="text-3xl lg:text-4xl font-medium text-[{{ $custom_styles['heading_color'] }}]">
-                                                {{ __($payment_details[0]->title) }}</h2>
+                                                @php $__t_ar = $payment_details[0]->title_ar ?? ''; @endphp
+                                                {{ (App::isLocale('ar') && !empty($payment_details[0]->title_ar)) ? $payment_details[0]->title_ar : __($payment_details[0]->title) }}</h2>
                                         </div>
                                         <div class="grid lg:grid-cols-2 gap-4">
                                             {{-- Payment options --}}
@@ -919,7 +925,8 @@
                                             <div class="flex items-center my-8">
                                                 <h2
                                                     class="text-3xl lg:text-4xl font-medium text-[{{ $custom_styles['heading_color'] }}]">
-                                                    {{ __($business_hours->title) }}</h2>
+                                                    @php $__t_ar = $business_hours->title_ar ?? ''; @endphp
+                                                    {{ (App::isLocale('ar') && !empty($business_hours->title_ar)) ? $business_hours->title_ar : __($business_hours->title) }}</h2>
                                             </div>
                                             <!-- Business Hours Card -->
                                             <div class="bg-white p-4 @if ($custom_styles['card_edge'] == 'rounded') rounded-2xl @endif">
@@ -995,7 +1002,8 @@
                                         <div class="flex items-center my-8">
                                             <h2
                                                 class="text-3xl lg:text-4xl font-medium text-[{{ $custom_styles['heading_color'] }}]">
-                                                {{ __($testimonials[0]->title) }}</h2>
+                                                @php $__t_ar = $testimonials[0]->title_ar ?? ''; @endphp
+                                                {{ (App::isLocale('ar') && !empty($testimonials[0]->title_ar)) ? $testimonials[0]->title_ar : __($testimonials[0]->title) }}</h2>
                                         </div>
                                         <swiper-container class="mySwiper" autoplay-delay="2000"
                                             autoplay-disable-on-interaction="false">
@@ -1127,7 +1135,8 @@
                                             <div class="flex items-center my-8">
                                                 <h2
                                                     class="text-3xl lg:text-4xl font-medium text-[{{ $custom_styles['heading_color'] }}]">
-                                                    {{ __($business_card_details->contact_form_title) }}</h2>
+                                                    @php $__t_ar = $business_card_details->contact_form_title_ar ?? ''; @endphp
+                                                    {{ (App::isLocale('ar') && !empty($business_card_details->contact_form_title_ar)) ? $business_card_details->contact_form_title_ar : __($business_card_details->contact_form_title) }}</h2>
                                             </div>
 
                                             {{-- Message Alert --}}

@@ -274,7 +274,7 @@
                         @if ($validFeatures->isNotEmpty())
                             <div class="section gsap-fade">
                                 <div class="section-header">
-                                    <h2 class="section-title">{{ __($feature_details[0]->title) }}</h2>
+                                    <h2 class="section-title">{{ (App::isLocale('ar') && !empty($feature_details[0]->title_ar)) ? $feature_details[0]->title_ar : __($feature_details[0]->title) }}</h2>
                                     <div class="header-line"></div>
                                 </div>
                                 <div class="grid-features">
@@ -305,7 +305,7 @@
                                 <i class="fas fa-cogs decor-icon anim-spin"
                                     style="font-size:80px;right:10px;top:10px"></i>
                                 <div class="section-header">
-                                    <h2 class="section-title">{{ __($service_details[0]->title) }}</h2>
+                                    <h2 class="section-title">{{ (App::isLocale('ar') && !empty($service_details[0]->title_ar)) ? $service_details[0]->title_ar : __($service_details[0]->title) }}</h2>
                                     <div class="header-line"></div>
                                 </div>
                                 <div class="swiper serviceSwiper">
@@ -337,7 +337,7 @@
                                 <i class="fas fa-oil-can decor-icon anim-float"
                                     style="font-size:65px;left:10px;top:-10px"></i>
                                 <div class="section-header">
-                                    <h2 class="section-title">{{ __($product_details[0]->title) }}</h2>
+                                    <h2 class="section-title">{{ (App::isLocale('ar') && !empty($product_details[0]->title_ar)) ? $product_details[0]->title_ar : __($product_details[0]->title) }}</h2>
                                     <div class="header-line"></div>
                                 </div>
                                 <div class="swiper productSwiper">
@@ -387,7 +387,7 @@
                                 <i class="fas fa-camera decor-icon anim-rev"
                                     style="font-size:60px;right:15px;top:-5px"></i>
                                 <div class="section-header">
-                                    <h2 class="section-title">{{ __($galleries_details[0]->title) }}</h2>
+                                    <h2 class="section-title">{{ (App::isLocale('ar') && !empty($galleries_details[0]->title_ar)) ? $galleries_details[0]->title_ar : __($galleries_details[0]->title) }}</h2>
                                     <div class="header-line"></div>
                                 </div>
                                 <div class="swiper gallerySwiper">
@@ -521,7 +521,7 @@
                                 <i class="far fa-clock decor-icon anim-spin"
                                     style="font-size:70px;right:10px;top:20px"></i>
                                 <div class="section-header">
-                                    <h2 class="section-title">{{ __($business_hours->title) }}</h2>
+                                    <h2 class="section-title">{{ (App::isLocale('ar') && !empty($business_hours->title_ar)) ? $business_hours->title_ar : __($business_hours->title) }}</h2>
                                     <div class="header-line"></div>
                                 </div>
                                 <div class="mech-card" style="border-left-color:var(--text-muted)">
@@ -610,7 +610,7 @@
                                 <i class="fas fa-trophy decor-icon anim-float"
                                     style="font-size:70px;left:0;top:-10px"></i>
                                 <div class="section-header">
-                                    <h2 class="section-title">{{ __($testimonials[0]->title) }}</h2>
+                                    <h2 class="section-title">{{ (App::isLocale('ar') && !empty($testimonials[0]->title_ar)) ? $testimonials[0]->title_ar : __($testimonials[0]->title) }}</h2>
                                     <div class="header-line"></div>
                                 </div>
                                 <div class="swiper testimonialSwiper">
@@ -740,7 +740,7 @@
                                 <i class="fas fa-credit-card decor-icon anim-spin"
                                     style="font-size:60px;left:10px;top:10px"></i>
                                 <div class="section-header">
-                                    <h2 class="section-title">{{ __($payment_details[0]->title) }}</h2>
+                                    <h2 class="section-title">{{ (App::isLocale('ar') && !empty($payment_details[0]->title_ar)) ? $payment_details[0]->title_ar : __($payment_details[0]->title) }}</h2>
                                     <div class="header-line"></div>
                                 </div>
                                 <div class="pay-links">
@@ -777,7 +777,7 @@
                                 <i class="fas fa-wrench decor-icon anim-float"
                                     style="font-size:60px;right:-5px;top:10px"></i>
                                 <div class="section-header">
-                                    <h2 class="section-title">{{ __($business_card_details->contact_form_title) }}
+                                    <h2 class="section-title">{{ (App::isLocale('ar') && !empty($business_card_details->contact_form_title_ar)) ? $business_card_details->contact_form_title_ar : __($business_card_details->contact_form_title) }}
                                     </h2>
                                     <div class="header-line"></div>
                                 </div>

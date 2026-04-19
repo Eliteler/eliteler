@@ -121,6 +121,15 @@ class BookServiceController extends Controller
                 ];
             }
 
+            // Dynamically set from address for this mail
+            $vcardOwner = \App\BusinessCard::where('card_id', $serviceDetails->vcard_id)->first();
+            if ($vcardOwner && !empty($vcardOwner->email_from_address)) {
+                config(['mail.from.address' => $vcardOwner->email_from_address]);
+            }
+            if ($vcardOwner && !empty($vcardOwner->email_from_name)) {
+                config(['mail.from.name' => $vcardOwner->email_from_name]);
+            }
+
             try {
                 Mail::to($request->customer_email)->send(new \App\Mail\AppointmentMail($details));
             } catch (\Exception $e) {
@@ -150,6 +159,14 @@ class BookServiceController extends Controller
 
             // Get business card owner email 
             $businessEmail = $serviceDetails->service_booking_receive_email;
+
+            // Dynamically set from address for this mail
+            if ($vcardOwner && !empty($vcardOwner->email_from_address)) {
+                config(['mail.from.address' => $vcardOwner->email_from_address]);
+            }
+            if ($vcardOwner && !empty($vcardOwner->email_from_name)) {
+                config(['mail.from.name' => $vcardOwner->email_from_name]);
+            }
 
             try {
                 Mail::to($businessEmail)->send(new \App\Mail\AppointmentMail($serviceBookingDetails));

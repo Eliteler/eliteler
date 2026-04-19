@@ -4,7 +4,8 @@
         {{-- Appointment Slots --}}
         <div class="bg-{{ $section_bg }} w-full mt-4 mb-4 flex justify-center align-middle py-2">
             <p class="heading font-{{ $bg_color }} text-{{ $text_color }} font-bold text-2xl px-4 py-2">
-                {{ __(json_decode($appointment_slots, true)['title']) }}</p>
+                @php $__slots = json_decode($appointment_slots, true); @endphp
+                {{ (App::isLocale('ar') && !empty($__slots['title_ar'])) ? $__slots['title_ar'] : __($__slots['title']) }}</p>
         </div>
         <div class="bg-{{ $bg_color }} w-full px-5 py-1">
             <!-- Error Message (hidden by default) -->

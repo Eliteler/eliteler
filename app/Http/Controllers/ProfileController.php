@@ -429,7 +429,8 @@ class ProfileController extends Controller
                             }
 
                             // Add appointment title to array
-                            $appointment_slots['title'] = $appointmentSlots[0]->title;
+                            $appointment_slots['title']    = $appointmentSlots[0]->title;
+                            $appointment_slots['title_ar'] = $appointmentSlots[0]->title_ar;
 
                             $appointmentEnabled = true;
                         }
@@ -1018,6 +1019,14 @@ class ProfileController extends Controller
                     ];
 
                     // Send mail
+                    // Dynamically set from address for this mail
+                    if ($business_card_details && !empty($business_card_details->email_from_address)) {
+                        config(['mail.from.address' => $business_card_details->email_from_address]);
+                    }
+                    if ($business_card_details && !empty($business_card_details->email_from_name)) {
+                        config(['mail.from.name' => $business_card_details->email_from_name]);
+                    }
+
                     Mail::to($business_card_details->enquiry_email)->send(new AppointmentMail($enquiryDetails));
 
                     // Send appointment booked message to vcard owner's WhatsApp

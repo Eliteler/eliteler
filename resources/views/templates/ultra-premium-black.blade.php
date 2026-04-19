@@ -312,7 +312,7 @@
                         {{-- Services --}}
                         @if ($service_details != null && !$service_details->isEmpty())
                             <div class="ribbon-1 w-full mt-4 mb-4 flex justify-center align-middle py-2">
-                                <p class="font-black mb-6 text-xl px-4 py-1">{{ __($service_details[0]->title) }}</p>
+                                <p class="font-black mb-6 text-xl px-4 py-1">{{ (App::isLocale('ar') && !empty($service_details[0]->title_ar)) ? $service_details[0]->title_ar : __($service_details[0]->title) }}</p>
                             </div>
 
                             <div class="px-5 py-4 grid grid-cols-2 gap-2">
@@ -356,7 +356,7 @@
                         @if ($product_details != null && !$product_details->isEmpty())
 
                             <div class="ribbon-1 w-full mt-4 mb-4 flex justify-center align-middle py-2">
-                                <p class="font-black mb-6 text-xl px-4 py-1">{{ __($product_details[0]->title) }}</p>
+                                <p class="font-black mb-6 text-xl px-4 py-1">{{ (App::isLocale('ar') && !empty($product_details[0]->title_ar)) ? $product_details[0]->title_ar : __($product_details[0]->title) }}</p>
                             </div>
 
                             <div class="px-1 py-1 grid grid-cols-2">
@@ -424,7 +424,7 @@
                         {{-- Galleries --}}
                         @if ($galleries_details != null && !$galleries_details->isEmpty())
                             <div class="ribbon-1 w-full mt-4 mb-4 flex justify-center align-middle py-2">
-                                <p class="font-black mb-6 text-xl px-4 py-1">{{ __($galleries_details[0]->title) }}</p>
+                                <p class="font-black mb-6 text-xl px-4 py-1">{{ (App::isLocale('ar') && !empty($galleries_details[0]->title_ar)) ? $galleries_details[0]->title_ar : __($galleries_details[0]->title) }}</p>
                             </div>
 
                             <div id="gallery" class="px-5 py-4 grid grid-cols-2 gap-2">
@@ -454,7 +454,7 @@
                         {{-- Testimonials --}}
                         @if ($testimonials != null && !$testimonials->isEmpty())
                             <div class="ribbon-1 w-full mt-4 mb-4 flex justify-center align-middle py-2">
-                                <p class="font-black mb-6 text-xl px-4 py-1">{{ __($testimonials[0]->title) }}</p>
+                                <p class="font-black mb-6 text-xl px-4 py-1">{{ (App::isLocale('ar') && !empty($testimonials[0]->title_ar)) ? $testimonials[0]->title_ar : __($testimonials[0]->title) }}</p>
                             </div>
 
                             <section class="px-4 py-4">
@@ -546,7 +546,7 @@
                         @if (count($payment_details) > 0)
 
                             <div class="ribbon-1 w-full mt-4 mb-4 flex justify-center align-middle py-2">
-                                <p class="font-black mb-6 text-xl px-4 py-1">{{ __($payment_details[0]->title) }}</p>
+                                <p class="font-black mb-6 text-xl px-4 py-1">{{ (App::isLocale('ar') && !empty($payment_details[0]->title_ar)) ? $payment_details[0]->title_ar : __($payment_details[0]->title) }}</p>
                             </div>
 
                             @foreach ($payment_details as $payment)
@@ -616,7 +616,7 @@
                             @if ($business_hours != null && $business_hours->is_display != 0)
 
                                 <div class="ribbon-1 w-full mt-4 mb-4 flex justify-center align-middle py-2">
-                                    <p class="font-black mb-6 text-xl px-4 py-1">{{ __($business_hours->title) }}</p>
+                                    <p class="font-black mb-6 text-xl px-4 py-1">{{ (App::isLocale('ar') && !empty($business_hours->title_ar)) ? $business_hours->title_ar : __($business_hours->title) }}</p>
                                 </div>
 
 
@@ -694,7 +694,7 @@
                             @if ($business_card_details->enquiry_email != null)
 
                                 <div class="ribbon-1 w-full mt-4 mb-4 flex justify-center align-middle py-2">
-                                    <p class="font-black mb-6 text-xl px-4 py-1">{{ __($business_card_details->contact_form_title) }}</p>
+                                    <p class="font-black mb-6 text-xl px-4 py-1">{{ (App::isLocale('ar') && !empty($business_card_details->contact_form_title_ar)) ? $business_card_details->contact_form_title_ar : __($business_card_details->contact_form_title) }}</p>
                                 </div>
 
                                 <section class="py-5 lg:py-8 border-b">

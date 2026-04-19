@@ -248,7 +248,8 @@
                             <div class="vault-panel gsap-reveal">
                                 <div class="panel-head">
                                     <div class="panel-icon"><i class="fas fa-clipboard-list"></i></div>
-                                    <span class="panel-title">{{ __($feature_details[0]->title ?? 'Information') }}</span>
+                                    @php $__t_ar = $feature_details[0]->title_ar ?? ''; @endphp
+                                    <span class="panel-title">{{ (App::isLocale('ar') && !empty($__t_ar)) ? $__t_ar : __($feature_details[0]->title ?? 'Information') }}</span>
                                 </div>
 
                                 <div class="feat-grid">
@@ -356,7 +357,8 @@
                             <div class="vault-panel gsap-reveal">
                                 <div class="panel-head">
                                     <div class="panel-icon"><i class="fas fa-tools"></i></div>
-                                    <span class="panel-title">{{ __($service_details[0]->title) }}</span>
+                                    @php $__t_ar = $service_details[0]->title_ar ?? ''; @endphp
+                                    <span class="panel-title">{{ (App::isLocale('ar') && !empty($service_details[0]->title_ar)) ? $service_details[0]->title_ar : __($service_details[0]->title) }}</span>
                                 </div>
                                 <div class="swiper serviceSwiper">
                                     <div class="swiper-wrapper">
@@ -393,7 +395,8 @@
                             <div class="vault-panel gsap-reveal">
                                 <div class="panel-head">
                                     <div class="panel-icon"><i class="fas fa-truck-loading"></i></div>
-                                    <span class="panel-title">{{ __($product_details[0]->title) }}</span>
+                                    @php $__t_ar = $product_details[0]->title_ar ?? ''; @endphp
+                                    <span class="panel-title">{{ (App::isLocale('ar') && !empty($product_details[0]->title_ar)) ? $product_details[0]->title_ar : __($product_details[0]->title) }}</span>
                                 </div>
                                 <div class="swiper productSwiper">
                                     <div class="swiper-wrapper">
@@ -449,7 +452,8 @@
                             <div class="vault-panel gsap-reveal">
                                 <div class="panel-head">
                                     <div class="panel-icon"><i class="fas fa-images"></i></div>
-                                    <span class="panel-title">{{ __($galleries_details[0]->title) }}</span>
+                                    @php $__t_ar = $galleries_details[0]->title_ar ?? ''; @endphp
+                                    <span class="panel-title">{{ (App::isLocale('ar') && !empty($galleries_details[0]->title_ar)) ? $galleries_details[0]->title_ar : __($galleries_details[0]->title) }}</span>
                                 </div>
                                 <div class="grid-2">
                                     @foreach ($galleries_details as $g)
@@ -543,7 +547,8 @@
                             <div class="vault-panel gsap-reveal" id="service-booking-section">
                                 <div class="panel-head">
                                     <div class="panel-icon"><i class="fas fa-clipboard-list"></i></div>
-                                    <span class="panel-title">{{ __($service_booking_details->title) }}</span>
+                                    @php $__t_ar = $service_booking_details->title_ar ?? ''; @endphp
+                                    <span class="panel-title">{{ (App::isLocale('ar') && !empty($__t_ar)) ? $__t_ar : __($service_booking_details->title) }}</span>
                                 </div>
                                 <div id="errorMessage1" class="alert-box alert-error hidden"></div>
                                 <div id="successMessage1" class="alert-box alert-success hidden"></div>
@@ -590,7 +595,8 @@
                             <div class="vault-panel gsap-reveal">
                                 <div class="panel-head">
                                     <div class="panel-icon"><i class="fas fa-star"></i></div>
-                                    <span class="panel-title">{{ __($testimonials[0]->title) }}</span>
+                                    @php $__t_ar = $testimonials[0]->title_ar ?? ''; @endphp
+                                    <span class="panel-title">{{ (App::isLocale('ar') && !empty($testimonials[0]->title_ar)) ? $testimonials[0]->title_ar : __($testimonials[0]->title) }}</span>
                                 </div>
                                 <div class="swiper testimonialSwiper">
                                     <div class="swiper-wrapper">
@@ -627,7 +633,8 @@
                             <div class="vault-panel gsap-reveal">
                                 <div class="panel-head">
                                     <div class="panel-icon"><i class="far fa-clock"></i></div>
-                                    <span class="panel-title">{{ __($business_hours->title) }}</span>
+                                    @php $__t_ar = $business_hours->title_ar ?? ''; @endphp
+                                    <span class="panel-title">{{ (App::isLocale('ar') && !empty($business_hours->title_ar)) ? $business_hours->title_ar : __($business_hours->title) }}</span>
                                 </div>
                                 @if ($business_hours->is_always_open != 'Opening')
                                     @foreach (['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as $day)
@@ -674,7 +681,8 @@
                             <div class="vault-panel gsap-reveal">
                                 <div class="panel-head">
                                     <div class="panel-icon"><i class="fas fa-file-invoice-dollar"></i></div>
-                                    <span class="panel-title">{{ __($payment_details[0]->title ?? 'Invoicing') }}</span>
+                                    @php $__t_ar = $payment_details[0]->title_ar ?? ''; @endphp
+                                    <span class="panel-title">{{ (App::isLocale('ar') && !empty($__t_ar)) ? $__t_ar : __($payment_details[0]->title ?? 'Invoicing') }}</span>
                                 </div>
                                 <div style="display:flex; flex-direction:column; gap:10px;">
                                     @foreach ($payment_details as $payment)
@@ -763,7 +771,8 @@
                             <div class="vault-panel gsap-reveal">
                                 <div class="panel-head">
                                     <div class="panel-icon"><i class="fas fa-network-wired"></i></div>
-                                    <span class="panel-title">{{ __('Network') }}</span>
+                                    @php $__t_ar = $feature_details[0]->title_ar ?? ''; @endphp
+                                    <span class="panel-title">{{ (App::isLocale('ar') && !empty($__t_ar)) ? $__t_ar : __($feature_details[0]->title ?? 'Network') }}</span>
                                 </div>
                                 <div class="grid-3">
                                     @foreach ($socialFeatures as $feature)
@@ -781,8 +790,8 @@
                             <div class="vault-panel gsap-reveal" id="contact-section">
                                 <div class="panel-head">
                                     <div class="panel-icon"><i class="fas fa-envelope"></i></div>
-                                    <span
-                                        class="panel-title">{{ __($business_card_details->contact_form_title ?? 'Contact Us') }}</span>
+                                    @php $__t_ar = $business_card_details->contact_form_title_ar ?? ''; @endphp
+                                    <span class="panel-title">{{ (App::isLocale('ar') && !empty($__t_ar)) ? $__t_ar : __($business_card_details->contact_form_title ?? 'Contact Us') }}</span>
                                 </div>
                                 @if (Session::has('message'))
                                     <div class="alert-box alert-success"><i class="fas fa-check-circle"></i>

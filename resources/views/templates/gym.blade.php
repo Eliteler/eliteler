@@ -351,7 +351,7 @@
                                                 class="w-[80px] absolute -top-[65px] ltr:-right-4 rtl:-left-4 rtl:transform rtl:scale-x-[-1] opacity-50" />
                                             <div class="flex items-center mb-8 mt-14">
                                                 <span
-                                                    class="text-3xl lg:text-4xl font-medium text-[#121212] head uppercase">{{ __($feature_details[0]->title) }}</span>
+                                                    class="text-3xl lg:text-4xl font-medium text-[#121212] head uppercase">{{ (App::isLocale('ar') && !empty($feature_details[0]->title_ar)) ? $feature_details[0]->title_ar : __($feature_details[0]->title) }}</span>
                                                 <hr class="flex-grow border-[7px] border-gray-800 ltr:ml-6 rtl:mr-6">
                                             </div>
                                             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -395,7 +395,7 @@
                                         <div class="flex items-center mb-8 mt-14">
                                             <hr class="flex-grow border-[7px] border-gray-800 rtl:ml-6 ltr:mr-6 z-10 relative">
                                             <span
-                                                class="text-3xl lg:text-4xl font-medium text-[#121212] head uppercase">{{ __($product_details[0]->title) }}</span>
+                                                class="text-3xl lg:text-4xl font-medium text-[#121212] head uppercase">{{ (App::isLocale('ar') && !empty($product_details[0]->title_ar)) ? $product_details[0]->title_ar : __($product_details[0]->title) }}</span>
                                         </div>
                                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 mt-6">
                                             {{-- All products --}}
@@ -478,7 +478,7 @@
                                             class="lg:w-[120px] w-[120px] absolute lg:-top-[106px] -top-[106px] lg:rtl:-left-7 lg:ltr:-right-7 rtl:-left-4 ltr:-right-4 rtl:transform rtl:scale-x-[-1] opacity-50" />
                                         <div class="flex items-center mb-8 mt-14">
                                             <span
-                                                class="text-3xl lg:text-4xl font-medium text-[#121212] head uppercase">{{ __($service_details[0]->title) }}</span>
+                                                class="text-3xl lg:text-4xl font-medium text-[#121212] head uppercase">{{ (App::isLocale('ar') && !empty($service_details[0]->title_ar)) ? $service_details[0]->title_ar : __($service_details[0]->title) }}</span>
                                             <hr class="flex-grow border-[7px] border-gray-800 ltr:ml-6 rtl:mr-6">
                                         </div>
                                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
@@ -596,7 +596,7 @@
                                         <div class="flex items-center mb-8 mt-14">
                                             <hr class="flex-grow border-[7px] border-gray-800 rtl:ml-6 ltr:mr-6">
                                             <span
-                                                class="text-3xl lg:text-4xl font-medium text-[#121212] head uppercase">{{ __($galleries_details[0]->title) }}</span>
+                                                class="text-3xl lg:text-4xl font-medium text-[#121212] head uppercase">{{ (App::isLocale('ar') && !empty($galleries_details[0]->title_ar)) ? $galleries_details[0]->title_ar : __($galleries_details[0]->title) }}</span>
                                         </div>
                                         <div>
                                             <swiper-container class="mySwiper" loop="true"
@@ -636,7 +636,7 @@
                                             class="lg:w-20 w-14 absolute lg:top-8 top-6 lg:-right-8 -right-4 opacity-20" />
                                         <div class="flex items-center mt-14 mb-8">
                                             <span
-                                                class="text-3xl lg:text-4xl font-medium text-[#121212] head uppercase">{{ __($testimonials[0]->title) }}</span>
+                                                class="text-3xl lg:text-4xl font-medium text-[#121212] head uppercase">{{ (App::isLocale('ar') && !empty($testimonials[0]->title_ar)) ? $testimonials[0]->title_ar : __($testimonials[0]->title) }}</span>
                                             <hr class="flex-grow border-[7px] border-gray-800 rtl:mr-6 ltr:ml-6">
                                         </div>
                                         <swiper-container class="mySwiper" autoplay-delay="2000"
@@ -741,7 +741,7 @@
                                                 <hr
                                                     class="flex-grow border-[7px] border-gray-800 rtl:ml-6 ltr:mr-6 z-10 relative">
                                                 <span
-                                                    class="text-3xl lg:text-4xl font-medium text-[#121212] head uppercase">{{ __($business_hours->title) }}</span>
+                                                    class="text-3xl lg:text-4xl font-medium text-[#121212] head uppercase">{{ (App::isLocale('ar') && !empty($business_hours->title_ar)) ? $business_hours->title_ar : __($business_hours->title) }}</span>
                                             </div>
                                             <!-- Business Hours Card -->
                                             <div class="bg-white rounded-lg py-4">
@@ -812,7 +812,7 @@
                                     <div class="relative">
                                         <div class="flex items-center mt-14 mb-8">
                                             <span
-                                                class="text-3xl lg:text-4xl font-medium text-[#121212] head uppercase">{{ __($payment_details[0]->title) }}</span>
+                                                class="text-3xl lg:text-4xl font-medium text-[#121212] head uppercase">{{ (App::isLocale('ar') && !empty($payment_details[0]->title_ar)) ? $payment_details[0]->title_ar : __($payment_details[0]->title) }}</span>
                                             <hr class="flex-grow border-[7px] border-gray-800 rtl:mr-6 ltr:ml-6">
                                         </div>
                                         <div class="grid lg:grid-cols-2 gap-4">
@@ -1081,7 +1081,7 @@
                                             <div class="flex items-center mt-16 mb-8">
                                                 <hr class="flex-grow border-[7px] border-gray-800 rtl:ml-6 ltr:mr-6">
                                                 <span
-                                                    class="text-3xl lg:text-4xl font-medium text-[#121212] head uppercase">{{ __($business_card_details->contact_form_title) }}</span>
+                                                    class="text-3xl lg:text-4xl font-medium text-[#121212] head uppercase">{{ (App::isLocale('ar') && !empty($business_card_details->contact_form_title_ar)) ? $business_card_details->contact_form_title_ar : __($business_card_details->contact_form_title) }}</span>
                                             </div>
 
                                             {{-- Message Alert --}}

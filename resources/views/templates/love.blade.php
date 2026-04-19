@@ -394,7 +394,7 @@
                                                 class="w-28 lg:w-36 absolute -top-10 lg:-top-14 ltr:-right-2 rtl:-left-2" />
                                             <h2
                                                 class="text-3xl lg:text-4xl font-medium text-white head ltr:text-left rtl:text-right my-12">
-                                                {{ __($feature_details[0]->title) }}</h2>
+                                                {{ (App::isLocale('ar') && !empty($feature_details[0]->title_ar)) ? $feature_details[0]->title_ar : __($feature_details[0]->title) }}</h2>
                                             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                                 @foreach ($feature_details as $feature)
                                                     {{-- Generate href value dynamically --}}
@@ -437,7 +437,7 @@
                                             class="w-28 lg:w-36 absolute -top-10 lg:-top-10 rtl:-right-2 ltr:-left-2" />
                                         <h2
                                             class="text-3xl lg:text-4xl font-medium text-white head rtl:text-left ltr:text-right my-12">
-                                            {{ __($galleries_details[0]->title) }}</h2>
+                                            {{ (App::isLocale('ar') && !empty($galleries_details[0]->title_ar)) ? $galleries_details[0]->title_ar : __($galleries_details[0]->title) }}</h2>
                                         <div class="w-full slider">
                                             {{-- Slider images --}}
                                             @foreach ($galleries_details as $galleries_detail)
@@ -468,7 +468,7 @@
                                             class="w-24 lg:w-32 absolute -top-10 lg:-top-12 ltr:-right-16 rtl:-left-16 rtl:scale-x-[-1]" />
                                         <h2
                                             class="text-3xl lg:text-4xl font-medium text-white head ltr:text-left rtl:text-right my-12">
-                                            {{ __($service_details[0]->title) }}</h2>
+                                            {{ (App::isLocale('ar') && !empty($service_details[0]->title_ar)) ? $service_details[0]->title_ar : __($service_details[0]->title) }}</h2>
                                         <div class="slider">
                                             {{-- All services --}}
                                             @foreach ($service_details as $service_detail)
@@ -516,7 +516,7 @@
                                             class="w-24 lg:w-32 absolute -top-8 lg:-top-8 rtl:-right-4 ltr:-left-4 ltr:-rotate-12 rtl:rotate-12" />
                                         <h2
                                             class="text-3xl lg:text-4xl font-medium text-white head rtl:text-left ltr:text-right my-12">
-                                            {{ __($product_details[0]->title) }}</h2>
+                                            {{ (App::isLocale('ar') && !empty($product_details[0]->title_ar)) ? $product_details[0]->title_ar : __($product_details[0]->title) }}</h2>
                                         <div class="slider">
                                             {{-- All products --}}
                                             @foreach ($product_details as $product_detail)
@@ -725,7 +725,7 @@
                                             <!-- Section Header -->
                                             <h2
                                                 class="text-3xl lg:text-4xl font-medium text-white head rtl:text-left ltr:text-right my-12">
-                                                {{ __($business_hours->title) }}</h2>
+                                                {{ (App::isLocale('ar') && !empty($business_hours->title_ar)) ? $business_hours->title_ar : __($business_hours->title) }}</h2>
                                             <!-- Business Hours Card -->
                                             <div class="rounded-lg py-4">
                                                 @if ($business_hours->is_always_open != 'Opening')
@@ -923,7 +923,7 @@
                                     <div class="relative">
                                         <h2
                                             class="text-3xl lg:text-4xl font-medium text-white head ltr:text-left rtl:text-right my-12">
-                                            {{ __($payment_details[0]->title) }}</h2>
+                                            {{ (App::isLocale('ar') && !empty($payment_details[0]->title_ar)) ? $payment_details[0]->title_ar : __($payment_details[0]->title) }}</h2>
                                         <div class="grid lg:grid-cols-2 gap-4">
                                             {{-- Payment options --}}
                                             @foreach ($payment_details as $payment)
@@ -999,7 +999,7 @@
                                             class="w-24 lg:w-32 absolute -top-8 lg:-top-8 rtl:-right-4 ltr:-left-4 ltr:-rotate-12 rtl:rotate-12" />
                                         <h2
                                             class="text-3xl lg:text-4xl font-medium text-white head rtl:text-left ltr:text-right my-12">
-                                            {{ __($testimonials[0]->title) }}</h2>
+                                            {{ (App::isLocale('ar') && !empty($testimonials[0]->title_ar)) ? $testimonials[0]->title_ar : __($testimonials[0]->title) }}</h2>
                                         <div class="review-slider bg-[#4B2F7A] rounded-2xl">
                                             {{-- Client Reviews --}}
                                             @foreach ($testimonials as $testimonial)
@@ -1074,7 +1074,7 @@
                                                 class="w-24 lg:w-32 absolute -top-12 lg:-top-16 ltr:-right-6 rtl:-left-6 rtl:scale-x-[-1]" />
                                             <h2
                                                 class="text-3xl lg:text-4xl font-medium text-white head ltr:text-left rtl:text-right my-12">
-                                                {{ __($business_card_details->contact_form_title) }}</h2>
+                                                {{ (App::isLocale('ar') && !empty($business_card_details->contact_form_title_ar)) ? $business_card_details->contact_form_title_ar : __($business_card_details->contact_form_title) }}</h2>
 
                                             {{-- Message Alert --}}
                                             @if (Session::has('message'))

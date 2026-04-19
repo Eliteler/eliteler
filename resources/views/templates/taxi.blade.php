@@ -384,7 +384,7 @@
                                                 class="w-24 absolute -top-[65px] ltr:left-0 rtl:right-0" />
                                             <h2
                                                 class="text-3xl font-medium text-black head ltr:text-left mt-[65px] mb-5 rtl:text-right">
-                                                {{ __($feature_details[0]->title) }}</h2>
+                                                {{ (App::isLocale('ar') && !empty($feature_details[0]->title_ar)) ? $feature_details[0]->title_ar : __($feature_details[0]->title) }}</h2>
                                             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                                 @foreach ($validFeatures as $feature)
                                                     @php
@@ -486,7 +486,7 @@
                                             class="w-24 absolute -top-[65px] ltr:left-0 rtl:right-0 " />
                                         <h2
                                             class="text-3xl font-medium text-black head ltr:text-left mt-[65px] mb-5 rtl:text-right">
-                                            {{ __($product_details[0]->title) }}</h2>
+                                            {{ (App::isLocale('ar') && !empty($product_details[0]->title_ar)) ? $product_details[0]->title_ar : __($product_details[0]->title) }}</h2>
                                         <swiper-container
                                             breakpoints='{
                                             "640": { "slidesPerView": 1 }, 
@@ -584,7 +584,7 @@
                                             class="w-24 absolute -top-[65px] ltr:right-0 rtl:left-0 " />
                                         <h2
                                             class="text-3xl font-medium text-black head ltr:text-right mt-[65px] mb-5 rtl:text-left">
-                                            {{ __($service_details[0]->title) }}</h2>
+                                            {{ (App::isLocale('ar') && !empty($service_details[0]->title_ar)) ? $service_details[0]->title_ar : __($service_details[0]->title) }}</h2>
                                         <swiper-container
                                             breakpoints='{
                                             "640": { "slidesPerView": 1 }, 
@@ -714,7 +714,7 @@
                                             class="w-24 absolute -top-[65px] ltr:left-0 rtl:right-0 " />
                                         <h2
                                             class="text-3xl font-medium text-black head ltr:text-left mt-[65px] mb-5 rtl:text-right">
-                                            {{ __($galleries_details[0]->title) }}</h2>
+                                            {{ (App::isLocale('ar') && !empty($galleries_details[0]->title_ar)) ? $galleries_details[0]->title_ar : __($galleries_details[0]->title) }}</h2>
                                         <div>
                                             <swiper-container class="mySwiper" loop="true" slides-per-view="1"
                                                 autoplay-delay="3000" autoplay-disable-on-interaction="false"
@@ -750,7 +750,7 @@
                                                 class="w-24 absolute -top-[65px] ltr:right-0 rtl:left-0 " />
                                             <h2
                                                 class="text-3xl font-medium text-black head ltr:text-right mt-[65px] mb-5 rtl:text-left">
-                                                {{ __($business_hours->title) }}</h2>
+                                                {{ (App::isLocale('ar') && !empty($business_hours->title_ar)) ? $business_hours->title_ar : __($business_hours->title) }}</h2>
                                             <!-- Business Hours Card -->
                                             <div class="bg-white rounded-lg py-4">
                                                 @if ($business_hours->is_always_open != 'Opening')
@@ -950,7 +950,7 @@
                                             class="w-24 absolute -top-[65px] ltr:left-0 rtl:right-0 " />
                                         <h2
                                             class="text-3xl font-medium text-black head ltr:text-left mt-[65px] mb-5 rtl:text-right">
-                                            {{ __($testimonials[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($testimonials[0]->title_ar)) ? $testimonials[0]->title_ar : __($testimonials[0]->title) }}
                                         </h2>
                                         <swiper-container class="mySwiper" autoplay-delay="2000"
                                             autoplay-disable-on-interaction="false">
@@ -993,7 +993,7 @@
                                             class="w-24 absolute -top-[65px] ltr:right-0 rtl:left-0 " />
                                         <h2
                                             class="text-3xl font-medium text-black head ltr:text-right mt-[65px] mb-5 rtl:text-left">
-                                            {{ __($payment_details[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($payment_details[0]->title_ar)) ? $payment_details[0]->title_ar : __($payment_details[0]->title) }}
                                         </h2>
                                         <div class="grid lg:grid-cols-2 gap-4">
                                             {{-- Payment options --}}
@@ -1138,7 +1138,7 @@
                                                 class="w-24 absolute -top-[65px] ltr:right-0 rtl:left-0 " />
                                             <h2
                                                 class="text-3xl font-medium text-black head ltr:text-right mt-[65px] mb-5 rtl:text-left">
-                                                {{ __($business_card_details->contact_form_title) }}</h2>
+                                                {{ (App::isLocale('ar') && !empty($business_card_details->contact_form_title_ar)) ? $business_card_details->contact_form_title_ar : __($business_card_details->contact_form_title) }}</h2>
                                             {{-- Message Alert --}}
                                             @if (Session::has('message'))
                                                 <div class="px-6 py-4 bg-yellow-400 shadow-md mb-6">

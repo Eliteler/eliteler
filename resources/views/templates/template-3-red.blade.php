@@ -343,7 +343,7 @@
                             @if (count($service_details) > 0 && !$service_details->isEmpty())
                                 <div class="py-5 px-3 my-2 shadow-lg">
                                     <h2 class="w-full md:w-auto mt-4 mb-2 md:mb-0 text-2xl font-bold">
-                                        {{ __($service_details[0]->title) }}
+                                        {{ (App::isLocale('ar') && !empty($service_details[0]->title_ar)) ? $service_details[0]->title_ar : __($service_details[0]->title) }}
                                     </h2>
 
                                     <!-- Slider Container -->
@@ -397,7 +397,7 @@
                             @if (count($product_details) > 0 && !$product_details->isEmpty())
                                 <div class="py-5 px-3 my-2 shadow-lg">
                                     <h2 class="w-full md:w-auto mt-2 mb-2 md:mb-0 text-2xl font-bold">
-                                        {{ __($product_details[0]->title) }}
+                                        {{ (App::isLocale('ar') && !empty($product_details[0]->title_ar)) ? $product_details[0]->title_ar : __($product_details[0]->title) }}
                                     </h2>
                                     <div class="flex flex-wrap -mx-2">
                                         <!-- Swiper container -->
@@ -462,7 +462,7 @@
                             @if (count($galleries_details) > 0 && !$galleries_details->isEmpty())
                                 <div class="py-5 px-3 my-2 shadow-lg">
                                     <h2 class="w-full md:w-auto mt-2 mb-2 md:mb-0 text-2xl font-bold">
-                                        {{ __($galleries_details[0]->title) }}
+                                        {{ (App::isLocale('ar') && !empty($galleries_details[0]->title_ar)) ? $galleries_details[0]->title_ar : __($galleries_details[0]->title) }}
                                     </h2>
                                     <div class="flex flex-wrap -mx-3 px-3">
                                         <!-- Images -->
@@ -491,7 +491,7 @@
                             @if ($testimonials != null && !$testimonials->isEmpty())
                                 <section class="py-5 px-3 my-2 shadow-lg">
                                     <h2 class="w-full md:w-auto mt-2 mb-2 md:mb-0 text-2xl font-bold">
-                                        {{ __($testimonials[0]->title) }}
+                                        {{ (App::isLocale('ar') && !empty($testimonials[0]->title_ar)) ? $testimonials[0]->title_ar : __($testimonials[0]->title) }}
                                     </h2>
                                     <div class="mb-3">
                                         <!-- Slider main container -->
@@ -614,7 +614,7 @@
                             @if (count($payment_details) > 0)
                                 <div class="py-5 px-3 my-2 shadow-lg">
                                     <h2 class="w-full md:w-auto mt-2 mb-4 md:mb-0 text-2xl font-bold">
-                                        {{ __($payment_details[0]->title) }}
+                                        {{ (App::isLocale('ar') && !empty($payment_details[0]->title_ar)) ? $payment_details[0]->title_ar : __($payment_details[0]->title) }}
                                     </h2>
 
                                     @foreach ($payment_details as $payment)
@@ -690,7 +690,7 @@
                                 @if ($business_hours != null && $business_hours->is_display != 0)
                                     <div class="py-5 px-3 my-2 shadow-lg">
                                         <h2 class="w-full md:w-auto mt-2 mb-4 md:mb-0 text-2xl font-bold">
-                                            {{ __($business_hours->title) }}
+                                            {{ (App::isLocale('ar') && !empty($business_hours->title_ar)) ? $business_hours->title_ar : __($business_hours->title) }}
                                         </h2>
 
                                         @if ($business_hours->is_always_open != 'Opening')
@@ -985,7 +985,7 @@
                                 @if ($business_card_details->enquiry_email != null)
                                     <div class="py-5 px-3 my-2 shadow-lg">
                                         <h2 class="w-full md:w-auto mt-2 mb-2 md:mb-0 text-2xl font-bold">
-                                            {{ __($business_card_details->contact_form_title) }}
+                                            {{ (App::isLocale('ar') && !empty($business_card_details->contact_form_title_ar)) ? $business_card_details->contact_form_title_ar : __($business_card_details->contact_form_title) }}
                                         </h2>
 
                                         <div class="-mx-2">

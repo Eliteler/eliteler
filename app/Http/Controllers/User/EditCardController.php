@@ -183,7 +183,9 @@ class EditCardController extends Controller
                     'sub_title' => $request->subtitle,
                     'subtitle2' => $request->subtitle2,
                     'copyright' => $request->copyright,
-                    'description' => $request->description
+                    'description' => $request->description,
+                    'email_from_name' => $request->email_from_name,
+                    'email_from_address' => $request->email_from_address
                 ]);
 
                 return redirect()->route('user.edit.social.links', $id)->with('success', trans('Details have been updated.'));

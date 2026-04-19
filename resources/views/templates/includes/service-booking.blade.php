@@ -7,11 +7,13 @@
 <div class="py-5 lg:py-8 border-b">
 
     @php
+        $__service_title = (App::isLocale('ar') && isset($service_booking_details->title_ar) && trim($service_booking_details->title_ar) != '') ? $service_booking_details->title_ar : __($service_booking_details->title);
+
         switch ($business_card_details->theme_id) {
             case '588969111094':
             case '588969111095':
                 $head = '<div class="bg-custom w-full mt-4 mb-4 flex justify-center align-middle py-2">
-                            <p class="heading font-black text-white text-xl px-4 py-2">' . __($service_booking_details->title) . '</p>
+                            <p class="heading font-black text-white text-xl px-4 py-2">' . $__service_title . '</p>
                         </div>';
                 break;
 
@@ -24,19 +26,19 @@
             case '588969111092':
             case '588969111093':
                 $head = '<div class="' . $head_style . '">
-                            <p class="heading font-black text-white text-xl px-4 py-2">' . __($service_booking_details->title) . '</p>
+                            <p class="heading font-black text-white text-xl px-4 py-2">' . $__service_title . '</p>
                         </div>';
                 break;
 
             case '588969110990':
                 $head = '<h2 class="' . $head_style . '">'
-                            . __($service_booking_details->title) .
+                            . $__service_title .
                         '</h2>';
                 break;
             
             default:
                 $head = '<h2 class="' . $head_style . '">'
-                            . __($service_booking_details->title) .
+                            . $__service_title .
                         '</h2>';
                 break;
         }

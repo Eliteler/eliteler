@@ -190,7 +190,7 @@
                                 @if (count($feature_details) > 0)
                                     <div class="lg:py-10 py-10">
                                         <h2 class="w-full md:w-auto mt-4 mb-2 md:mb-0 text-2xl font-bold">
-                                            {{ __($feature_details[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($feature_details[0]->title_ar)) ? $feature_details[0]->title_ar : __($feature_details[0]->title) }}
                                         </h2>
                                         <div class="flex flex-wrap items-center -mx-2 mt-3">
                                             @foreach ($feature_details as $feature)

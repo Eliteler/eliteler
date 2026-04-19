@@ -56,38 +56,44 @@ class SectionTitleController extends Controller
 
         // Define all sections without numeric keys
         $sections = [
-            ['table' => 'business_fields', 'column' => 'title', 'label' => trans('Social Links')],
-            ['table' => 'payments', 'column' => 'title', 'label' => trans('Payments')],
-            ['table' => 'services', 'column' => 'title', 'label' => trans('Services')],
-            ['table' => 'vcard_products', 'column' => 'title', 'label' => trans('Products')],
-            ['table' => 'galleries', 'column' => 'title', 'label' => trans('Galleries')],
-            ['table' => 'testimonials', 'column' => 'title', 'label' => trans('Testimonials')],
-            ['table' => 'business_hours', 'column' => 'title', 'label' => trans('Business Hours')],
-            ['table' => 'card_appointment_times', 'column' => 'title', 'label' => trans('Appointments')],
-            ['table' => 'business_cards', 'column' => 'contact_form_title', 'label' => trans('Contact Form')],
-            ['table' => 'service_bookings', 'column' => 'title', 'label' => trans('Service Booking')],
+            ['table' => 'business_fields',       'column' => 'title',              'label' => trans('Social Links')],
+            ['table' => 'payments',               'column' => 'title',              'label' => trans('Payments')],
+            ['table' => 'services',               'column' => 'title',              'label' => trans('Services')],
+            ['table' => 'vcard_products',         'column' => 'title',              'label' => trans('Products')],
+            ['table' => 'galleries',              'column' => 'title',              'label' => trans('Galleries')],
+            ['table' => 'testimonials',           'column' => 'title',              'label' => trans('Testimonials')],
+            ['table' => 'business_hours',         'column' => 'title',              'label' => trans('Business Hours')],
+            ['table' => 'card_appointment_times', 'column' => 'title',              'label' => trans('Appointments')],
+            ['table' => 'business_cards',         'column' => 'contact_form_title', 'label' => trans('Contact Form')],
+            ['table' => 'service_bookings',       'column' => 'title',              'label' => trans('Service Booking')],
         ];
 
         $sectionTitles = collect();
 
         foreach ($sections as $index => $section) {
-            $table = $section['table'];
-            $column = $section['column'];
+            $table        = $section['table'];
+            $column       = $section['column'];
             $cardIdColumn = ($table === 'service_bookings') ? 'vcard_id' : 'card_id';
+            $arColumn     = ($table === 'business_cards') ? 'contact_form_title_ar' : 'title_ar';
 
             // Fetch rows
             $rows = DB::table($table)
                 ->where($cardIdColumn, $cardId)
-                ->select(DB::raw("COALESCE($column, '') as title"))
+                ->select(
+                    DB::raw("COALESCE($column, '') as title"),
+                    DB::raw("COALESCE($arColumn, '') as title_ar")
+                )
                 ->get();
 
             // Use first title or fallback to label
-            $title = $rows->first()->title ?? $section['label'];
+            $title    = $rows->first()->title    ?? $section['label'];
+            $title_ar = $rows->first()->title_ar ?? '';
 
             $sectionTitles->push((object)[
-                'id'    => $index + 1,
-                'title' => trim($title) !== '' ? trim($title) : $section['label'],
-                'label' => $section['label'],
+                'id'       => $index + 1,
+                'title'    => trim($title) !== '' ? trim($title) : $section['label'],
+                'title_ar' => trim($title_ar),
+                'label'    => $section['label'],
             ]);
         }
 
@@ -98,11 +104,13 @@ class SectionTitleController extends Controller
     public function updateSectionTitle(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            'titles' => 'required|array',
-            'titles.*' => 'required|string|max:255',
+            'titles'       => 'required|array',
+            'titles.*'     => 'required|string|max:255',
+            'titles_ar'    => 'nullable|array',
+            'titles_ar.*'  => 'nullable|string|max:255',
         ], [
-            'titles.required' => trans('Section title required'),
-            'titles.*.required' => trans('Section title required'),
+            'titles.required'    => trans('Section title required'),
+            'titles.*.required'  => trans('Section title required'),
         ]);
 
         if ($validator->fails()) {
@@ -111,42 +119,44 @@ class SectionTitleController extends Controller
                 ->withInput();
         }
 
-        $plan = DB::table('users')->where('user_id', Auth::user()->user_id)->where('status', 1)->first();
+        $plan         = DB::table('users')->where('user_id', Auth::user()->user_id)->where('status', 1)->first();
         $plan_details = json_decode($plan->plan_details);
+        $titles_ar    = $request->titles_ar ?? [];
 
         foreach ($request->titles as $key => $value) {
-            $value = trim($value);
+            $value    = trim($value);
+            $value_ar = isset($titles_ar[$key]) ? (trim($titles_ar[$key]) ?: null) : null;
 
             switch ($key) {
                 case 1:
-                    DB::table('business_fields')->where('card_id', $id)->update(['title' => $value]);
+                    DB::table('business_fields')->where('card_id', $id)->update(['title' => $value, 'title_ar' => $value_ar]);
                     break;
                 case 2:
-                    DB::table('payments')->where('card_id', $id)->update(['title' => $value]);
+                    DB::table('payments')->where('card_id', $id)->update(['title' => $value, 'title_ar' => $value_ar]);
                     break;
                 case 3:
-                    DB::table('services')->where('card_id', $id)->update(['title' => $value]);
+                    DB::table('services')->where('card_id', $id)->update(['title' => $value, 'title_ar' => $value_ar]);
                     break;
                 case 4:
-                    DB::table('vcard_products')->where('card_id', $id)->update(['title' => $value]);
+                    DB::table('vcard_products')->where('card_id', $id)->update(['title' => $value, 'title_ar' => $value_ar]);
                     break;
                 case 5:
-                    DB::table('galleries')->where('card_id', $id)->update(['title' => $value]);
+                    DB::table('galleries')->where('card_id', $id)->update(['title' => $value, 'title_ar' => $value_ar]);
                     break;
                 case 6:
-                    DB::table('testimonials')->where('card_id', $id)->update(['title' => $value]);
+                    DB::table('testimonials')->where('card_id', $id)->update(['title' => $value, 'title_ar' => $value_ar]);
                     break;
                 case 7:
-                    DB::table('business_hours')->where('card_id', $id)->update(['title' => $value]);
+                    DB::table('business_hours')->where('card_id', $id)->update(['title' => $value, 'title_ar' => $value_ar]);
                     break;
                 case 8:
-                    DB::table('card_appointment_times')->where('card_id', $id)->update(['title' => $value]);
+                    DB::table('card_appointment_times')->where('card_id', $id)->update(['title' => $value, 'title_ar' => $value_ar]);
                     break;
                 case 9:
-                    DB::table('business_cards')->where('card_id', $id)->update(['contact_form_title' => $value]);
+                    DB::table('business_cards')->where('card_id', $id)->update(['contact_form_title' => $value, 'contact_form_title_ar' => $value_ar]);
                     break;
                 case 10:
-                    DB::table('service_bookings')->where('vcard_id', $id)->update(['title' => $value]);
+                    DB::table('service_bookings')->where('vcard_id', $id)->update(['title' => $value, 'title_ar' => $value_ar]);
                     break;
             }
         }

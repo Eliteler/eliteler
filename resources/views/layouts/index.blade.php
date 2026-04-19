@@ -191,11 +191,45 @@
 
     {{-- WhatsApp Chatbot --}}
     @if (isset($config) && $config)
-        @if ($config[40]->config_value == '1')
-            <a href="https://api.whatsapp.com/send?phone={{ $config[41]->config_value }}&text={{ urlencode($config[42]->config_value) }}"
-                class="whatapp-chatbot" target="_blank">
-                <i class="fab fa-whatsapp whatapp-chatbot-icon"></i>
-            </a>
+        @php
+            $wp_configs = collect($config)->pluck('config_value', 'config_key');
+            $show_chatbot = $wp_configs['show_whatsapp_chatbot'] ?? '0';
+        @endphp
+        @if ($show_chatbot == '1')
+            <div class="fixed bottom-6 right-6 z-50" style="right: 30px; bottom: 30px; position: fixed; z-index: 9999;">
+                <div id="whatsappPopup" class="mb-4 bg-white rounded-lg shadow-xl border border-gray-200 w-64 overflow-hidden transition-all duration-300" style="display: none; position: absolute; bottom: 65px; left: -195px; width: 250px;">
+                    <div class="bg-green-500 text-white p-3 font-semibold text-sm flex justify-between items-center">
+                        <span>{{ __('Chat with us') }}</span>
+                        <button onclick="document.getElementById('whatsappPopup').style.display = 'none'" class="text-white hover:text-gray-200 focus:outline-none fill-current" style="background: none; border: none; cursor: pointer;">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width: 16px; height: 16px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                    <div class="max-h-64 overflow-y-auto w-full p-2 space-y-2">
+                        @for($i = 1; $i <= 6; $i++)
+                            @php
+                                $numKey = $i == 1 ? 'whatsapp_chatbot_mobile_number' : "whatsapp_chatbot_mobile_number_{$i}";
+                                $msgKey = $i == 1 ? 'whatsapp_chatbot_message' : "whatsapp_chatbot_message_{$i}";
+                                $nameKey = "whatsapp_chatbot_name_{$i}";
+                                $num = $wp_configs[$numKey] ?? null;
+                                $msg = $wp_configs[$msgKey] ?? '';
+                                $name = $wp_configs[$nameKey] ?? '';
+                            @endphp
+                            @if(!empty($num))
+                                <a href="https://api.whatsapp.com/send?phone={{ $num }}&text={{ urlencode($msg) }}" target="_blank" class="flex items-center p-2 rounded-md hover:bg-gray-100 transition-colors w-full border border-gray-100 mt-2 text-decoration-none" style="display: flex; align-items: center; padding: 10px; text-decoration: none; border-bottom: 1px solid #f1f1f1;">
+                                    <div class="bg-green-100 text-green-600 rounded-full w-8 h-8 flex items-center justify-center me-3 flex-shrink-0" style="width: 32px; height: 32px; border-radius: 50%; background-color: #d1fae5; color: #059669; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
+                                        <i class="fab fa-whatsapp"></i>
+                                    </div>
+                                    <div style="padding-left: 10px; padding-right: 10px; color: #1f2937;" class="text-sm text-gray-800 font-medium truncate">{{ $name ?: __('Support') }}</div>
+                                </a>
+                            @endif
+                        @endfor
+                    </div>
+                </div>
+                
+                <button onclick="var el = document.getElementById('whatsappPopup'); el.style.display = el.style.display === 'none' ? 'block' : 'none';" class="whatapp-chatbot cursor-pointer flex items-center justify-center border-0 shadow-lg" style="position: relative !important; right: auto; bottom: auto; width: 60px; height: 60px; border: none; background: transparent; outline: none; padding: 0; cursor: pointer;">
+                    <i class="fab fa-whatsapp whatapp-chatbot-icon"></i>
+                </button>
+            </div>
         @endif
     @endif
 

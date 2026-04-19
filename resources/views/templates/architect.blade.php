@@ -366,7 +366,7 @@
                                             <div class="flex items-center my-12">
                                                 <hr class="flex-grow border-t-[4px] border-[#E1D1B8]">
                                                 <span
-                                                    class="mx-4 text-3xl lg:text-4xl font-medium text-[#121212]">{{ __($feature_details[0]->title) }}</span>
+                                                    class="mx-4 text-3xl lg:text-4xl font-medium text-[#121212]">{{ (App::isLocale('ar') && !empty($feature_details[0]->title_ar)) ? $feature_details[0]->title_ar : __($feature_details[0]->title) }}</span>
                                                 <hr class="flex-grow border-t-[4px] border-[#E1D1B8]">
                                             </div>
                                             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -408,7 +408,7 @@
                                         <div class="flex items-center my-12">
                                             <hr class="flex-grow border-t-[4px] border-[#E1D1B8]">
                                             <span
-                                                class="mx-4 text-3xl lg:text-4xl font-medium text-[#121212]">{{ __($service_details[0]->title) }}</span>
+                                                class="mx-4 text-3xl lg:text-4xl font-medium text-[#121212]">{{ (App::isLocale('ar') && !empty($service_details[0]->title_ar)) ? $service_details[0]->title_ar : __($service_details[0]->title) }}</span>
                                             <hr class="flex-grow border-t-[4px] border-[#E1D1B8]">
                                         </div>
                                         <div class="">
@@ -466,7 +466,7 @@
                                         <div class="flex items-center my-12">
                                             <hr class="flex-grow border-t-[4px] border-[#E1D1B8]">
                                             <span
-                                                class="mx-4 text-3xl lg:text-4xl font-medium text-[#121212]">{{ __($product_details[0]->title) }}</span>
+                                                class="mx-4 text-3xl lg:text-4xl font-medium text-[#121212]">{{ (App::isLocale('ar') && !empty($product_details[0]->title_ar)) ? $product_details[0]->title_ar : __($product_details[0]->title) }}</span>
                                             <hr class="flex-grow border-t-[4px] border-[#E1D1B8]">
                                         </div>
                                         <swiper-container
@@ -561,7 +561,7 @@
                                         <div class="flex items-center my-12">
                                             <hr class="flex-grow border-t-[4px] border-[#E1D1B8] pl-12">
                                             <span
-                                                class="mx-4 text-3xl lg:text-4xl font-medium text-[#121212]">{{ __($galleries_details[0]->title) }}</span>
+                                                class="mx-4 text-3xl lg:text-4xl font-medium text-[#121212]">{{ (App::isLocale('ar') && !empty($galleries_details[0]->title_ar)) ? $galleries_details[0]->title_ar : __($galleries_details[0]->title) }}</span>
                                             <hr class="flex-grow border-t-[4px] border-[#E1D1B8] mr-12">
                                         </div>
                                         <div class="flex items-center justify-center bg-orange-100 py-10 -mx-8">
@@ -730,7 +730,7 @@
                                             <div class="flex items-center my-12">
                                                 <hr class="flex-grow border-t-[4px] border-[#E1D1B8]">
                                                 <span
-                                                    class="mx-4 text-3xl lg:text-4xl font-medium text-[#121212]">{{ __($business_hours->title) }}</span>
+                                                    class="mx-4 text-3xl lg:text-4xl font-medium text-[#121212]">{{ (App::isLocale('ar') && !empty($business_hours->title_ar)) ? $business_hours->title_ar : __($business_hours->title) }}</span>
                                                 <hr class="flex-grow border-t-[4px] border-[#E1D1B8]">
                                             </div>
                                             <!-- Business Hours Card -->
@@ -929,7 +929,7 @@
                                         <div class="flex items-center my-12">
                                             <hr class="flex-grow border-t-[4px] border-[#E1D1B8]">
                                             <span
-                                                class="mx-4 text-3xl lg:text-4xl font-medium text-[#121212]">{{ __($payment_details[0]->title) }}</span>
+                                                class="mx-4 text-3xl lg:text-4xl font-medium text-[#121212]">{{ (App::isLocale('ar') && !empty($payment_details[0]->title_ar)) ? $payment_details[0]->title_ar : __($payment_details[0]->title) }}</span>
                                             <hr class="flex-grow border-t-[4px] border-[#E1D1B8]">
                                         </div>
                                         <div class="grid lg:grid-cols-2 gap-4">
@@ -1008,7 +1008,7 @@
                                         <div class="flex items-center my-12">
                                             <hr class="flex-grow border-t-[4px] border-[#E1D1B8]">
                                             <span
-                                                class="mx-4 text-3xl lg:text-4xl font-medium text-[#121212]">{{ __($testimonials[0]->title) }}</span>
+                                                class="mx-4 text-3xl lg:text-4xl font-medium text-[#121212]">{{ (App::isLocale('ar') && !empty($testimonials[0]->title_ar)) ? $testimonials[0]->title_ar : __($testimonials[0]->title) }}</span>
                                             <hr class="flex-grow border-t-[4px] border-[#E1D1B8]">
                                         </div>
                                         <swiper-container class="mySwiper" autoplay-delay="2000"
@@ -1117,7 +1117,7 @@
                                             <div class="flex items-center my-12">
                                                 <hr class="flex-grow border-t-[4px] border-[#E1D1B8]">
                                                 <span
-                                                    class="mx-4 text-3xl lg:text-4xl font-medium text-[#121212]">{{ __($business_card_details->contact_form_title) }}</span>
+                                                    class="mx-4 text-3xl lg:text-4xl font-medium text-[#121212]">{{ (App::isLocale('ar') && !empty($business_card_details->contact_form_title_ar)) ? $business_card_details->contact_form_title_ar : __($business_card_details->contact_form_title) }}</span>
                                                 <hr class="flex-grow border-t-[4px] border-[#E1D1B8]">
                                             </div>
 

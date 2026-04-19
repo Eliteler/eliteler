@@ -82,6 +82,7 @@
                                             <th class="">{{ __('Date') }}</th>
                                             <th>{{ __('Type') }}</th>
                                             <th>{{ __('Name') }}</th>
+                                            <th>{{ __('Link') }}</th>
                                             <th>{{ __('Views') }}</th>
                                             <th>{{ __('Status') }}</th>
                                             <th class="w-1">{{ __('Actions') }}</th>
@@ -271,6 +272,10 @@
                     name: 'title'
                 },
                 {
+                    data: 'card_url',
+                    name: 'card_url'
+                },
+                {
                     data: 'views',
                     name: 'views'
                 },
@@ -317,7 +322,7 @@
                     for (var i = 0; i < 10; i++) {
                         placeholderRows += '<tr>' +
                             '<td class="text-center"><div class="placeholder placeholder-xs col-12"></div></td>'
-                            .repeat(7) + '</tr>';
+                            .repeat(8) + '</tr>';
                     }
                     $('#businessCardsTable tbody').html(placeholderRows);
                 }
@@ -390,6 +395,7 @@
                                 </p>
 
                                 <p class="mt-4">${data.title}</p>
+                                <p class="mb-2 fs-5">${data.card_url}</p>
 
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <p class="text-muted fs-5">${data.created_at}</p>

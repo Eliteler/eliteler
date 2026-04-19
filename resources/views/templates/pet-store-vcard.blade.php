@@ -421,7 +421,7 @@
                             <div class="bento-box gsap-bento">
                                 <i class="fas fa-box decor-icon anim-float"></i>
                                 <div class="bento-header">
-                                    <h2 class="bento-title">{{ __($product_details[0]->title) }}</h2>
+                                    <h2 class="bento-title">{{ (App::isLocale('ar') && !empty($product_details[0]->title_ar)) ? $product_details[0]->title_ar : __($product_details[0]->title) }}</h2>
                                 </div>
 
                                 {{-- Swiper Container --}}
@@ -503,7 +503,7 @@
                             <div class="bento-box gsap-bento">
                                 <i class="fas fa-concierge-bell decor-icon anim-float"></i>
                                 <div class="bento-header">
-                                    <h2 class="bento-title">{{ __($service_details[0]->title) }}</h2>
+                                    <h2 class="bento-title">{{ (App::isLocale('ar') && !empty($service_details[0]->title_ar)) ? $service_details[0]->title_ar : __($service_details[0]->title) }}</h2>
                                 </div>
 
                                 <div class="swiper serviceSwiper">
@@ -551,7 +551,7 @@
                                 <i class="fas fa-camera decor-icon anim-float"></i>
                                 <div class="bento-header">
                                     {{-- Use the dynamic title from your DB --}}
-                                    <h2 class="bento-title">{{ __($galleries_details[0]->title) }}</h2>
+                                    <h2 class="bento-title">{{ (App::isLocale('ar') && !empty($galleries_details[0]->title_ar)) ? $galleries_details[0]->title_ar : __($galleries_details[0]->title) }}</h2>
                                 </div>
 
                                 {{-- Use the new 2-column grid instead of a swiper --}}
@@ -750,7 +750,7 @@
 
                                     {{-- Section Header --}}
                                     <div class="bento-header">
-                                        <h2 class="bento-title">{{ __($business_hours->title) }}</h2>
+                                        <h2 class="bento-title">{{ (App::isLocale('ar') && !empty($business_hours->title_ar)) ? $business_hours->title_ar : __($business_hours->title) }}</h2>
                                     </div>
 
                                     <div class="business-hours-content">
@@ -909,7 +909,7 @@
 
                                     {{-- Section Header --}}
                                     <div class="bento-header">
-                                        <h2 class="bento-title">{{ __($business_card_details->contact_form_title) }}</h2>
+                                        <h2 class="bento-title">{{ (App::isLocale('ar') && !empty($business_card_details->contact_form_title_ar)) ? $business_card_details->contact_form_title_ar : __($business_card_details->contact_form_title) }}</h2>
                                     </div>
 
                                     {{-- Message Alert (Styled for Bento UI) --}}

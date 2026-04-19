@@ -21,11 +21,11 @@ class WhatsAppChatButtonController extends Controller
 {
     public function whatsAppChatButtonSettings(Request $request)
     {
-        $whatsapp_settings = DB::table('config')->get();
+        $config = DB::table('config')->pluck('config_value', 'config_key')->toArray();
 
         $settings = Setting::where('id', 1)->first();
 
-        return view()->file(base_path('plugins/WhatsAppChatButton/Views/index.blade.php'), compact('whatsapp_settings', 'settings'));
+        return view()->file(base_path('plugins/WhatsAppChatButton/Views/index.blade.php'), compact('config', 'settings'));
     }
 
     public function whatsAppChatButtonSettingsUpdate(Request $request)
@@ -34,14 +34,26 @@ class WhatsAppChatButtonController extends Controller
             'config_value' => $request->show_whatsapp_chatbot,
         ]);
 
-        DB::table('config')->where('config_key', 'whatsapp_chatbot_mobile_number')->update([
-            'config_value' => $request->whatsapp_chatbot_mobile_number,
-        ]);
+        for ($i = 1; $i <= 6; $i++) {
+            $numKey = $i == 1 ? 'whatsapp_chatbot_mobile_number' : "whatsapp_chatbot_mobile_number_{$i}";
+            $msgKey = $i == 1 ? 'whatsapp_chatbot_message' : "whatsapp_chatbot_message_{$i}";
+            $nameKey = "whatsapp_chatbot_name_{$i}";
 
-        DB::table('config')->where('config_key', 'whatsapp_chatbot_message')->update([
-            'config_value' => $request->whatsapp_chatbot_message,
-        ]);
+            DB::table('config')->updateOrInsert(
+                ['config_key' => $numKey],
+                ['config_value' => $request->input($numKey) ?? '']
+            );
 
+            DB::table('config')->updateOrInsert(
+                ['config_key' => $msgKey],
+                ['config_value' => $request->input($msgKey) ?? '']
+            );
+
+            DB::table('config')->updateOrInsert(
+                ['config_key' => $nameKey],
+                ['config_value' => $request->input($nameKey) ?? '']
+            );
+        }
 
         return redirect()->route('admin.plugin.whatsapp_chat_button.settings')->with('success', __('WhatsApp Chat Button Settings updated successfully.'));
     }

@@ -358,7 +358,7 @@
                                                 <div
                                                     class="absolute bottom-10 left-1/2 h-1.5 w-16 bg-blue-600 -translate-x-1/2 rounded-full">
                                                 </div>
-                                                {{ __($feature_details[0]->title) }}
+                                                {{ (App::isLocale('ar') && !empty($feature_details[0]->title_ar)) ? $feature_details[0]->title_ar : __($feature_details[0]->title) }}
                                             </h2>
                                             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                                 @foreach ($validFeatures as $feature)
@@ -403,7 +403,7 @@
                                             <div
                                                 class="absolute bottom-10 left-1/2 h-1.5 w-16 bg-blue-600 -translate-x-1/2 rounded-full">
                                             </div>
-                                            {{ __($service_details[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($service_details[0]->title_ar)) ? $service_details[0]->title_ar : __($service_details[0]->title) }}
                                         </h2>
                                         <div class="">
                                             <swiper-container
@@ -466,7 +466,7 @@
                                             <div
                                                 class="absolute bottom-10 left-1/2 h-1.5 w-16 bg-blue-600 -translate-x-1/2 rounded-full">
                                             </div>
-                                            {{ __($product_details[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($product_details[0]->title_ar)) ? $product_details[0]->title_ar : __($product_details[0]->title) }}
                                         </h2>
                                         <swiper-container
                                             breakpoints='{ "640": { "slidesPerView": 1 }, "1024": { "slidesPerView": 2 } }'
@@ -562,7 +562,7 @@
                                             <div
                                                 class="absolute bottom-10 left-1/2 h-1.5 w-16 bg-blue-600 -translate-x-1/2 rounded-full">
                                             </div>
-                                            {{ __($galleries_details[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($galleries_details[0]->title_ar)) ? $galleries_details[0]->title_ar : __($galleries_details[0]->title) }}
                                         </h2>
                                         <div>
                                             <swiper-container class="mySwiper" autoplay-delay="3000"
@@ -681,7 +681,7 @@
                                             <div
                                                 class="absolute bottom-10 left-1/2 h-1.5 w-16 bg-blue-600 -translate-x-1/2 rounded-full">
                                             </div>
-                                            {{ __($testimonials[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($testimonials[0]->title_ar)) ? $testimonials[0]->title_ar : __($testimonials[0]->title) }}
                                         </h2>
                                         <swiper-container class="mySwiper" autoplay-delay="3000"
                                             autoplay-disable-on-interaction="false" loop="true">
@@ -789,7 +789,7 @@
                                                 <div
                                                     class="absolute bottom-10 left-1/2 h-1.5 w-16 bg-blue-600 -translate-x-1/2 rounded-full">
                                                 </div>
-                                                {{ __($business_hours->title) }}
+                                                {{ (App::isLocale('ar') && !empty($business_hours->title_ar)) ? $business_hours->title_ar : __($business_hours->title) }}
                                             </h2>
                                             <!-- Business Hours Card -->
                                             <div
@@ -995,7 +995,7 @@
                                             <div
                                                 class="absolute bottom-10 left-1/2 h-1.5 w-16 bg-blue-600 -translate-x-1/2 rounded-full">
                                             </div>
-                                            {{ __($payment_details[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($payment_details[0]->title_ar)) ? $payment_details[0]->title_ar : __($payment_details[0]->title) }}
                                         </h2>
                                         <div class="grid lg:grid-cols-2 gap-4">
                                             {{-- Payment options --}}
@@ -1148,7 +1148,7 @@
                                                 <div
                                                     class="absolute bottom-10 left-1/2 h-1.5 w-16 bg-blue-600 -translate-x-1/2 rounded-full">
                                                 </div>
-                                                {{ __($business_card_details->contact_form_title) }}
+                                                {{ (App::isLocale('ar') && !empty($business_card_details->contact_form_title_ar)) ? $business_card_details->contact_form_title_ar : __($business_card_details->contact_form_title) }}
                                             </h2>
 
                                             {{-- Message Alert --}}

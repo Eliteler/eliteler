@@ -388,7 +388,7 @@
                                                 <div
                                                     class="absolute bottom-8 left-1/2 h-1.5 w-16 bg-[#f7a76c] -translate-x-1/2">
                                                 </div>
-                                                {{ __($feature_details[0]->title) }}
+                                                {{ (App::isLocale('ar') && !empty($feature_details[0]->title_ar)) ? $feature_details[0]->title_ar : __($feature_details[0]->title) }}
                                             </h2>
                                             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                                 @foreach ($feature_details as $feature)
@@ -434,7 +434,7 @@
                                             class="text-3xl lg:text-4xl font-medium text-black py-12 text-center relative head">
                                             <div class="absolute bottom-8 left-1/2 h-1.5 w-16 bg-[#f7a76c] -translate-x-1/2">
                                             </div>
-                                            {{ __($product_details[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($product_details[0]->title_ar)) ? $product_details[0]->title_ar : __($product_details[0]->title) }}
                                         </h2>
                                         <div class="slider">
                                             {{-- All products --}}
@@ -523,7 +523,7 @@
                                             class="text-3xl lg:text-4xl font-medium text-black py-12 text-center relative head">
                                             <div class="absolute bottom-8 left-1/2 h-1.5 w-16 bg-[#f7a76c] -translate-x-1/2">
                                             </div>
-                                            {{ __($service_details[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($service_details[0]->title_ar)) ? $service_details[0]->title_ar : __($service_details[0]->title) }}
                                         </h2>
                                         <div class="slider">
                                             {{-- All services --}}
@@ -648,7 +648,7 @@
                                             class="text-3xl lg:text-4xl font-medium text-black py-12 text-center relative head">
                                             <div class="absolute bottom-8 left-1/2 h-1.5 w-16 bg-[#f7a76c] -translate-x-1/2">
                                             </div>
-                                            {{ __($galleries_details[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($galleries_details[0]->title_ar)) ? $galleries_details[0]->title_ar : __($galleries_details[0]->title) }}
                                         </h2>
                                         <div class="w-full slider">
                                             {{-- Slider images --}}
@@ -682,7 +682,7 @@
                                                 <div
                                                     class="absolute bottom-8 left-1/2 h-1.5 w-16 bg-[#f7a76c] -translate-x-1/2">
                                                 </div>
-                                                {{ __($business_hours->title) }}
+                                                {{ (App::isLocale('ar') && !empty($business_hours->title_ar)) ? $business_hours->title_ar : __($business_hours->title) }}
                                             </h2>
                                             <!-- Business Hours Card -->
                                             <div class="rounded-lg py-4">
@@ -946,7 +946,7 @@
                                             class="text-3xl lg:text-4xl font-medium text-black py-12 text-center relative head">
                                             <div class="absolute bottom-8 left-1/2 h-1.5 w-16 bg-[#f7a76c] -translate-x-1/2">
                                             </div>
-                                            {{ __($payment_details[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($payment_details[0]->title_ar)) ? $payment_details[0]->title_ar : __($payment_details[0]->title) }}
                                         </h2>
                                         <div class="grid lg:grid-cols-2 gap-4">
                                             {{-- Payment options --}}
@@ -1025,7 +1025,7 @@
                                             class="text-3xl lg:text-4xl font-medium text-black py-12 text-center relative head">
                                             <div class="absolute bottom-8 left-1/2 h-1.5 w-16 bg-[#f7a76c] -translate-x-1/2">
                                             </div>
-                                            {{ __($testimonials[0]->title) }}
+                                            {{ (App::isLocale('ar') && !empty($testimonials[0]->title_ar)) ? $testimonials[0]->title_ar : __($testimonials[0]->title) }}
                                         </h2>
                                         <div class="review-slider bg-[#f7a76c] border border-orange-400 rounded-2xl">
                                             {{-- Client Reviews --}}
@@ -1108,7 +1108,7 @@
                                                 <div
                                                     class="absolute bottom-8 left-1/2 h-1.5 w-16 bg-[#f7a76c] -translate-x-1/2">
                                                 </div>
-                                                {{ __($business_card_details->contact_form_title) }}
+                                                {{ (App::isLocale('ar') && !empty($business_card_details->contact_form_title_ar)) ? $business_card_details->contact_form_title_ar : __($business_card_details->contact_form_title) }}
                                             </h2>
 
                                             {{-- Message Alert --}}
