@@ -79,6 +79,7 @@
                                                     <thead>
                                                         <tr>
                                                             <th>{{ __('ID') }}</th>
+                                                            <th>{{ __('Date') }}</th>
                                                             <th>{{ __('Version') }}</th>
                                                             <th>{{ __('Status') }}</th>
                                                             <th>{{ __('Actions') }}</th>
@@ -114,6 +115,7 @@
                                                     <thead>
                                                         <tr>
                                                             <th>{{ __('ID') }}</th>
+                                                            <th>{{ __('Date') }}</th>
                                                             <th>{{ __('Version') }}</th>
                                                             <th>{{ __('Status') }}</th>
                                                             <th>{{ __('Actions') }}</th>
@@ -168,14 +170,14 @@
             </div>
         </div>
     </div>
+@endsection
 
-    {{-- Custom JS --}}
 @section('scripts')
     <script type="text/javascript">
         $(document).ready(function() {
             // Files Backups
             $('#files-backups-table').DataTable({
-                processing: false,
+                processing: true,
                 serverSide: true,
                 ajax: "{{ route('admin.backups') }}",
                 language: {
@@ -200,44 +202,31 @@
                 },
                 columns: [
                     { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
+                    { data: 'created_at', name: 'created_at' },
                     { data: 'version', name: 'version' },
                     { data: 'status', name: 'status' },
                     { data: 'action', name: 'action', orderable: false, searchable: false },
                 ],
                 preDrawCallback: function(settings) {
-                    // Add placeholder-glow class to the table before rendering
                     $('#files-backups-table_wrapper').addClass('placeholder-glow');
-
-                    // Check if there are rows in the tbody after draw
                     if ($('#files-backups-table tbody tr').length === 0) {
-                        // If there are no rows, add 10 placeholder rows with 4 columns each
                         var placeholderRows = '';
                         for (var i = 0; i < 10; i++) {
                             placeholderRows += '<tr>' +
                                 '<td class="text-center"><div class="placeholder placeholder-xs col-12"></div></td>'
-                                .repeat(4) + '</tr>';
+                                .repeat(5) + '</tr>';
                         }
                         $('#files-backups-table tbody').html(placeholderRows);
                     }
                 },
                 drawCallback: function(settings) {
-                    // Remove the placeholder-glow class once the table is fully rendered
                     $('#files-backups-table_wrapper').removeClass('placeholder-glow');
-
-                    // clear any existing placeholder rows
-                    $('#files-backups-table tbody tr').each(function() {
-                        var actionCell = $(this).find('td').eq(
-                            3); // Targeting the 9th column (index 4)
-                        if (actionCell.find('span.placeholder').length > 0) {
-                            actionCell.empty(); // Clear the placeholder once data is available
-                        }
-                    });
                 }
             });
 
             // Database backups
             $('#database-backups-table').DataTable({
-                processing: false,
+                processing: true,
                 serverSide: true,
                 ajax: "{{ route('admin.get.database.backup') }}",
                 language: {
@@ -262,38 +251,25 @@
                 },
                 columns: [
                     { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
+                    { data: 'created_at', name: 'created_at' },
                     { data: 'version', name: 'version' },
                     { data: 'status', name: 'status' },
                     { data: 'action', name: 'action', orderable: false, searchable: false },
                 ],
                 preDrawCallback: function(settings) {
-                    // Add placeholder-glow class to the table before rendering
                     $('#database-backups-table_wrapper').addClass('placeholder-glow');
-
-                    // Check if there are rows in the tbody after draw
                     if ($('#database-backups-table tbody tr').length === 0) {
-                        // If there are no rows, add 10 placeholder rows with 4 columns each
                         var placeholderRows = '';
                         for (var i = 0; i < 10; i++) {
                             placeholderRows += '<tr>' +
                                 '<td class="text-center"><div class="placeholder placeholder-xs col-12"></div></td>'
-                                .repeat(4) + '</tr>';
+                                .repeat(5) + '</tr>';
                         }
                         $('#database-backups-table tbody').html(placeholderRows);
                     }
                 },
                 drawCallback: function(settings) {
-                    // Remove the placeholder-glow class once the table is fully rendered
                     $('#database-backups-table_wrapper').removeClass('placeholder-glow');
-
-                    // clear any existing placeholder rows
-                    $('#database-backups-table tbody tr').each(function() {
-                        var actionCell = $(this).find('td').eq(
-                            3); // Targeting the 9th column (index 4)
-                        if (actionCell.find('span.placeholder').length > 0) {
-                            actionCell.empty(); // Clear the placeholder once data is available
-                        }
-                    });
                 }
             });
         });
@@ -302,18 +278,17 @@
         function deleteBackup(backupId) {
             "use strict";
 
-            $("#delete-modal").modal("show");
+            var deleteModalEl = document.getElementById('delete-modal');
+            var deleteModal = bootstrap.Modal.getOrCreateInstance(deleteModalEl);
+            deleteModal.show();
+            
             var delete_status = document.getElementById("delete-modal-text");
             delete_status.innerHTML = `{{ __('If you proceed, you will') }} ` + `{{ __('delete') }}` +
                 ` {{ __('this backup.') }}`;
             var deleteLink = document.getElementById("delete-backup");
-            deleteLink.getAttribute("href");
             deleteLink.setAttribute("href", "{{ route('admin.backup.delete') }}?id=" + backupId);
-            deleteLink.setAttribute("onclick", "");
             deleteLink.setAttribute("class", "btn btn-danger btn-4 w-100");
             deleteLink.innerHTML = "<?php echo __('Delete'); ?>";
-            deleteLink.classList.remove("btn-primary");
         }
     </script>
-@endsection
 @endsection

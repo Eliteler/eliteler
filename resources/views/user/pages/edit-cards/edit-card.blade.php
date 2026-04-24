@@ -152,7 +152,7 @@
                                                             class="form-control card_lang" required>
                                                             @foreach (config('app.languages') as $langLocale => $langName)
                                                                 <option class="dropdown-item" value="{{ $langLocale }}"
-                                                                    {{ strtolower($business_card->card_lang) == $langLocale ? 'selected' : '' }}>
+                                                                    {{ old('card_lang', strtolower($business_card->card_lang)) == $langLocale ? 'selected' : '' }}>
                                                                     {{ $langName }} ({{ strtoupper($langLocale) }})
                                                                 </option>
                                                             @endforeach
@@ -167,32 +167,27 @@
                                                             class="form-control cover_type" required>
 
                                                             <option class="dropdown-item" value="youtube"
-                                                                {{ $business_card->cover_type == 'youtube' ? 'selected' : '' }}>
+                                                                {{ old('cover_type', $business_card->cover_type) == 'youtube' ? 'selected' : '' }}>
                                                                 {{ __('YouTube Video') }}
                                                             </option>
-
                                                             <option class="dropdown-item" value="youtube-ap"
-                                                                {{ $business_card->cover_type == 'youtube-ap' ? 'selected' : '' }}>
+                                                                {{ old('cover_type', $business_card->cover_type) == 'youtube-ap' ? 'selected' : '' }}>
                                                                 {{ __('YouTube Video - Autoplay') }}
                                                             </option>
-
                                                             <option class="dropdown-item" value="vimeo"
-                                                                {{ $business_card->cover_type == 'vimeo' ? 'selected' : '' }}>
+                                                                {{ old('cover_type', $business_card->cover_type) == 'vimeo' ? 'selected' : '' }}>
                                                                 {{ __('Vimeo Video') }}
                                                             </option>
-
                                                             <option class="dropdown-item" value="vimeo-ap"
-                                                                {{ $business_card->cover_type == 'vimeo-ap' ? 'selected' : '' }}>
+                                                                {{ old('cover_type', $business_card->cover_type) == 'vimeo-ap' ? 'selected' : '' }}>
                                                                 {{ __('Vimeo Video - Autoplay') }}
                                                             </option>
-
                                                             <option class="dropdown-item" value="photo"
-                                                                {{ $business_card->cover_type == null || $business_card->cover_type == 'photo' ? 'selected' : '' }}>
+                                                                {{ old('cover_type', $business_card->cover_type) == 'photo' || $business_card->cover_type == null ? 'selected' : '' }}>
                                                                 {{ __('Photo') }}
                                                             </option>
-
                                                             <option class="dropdown-item" value="none"
-                                                                {{ $business_card->cover_type == 'none' ? 'selected' : '' }}>
+                                                                {{ old('cover_type', $business_card->cover_type) == 'none' ? 'selected' : '' }}>
                                                                 {{ __('Default') }}
                                                             </option>
 
@@ -214,7 +209,7 @@
                                                             <input type="text" class="form-control" id="cover_url_input"
                                                                 name="cover_url" placeholder="{{ __('Video ID') }}"
                                                                 autocomplete="off"
-                                                                value="{{ $business_card->cover_type != 'none' || $business_card->cover_type != 'photo' ? $business_card->cover : '' }}"
+                                                                value="{{ old('cover_url', ($business_card->cover_type != 'none' && $business_card->cover_type != 'photo' ? $business_card->cover : '')) }}"
                                                                 minlength="3" required>
                                                         </div>
                                                     </div>
@@ -228,7 +223,7 @@
                                                             value="{{ $business_card->cover }}"
                                                             accept=".jpeg,.jpg,.png,.gif,.svg" />
                                                         <input type="hidden" class="form-control" name="cover"
-                                                            value="{{ $business_card->cover }}">
+                                                            value="{{ old('cover', $business_card->cover) }}">
                                                     </div>
                                                 </div>
 
@@ -239,7 +234,7 @@
                                                             placeholder="{{ __('Logo') }}"
                                                             accept=".jpeg,.jpg,.png,.gif,.svg" />
                                                         <input type="hidden" class="form-control" name="logo"
-                                                            value="{{ $business_card->profile }}">
+                                                            value="{{ old('logo', $business_card->profile) }}">
                                                     </div>
                                                 </div>
 
@@ -262,7 +257,7 @@
                                                         <input type="text" class="form-control" name="title"
                                                             id="{{ \Illuminate\Support\Str::contains($business_card->title, 'Duplicate') ? 'title' : 'default-title' }}"
                                                             placeholder="{{ __('Business name / Your name') }}"
-                                                            value="{{ $business_card->title }}" required>
+                                                            value="{{ old('title', $business_card->title) }}" required>
                                                         <small
                                                             class="form-hint">{{ __('Please verify your business personalized link.') }}</small>
                                                     </div>
@@ -281,7 +276,7 @@
                                                                 <input type="text" class="form-control" name="link"
                                                                     placeholder="{{ __('Personalized Link') }}"
                                                                     autocomplete="off" id="plink" minlength="2"
-                                                                    value="{{ $business_card->card_url }}" required>
+                                                                    value="{{ old('link', $business_card->card_url) }}" required>
                                                             </div>
                                                             <small class="form-hint">
                                                                 {{ __('vCard link') }} : <span><a
@@ -297,7 +292,7 @@
                                                         <label class="form-label">{{ __('Sub Title (Optional)') }}</label>
                                                         <input type="text" class="form-control" name="subtitle"
                                                             placeholder="{{ __('Location / Job title') }}"
-                                                            value="{{ $business_card->sub_title }}">
+                                                            value="{{ old('subtitle', $business_card->sub_title) }}">
                                                     </div>
                                                 </div>
 
@@ -306,7 +301,7 @@
                                                         <label class="form-label">{{ __('Title in another language (Optional)') }}</label>
                                                         <input type="text" class="form-control" name="title2"
                                                             placeholder="{{ __('Secondary Title') }}"
-                                                            value="{{ $business_card->title2 }}">
+                                                            value="{{ old('title2', $business_card->title2) }}">
                                                     </div>
                                                 </div>
 
@@ -315,7 +310,7 @@
                                                         <label class="form-label">{{ __('Subtitle in another language (Optional)') }}</label>
                                                         <input type="text" class="form-control" name="subtitle2"
                                                             placeholder="{{ __('Secondary Sub Title') }}"
-                                                            value="{{ $business_card->subtitle2 }}">
+                                                            value="{{ old('subtitle2', $business_card->subtitle2) }}">
                                                     </div>
                                                 </div>
 
@@ -323,7 +318,7 @@
                                                     <div class="mb-3">
                                                         <label class="form-label">{{ __('Description (Optional)') }}</label>
                                                         <textarea class="form-control" name="description" id="description" data-bs-toggle="autosize"
-                                                            placeholder="{{ __('About business / Bio') }}">{{ $business_card->description }}</textarea>
+                                                            placeholder="{{ __('About business / Bio') }}">{{ old('description', $business_card->description) }}</textarea>
                                                     </div>
                                                 </div>
                                                 </div>
@@ -332,7 +327,7 @@
                                                     <div class="mb-3">
                                                         <label class="form-label text-primary">{{ __('Copyright (Optional)') }}</label>
                                                         <input type="text" class="form-control" name="copyright"
-                                                            value="{{ $business_card->copyright }}"
+                                                            value="{{ old('copyright', $business_card->copyright) }}"
                                                             placeholder="{{ parse_url(config('app.url'), PHP_URL_HOST) }}">
                                                         <small class="form-hint">{{ __('Leave blank to use site domain') }}</small>
                                                     </div>
@@ -352,7 +347,7 @@
                                                                    data-bs-html="true">?</span>
                                                                 </label>
                                                                 <input type="text" class="form-control" name="email_from_name"
-                                                                    value="{{ $business_card->email_from_name }}"
+                                                                    value="{{ old('email_from_name', $business_card->email_from_name) }}"
                                                                     placeholder="{{ __('Custom Email From Name') }}">
                                                             </div>
                                                         </div>
@@ -365,7 +360,7 @@
                                                                    data-bs-html="true">?</span>
                                                                 </label>
                                                                 <input type="email" class="form-control" name="email_from_address"
-                                                                    value="{{ $business_card->email_from_address }}"
+                                                                    value="{{ old('email_from_address', $business_card->email_from_address) }}"
                                                                     placeholder="{{ __('example@yourdomain.com') }}">
                                                             </div>
                                                         </div>

@@ -1,0 +1,8 @@
+{
+    "plugin_id": "MSG91WhatsappNotification",
+    "name": "MSG91 WhatsApp Notification",
+    "description": "Adds Whatsapp Notification capabilities.",
+    "version": "2.1.0",
+    "img": "msg91.png",
+    "main_route": "admin.plugin.msg91_whatsapp_notification.settings"
+}

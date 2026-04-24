@@ -191,7 +191,7 @@ class EditCardController extends Controller
                 return redirect()->route('user.edit.social.links', $id)->with('success', trans('Details have been updated.'));
             }
         } else {
-            return redirect()->route('user.edit.card', $id)->with('failed', trans('Sorry, the personalized link was already registered.'));
+            return redirect()->route('user.edit.card', $id)->with('failed', trans('Sorry, the personalized link was already registered.'))->withInput();
         }
     }
 }

@@ -260,5 +260,5 @@ if (!function_exists('remove_country_code')) {
 $number_without_country_code = remove_country_code($store_details->whatsapp_no, $country_codes);
 ?>
 
-<input type="number" class="form-control" name="whatsapp_no" placeholder="Ex. 9876543210" value="<?php echo $number_without_country_code; ?>"
+<input type="number" class="form-control" name="whatsapp_no" placeholder="Ex. 9876543210" value="<?php echo old('whatsapp_no', $number_without_country_code); ?>"
     required>

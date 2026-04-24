@@ -143,7 +143,7 @@ foreach ($themes as $value => $theme) {
                                                         class="text-danger">*</span></label>
                                                 <select name="card_lang" id="card_lang" class="form-control card_lang" required>
                                                     @foreach(config('app.languages') as $langLocale => $langName)
-                                                    <option class="dropdown-item" value="{{ $langLocale }}" {{ $langLocale == config('app.locale') ? 'selected' : '' }}>{{ $langName }} ({{ strtoupper($langLocale) }})
+                                                    <option class="dropdown-item" value="{{ $langLocale }}" {{ old('card_lang', config('app.locale')) == $langLocale ? 'selected' : '' }}>{{ $langName }} ({{ strtoupper($langLocale) }})
                                                     </option>
                                                     @endforeach
                                                 </select> 
@@ -169,7 +169,7 @@ foreach ($themes as $value => $theme) {
                                                 <input type="file" class="form-control" id="coverInput"
                                                     placeholder="{{ __('Banner') }}" required
                                                     accept=".jpeg,.jpg,.png,.gif,.svg" />
-                                                <input type="hidden" class="form-control" name="banner">
+                                                <input type="hidden" class="form-control" name="banner" value="{{ old('banner') }}">
                                                 <small class="fw-bold"><span class="text-danger">*</span> {{ __('Upload banner images one after the other') }}</small>
                                             </div>
                                         </div>
@@ -181,7 +181,7 @@ foreach ($themes as $value => $theme) {
                                                 <input type="file" class="form-control" id="logo"
                                                     placeholder="{{ __('Logo') }}" required
                                                     accept=".jpeg,.jpg,.png,.gif,.svg" />
-                                                <input type="hidden" class="form-control" name="logo">
+                                                <input type="hidden" class="form-control" name="logo" value="{{ old('logo') }}">
                                             </div>
                                         </div>
 
@@ -192,6 +192,7 @@ foreach ($themes as $value => $theme) {
                                                 <input type="text" class="form-control" name="title"
                                                     onload="convertToLink(this.value); checkLink()"
                                                     onkeyup="convertToLink(this.value); checkLink()"
+                                                    value="{{ old('title') }}"
                                                     placeholder="{{ __('Store name') }}" required>
                                             </div>
                                         </div>
@@ -201,6 +202,7 @@ foreach ($themes as $value => $theme) {
                                             <div class="mb-3">
                                                 <label class="form-label">{{ __('Title in another language (Optional)') }}</label>
                                                 <input type="text" class="form-control" name="title2"
+                                                    value="{{ old('title2') }}"
                                                     placeholder="{{ __('Secondary Title') }}">
                                             </div>
                                         </div>
@@ -214,7 +216,7 @@ foreach ($themes as $value => $theme) {
                                                     <span class="input-group-text">
                                                         {{ URL::to('/') }}
                                                     </span>
-                                                    <input type="text" class="form-control" name="link" placeholder="{{ __('Personalized Link') }}" autocomplete="off" id="plink" onkeyup="checkLink()" oninput="convertToLink(this.value)" minlength="3" required>
+                                                    <input type="text" class="form-control" name="link" placeholder="{{ __('Personalized Link') }}" autocomplete="off" id="plink" onkeyup="checkLink()" oninput="convertToLink(this.value)" value="{{ old('link') }}" minlength="2" required>
                                                     <span class="input-group-text" id="status">
                                                         <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-link"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 15l6 -6" /><path d="M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464" /><path d="M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463" /></svg>
                                                     </span>
@@ -228,6 +230,7 @@ foreach ($themes as $value => $theme) {
                                             <div class="mb-3">
                                                 <label class="form-label">{{ __('Store greeting (Optional)') }}</label>
                                                 <input type="text" class="form-control" name="subtitle"
+                                                    value="{{ old('subtitle') }}"
                                                     placeholder="{{ __('Ex: Welcome to') }}">
                                             </div>
                                         </div>
@@ -237,6 +240,7 @@ foreach ($themes as $value => $theme) {
                                             <div class="mb-3">
                                                 <label class="form-label">{{ __('Subtitle in another language (Optional)') }}</label>
                                                 <input type="text" class="form-control" name="subtitle2"
+                                                    value="{{ old('subtitle2') }}"
                                                     placeholder="{{ __('Secondary Sub Title') }}">
                                             </div>
                                         </div>
@@ -249,7 +253,7 @@ foreach ($themes as $value => $theme) {
                                                 <select name="currency" id="currency" class="form-control currency" required>
                                                     <option value="" disabled selected>{{ __("Choose currency") }}</option>
                                                     @foreach ($currencies as $currency)
-                                                    <option value="{{ $currency->iso_code }}" {{ $currencies->count() <= 1 ? 'selected' : '' }}>{{ $currency->name }} ({{ $currency->symbol }})</option>
+                                                    <option value="{{ $currency->iso_code }}" {{ old('currency') == $currency->iso_code || $currencies->count() <= 1 ? 'selected' : '' }}>{{ $currency->name }} ({{ $currency->symbol }})</option>
                                                     @endforeach
                                                 </select>
                                             </div>
@@ -268,6 +272,7 @@ foreach ($themes as $value => $theme) {
                                             <div class="mb-3">
                                                 <label class="form-label required">{{ __('WhatsApp Number') }}</label>
                                                 <input type="number" class="form-control" name="whatsapp_no"
+                                                    value="{{ old('whatsapp_no') }}"
                                                     placeholder="{{ __('Ex. 9876543210') }}"
                                                     required>
                                             </div>
@@ -281,7 +286,7 @@ foreach ($themes as $value => $theme) {
                                                 <textarea class="form-control" name="whatsapp_msg"
                                                     data-bs-toggle="autosize"
                                                     placeholder="{{ __('Thanks note') }}"
-                                                    required>{{ __('Thanks for shopping with us.') }}</textarea>
+                                                    required>{{ old('whatsapp_msg', __('Thanks for shopping with us.')) }}</textarea>
                                             </div>
                                         </div>
 
@@ -290,6 +295,7 @@ foreach ($themes as $value => $theme) {
                                             <div class="mb-3">
                                                 <label class="form-label text-primary">{{ __('Copyright (Optional)') }}</label>
                                                 <input type="text" class="form-control" name="copyright"
+                                                    value="{{ old('copyright') }}"
                                                     placeholder="{{ parse_url(config('app.url'), PHP_URL_HOST) }}">
                                                 <small class="form-hint">{{ __('Leave blank to use site domain') }}</small>
                                             </div>
@@ -499,6 +505,30 @@ $(document).ready(function () {
     var currentFileIndex;
     var files = [];
     var csrfToken = $('meta[name="csrf-token"]').attr('content');
+
+    // Restore logo preview if it exists in old()
+    var oldLogo = $('input[name="logo"]').val();
+    if (oldLogo) {
+        var previewSection = $('#previewSection').removeClass('d-none');
+        $('#logoPreview').html('<div class="col-md-12"><img src="' + oldLogo + '" class="img-fluid rounded"></div>');
+        $('#logo').prop('required', false);
+    }
+
+    // Restore banner previews if they exist in old()
+    var oldBanner = $('input[name="banner"]').val();
+    if (oldBanner) {
+        var banners = oldBanner.split(',');
+        var previewCoverContainer = $('#previewCoverContainer');
+        var previewSection = $('#previewSection').removeClass('d-none');
+        banners.forEach(function(url) {
+            if (url) {
+                var previewHtml = '<div class="col-md-6"><img src="' + url + '" class="img-fluid rounded"></div>';
+                previewCoverContainer.append(previewHtml);
+                pushedCoverImages.push(url);
+            }
+        });
+        $('#coverInput').prop('required', false);
+    }
 
     $('#coverInput').change(function (e) {
         files = e.target.files;

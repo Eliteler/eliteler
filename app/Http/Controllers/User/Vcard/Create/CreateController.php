@@ -242,13 +242,14 @@ class CreateController extends Controller
 
                     return redirect()->route('user.edit.social.links', $cardId)->with('success', trans('New Business Card Created Successfully!'));
                 } catch (\Exception $th) {
-                    return redirect()->back()->with('failed', trans('Sorry, the personalized link was already registered.'));
+                    \Log::error('Vcard creation failed: ' . $th->getMessage());
+                    return redirect()->back()->with('failed', trans('Something went wrong. Please try again.'))->withInput();
                 }
             } else {
-                return redirect()->back()->with('failed', trans('Maximum card creation limit is exceeded, Please upgrade your plan to add more card(s).'));
+                return redirect()->back()->with('failed', trans('Maximum card creation limit is exceeded, Please upgrade your plan to add more card(s).'))->withInput();
             }
         } else {
-            return redirect()->back()->with('failed', trans('Sorry, the personalized link was already registered.'));
+            return redirect()->back()->with('failed', trans('Sorry, the personalized link was already registered.'))->withInput();
         }
     }
 

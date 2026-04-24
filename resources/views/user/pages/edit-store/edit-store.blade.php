@@ -160,7 +160,7 @@ foreach ($themes as $theme) {
                                                     <select name="card_lang" id="card_lang" class="form-control card_lang" required>
                                                         @foreach(config('app.languages') as $langLocale => $langName)
                                                         <option class="dropdown-item" value="{{ $langLocale }}" {{
-                                                            strtolower($business_card->card_lang) == $langLocale ?
+                                                            old('card_lang', strtolower($business_card->card_lang)) == $langLocale ?
                                                             'selected' : '' }}>
                                                             {{ $langName }} ({{ strtoupper($langLocale) }})
                                                         </option>
@@ -207,7 +207,7 @@ foreach ($themes as $theme) {
                                                     <label class="form-label required">{{ __('Store name') }}</label>
                                                     <input type="text" class="form-control" name="title" id="{{ \Illuminate\Support\Str::contains($business_card->title, 'Duplicate') ? 'title' : 'default-title' }}"
                                                         placeholder="{{ __('Store name') }}"
-                                                        value="{{ $business_card->title }}" required>
+                                                        value="{{ old('title', $business_card->title) }}" required>
                                                 </div>
                                             </div>
 
@@ -217,7 +217,7 @@ foreach ($themes as $theme) {
                                                     <label class="form-label">{{ __('Title in another language (Optional)') }}</label>
                                                     <input type="text" class="form-control" name="title2"
                                                         placeholder="{{ __('Secondary Title') }}"
-                                                        value="{{ $business_card->title2 }}">
+                                                        value="{{ old('title2', $business_card->title2) }}">
                                                 </div>
                                             </div>
 
@@ -232,7 +232,7 @@ foreach ($themes as $theme) {
                                                         </span>
                                                         <input type="text" class="form-control" name="link"
                                                             placeholder="{{ __('Personalized Link') }}" autocomplete="off"
-                                                            value="{{ $business_card->card_url }}" required>
+                                                            value="{{ old('link', $business_card->card_url) }}" required>
                                                     </div>
                                                     <small class="form-hint">
                                                         {{ __('Store link') }} : <span><a href="{{ url($business_card->card_url) }}" target="_blank">{{ url($business_card->card_url) }}</a></span>
@@ -247,7 +247,7 @@ foreach ($themes as $theme) {
                                                     <label class="form-label">{{ __('Store greeting (Optional)') }}</label>
                                                     <input type="text" class="form-control" name="subtitle"
                                                         placeholder="{{ __('Store greeting') }}"
-                                                        value="{{ $business_card->sub_title }}">
+                                                        value="{{ old('subtitle', $business_card->sub_title) }}">
                                                 </div>
                                             </div>
 
@@ -257,7 +257,7 @@ foreach ($themes as $theme) {
                                                     <label class="form-label">{{ __('Subtitle in another language (Optional)') }}</label>
                                                     <input type="text" class="form-control" name="subtitle2"
                                                         placeholder="{{ __('Secondary Sub Title') }}"
-                                                        value="{{ $business_card->subtitle2 }}">
+                                                        value="{{ old('subtitle2', $business_card->subtitle2) }}">
                                                 </div>
                                             </div>
 
@@ -267,7 +267,7 @@ foreach ($themes as $theme) {
                                                     <label class="form-label required" for="currency">{{ __('Currency') }}</label>
                                                     <select name="currency" id="currency" class="form-control currency">
                                                         @foreach ($currencies as $currency)
-                                                        <option value="{{ $currency->iso_code }}" {{ $store_details->currency == $currency->iso_code || $store_details->currency == $currency->symbol ? 'selected' : '' }}>
+                                                        <option value="{{ $currency->iso_code }}" {{ old('currency', $store_details->currency) == $currency->iso_code || old('currency', $store_details->currency) == $currency->symbol ? 'selected' : '' }}>
                                                             {{ $currency->name }} ({{ $currency->symbol }})</option>
                                                         @endforeach
                                                     </select>
@@ -296,7 +296,7 @@ foreach ($themes as $theme) {
                                                     <label class="form-label required">{{ __('WhatsApp Footer Text') }}</label>
                                                     <textarea class="form-control" name="whatsapp_msg" id="whatsapp_msg"
                                                         cols="10" rows="3"
-                                                        placeholder="{{ __('Thanks note') }}">{{ $store_details->whatsapp_msg }}</textarea>
+                                                        placeholder="{{ __('Thanks note') }}">{{ old('whatsapp_msg', $store_details->whatsapp_msg) }}</textarea>
                                                 </div>
                                             </div>
 
@@ -305,7 +305,7 @@ foreach ($themes as $theme) {
                                                 <div class="mb-3">
                                                     <label class="form-label text-primary">{{ __('Copyright (Optional)') }}</label>
                                                     <input type="text" class="form-control" name="copyright"
-                                                        value="{{ $business_card->copyright }}"
+                                                        value="{{ old('copyright', $business_card->copyright) }}"
                                                         placeholder="{{ parse_url(config('app.url'), PHP_URL_HOST) }}">
                                                     <small class="form-hint">{{ __('Leave blank to use site domain') }}</small>
                                                 </div>

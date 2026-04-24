@@ -108,7 +108,14 @@ class SocialLinkController extends Controller
                             $customContent = $request->value[$i];
 
                             if (!empty($customContent)) {
-                                if (strpos($customContent, 'http://') === 0 || strpos($customContent, 'https://') === 0) {
+                                // Specific handling for WhatsApp to extract ONLY the number
+                                if ($type == 'wa') {
+                                    $customContent = str_replace(['https://wa.me/', 'http://wa.me/', 'wa.me/'], '', $customContent);
+                                    $customContent = ltrim($customContent, '+');
+                                    if (strpos($customContent, '00') === 0) {
+                                        $customContent = substr($customContent, 2);
+                                    }
+                                } elseif (strpos($customContent, 'http://') === 0 || strpos($customContent, 'https://') === 0) {
                                     $customContent = str_replace('http://', 'https://', $customContent);
                                 } else {
                                     $baseUrls = [
@@ -124,21 +131,12 @@ class SocialLinkController extends Controller
                                         'telegram' => 't.me/',
                                         'tumblr' => 'tumblr.com/',
                                         'quora' => 'quora.com/profile/',
-                                        'wa' => 'wa.me/',
                                     ];
 
                                     if (isset($baseUrls[$type])) {
                                         if (strpos($customContent, $baseUrls[$type]) === false) {
                                             if (in_array($type, ['tiktok', 'threads']) && strpos($customContent, '@') === 0) {
                                                 $customContent = substr($customContent, 1);
-                                            }
-                                            
-                                            // Handle WhatsApp specifically to remove + or 00
-                                            if ($type == 'wa') {
-                                                $customContent = ltrim($customContent, '+');
-                                                if (strpos($customContent, '00') === 0) {
-                                                    $customContent = substr($customContent, 2);
-                                                }
                                             }
 
                                             $customContent = 'https://' . $baseUrls[$type] . ltrim($customContent, '/');

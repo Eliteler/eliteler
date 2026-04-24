@@ -663,6 +663,7 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::get('backups/create-file-backup', [BackupController::class, 'createFileBackup'])->name('create.file.backup')->middleware(['user.page.permission:backup', 'demo.mode']);
         Route::get('backups/create-database-backup', [BackupController::class, 'createDatabaseBackup'])->name('create.database.backup')->middleware(['user.page.permission:backup', 'demo.mode']);
         Route::get('backups/restore-backup', [BackupController::class, 'restore'])->name('backup.restore')->middleware(['user.page.permission:backup', 'demo.mode']);
+        Route::get('backups/restore-status', [BackupController::class, 'restoreStatus'])->name('backup.restore.status')->middleware(['user.page.permission:backup', 'demo.mode']);
         Route::get('backups/download-backup', [BackupController::class, 'download'])->name('backup.download')->middleware(['user.page.permission:backup', 'demo.mode']);
         Route::get('backups/delete-backup', [BackupController::class, 'delete'])->name('backup.delete')->middleware(['user.page.permission:backup', 'demo.mode']);
 

@@ -142,10 +142,10 @@
                                     <div class="{{ $type != 'custom' ? 'col-md-8' : 'col-md-12' }}">
                                         <div class="row">
                                             <input type="hidden" class="form-control" name="theme_id"
-                                                value="{{ $themeId }}">
+                                                value="{{ old('theme_id', $themeId) }}">
 
                                             <input type="hidden" class="form-control" name="type"
-                                                value="{{ $type }}">
+                                                value="{{ old('type', $type) }}">
 
                                             <div
                                                 class="{{ $type != 'custom' ? 'col-md-6 col-xl-6' : 'col-md-4 col-xl-4' }} {{ is_array(config('app.languages')) && count(config('app.languages')) <= 1 ? 'd-none' : '' }}">
@@ -156,7 +156,7 @@
                                                         required>
                                                         @foreach (config('app.languages') as $langLocale => $langName)
                                                             <option class="dropdown-item" value="{{ $langLocale }}"
-                                                                {{ $langLocale == config('app.locale') ? 'selected' : '' }}>
+                                                                {{ old('card_lang', config('app.locale')) == $langLocale ? 'selected' : '' }}>
                                                                 {{ $langName }} ({{ strtoupper($langLocale) }})
                                                             </option>
                                                         @endforeach
@@ -171,29 +171,18 @@
                                                     <select id="coverType" name="cover_type" class="form-control cover_type"
                                                         required>
 
-                                                        <option class="dropdown-item" value="youtube">
-                                                            {{ __('YouTube Video') }}
-                                                        </option>
-
-                                                        <option class="dropdown-item" value="youtube-ap">
-                                                            {{ __('YouTube Video - Autoplay') }}
-                                                        </option>
-
-                                                        <option class="dropdown-item" value="vimeo">
-                                                            {{ __('Vimeo Video') }}
-                                                        </option>
-
-                                                        <option class="dropdown-item" value="vimeo-ap">
-                                                            {{ __('Vimeo Video - Autoplay') }}
-                                                        </option>
-
-                                                        <option class="dropdown-item" value="photo" selected>
-                                                            {{ __('Photo') }}
-                                                        </option>
-
-                                                        <option class="dropdown-item" value="none">
-                                                            {{ __('Default') }}
-                                                        </option>
+                                                            <option class="dropdown-item" value="photo" {{ old('cover_type', 'photo') == 'photo' ? 'selected' : '' }}>
+                                                                {{ __('Photo') }}</option>
+                                                            <option class="dropdown-item" value="youtube" {{ old('cover_type') == 'youtube' ? 'selected' : '' }}>
+                                                                {{ __('YouTube Video') }}</option>
+                                                            <option class="dropdown-item" value="youtube-ap" {{ old('cover_type') == 'youtube-ap' ? 'selected' : '' }}>
+                                                                {{ __('YouTube Video - Autoplay') }}</option>
+                                                            <option class="dropdown-item" value="vimeo" {{ old('cover_type') == 'vimeo' ? 'selected' : '' }}>
+                                                                {{ __('Vimeo Video') }}</option>
+                                                            <option class="dropdown-item" value="vimeo-ap" {{ old('cover_type') == 'vimeo-ap' ? 'selected' : '' }}>
+                                                                {{ __('Vimeo Video - Autoplay') }}</option>
+                                                            <option class="dropdown-item" value="none" {{ old('cover_type') == 'none' ? 'selected' : '' }}>
+                                                                {{ __('Default') }}</option>
                                                     </select>
 
                                                     <small>{{ __('Autoplay video will be muted due to browser policies') }}</small>
@@ -202,7 +191,7 @@
 
                                             <div
                                                 class="{{ $type != 'custom' ? 'col-md-6 col-xl-6' : 'col-md-4 col-xl-4' }}">
-                                                <div class="mb-3" id="cover_url_col">
+                                                <div class="mb-3 {{ in_array(old('cover_type', 'photo'), ['youtube', 'youtube-ap', 'vimeo', 'vimeo-ap']) ? '' : 'd-none' }}" id="cover_url_col">
                                                     <label id="cover_url_label"
                                                         class="form-label required">{{ __('Cover Video URL') }}</label>
                                                     <div class="input-group">
@@ -212,7 +201,7 @@
                                                         <input type="text" class="form-control" id="cover_url_input"
                                                             name="cover_url" value="{{ old('cover_url') }}"
                                                             placeholder="{{ __('Video ID') }}" autocomplete="off"
-                                                            minlength="3">
+                                                            minlength="2">
                                                     </div>
                                                 </div>
 
@@ -221,7 +210,7 @@
                                                     <input type="file" class="form-control" id="cover"
                                                         placeholder="{{ __('Cover') }}"
                                                         accept=".jpeg,.jpg,.png,.gif,.svg" />
-                                                    <input type="hidden" class="form-control" name="cover">
+                                                    <input type="hidden" class="form-control" name="cover" value="{{ old('cover') }}">
                                                 </div>
                                             </div>
 
@@ -232,7 +221,7 @@
                                                     <input type="file" class="form-control" id="logo"
                                                         placeholder="{{ __('Logo') }}"
                                                         accept=".jpeg,.jpg,.png,.gif,.svg" required />
-                                                    <input type="hidden" class="form-control" name="logo">
+                                                    <input type="hidden" class="form-control" name="logo" value="{{ old('logo') }}">
                                                 </div>
                                             </div>
 
@@ -275,7 +264,7 @@
                                                             <input type="text" class="form-control" name="link"
                                                                 placeholder="{{ __('Personalized Link') }}"
                                                                 autocomplete="off" id="plink" onkeyup="checkLink()" oninput="convertToLink(this.value)"
-                                                                value="{{ old('link') }}" minlength="3" required>
+                                                                value="{{ old('link') }}" minlength="2" required>
                                                             <span class="input-group-text" id="status">
                                                                 <svg xmlns="http://www.w3.org/2000/svg" width="24"
                                                                     height="24" viewBox="0 0 24 24" fill="none"
@@ -306,6 +295,14 @@
                                                 </div>
                                             </div>
 
+                                            <div class="col-md-12 col-xl-12">
+                                                <div class="mb-3">
+                                                    <label class="form-label">{{ __('Description (Optional)') }}</label>
+                                                    <textarea class="form-control" name="description" id="description"
+                                                        placeholder="{{ __('About business / Bio') }}">{{ old('description') }}</textarea>
+                                                </div>
+                                            </div>
+
                                             <div
                                                 class="{{ $type != 'custom' ? 'col-md-6 col-xl-6' : 'col-md-4 col-xl-4' }}">
                                                 <div class="mb-3">
@@ -326,14 +323,7 @@
                                                 </div>
                                             </div>
 
-                                            <div class="col-md-12 col-xl-12">
-                                                <div class="mb-3">
-                                                    <label class="form-label">{{ __('Description (Optional)') }}</label>
-                                                    <textarea class="form-control" name="description" id="description" data-bs-toggle="autosize"
-                                                        placeholder="{{ __('About business / Bio') }}">{{ old('description') }}</textarea>
-                                                </div>
-                                            </div>
-                                            </div>
+
 
                                             <div class="col-md-12 col-xl-12">
                                                 <div class="mb-3">
@@ -686,6 +676,13 @@
                 var cropper;
                 var uploadedImageURL;
 
+                // Restore logo preview if it exists in old()
+                var oldLogo = $('input[name="logo"]').val();
+                if (oldLogo) {
+                    $('#logoNone').removeClass('d-none');
+                    $("#logoPreview").css('background-image', 'url(' + oldLogo + ')');
+                }
+
                 // Initialize cropper when modal is shown
                 $('#cropModal').on('shown.bs.modal', function() {
                     cropper = new Cropper(document.getElementById('croppedImage'), {
@@ -707,6 +704,10 @@
                         uploadedImageURL = event.target.result;
                         $('#croppedImage').attr('src', uploadedImageURL);
                         $('#cropModal').modal('show');
+
+                        // Show preview immediately
+                        $('#logoNone').removeClass('d-none');
+                        $("#logoPreview").css('background-image', 'url(' + uploadedImageURL + ')');
                     };
 
                     reader.readAsDataURL(files[0]);
@@ -773,6 +774,13 @@
                 var uploadedCoverImageURL;
                 var coverFileOriginal; // Store the original file for "upload without cropping"
 
+                // Restore cover preview if it exists in old()
+                var oldCover = $('input[name="cover"]').val();
+                if (oldCover) {
+                    $('#coverNone').removeClass('d-none');
+                    $("#coverPreview").css('background-image', 'url(' + oldCover + ')');
+                }
+
                 // Initialize cropper when modal is shown
                 $('#cropCoverModal').on('shown.bs.modal', function() {
                     coverCropper = new Cropper(document.getElementById('croppedCoverImage'), {
@@ -797,6 +805,10 @@
                         uploadedCoverImageURL = event.target.result;
                         $('#croppedCoverImage').attr('src', uploadedCoverImageURL);
                         $('#cropCoverModal').modal('show');
+
+                        // Show preview immediately
+                        $('#coverNone').removeClass('d-none');
+                        $("#coverPreview").css('background-image', 'url(' + uploadedCoverImageURL + ')');
                     };
                     reader.readAsDataURL(files[0]);
                 });
@@ -940,43 +952,7 @@
                 str = str.replace(/\s+/g, '-');
                 document.getElementById("plink").value = str;
                 //return str;
-            }
-
-    // Preview Cover
-    $(document).ready(() => {
-        "use strict";
-
-        const coverInp = $("#cover");
-        let imgURL;
-
-        coverInp.change(function(e) {
-            $("#logoNone").removeClass('d-none');
-            $("#coverNone").removeClass('d-none');
-            // Remove unwanted space
-            $(".unwanted-space").remove();
-
-
-            imgURL = URL.createObjectURL(e.target.files[0]);
-            $("#coverPreview").css('background-image', 'url(' + imgURL + ')');
-        });
-    });
-
-    // Preview logo
-    $(document).ready(() => {
-        "use strict";
-
-        const logoInp = $("#logo");
-        let imgURL;
-
-        logoInp.change(function(e) {
-            $("#logoNone").removeClass('d-none');
-            $("#coverNone").removeClass('d-none');
-            // Remove unwanted space
-            $(".unwanted-space").remove();
-
-            imgURL = URL.createObjectURL(e.target.files[0]);
-            $("#logoPreview").css('background-image', 'url(' + imgURL + ')');
-        });
+            };
 
 
         $("#coverType").change(function() {
@@ -985,11 +961,11 @@
                 $("#cover_url_title").text("https://vimeo.com/");
                 $("#cover_url_label").attr("class", "form-label required");
                 $("#cover_url_input").prop("required", true);
-                $("#coverNone").css('display', 'none');
+                $("#coverNone").addClass("d-none");
                 // $("#logoNone").addClass('d-none');
                 $("#coverChooser").addClass('d-none');
                 $("#cover").prop("required", false);
-                $("#cover_url_col").css("display", "block");
+                $("#cover_url_col").removeClass("d-none");
                 // Remove unwanted space
                 $(".unwanted-space").remove();
                 $(".cover-unwanted-space").remove();
@@ -999,11 +975,11 @@
                 $("#cover_url_title").text("https://www.youtube.com/watch?v=");
                 $("#cover_url_label").attr("class", "form-label required");
                 $("#cover_url_input").prop("required", true);
-                $("#coverNone").css('display', 'none');
+                $("#coverNone").addClass("d-none");
                 // $("#logoNone").addClass('d-none');
                 $("#coverChooser").addClass('d-none');
                 $("#cover").prop("required", false);
-                $("#cover_url_col").css("display", "block");
+                $("#cover_url_col").removeClass("d-none");
                 // Remove unwanted space
                 $(".unwanted-space").remove();
                 $(".cover-unwanted-space").remove();
@@ -1012,19 +988,28 @@
             if (this.value == "photo") {
                 $("#cover_url_label").attr("class", "form-label");
                 $("#cover_url_input").prop("required", false);
-                $("#cover").prop("required", true);
-                // $("#logoNone").removeClass('d-none');
-                $("#coverNone").css('display', 'block');
+                if ($('input[name="cover"]').val()) {
+                    $("#coverNone").removeClass("d-none");
+                } else {
+                    $("#coverNone").addClass("d-none");
+                }
                 $("#coverChooser").removeClass('d-none');
-                $("#cover_url_col").css("display", "none");
+                $("#cover_url_col").addClass("d-none");
+
+                // If we have an existing cover (from old()), it's not required to upload a new one
+                if ($('input[name="cover"]').val()) {
+                    $("#cover").prop("required", false);
+                } else {
+                    $("#cover").prop("required", true);
+                }
             }
 
             if (this.value == "none") {
                 $("#cover_url_label").attr("class", "form-label");
                 $("#cover_url_input").prop("required", false);
-                $("#coverNone").css('display', 'none');
+                $("#coverNone").addClass("d-none");
                 $("#coverChooser").addClass('d-none');
-                $("#cover_url_col").css("display", "none");
+                $("#cover_url_col").addClass("d-none");
                 $("#cover").prop("required", false);
                 // Remove unwanted space
                 $(".unwanted-space").remove();
@@ -1033,9 +1018,13 @@
 
         });
 
-        $("#coverType").val("photo").change();
+        // Trigger change to set initial state based on current (old() or default) value
+        $("#coverType").change();
 
-    });
+        // Also check logo required status on load
+        if ($('input[name="logo"]').val()) {
+            $("#logo").prop("required", false);
+        }
 
     var APP_URL = '{{ config('app.url') }}';
 

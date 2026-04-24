@@ -75,7 +75,7 @@ class UpdateController extends Controller
         $themeExists = Theme::where('theme_id', $request->theme_id)->where('theme_description', 'WhatsApp Store')->where('status', 1)->count();
 
         if ($themeExists == 0) {
-            return back()->with('failed', trans('Invalid Theme'));
+            return back()->with('failed', trans('Invalid Theme'))->withInput();
         }
         
         // Queries
@@ -261,7 +261,7 @@ class UpdateController extends Controller
                     return redirect()->route('user.edit.store', $id)->with('success', trans('Updated!'));
                 }
             } else {
-                return redirect()->route('user.edit.store', $id)->with('failed', trans('Sorry, the personalized link was already registered.'));
+                return redirect()->route('user.edit.store', $id)->with('failed', trans('Sorry, the personalized link was already registered.'))->withInput();
             }
         }
     }

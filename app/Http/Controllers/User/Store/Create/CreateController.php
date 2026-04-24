@@ -234,19 +234,18 @@ class CreateController extends Controller
 
                     return redirect()->route('user.edit.products', $card_id)->with('success', trans('New WhatsApp Store Created Successfully!'));
                 } catch (\Exception $th) {
-
-                    // Alert (Personalized link was already registered)
-                    return redirect()->route('user.create.store')->with('failed', trans('Sorry, the personalized link was already registered.'));
+                    \Log::error('Store creation failed: ' . $th->getMessage());
+                    return redirect()->route('user.create.store')->with('failed', trans('Something went wrong. Please try again.'))->withInput();
                 }
             } else {
 
                 // Alert (Maximum store creation limit is exceeded,)
-                return redirect()->route('user.create.store')->with('failed', trans('Maximum store creation limit is exceeded, Please upgrade your plan to add more store(s).'));
+                return redirect()->route('user.create.store')->with('failed', trans('Maximum store creation limit is exceeded, Please upgrade your plan to add more store(s).'))->withInput();
             }
         } else {
 
             // Alert (Personalized link was already registered)
-            return redirect()->route('user.create.store')->with('failed', trans('Sorry, the personalized link was already registered.'));
+            return redirect()->route('user.create.store')->with('failed', trans('Sorry, the personalized link was already registered.'))->withInput();
         }
     }
 

@@ -252,7 +252,7 @@ $country_codes = [
 
 <select name="country_code" id="country_code" class="form-control country_code">
     <?php foreach ($country_codes as $code => $label) : ?>
-        <option value="<?php echo $code; ?>" <?php echo (strpos($whatsapp_no, (string)$code) === 0) ? 'selected' : ''; ?>>
+        <option value="<?php echo $code; ?>" <?php echo (old('country_code', $country_code) == (string)$code) ? 'selected' : ''; ?>>
             <?php echo $label; ?>
     </option>
     <?php endforeach; ?>
