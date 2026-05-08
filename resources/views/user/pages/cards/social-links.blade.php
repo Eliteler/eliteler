@@ -164,6 +164,7 @@
                 // Add section options
                 sectionOptions = "<optgroup label='{{ __('Sections') }}'>";
                 sectionOptions += "<option value='map'>{{ __('Google Map') }}</option>";
+                sectionOptions += "<option value='location_url'>{{ __('Location without Map') }}</option>";
                 sectionOptions += "<option value='youtube'>{{ __('Youtube') }}</option>";
                 sectionOptions += "<option value='iframe'>{{ __('iframe') }}</option>";
                 sectionOptions += "</optgroup>";
@@ -558,6 +559,15 @@
             icon.value = "fas fa-star";
             lbl.value = `{{ __('Google Review') }}`;
             $("#displayIcon" + id).attr("class", "fas fa-star");
+            textlbl.type = 'text';
+
+        } else if (type == 'location_url') {
+            label = `{{ __('Location') }}`;
+            textlabel = `{{ __('For ex: https://maps.app.goo.gl/...') }}`;
+
+            icon.value = "fas fa-location-dot";
+            lbl.value = `{{ __('Location') }}`;
+            $("#displayIcon" + id).attr("class", "fas fa-location-dot");
             textlbl.type = 'text';
         }
 

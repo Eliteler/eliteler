@@ -181,6 +181,9 @@
                 $subtitle2_align = $custom_styles['subtitle2_alignment'] ?? ($custom_styles['layout'] == 'row' ? 'left' : 'center');
                 $title2_font = $custom_styles['title2_font_family'] ?? 'Poppins';
                 $subtitle2_font = $custom_styles['subtitle2_font_family'] ?? 'Poppins';
+                $subtitle_font = $custom_styles['subtitle_font_family'] ?? $custom_styles['font_family'] ?? 'Poppins';
+                $title2_color = $custom_styles['title2_color'] ?? $custom_styles['title_color'] ?? '#000000';
+                $subtitle2_color = $custom_styles['subtitle2_color'] ?? $custom_styles['sub_title_color'] ?? '#000000';
             @endphp
             @if ($backgroundType == 'image' && !empty($backgroundImage))
                 <div class="fixed inset-0 z-0 flex justify-center items-start">
@@ -306,15 +309,15 @@
                                             {{-- Name --}}
                                             @if(!empty($business_card_details->title2))
 <h1
-                                                class="lg:text-4xl text-2xl font-medium text-[{{ $custom_styles['title_color'] }}] tracking-tighter" style="margin-bottom: 0px; padding-bottom: 0px; font-size: {{ $custom_styles['title2_font_size'] ?? '36' }}px !important; font-family: '{{ $title2_font }}', sans-serif; text-align: {{ $title2_align }};">{{ $business_card_details->title2 }}</h1>
+                                                class="lg:text-4xl text-2xl font-medium text-[{{ $title2_color }}] tracking-tighter" style="margin-bottom: 0px; padding-bottom: 0px; font-size: {{ $custom_styles['title2_font_size'] ?? '36' }}px !important; font-family: '{{ $title2_font }}', sans-serif; text-align: {{ $title2_align }};">{{ $business_card_details->title2 }}</h1>
 @endif
 @if(!empty($business_card_details->subtitle2))
-                                                <p class="text-[{{ $custom_styles['sub_title_color'] }}] font-bold mt-2 text-md" style="margin-bottom: 5px; padding-bottom: 0px; font-size: {{ $custom_styles['subtitle2_font_size'] ?? '18' }}px !important; font-family: '{{ $subtitle2_font }}', sans-serif; text-align: {{ $subtitle2_align }};">{{ $business_card_details->subtitle2 }}</p>
+                                                <p class="text-[{{ $subtitle2_color }}] font-bold mt-2 text-md" style="margin-bottom: 5px; padding-bottom: 0px; font-size: {{ $custom_styles['subtitle2_font_size'] ?? '18' }}px !important; font-family: '{{ $subtitle2_font }}', sans-serif; text-align: {{ $subtitle2_align }};">{{ $business_card_details->subtitle2 }}</p>
                                             @endif
 <h1
                                                 class="lg:text-4xl text-2xl font-medium text-[{{ $custom_styles['title_color'] }}] tracking-tighter" style="font-size: {{ $custom_styles['title_font_size'] ?? '36' }}px !important; text-align: {{ $title1_align }};">{{ $business_card_details->title }}</h1>
                                             {{-- Job Title --}}
-                                            <p class="text-[{{ $custom_styles['sub_title_color'] }}] font-bold mt-2 text-md" style="font-size: {{ $custom_styles['sub_title_font_size'] ?? '18' }}px !important; text-align: {{ $subtitle_align }};">{{ $card_details->sub_title }}</p>
+                                            <p class="text-[{{ $custom_styles['sub_title_color'] }}] font-bold mt-2 text-md" style="font-size: {{ $custom_styles['sub_title_font_size'] ?? '18' }}px !important; font-family: '{{ $subtitle_font }}', sans-serif; text-align: {{ $subtitle_align }};">{{ $card_details->sub_title }}</p>
                                             {{-- About --}}
                                             @if (isset($business_card_details->description) || isset($business_card_details->address))
                                                 <div
@@ -341,15 +344,15 @@
                                             {{-- Name --}}
                                             @if(!empty($business_card_details->title2))
 <h1
-                                                class="lg:text-4xl text-2xl font-medium text-[{{ $custom_styles['title_color'] }}] tracking-tighter w-full" style="margin-bottom: 0px; padding-bottom: 0px; font-size: {{ $custom_styles['title2_font_size'] ?? '36' }}px !important; font-family: '{{ $title2_font }}', sans-serif; text-align: {{ $title2_align }};">{{ $business_card_details->title2 }}</h1>
+                                                class="lg:text-4xl text-2xl font-medium text-[{{ $title2_color }}] tracking-tighter w-full" style="margin-bottom: 0px; padding-bottom: 0px; font-size: {{ $custom_styles['title2_font_size'] ?? '36' }}px !important; font-family: '{{ $title2_font }}', sans-serif; text-align: {{ $title2_align }};">{{ $business_card_details->title2 }}</h1>
 @endif
 @if(!empty($business_card_details->subtitle2))
-                                                <p class="text-[{{ $custom_styles['sub_title_color'] }}] font-bold mt-2 text-md w-full" style="margin-bottom: 5px; padding-bottom: 0px; font-size: {{ $custom_styles['subtitle2_font_size'] ?? '18' }}px !important; font-family: '{{ $subtitle2_font }}', sans-serif; text-align: {{ $subtitle2_align }};">{{ $business_card_details->subtitle2 }}</p>
+                                                <p class="text-[{{ $subtitle2_color }}] font-bold mt-2 text-md w-full" style="margin-bottom: 5px; padding-bottom: 0px; font-size: {{ $custom_styles['subtitle2_font_size'] ?? '18' }}px !important; font-family: '{{ $subtitle2_font }}', sans-serif; text-align: {{ $subtitle2_align }};">{{ $business_card_details->subtitle2 }}</p>
                                             @endif
 <h1
                                                 class="lg:text-4xl text-2xl font-medium text-[{{ $custom_styles['title_color'] }}] tracking-tighter w-full" style="font-size: {{ $custom_styles['title_font_size'] ?? '36' }}px !important; text-align: {{ $title1_align }};">{{ $business_card_details->title }}</h1>
                                             {{-- Job Title --}}
-                                            <p class="text-[{{ $custom_styles['sub_title_color'] }}] font-bold mt-2 text-md w-full" style="font-size: {{ $custom_styles['sub_title_font_size'] ?? '18' }}px !important; text-align: {{ $subtitle_align }};">{{ $card_details->sub_title }}</p>
+                                            <p class="text-[{{ $custom_styles['sub_title_color'] }}] font-bold mt-2 text-md w-full" style="font-size: {{ $custom_styles['sub_title_font_size'] ?? '18' }}px !important; font-family: '{{ $subtitle_font }}', sans-serif; text-align: {{ $subtitle_align }};">{{ $card_details->sub_title }}</p>
                                             {{-- About --}}
                                             @if (isset($business_card_details->description) || isset($business_card_details->address))
                                                 <div
@@ -368,7 +371,7 @@
                                     <div class="flex justify-center gap-4 mt-6">
                                         {{-- Loop through the feature_details array and display the icons --}}
                                         @foreach ($feature_details as $feature)
-                                            @if (in_array($feature->type, ['tel', 'address', 'wa', 'instagram']))
+                                            @if (in_array($feature->type, ['tel', 'address', 'wa']))
                                                 {{-- Location --}}
                                                 @if ($feature->type == 'address')
                                                     <a href="#location"
@@ -392,16 +395,6 @@
                                                 {{-- WhatsApp --}}
                                                 @if ($feature->type == 'wa')
                                                     <a href="https://wa.me/{{ $feature->content }}"
-                                                        class="@if ($buttonBackgroundType == 'single_color') bg-[{{ $buttonBackgroundColor }}] @endif
-                                                        @if ($buttonBackgroundType == 'gradient') bg-gradient-to-r from-[{{ $buttonGradientFrom }}] to-[{{ $buttonGradientTo }}] @endif
-                                                        @if ($buttonEdge == 'rounded') rounded-2xl @endif focus:outline-none">
-                                                        <i
-                                                            class="{{ $feature->icon }} fa-2xl text-[{{ $buttonIconColor }}] w-14 h-14 flex items-center justify-center"></i>
-                                                    </a>
-                                                @endif
-                                                {{-- Instagram --}}
-                                                @if ($feature->type == 'instagram')
-                                                    <a href="{{ $feature->content }}" target="_blank"
                                                         class="@if ($buttonBackgroundType == 'single_color') bg-[{{ $buttonBackgroundColor }}] @endif
                                                         @if ($buttonBackgroundType == 'gradient') bg-gradient-to-r from-[{{ $buttonGradientFrom }}] to-[{{ $buttonGradientTo }}] @endif
                                                         @if ($buttonEdge == 'rounded') rounded-2xl @endif focus:outline-none">
@@ -450,7 +443,7 @@
                                 @if (!empty($feature_details) && count($feature_details) > 0)
                                     @php
                                         // List of excluded feature types
-                                        $excludedTypes = ['tel', 'instagram', 'wa', 'address', 'map', 'iframe', 'youtube'];
+                                        $excludedTypes = ['tel', 'wa', 'address', 'map', 'iframe', 'youtube', 'location_url'];
 
                                         // Filter the features to include only valid ones
                                         $validFeatures = collect($feature_details)->filter(function ($feature) use (
@@ -1080,6 +1073,32 @@
                                 @endif
                                 <!-- End Location section -->
 
+                                <!-- Start Location without Map section -->
+                                @if (count($feature_details) > 0 && $feature_details->contains('type', 'location_url'))
+                                    <div class="relative mt-8" id="location-url">
+                                        @foreach ($feature_details as $feature)
+                                            @if ($feature->type == 'location_url')
+                                                <a href="{{ $feature->content }}" target="_blank" rel="noopener noreferrer"
+                                                    class="flex items-center gap-4 px-5 py-4 w-full
+                                                    @if ($buttonBackgroundType == 'single_color') bg-[{{ $buttonBackgroundColor }}] @endif
+                                                    @if ($buttonBackgroundType == 'gradient') bg-gradient-to-r from-[{{ $buttonGradientFrom }}] to-[{{ $buttonGradientTo }}] @endif
+                                                    @if ($custom_styles['card_edge'] == 'rounded') rounded-2xl @endif">
+                                                    <i class="{{ $feature->icon ?? 'fas fa-location-dot' }} fa-xl text-[{{ $buttonIconColor }}]"></i>
+                                                    <div>
+                                                        <div class="font-semibold text-lg text-[{{ $buttonTextColor }}]">
+                                                            {{ $feature->label }}
+                                                        </div>
+                                                        <div class="text-sm text-[{{ $buttonTextColor }}] opacity-80">
+                                                            {{ $feature->content }}
+                                                        </div>
+                                                    </div>
+                                                </a>
+                                            @endif
+                                        @endforeach
+                                    </div>
+                                @endif
+                                <!-- End Location without Map section -->
+
                                 {{-- Service Service Booking --}}
                                 @if (isset($plan_details['service_booking']) && $plan_details['service_booking'] == 1)
                                     @if (!empty($service_booking_details) && $service_booking_details->service_booking == 1)
@@ -1228,9 +1247,9 @@
                                         <div class="flex pt-5 px-3 m-auto font-semibol text-sm flex-col md:flex-row max-w-6xl">
                                             <div class="mt-2 text-[{{ $custom_styles['sub_title_color'] }}]">
                                                 {{ __('Copyright') }} &copy;
-                                                <a class="text-[{{ $custom_styles['title_color'] }}]"
-                                                    href="{{ url()->current() }}">
-                                                    {{ $card_details->title }}</a><span
+                                                <a class="text-[{{ $custom_styles['copyright_color'] ?? $custom_styles['title_color'] ?? '#000000' }}]"
+                                                    href="{{ !empty($business_card_details->copyright) ? (str_starts_with($business_card_details->copyright, 'http') ? $business_card_details->copyright : 'https://'.$business_card_details->copyright) : env('APP_URL') }}" target="_blank" rel="noopener noreferrer">
+                                                    {{ !empty($business_card_details->copyright) ? $business_card_details->copyright : $card_details->title }}</a><span
                                                     id="year"></span>{{ __('. All Rights Reserved.') }}
                                             </div>
                                         </div>
@@ -1441,20 +1460,20 @@
                     </div>
 
                     <!-- Share via Social Media -->
-                    <div class="flex justify-around text-[{{ $buttonIconColor }}]">
-                        <a href="{{ $shareComponent['facebook'] }}" target="_blank">
+                    <div class="flex justify-around">
+                        <a href="{{ $shareComponent['facebook'] }}" target="_blank" style="color: #1877F2;">
                             <i class="fab fa-facebook fa-2x"></i>
                         </a>
-                        <a href="{{ $shareComponent['twitter'] }}" target="_blank">
+                        <a href="{{ $shareComponent['twitter'] }}" target="_blank" style="color: #1DA1F2;">
                             <i class="fab fa-twitter fa-2x"></i>
                         </a>
-                        <a href="{{ $shareComponent['linkedin'] }}" target="_blank">
+                        <a href="{{ $shareComponent['linkedin'] }}" target="_blank" style="color: #0A66C2;">
                             <i class="fab fa-linkedin fa-2x"></i>
                         </a>
-                        <a href="{{ $shareComponent['whatsapp'] }}" target="_blank">
+                        <a href="{{ $shareComponent['whatsapp'] }}" target="_blank" style="color: #25D366;">
                             <i class="fab fa-whatsapp fa-2x"></i>
                         </a>
-                        <a href="{{ $shareComponent['telegram'] }}" target="_blank">
+                        <a href="{{ $shareComponent['telegram'] }}" target="_blank" style="color: #229ED9;">
                             <i class="fab fa-telegram fa-2x"></i>
                         </a>
                     </div>
@@ -1506,6 +1525,9 @@
                 <!-- Modal content (stops propagation to prevent closing when clicking inside) -->
                 <div class="rounded-2xl w-full max-w-md p-6 mx-4 space-y-6 bg-white qr-modal-overlay"
                     onclick="event.stopPropagation()">
+                                        <!-- Scan QR Title -->
+                    <p style="text-align:center;font-size:1.15rem;font-weight:700;margin-bottom:4px;">{{ __('Scan QR Code') }}</p>
+                    <p class="qr-card-name" style="text-align:center;font-weight:600;font-size:.95rem;margin-bottom:8px;opacity:.8;">{{ $business_card_details->title }}</p>
                     <!-- Qr Code -->
                     <div class="flex justify-center flex-col items-center">
                         <div class="qr-code mb-2"></div>
@@ -1514,7 +1536,7 @@
                     <!-- Submit Button -->
                     <div class="flex justify-center">
                         <button id="download"
-                            onclick="downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500)"
+                            onclick="downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500, '{{ addslashes($business_card_details->title) }}')"
                             class="@if ($buttonBackgroundType == 'single_color') bg-[{{ $buttonBackgroundColor }}] @endif
                             @if ($buttonBackgroundType == 'gradient') bg-gradient-to-r from-[{{ $buttonGradientFrom }}] to-[{{ $buttonGradientTo }}] @endif
                             @if ($buttonEdge == 'rounded') rounded-2xl @endif text-[{{ $buttonTextColor }}] font-bold p-3">
@@ -1626,7 +1648,7 @@
     {{-- Smooth Scroll --}}
     <script src="{{ url('js/smooth-scroll.polyfills.min.js') }}"></script>
     {{-- Other JS --}}
-    <script type="text/javascript" src="{{ url('app/js/footer.js') }}"></script>
+    <script type="text/javascript" src="{{ url('app/js/footer.js') }}?v=1.4"></script>
     {{-- Flatpickr JS --}}
     <script src="{{ url('js/flatpickr.min.js') }}"></script>
     {{-- Swiper JS --}}
@@ -1780,6 +1802,13 @@
                         errorMessage1.classList.add('hidden');
                         successMessage1.classList.remove('hidden');
                         successMessage1.innerHTML = data.message || 'Your service has been successfully booked!';
+                        // Redirect to whatsapp url
+                        if (data.whatsapp_url && data.whatsapp_url !== '#') {
+                            setTimeout(() => {
+                                window.location.href = data.whatsapp_url;
+                            }, 3000);
+                        }
+
                     } else {
                         successMessage1.classList.add('hidden');
                         errorMessage1.classList.remove('hidden');

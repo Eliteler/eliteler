@@ -197,7 +197,7 @@
                                                 </div>
                                             </div>
                                             <div class="px-3">
-                                                <div><span class="status-dot bg-orange"></span> {{ __('vCards') }}</div>
+                                                <div><span class="status-dot bg-orange"></span> {{ __('eCards') }}</div>
                                                 <div class="h2" id="totalvCards">{{ $totalvCards }}</div>
                                             </div>
                                             <div class="px-3">
@@ -681,7 +681,7 @@
                         data: []
                     },
                     {
-                        name: "vCards",
+                        name: "eCards",
                         data: []
                     },
                     {
@@ -733,7 +733,7 @@
                             data: res.earnings
                         },
                         {
-                            name: "vCards",
+                            name: "eCards",
                             data: res.vcards
                         },
                         {

@@ -1169,7 +1169,7 @@
                                         class="flex pb-5 m-auto pt-5 font-semibold text-sm flex-col md:flex-row max-w-6xl">
                                         <div class="mt-2">
                                             {{ __('Copyright') }} &copy; {{ now()->year }} {{ __('by') }}
-                                            <a class="text-indigo-500" href="{{ url()->current() }}">{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}</a>
+                                            <a class="text-indigo-500" href="{{ !empty($business_card_details->copyright) ? (str_starts_with($business_card_details->copyright, 'http') ? $business_card_details->copyright : 'https://'.$business_card_details->copyright) : env('APP_URL') }}" target="_blank" rel="noopener noreferrer">{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}</a>
                                             <span id="year"></span>{{ __('. All Rights Reserved.') }}
                                         </div>
                                     </div>
@@ -1181,7 +1181,7 @@
                                         <div class="mt-2">
                                             {{ __('Copyright') }} &copy; {{ now()->year }}.
                                             {{ __('Made with') }}
-                                            <a class="text-indigo-500" href="{{ env('APP_URL') }}">{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}</a>
+                                            <a class="text-indigo-500" href="{{ !empty($business_card_details->copyright) ? (str_starts_with($business_card_details->copyright, 'http') ? $business_card_details->copyright : 'https://'.$business_card_details->copyright) : env('APP_URL') }}" target="_blank" rel="noopener noreferrer">{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}</a>
                                             <span id="year"></span>{{ __('. All Rights Reserved.') }}
                                         </div>
                                     </div>
@@ -1227,7 +1227,7 @@
                     <div class="modal-content py-4 text-left px-6">
                         <div class="justify-between items-center px-6 qr-code"></div>
                         <a id="download"
-                            onclick="downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500)"
+                            onclick="downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500, '{{ addslashes($business_card_details->title) }}')"
                             class="mt-3 cursor-pointer w-full flex justify-center items-center content-center bg-indigo-500 hover:bg-indigo-600 shadow-lg hover:shadow-lg h-8 w-8 rounded fill-current text-white qr-code-download">
                             <span>{{ __('Download') }}</span>
                         </a>
@@ -1328,7 +1328,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script type="text/javascript" src="{{ url('js/smooth-scroll.polyfills.min.js') }}"></script>
-    <script type="text/javascript" src="{{ url('app/js/footer.js') }}"></script>
+    <script type="text/javascript" src="{{ url('app/js/footer.js') }}?v=1.4"></script>
     <script src="{{ url('templates/js/template-1.js') }}"></script>
     <script type="text/javascript" src="{{ url('js/jquery-qrcode.min.js') }}"></script>
 
@@ -1487,6 +1487,13 @@
                     errorMessage1.classList.add('hidden');
                     successMessage1.classList.remove('hidden');
                     successMessage1.innerHTML = data.message || 'Your service has been successfully booked!';
+                        // Redirect to whatsapp url
+                        if (data.whatsapp_url && data.whatsapp_url !== '#') {
+                            setTimeout(() => {
+                                window.location.href = data.whatsapp_url;
+                            }, 3000);
+                        }
+
                 } else {
                     successMessage1.classList.add('hidden');
                     errorMessage1.classList.remove('hidden');

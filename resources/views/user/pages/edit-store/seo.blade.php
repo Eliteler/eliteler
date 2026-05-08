@@ -73,6 +73,7 @@
                                                 <div class="form-label">{{ __('Favicon') }}</div>
                                                 <div>
                                                     <input type="file" class="form-control" name="favicon" id="favicon" accept="image/*">
+                                                    <small class="form-hint text-muted mt-1 d-block"><i class="ti ti-photo me-1"></i>{{ __(':size px recommended', ['size' => '32 x 32 px']) }}</small>
                                                 </div>
                                             </div>
                                         </div>

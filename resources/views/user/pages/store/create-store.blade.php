@@ -169,6 +169,7 @@ foreach ($themes as $value => $theme) {
                                                 <input type="file" class="form-control" id="coverInput"
                                                     placeholder="{{ __('Banner') }}" required
                                                     accept=".jpeg,.jpg,.png,.gif,.svg" />
+                                                <small class="form-hint text-muted mt-1 d-block"><i class="ti ti-photo me-1"></i>{{ __(':size px recommended', ['size' => '1200 x 400 px']) }}</small>
                                                 <input type="hidden" class="form-control" name="banner" value="{{ old('banner') }}">
                                                 <small class="fw-bold"><span class="text-danger">*</span> {{ __('Upload banner images one after the other') }}</small>
                                             </div>
@@ -181,6 +182,7 @@ foreach ($themes as $value => $theme) {
                                                 <input type="file" class="form-control" id="logo"
                                                     placeholder="{{ __('Logo') }}" required
                                                     accept=".jpeg,.jpg,.png,.gif,.svg" />
+                                                <small class="form-hint text-muted mt-1 d-block"><i class="ti ti-photo me-1"></i>{{ __(':size px recommended', ['size' => '800 x 800 px']) }}</small>
                                                 <input type="hidden" class="form-control" name="logo" value="{{ old('logo') }}">
                                             </div>
                                         </div>
@@ -189,7 +191,7 @@ foreach ($themes as $value => $theme) {
                                         <div class="col-md-6 col-xl-6">
                                             <div class="mb-3">
                                                 <label class="form-label required">{{ __('Store name') }}</label>
-                                                <input type="text" class="form-control" name="title"
+                                                <input type="text" class="form-control" name="title" id="store-title"
                                                     onload="convertToLink(this.value); checkLink()"
                                                     onkeyup="convertToLink(this.value); checkLink()"
                                                     value="{{ old('title') }}"
@@ -294,7 +296,7 @@ foreach ($themes as $value => $theme) {
                                         <div class="col-md-12 col-xl-12">
                                             <div class="mb-3">
                                                 <label class="form-label text-primary">{{ __('Copyright (Optional)') }}</label>
-                                                <input type="text" class="form-control" name="copyright"
+                                                <input type="text" class="form-control" name="copyright" id="store-copyright"
                                                     value="{{ old('copyright') }}"
                                                     placeholder="{{ parse_url(config('app.url'), PHP_URL_HOST) }}">
                                                 <small class="form-hint">{{ __('Leave blank to use site domain') }}</small>
@@ -614,6 +616,29 @@ $(document).ready(function () {
         pushedCoverImages.push(imageUrl);
         $('input[name="banner"]').val(pushedCoverImages);
     }
+});
+</script>
+<script>
+// Sync copyright from title
+document.addEventListener('DOMContentLoaded', function () {
+    var titleInput     = document.getElementById('store-title');
+    var copyrightInput = document.getElementById('store-copyright');
+    var copyrightManuallyEdited = copyrightInput.value.trim() !== '';
+
+    copyrightInput.addEventListener('input', function () {
+        copyrightManuallyEdited = this.value.trim() !== '';
+    });
+
+    titleInput.addEventListener('input', function () {
+        if (!copyrightManuallyEdited) {
+            copyrightInput.value = this.value;
+        }
+    });
+    titleInput.addEventListener('keyup', function () {
+        if (!copyrightManuallyEdited) {
+            copyrightInput.value = this.value;
+        }
+    });
 });
 </script>
 <script>

@@ -105,6 +105,7 @@
                                                                 onclick="openMedia({{ $testimonials[$i]->id }})">{{ __('Choose
                                                                                                                         image') }}</button>
                                                         </div>
+                                                        <small class="form-hint text-muted mt-1 d-block"><i class="ti ti-photo me-1"></i>{{ __(':size px recommended', ['size' => '400 x 400 px']) }}</small>
                                                     </div>
                                                 </div>
                                                 <div class="col-md-6 col-xl-6">

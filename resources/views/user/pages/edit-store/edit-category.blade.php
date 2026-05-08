@@ -128,6 +128,7 @@
                                         <input type="file" class="form-control" name="category_image" id="categoryImage"
                                             placeholder="{{ __('Thumbnail') }}"
                                             accept=".jpeg,.jpg,.png" required />
+                                        <small class="form-hint text-muted mt-1 d-block"><i class="ti ti-photo me-1"></i>{{ __(':size px recommended', ['size' => '600 x 400 px']) }}</small>
                                     </div>
                                 </div>
 
@@ -171,6 +172,7 @@
                                         <input type="file" class="form-control" name="category_image" id="updateCategoryImage"
                                             placeholder="{{ __('Thumbnail') }}"
                                             accept=".jpeg,.jpg,.png" />
+                                        <small class="form-hint text-muted mt-1 d-block"><i class="ti ti-photo me-1"></i>{{ __(':size px recommended', ['size' => '600 x 400 px']) }}</small>
                                     </div>
                                 </div>
 

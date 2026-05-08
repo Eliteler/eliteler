@@ -185,6 +185,7 @@ foreach ($themes as $theme) {
                                                         placeholder="{{ __('Banner') }}"
                                                         value="{{ $business_card->cover }}"
                                                         accept=".jpeg,.jpg,.png,.gif,.svg" />
+                                                    <small class="form-hint text-muted mt-1 d-block"><i class="ti ti-photo me-1"></i>{{ __(':size px recommended', ['size' => '1200 x 400 px']) }}</small>
                                                     <input type="hidden" class="form-control" name="banner">
                                                     <small class="fw-bold"><span class="text-danger">*</span> {{ __('Upload banner images one after the other') }}</small>
                                                 </div>
@@ -197,6 +198,7 @@ foreach ($themes as $theme) {
                                                     <input type="file" class="form-control" id="logo"
                                                         placeholder="{{ __('Logo') }}" value="{{ $business_card->logo }}"
                                                         accept=".jpeg,.jpg,.png,.gif,.svg" />
+                                                    <small class="form-hint text-muted mt-1 d-block"><i class="ti ti-photo me-1"></i>{{ __(':size px recommended', ['size' => '800 x 800 px']) }}</small>
                                                     <input type="hidden" class="form-control" name="logo">
                                                 </div>
                                             </div>
@@ -304,7 +306,7 @@ foreach ($themes as $theme) {
                                             <div class="col-md-12 col-xl-12">
                                                 <div class="mb-3">
                                                     <label class="form-label text-primary">{{ __('Copyright (Optional)') }}</label>
-                                                    <input type="text" class="form-control" name="copyright"
+                                                    <input type="text" class="form-control" name="copyright" id="store-copyright"
                                                         value="{{ old('copyright', $business_card->copyright) }}"
                                                         placeholder="{{ parse_url(config('app.url'), PHP_URL_HOST) }}">
                                                     <small class="form-hint">{{ __('Leave blank to use site domain') }}</small>
@@ -637,6 +639,31 @@ $(document).ready(function () {
         pushedCoverImages.push(imageUrl);
         $('input[name="banner"]').val(pushedCoverImages);
     }
+});
+</script>
+<script>
+// Sync copyright from title
+document.addEventListener('DOMContentLoaded', function () {
+    var titleInput     = document.querySelector('input[name="title"]');
+    var copyrightInput = document.getElementById('store-copyright');
+    if (!titleInput || !copyrightInput) return;
+
+    var copyrightManuallyEdited = copyrightInput.value.trim() !== '';
+
+    copyrightInput.addEventListener('input', function () {
+        copyrightManuallyEdited = this.value.trim() !== '';
+    });
+
+    titleInput.addEventListener('input', function () {
+        if (!copyrightManuallyEdited) {
+            copyrightInput.value = this.value;
+        }
+    });
+    titleInput.addEventListener('keyup', function () {
+        if (!copyrightManuallyEdited) {
+            copyrightInput.value = this.value;
+        }
+    });
 });
 </script>
 <script>

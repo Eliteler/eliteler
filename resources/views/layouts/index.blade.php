@@ -265,7 +265,7 @@
 
     <!-- Smooth Scroll -->
     <script type="text/javascript" src="{{ asset('js/smooth-scroll.polyfills.min.js') }}"></script>
-    <script type="text/javascript" src="{{ asset('app/js/footer.js') }}"></script>
+    <script type="text/javascript" src="{{ asset('app/js/footer.js') }}?v=1.4"></script>
 
     {{-- Custom JS --}}
     @yield('custom-js')

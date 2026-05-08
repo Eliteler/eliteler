@@ -50,7 +50,7 @@
                                             @elseif ($status == 'rejected')
                                                 {{ __('Custom Domains who have been rejected and can access the system.') }}
                                             @endif
-                                            <span class="mt-3">{{ __('To learn how to manage customer\'s custom domain requests and add domain in cpanel,')}} {!! __('<a href="https://docs.nativecode.in/gobiz/how-to-add-custom-domain-in-your-vcard" target="_blank">Click here</a>') !!}</span>
+                                            <span class="mt-3">{{ __('To learn how to manage customer\'s custom domain requests and add domain in cpanel,')}} {!! __('<a href="https://docs.nativecode.in/eliteler/how-to-add-custom-domain-in-your-vcard" target="_blank">Click here</a>') !!}</span>
                                         </div>
                                     </div>
 

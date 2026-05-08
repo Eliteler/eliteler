@@ -99,6 +99,7 @@
                                                     <div class="mb-3">
                                                         <label class="form-label required">{{ __('Image') }}</label>
                                                         <input type="file" class="form-control" name="info_pop_image" id="info_pop_image" placeholder="{{ __('Image') }}">
+                                                        <small class="form-hint text-muted mt-1 d-block"><i class="ti ti-photo me-1"></i>{{ __(':size px recommended', ['size' => '800 x 600 px']) }}</small>
                                                     </div>
                                                 </div>
                         

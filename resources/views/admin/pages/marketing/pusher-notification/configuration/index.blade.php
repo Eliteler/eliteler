@@ -19,7 +19,7 @@
                             {{ __('Pusher Notification Configuration') }}
                         </h2>
                     </div>
-                    <span class="mt-3">{{ __('How to configure Pusher notifications?') }} {!! __('<a href="https://docs.nativecode.in/gobiz/how-to-get-pusher-beams-instance-id-and-secret-key" target="_blank">Click here</a>') !!}</span>
+                    <span class="mt-3">{{ __('How to configure Pusher notifications?') }} {!! __('<a href="https://docs.nativecode.in/eliteler/how-to-get-pusher-beams-instance-id-and-secret-key" target="_blank">Click here</a>') !!}</span>
                 </div>
             </div>
         </div>

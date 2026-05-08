@@ -66,6 +66,7 @@
                                                 <input type="file" class="form-control" name="profile_picture"
                                                     placeholder="{{ __('Profile Picture') }}..."
                                                     accept=".jpeg,.jpg,.png,.gif,.svg" />
+                                                <small class="form-hint text-muted mt-1 d-block"><i class="ti ti-photo me-1"></i>{{ __(':size px recommended', ['size' => '400 x 400 px']) }}</small>
                                                 <small class='text-muted'>{{ __('Recommended : 200 x 200 pixels or 500 x 500 pixels') }}</small>
                                             </div>
                                         </div>

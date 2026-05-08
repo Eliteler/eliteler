@@ -162,6 +162,23 @@
 
                                                 <div class="col-md-6 col-xl-6">
                                                     <div class="mb-3">
+                                                        <label class="form-label">{{ __('Logo') }}</label>
+                                                        <input type="file" class="form-control" id="logo"
+                                                            placeholder="{{ __('Logo') }}"
+                                                            accept=".jpeg,.jpg,.png,.gif,.svg" />
+                                                        <small class="form-hint text-muted mt-1 d-block"><i class="ti ti-photo me-1"></i>{{ __(':size px recommended', ['size' => '800 x 800 px']) }}</small>
+                                                        <input type="hidden" class="form-control" name="logo"
+                                                            value="{{ old('logo', $business_card->profile) }}">
+                                                    </div>
+                                                    {{-- Logo Preview --}}
+                                                    <div class="mb-3" id="logoPreviewSection">
+                                                        <span class="avatar avatar-xl w-100 me-3" id="logoPreview"
+                                                            style="background-image: url({{ asset($business_card->profile) }}); background-size: contain; background-position: left;"></span>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6 col-xl-6">
+                                                    <div class="mb-3">
                                                         <div class="form-label">{{ __('Cover type') }}</div>
                                                         <select id="coverType" name="cover_type"
                                                             class="form-control cover_type" required>
@@ -222,34 +239,16 @@
                                                             placeholder="{{ __('Cover') }}"
                                                             value="{{ $business_card->cover }}"
                                                             accept=".jpeg,.jpg,.png,.gif,.svg" />
+                                                        <small class="form-hint text-muted mt-1 d-block"><i class="ti ti-photo me-1"></i>{{ __(':size px recommended', ['size' => '1200 x 400 px']) }}</small>
                                                         <input type="hidden" class="form-control" name="cover"
                                                             value="{{ old('cover', $business_card->cover) }}">
                                                     </div>
-                                                </div>
-
-                                                <div class="col-md-6 col-xl-6">
-                                                    <div class="mb-3">
-                                                        <label class="form-label">{{ __('Logo') }}</label>
-                                                        <input type="file" class="form-control" id="logo"
-                                                            placeholder="{{ __('Logo') }}"
-                                                            accept=".jpeg,.jpg,.png,.gif,.svg" />
-                                                        <input type="hidden" class="form-control" name="logo"
-                                                            value="{{ old('logo', $business_card->profile) }}">
+                                                    {{-- Cover Preview --}}
+                                                    <div class="mb-3" id="coverPreviewSection">
+                                                        <span class="avatar avatar-xl w-100 me-3" id="coverPreview"
+                                                            style="background-image: url({{ asset($business_card->cover) }}); background-position: left;"></span>
                                                     </div>
                                                 </div>
-
-                                                {{-- Cover Preview --}}
-                                                <div class="col-md-6 col-xl-6 mb-3" id="coverPreviewSection">
-                                                    <span class="avatar avatar-xl w-100 me-3" id="coverPreview"
-                                                        style="background-image: url({{ asset($business_card->cover) }}); background-position: left;"></span>
-                                                </div>
-
-                                                {{-- Logo Preview --}}
-                                                <div class="col-md-6 col-xl-6 mb-3" id="logoPreviewSection">
-                                                    <span class="avatar avatar-xl w-100 me-3" id="logoPreview"
-                                                        style="background-image: url({{ asset($business_card->profile) }}); background-size: contain; background-position: left;"></span>
-                                                </div>
-
 
                                                 <div class="col-md-6 col-xl-6">
                                                     <div class="mb-3">
@@ -263,9 +262,44 @@
                                                     </div>
                                                 </div>
 
+                                                <div class="col-md-6 col-xl-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">{{ __('Title in another language (Optional)') }}</label>
+                                                        <input type="text" class="form-control" name="title2"
+                                                            placeholder="{{ __('Secondary Title') }}"
+                                                            value="{{ old('title2', $business_card->title2) }}">
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6 col-xl-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">{{ __('Sub Title (Optional)') }}</label>
+                                                        <input type="text" class="form-control" name="subtitle"
+                                                            placeholder="{{ __('Location / Job title') }}"
+                                                            value="{{ old('subtitle', $business_card->sub_title) }}">
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6 col-xl-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">{{ __('Subtitle in another language (Optional)') }}</label>
+                                                        <input type="text" class="form-control" name="subtitle2"
+                                                            placeholder="{{ __('Secondary Sub Title') }}"
+                                                            value="{{ old('subtitle2', $business_card->subtitle2) }}">
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-12 col-xl-12">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">{{ __('Description (Optional)') }}</label>
+                                                        <textarea class="form-control" name="description" id="description" data-bs-toggle="autosize"
+                                                            placeholder="{{ __('About business / Bio') }}">{{ old('description', $business_card->description) }}</textarea>
+                                                    </div>
+                                                </div>
+
                                                 {{-- Personalized Link --}}
                                                 @if ($plan_details->personalized_link)
-                                                    <div class="col-md-6 col-xl-6">
+                                                    <div class="col-md-12 col-xl-12">
                                                         <div class="mb-3">
                                                             <label
                                                                 class="form-label required">{{ __('Personalized Link') }}</label>
@@ -286,41 +320,6 @@
                                                         </div>
                                                     </div>
                                                 @endif
-
-                                                <div class="col-md-6 col-xl-6">
-                                                    <div class="mb-3">
-                                                        <label class="form-label">{{ __('Sub Title (Optional)') }}</label>
-                                                        <input type="text" class="form-control" name="subtitle"
-                                                            placeholder="{{ __('Location / Job title') }}"
-                                                            value="{{ old('subtitle', $business_card->sub_title) }}">
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-6 col-xl-6">
-                                                    <div class="mb-3">
-                                                        <label class="form-label">{{ __('Title in another language (Optional)') }}</label>
-                                                        <input type="text" class="form-control" name="title2"
-                                                            placeholder="{{ __('Secondary Title') }}"
-                                                            value="{{ old('title2', $business_card->title2) }}">
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-6 col-xl-6">
-                                                    <div class="mb-3">
-                                                        <label class="form-label">{{ __('Subtitle in another language (Optional)') }}</label>
-                                                        <input type="text" class="form-control" name="subtitle2"
-                                                            placeholder="{{ __('Secondary Sub Title') }}"
-                                                            value="{{ old('subtitle2', $business_card->subtitle2) }}">
-                                                    </div>
-                                                </div>
-
-                                                <div class="col-md-12 col-xl-12">
-                                                    <div class="mb-3">
-                                                        <label class="form-label">{{ __('Description (Optional)') }}</label>
-                                                        <textarea class="form-control" name="description" id="description" data-bs-toggle="autosize"
-                                                            placeholder="{{ __('About business / Bio') }}">{{ old('description', $business_card->description) }}</textarea>
-                                                    </div>
-                                                </div>
                                                 </div>
 
                                                 <div class="col-md-12 col-xl-12">

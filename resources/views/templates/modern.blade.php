@@ -368,16 +368,16 @@
     {{-- Smooth Scroll --}}
     <script src="{{ url('js/smooth-scroll.polyfills.min.js') }}"></script>
     {{-- Other JS --}}
-    <script type="text/javascript" src="{{ url('app/js/footer.js') }}"></script>
+    <script type="text/javascript" src="{{ url('app/js/footer.js') }}?v=1.4"></script>
     {{-- Flatpickr JS --}}
     <script src="{{ url('js/flatpickr.min.js') }}"></script>
     {{-- Slick --}}
     <script src="{{ url('js/slick.min.js') }}"></script>
 
     {{-- Animation --}}
-    <script src="{{ url('js/gobiz-animation.min.js') }}"></script>
-    <script src="{{ url('js/gobiz-animation-scrolltrigger.min.js') }}"></script>
-    <script src="{{ url('js/gobiz-animation-splittext.js') }}"></script>
+    <script src="{{ url('js/eliteler-animation.min.js') }}"></script>
+    <script src="{{ url('js/eliteler-animation-scrolltrigger.min.js') }}"></script>
+    <script src="{{ url('js/eliteler-animation-splittext.js') }}"></script>
 
     {{-- Custom JS --}}
     @yield('custom-js')
@@ -638,6 +638,13 @@
                         errorMessage1.classList.add('hidden');
                         successMessage1.classList.remove('hidden');
                         successMessage1.innerHTML = data.message || 'Your service has been successfully booked!';
+                        // Redirect to whatsapp url
+                        if (data.whatsapp_url && data.whatsapp_url !== '#') {
+                            setTimeout(() => {
+                                window.location.href = data.whatsapp_url;
+                            }, 3000);
+                        }
+
                     } else {
                         successMessage1.classList.add('hidden');
                         errorMessage1.classList.remove('hidden');

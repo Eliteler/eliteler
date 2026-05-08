@@ -1125,7 +1125,7 @@
                                             class="flex pt-5 px-3 m-auto font-semibold text-white text-sm flex-col md:flex-row max-w-6xl">
                                             <div class="mt-2 text-gray-500">
                                                 {{ __('Copyright') }} &copy;
-                                                <a class="text-orange-500" href="{{ url()->current() }}">
+                                                <a class="text-orange-500" href="{{ !empty($business_card_details->copyright) ? (str_starts_with($business_card_details->copyright, 'http') ? $business_card_details->copyright : 'https://'.$business_card_details->copyright) : env('APP_URL') }}" target="_blank" rel="noopener noreferrer">
                                                     {{ !empty($business_card_details->copyright) ? $business_card_details->copyright : $card_details->title }}</a><span id="year"></span>{{ __('. All Rights Reserved.') }}
                                             </div>
                                         </div>
@@ -1136,7 +1136,7 @@
                                             class="flexpx-3 m-auto pt-5 font-semibold text-white text-sm flex-col md:flex-row max-w-6xl">
                                             <div class="mt-2 text-gray-500">
                                                 {{ __('Made with') }}
-                                                <a class="text-orange-500" href="{{ env('APP_URL') }}">
+                                                <a class="text-orange-500" href="{{ !empty($business_card_details->copyright) ? (str_starts_with($business_card_details->copyright, 'http') ? $business_card_details->copyright : 'https://'.$business_card_details->copyright) : env('APP_URL') }}" target="_blank" rel="noopener noreferrer">
                                                     {{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }} </a>
                                                 <span id="year"></span>{{ __('. All Rights Reserved.') }}
                                             </div>
@@ -1377,6 +1377,9 @@
                 <!-- Modal content (stops propagation to prevent closing when clicking inside) -->
                 <div class="rounded-2xl w-full max-w-md p-6 mx-4 space-y-6 border-orange-200 bg-orange-50 qr-modal-overlay"
                     onclick="event.stopPropagation()">
+                                        <!-- Scan QR Title -->
+                    <p style="text-align:center;font-size:1.15rem;font-weight:700;margin-bottom:4px;">{{ __('Scan QR Code') }}</p>
+                    <p class="qr-card-name" style="text-align:center;font-weight:600;font-size:.95rem;margin-bottom:8px;opacity:.8;">{{ $business_card_details->title }}</p>
                     <!-- Qr Code -->
                     <div class="flex justify-center flex-col items-center">
                         <div class="qr-code mb-2"></div>
@@ -1384,7 +1387,7 @@
 
                     <!-- Submit Button -->
                     <div class="flex justify-center">
-                        <button onclick="downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500)" id="download"
+                        <button onclick="downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500, '{{ addslashes($business_card_details->title) }}')" id="download"
                             class="bg-orange-100 border border-orange-200 font-bold p-3 rounded-full">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -1493,7 +1496,7 @@
     {{-- Smooth Scroll --}}
     <script src="{{ url('js/smooth-scroll.polyfills.min.js') }}"></script>
     {{-- Other JS --}}
-    <script type="text/javascript" src="{{ url('app/js/footer.js') }}"></script>
+    <script type="text/javascript" src="{{ url('app/js/footer.js') }}?v=1.4"></script>
     {{-- Swiper JS --}}
     <script src="{{ url('js/swiper-element-bundle.min.js') }}"></script>
     {{-- Flatpicker --}}
@@ -1646,6 +1649,13 @@
                         errorMessage1.classList.add('hidden');
                         successMessage1.classList.remove('hidden');
                         successMessage1.innerHTML = data.message || 'Your service has been successfully booked!';
+                        // Redirect to whatsapp url
+                        if (data.whatsapp_url && data.whatsapp_url !== '#') {
+                            setTimeout(() => {
+                                window.location.href = data.whatsapp_url;
+                            }, 3000);
+                        }
+
                     } else {
                         successMessage1.classList.add('hidden');
                         errorMessage1.classList.remove('hidden');

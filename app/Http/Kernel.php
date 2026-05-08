@@ -81,6 +81,6 @@ class Kernel extends HttpKernel
         'scriptsanitizer' => ScriptSanitizer::class,
         'frame.destroyer' => \App\Http\Middleware\FrameDestroyerMiddleware::class,
         'redirect.subdomain' => \App\Http\Middleware\RedirectSubdomain::class,
-        'gobiz.common' => \App\Http\Middleware\GoBizModernCommonData::class,
+        'eliteler.common' => \App\Http\Middleware\GoBizModernCommonData::class,
     ];
 }

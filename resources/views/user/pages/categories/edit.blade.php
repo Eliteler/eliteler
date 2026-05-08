@@ -59,6 +59,7 @@
                                                 <input type="file" class="form-control" name="thumbnail"
                                                     placeholder="{{ __('Thumbnail') }}"
                                                     accept=".jpeg,.jpg,.png" />
+                                                <small class="form-hint text-muted mt-1 d-block"><i class="ti ti-photo me-1"></i>{{ __(':size px recommended', ['size' => '600 x 400 px']) }}</small>
                                             </div>
                                         </div>
 

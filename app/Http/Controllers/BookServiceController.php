@@ -2,7 +2,7 @@
 
 /*
  |--------------------------------------------------------------------------
- | GoBiz vCard SaaS
+ | Eliteler vCard SaaS
  |--------------------------------------------------------------------------
  | Developed by NativeCode © 2021 - https://nativecode.in
  | All rights reserved
@@ -173,10 +173,45 @@ class BookServiceController extends Controller
             } catch (\Exception $e) {
             }
 
+            // Send service booked message to vcard owner's WhatsApp
+            $whatsAppExists = \App\BusinessField::where('card_id', $request->card)->where('type', 'wa')->exists();
+
+            $whatsapp_url = "#";
+
+            if ($whatsAppExists) {
+                $whatsAppNumber = \App\BusinessField::where('card_id', $request->card)->where('type', 'wa')->first()->content;
+
+                $vcardLanguage = $vcardOwner->card_lang ?? 'en';
+
+                // Apply locale
+                app()->setLocale($vcardLanguage);
+
+                $businessName = $vcardOwner->title ?? '';
+
+                // Build WhatsApp message using the JSON keys
+                $serviceMessage  = __("New Service Booking") . "\n\n";
+                $serviceMessage .= __("vCard Name") . ": " . $businessName . "\n";
+                $serviceMessage .= __("Customer Name") . ": " . $request->customer_name . "\n";
+                $serviceMessage .= __("Customer Email") . ": " . $request->customer_email . "\n";
+                $serviceMessage .= __("Customer Phone") . ": " . $request->customer_phone . "\n";
+                $serviceMessage .= __("Number of Guests") . ": " . $request->no_of_persons . "\n";
+                $serviceMessage .= __("Checkin Date") . ": " . $request->service_start_date . "\n";
+                $serviceMessage .= __("Checkin Time") . ": " . $request->service_start_time . "\n";
+                $serviceMessage .= __("Checkout Date") . ": " . $request->service_end_date . "\n";
+                $serviceMessage .= __("Checkout Time") . ": " . $request->service_end_time . "\n";
+                $serviceMessage .= __("Address") . ": " . $request->customer_address . "\n";
+                $serviceMessage .= __("Notes") . ": " . $request->customer_notes;
+
+                // Format number
+                $whatsAppNumber = preg_replace('/[^0-9]/', '', $whatsAppNumber);
+
+                $whatsapp_url = "https://api.whatsapp.com/send?phone={$whatsAppNumber}&text=" . urlencode($serviceMessage);
+            }
+
             if ($bookService) {
-                return response()->json(['success' => true, 'message' => trans('Your service has been successfully booked!')]);
+                return response()->json(['success' => true, 'message' => trans('Your service has been successfully booked!'), 'whatsapp_url' => $whatsapp_url]);
             } else {
-                return response()->json(['success' => false, 'message' => trans('Booking failed. Please check your details and try again.')]);
+                return response()->json(['success' => false, 'message' => trans('Booking failed. Please check your details and try again.'), 'whatsapp_url' => $whatsapp_url]);
             }
         } else {
             return response()->json(['success' => false, 'message' => trans('Service booking is not enabled for this vCard.')]);

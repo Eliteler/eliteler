@@ -142,7 +142,7 @@
                                     <div class="card bg-custom2">
                                         <div class="card-body">
                                             <div class="d-flex align-items-center mb-3">
-                                                <div class="subheader text-custom">{{ __('Business Cards') }}</div>
+                                                <div class="subheader text-custom">{{ __('eCards') }}</div>
                                             </div>
                                             <div class="h4 h-lg-1 text-custom">
                                                 {{ $business_card == 999 ? __('Unlimited') : $business_card }}</div>
@@ -180,7 +180,7 @@
                                     <div class="card bg-custom2">
                                         <div class="card-body">
                                             <div class="d-flex align-items-center mb-3">
-                                                <div class="subheader text-custom">{{ __('Business Cards') }}</div>
+                                                <div class="subheader text-custom">{{ __('eCards') }}</div>
                                             </div>
                                             <div class="h4 h-lg-1 text-custom">
                                                 {{ $business_card == 999 ? __('Unlimited') : $business_card }}</div>
@@ -251,7 +251,7 @@
                                             @if ($active_plan->plan_type === 'VCARD' || $active_plan->plan_type === 'BOTH')
                                                 <div class="px-3">
                                                     <div>
-                                                        <span class="status-dot bg-orange"></span> {{ __('vCards') }}
+                                                        <span class="status-dot bg-orange"></span> {{ __('eCards') }}
                                                     </div>
                                                     <div class="h2">{{ $totalvCards }}</div>
                                                 </div>
@@ -292,7 +292,7 @@
                     <div class="col-md-8 col-lg-12 col-xl-8 mb-2">
                         <div class="card">
                             <div class="card-header">
-                                <div class="subheader">{{ __('This week\'s audience of cards') }}</div>
+                                <div class="subheader">{{ __('This week\'s audience of eCards') }}</div>
                             </div>
                             <div class="card-body">
                                 <div id="thisWeekAudience"></div>
@@ -331,7 +331,7 @@
                     <div class="col-md-4 col-lg-12 col-xl-4 mb-2">
                         <div class="card visitors-card">
                             <div class="card-header">
-                                <div class="subheader">{{ __('Top 20 Most Viewed Cards') }}</div>
+                                <div class="subheader">{{ __('Top 20 Most Viewed eCards') }}</div>
                             </div>
                             <div class="card-table table-responsive">
                                 <table class="table table-vcenter">
@@ -408,7 +408,7 @@
                 series: [
                     @if ($active_plan->plan_type === 'VCARD' || $active_plan->plan_type === 'BOTH')
                         {
-                            name: `{{ __('vCards') }}`,
+                            name: `{{ __('eCards') }}`,
                             data: [{{ $vcards }}]
                         }@if ($active_plan->plan_type === 'STORE' || $active_plan->plan_type === 'BOTH'),@endif
                     @endif
@@ -539,7 +539,7 @@
                 series: [
                     @if ($active_plan->plan_type === 'VCARD' || $active_plan->plan_type === 'BOTH')
                         {
-                            name: `{{ __('vCards') }}`,
+                            name: `{{ __('eCards') }}`,
                             data: {!! json_encode($weekData['vcard']) !!}
                         }@if ($active_plan->plan_type === 'STORE' || $active_plan->plan_type === 'BOTH'),@endif
                     @endif
@@ -667,7 +667,7 @@
                     var modalContent = modal.querySelector('.modal-content');
                     modalContent.innerHTML = `
                         <div class="modal-header">
-                            <h5 class="modal-title text-capitalize">{{ __('vCard name')}}: ${info.event._def.title}</h5>
+                            <h5 class="modal-title text-capitalize">{{ __('eCard name')}}: ${info.event._def.title}</h5>
                         </div>
                         <div class="modal-body">
                             <div class="row">

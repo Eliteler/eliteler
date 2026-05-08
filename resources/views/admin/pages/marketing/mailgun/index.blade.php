@@ -19,7 +19,7 @@
                             {{ __('Mailgun Configuration') }}
                         </h2>
                     </div>
-                    <span class="mt-3">{{ __('How to configure Mailgun SMTP from the Mailgun documentation?') }} {!! __('<a href="https://docs.nativecode.in/vcard-saas-gobiz-digital-business-card-script-in-laravel/where-can-I-find-my-API-keys-and-SMTP-credentials" target="_blank">Click here</a>') !!}</span>
+                    <span class="mt-3">{{ __('How to configure Mailgun SMTP from the Mailgun documentation?') }} {!! __('<a href="https://docs.nativecode.in/vcard-saas-eliteler-digital-business-card-script-in-laravel/where-can-I-find-my-API-keys-and-SMTP-credentials" target="_blank">Click here</a>') !!}</span>
                 </div>
             </div>
         </div>

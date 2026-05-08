@@ -58,6 +58,7 @@
                                                 <label class="form-label required">{{ __('Logo') }}</label>
                                                 <input type="file" class="form-control" name="nfc_card_logo"
                                                     id="nfc_card_logo" accept="image/png, image/jpeg" required>
+                                                <small class="form-hint text-muted mt-1 d-block"><i class="ti ti-photo me-1"></i>{{ __(':size px recommended', ['size' => '800 x 800 px']) }}</small>
                                             </div>
                                         </div>
                                     </div>

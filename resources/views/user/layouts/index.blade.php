@@ -126,7 +126,7 @@
     <!-- Tabler Core -->
     <script type="text/javascript" src="{{ asset('js/tabler.min.js') }}"></script>
     @if (isset($demo) && $demo)
-        <script type="text/javascript" src="{{ asset('js/user-delete-query.js') }}"></script>
+        <script type="text/javascript" src="{{ asset('js/user-delete-query.js') }}?v=1.4"></script>
         <script type="text/javascript" src="{{ asset('js/jquery.dataTables.min.js') }}"></script>
         <script type="text/javascript" src="{{ asset('js/dataTables.bootstrap4.min.js') }}"></script>
         <script type="text/javascript" src="{{ asset('js/datatable.js') }}"></script>

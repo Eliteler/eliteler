@@ -212,7 +212,7 @@ class GoBizCommonService
         );
     }
 
-    // Get gobiz modern config values
+    // Get eliteler modern config values
     public static function gobizModernConfig()
     {
         return Cache::remember(
@@ -223,7 +223,7 @@ class GoBizCommonService
         );
     }
 
-    // Get gobiz original config values
+    // Get eliteler original config values
     public static function gobizOriginalConfig()
     {
         return Cache::remember(

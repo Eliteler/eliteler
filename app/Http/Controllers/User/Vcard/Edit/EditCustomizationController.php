@@ -323,6 +323,39 @@ class EditCustomizationController extends Controller
                     'custom_styles' => json_encode($customStyles),
                 ]);
                 return response()->json(['status' => 'success', 'type' => $request->type]);
+
+            } elseif ($request->type == 'title2_color') {
+                $customStyles                       = json_decode(BusinessCard::where('card_id', $request->card_id)->first()->custom_styles, true);
+                $customStyles['title2_color'] = $request->title2_color;
+
+                BusinessCard::where('card_id', $request->card_id)->update([
+                    'custom_styles' => json_encode($customStyles),
+                ]);
+                return response()->json(['status' => 'success', 'type' => $request->type]);
+            } elseif ($request->type == 'subtitle2_color') {
+                $customStyles                       = json_decode(BusinessCard::where('card_id', $request->card_id)->first()->custom_styles, true);
+                $customStyles['subtitle2_color'] = $request->subtitle2_color;
+
+                BusinessCard::where('card_id', $request->card_id)->update([
+                    'custom_styles' => json_encode($customStyles),
+                ]);
+                return response()->json(['status' => 'success', 'type' => $request->type]);
+            } elseif ($request->type == 'subtitle_font_family') {
+                $customStyles                       = json_decode(BusinessCard::where('card_id', $request->card_id)->first()->custom_styles, true);
+                $customStyles['subtitle_font_family'] = $request->subtitle_font_family;
+
+                BusinessCard::where('card_id', $request->card_id)->update([
+                    'custom_styles' => json_encode($customStyles),
+                ]);
+                return response()->json(['status' => 'success', 'type' => $request->type]);
+            } elseif ($request->type == 'copyright_color') {
+                $customStyles                       = json_decode(BusinessCard::where('card_id', $request->card_id)->first()->custom_styles, true);
+                $customStyles['copyright_color']    = $request->copyright_color;
+
+                BusinessCard::where('card_id', $request->card_id)->update([
+                    'custom_styles' => json_encode($customStyles),
+                ]);
+                return response()->json(['status' => 'success', 'type' => $request->type]);
             }
         } else {
             return response()->json(['status' => 'failed', 'message' => $validator->errors()->first(), 'type' => $request->type]);

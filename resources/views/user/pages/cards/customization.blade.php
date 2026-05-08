@@ -310,6 +310,7 @@
                                                 <input type="file" class="form-control" name="background_image"
                                                     id="background_image" accept=".jpeg,.png,.jpg,.svg"
                                                     onchange="updateCustomStyle('background_image')">
+                                                <small class="form-hint text-muted mt-1 d-block"><i class="ti ti-photo me-1"></i>{{ __(':size px recommended', ['size' => '1080 x 1920 px']) }}</small>
                                             </div>
                                         </div>
                                         {{-- Heading Color Background --}}

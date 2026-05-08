@@ -5,5 +5,5 @@
     "version": "1.0.0",
     "img": "aibuilder.png",
     "main_route": "admin.plugin.aibuilder",
-    "platform": "gobiz"
+    "platform": "eliteler"
 }

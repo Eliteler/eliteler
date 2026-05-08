@@ -143,7 +143,10 @@
     <!-- Modal content (stops propagation to prevent closing when clicking inside) -->
     <div class="rounded-2xl w-full max-w-md p-6 mx-4 space-y-6 bg-white qr-modal-overlay"
         onclick="event.stopPropagation()">
-        <!-- Qr Code -->
+        <!-- Scan QR Title -->
+        <p style="text-align:center;font-size:1.15rem;font-weight:700;margin-bottom:4px;">{{ __('Scan QR Code') }}</p>
+        <p class="qr-card-name" style="text-align:center;font-weight:600;font-size:.95rem;margin-bottom:8px;opacity:.8;">{{ $business_card_details->title }}</p>
+                <!-- Qr Code -->
         <div class="flex justify-center flex-col items-center">
             <div class="qr-code mb-2"></div>
         </div>
@@ -151,7 +154,7 @@
         <!-- Submit Button -->
         <div class="flex justify-center">
             <button id="download"
-                onclick="downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500)"
+                onclick="downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500, '{{ addslashes($business_card_details->title) }}')"
                 class="bg-green-100 border border-green-600 font-bold p-3 rounded-2xl">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"

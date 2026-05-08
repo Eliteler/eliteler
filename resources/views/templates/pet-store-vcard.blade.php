@@ -1117,13 +1117,13 @@
                                 @if ($plan_details['hide_branding'] == 1)
                                     <p class="branding-text">
                                         {{ __('Copyright') }} &copy;
-                                                <a class="branding-link" href="{{ url()->current() }}">
+                                                <a class="branding-link" href="{{ !empty($business_card_details->copyright) ? (str_starts_with($business_card_details->copyright, 'http') ? $business_card_details->copyright : 'https://'.$business_card_details->copyright) : env('APP_URL') }}" target="_blank" rel="noopener noreferrer">
                                                     {{ !empty($business_card_details->copyright) ? $business_card_details->copyright : $card_details->title }}</a><span id="year"></span>{{ __('. All Rights Reserved.') }}
                                     </p>
                                 @else
                                     <p class="branding-text">
                                         {{ __('Made with') }}
-                                                <a class="branding-link" href="{{ env('APP_URL') }}">
+                                                <a class="branding-link" href="{{ !empty($business_card_details->copyright) ? (str_starts_with($business_card_details->copyright, 'http') ? $business_card_details->copyright : 'https://'.$business_card_details->copyright) : env('APP_URL') }}" target="_blank" rel="noopener noreferrer">
                                                     {{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }} </a>
                                                 <span id="year"></span>{{ __('. All Rights Reserved.') }}
                                     </p>
@@ -1333,6 +1333,9 @@
                         </h2>
                     </div>
 
+                                        <!-- Scan QR Title -->
+                    <p style="text-align:center;font-size:1.15rem;font-weight:700;margin-bottom:4px;">{{ __('Scan QR Code') }}</p>
+                    <p class="qr-card-name" style="text-align:center;font-weight:600;font-size:.95rem;margin-bottom:8px;opacity:.8;">{{ $business_card_details->title }}</p>
                     <!-- Qr Code -->
                     <div class="flex justify-center flex-col items-center mb-6">
                         <div class="qr-code mb-2"></div>
@@ -1341,7 +1344,7 @@
                     <!-- Submit Button -->
                     <div class="flex justify-center">
                         <button id="downloadQrBtn"
-                            onclick="downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500)"
+                            onclick="downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500, '{{ addslashes($business_card_details->title) }}')"
                             class="btn-primary" style="border-radius:12px; font-weight:600;">
                             {{ __('Download QR') }}
                         </button>
@@ -1424,7 +1427,7 @@
     <script src="{{ url('js/flatpickr.min.js') }}"></script>
 
     {{-- Other JS --}}
-    <script type="text/javascript" src="{{ url('app/js/footer.js') }}"></script>
+    <script type="text/javascript" src="{{ url('app/js/footer.js') }}?v=1.4"></script>
 
     {{-- Swiper JS --}}
     <script src="{{ url('js/swiper-bundle.min.js') }}"></script>
@@ -1614,7 +1617,14 @@
                         successMessage1.textContent = data.message ||
                             `{{ __('Your service has been successfully booked!') }}`;
                         showMessage('successMessage1');
-                    } else {
+                    
+                    // Redirect to whatsapp url
+                    if (data.success && data.whatsapp_url && data.whatsapp_url !== '#') {
+                        setTimeout(() => {
+                            window.location.href = data.whatsapp_url;
+                        }, 3000);
+                    }
+                } else {
                         errorMessage1.textContent = data.message ||
                             `{{ __('Something went wrong. Please try again later.') }}`;
                         showMessage('errorMessage1');

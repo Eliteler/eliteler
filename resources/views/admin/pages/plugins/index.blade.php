@@ -172,9 +172,9 @@
                         </div>
                         <p class="empty-title">{{ __('Coming Soon!') }}</p>
                         <p class="empty-subtitle text-secondary">
-                            {{ __('Plugins are used to add extra functionality to GoBiz.') }}
+                            {{ __('Plugins are used to add extra functionality to Eliteler.') }}
                             <br>
-                            {{ __('You can install plugins from the GoBiz Plugins Store.') }}
+                            {{ __('You can install plugins from the Eliteler Plugins Store.') }}
                         </p>
                         {{-- Notify Me --}}
                         <div class="empty-action">

@@ -486,7 +486,7 @@
                             <span class="text-muted">
                                 {{ __('Copyright') }} &copy;
                                 <span id="year"></span>
-                                <a href="{{ url()->current() }}">{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : $business_card_details->title }}</a>.
+                                <a href="{{ !empty($business_card_details->copyright) ? (str_starts_with($business_card_details->copyright, 'http') ? $business_card_details->copyright : 'https://'.$business_card_details->copyright) : env('APP_URL') }}" target="_blank" rel="noopener noreferrer">{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : $business_card_details->title }}</a>.
                                 {{ __('All rights reserved.') }} <br>
                                 @if (!isset($plan_details['hide_branding']) || $plan_details['hide_branding'] != 1)
                                     {{ __('Made with') }} <i class="ti ti-heart text-danger"></i> {{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}

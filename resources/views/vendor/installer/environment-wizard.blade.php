@@ -40,7 +40,7 @@
                         <label class="form-label">
                             {{ trans('installer_messages.environment.wizard.form.app_name_label') }}</label>
                         <input type="text" class="form-control" name="app_name" id="app_name"
-                            value="{{ __('GoBiz') }}" onkeypress="return blockSpecialChar(event)"
+                            value="{{ __('Eliteler') }}" onkeypress="return blockSpecialChar(event)"
                             placeholder="{{ trans('installer_messages.environment.wizard.form.app_name_placeholder') }}"
                             autocomplete="off">
                     </div>

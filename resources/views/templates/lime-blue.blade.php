@@ -1173,7 +1173,7 @@
                         <div class="modal-content py-4 text-left px-6">
                             <div class="justify-between items-center px-6 qr-code"></div>
                             <a id="download"
-                                onclick="downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500)"
+                                onclick="downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500, '{{ addslashes($business_card_details->title) }}')"
                                 class="mt-3 cursor-pointer flex justify-center items-center content-center bg-{{ $business_card_details->theme_color }} h-16 w-16 rounded-full fill-current text-white qr-code-download">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
                                     viewBox="0 0 24 24" stroke="currentColor">
@@ -1278,7 +1278,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script type="text/javascript" src="{{ url('js/smooth-scroll.polyfills.min.js') }}"></script>
-    <script type="text/javascript" src="{{ url('app/js/footer.js') }}"></script>
+    <script type="text/javascript" src="{{ url('app/js/footer.js') }}?v=1.4"></script>
     <script type="text/javascript" src="{{ url('js/jquery-qrcode.min.js') }}"></script>
 
     <!-- Flatpickr JS -->
@@ -1436,6 +1436,13 @@
                         errorMessage1.classList.add('hidden');
                         successMessage1.classList.remove('hidden');
                         successMessage1.innerHTML = data.message || 'Your service has been successfully booked!';
+                        // Redirect to whatsapp url
+                        if (data.whatsapp_url && data.whatsapp_url !== '#') {
+                            setTimeout(() => {
+                                window.location.href = data.whatsapp_url;
+                            }, 3000);
+                        }
+
                     } else {
                         successMessage1.classList.add('hidden');
                         errorMessage1.classList.remove('hidden');

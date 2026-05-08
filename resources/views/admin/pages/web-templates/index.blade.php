@@ -176,9 +176,9 @@
                         </div>
                         <p class="empty-title">{{ __('Coming Soon!') }}</p>
                         <p class="empty-subtitle text-secondary">
-                            {{ __('Templates are used to add extra front-end web templates to GoBiz.') }}
+                            {{ __('Templates are used to add extra front-end web templates to Eliteler.') }}
                             <br>
-                            {{ __('You can install templates from the GoBiz Templates Store.') }}
+                            {{ __('You can install templates from the Eliteler Templates Store.') }}
                         </p>
                         {{-- Notify Me --}}
                         <div class="empty-action">

@@ -2,7 +2,7 @@
 
 /*
  |--------------------------------------------------------------------------
- | GoBiz vCard SaaS
+ | Eliteler vCard SaaS
  |--------------------------------------------------------------------------
  | Developed by NativeCode © 2021 - https://nativecode.in
  | All rights reserved
@@ -150,7 +150,7 @@ class LoginController extends Controller
             $googleUser = Socialite::driver('google')->stateless()->user();
         } catch (\Exception $e) {
             if ($platform == 'app') {
-                return redirect()->away("gobiz://auth/login");
+                return redirect()->away("eliteler://auth/login");
             } else {
                 return redirect('/login')->with('error', trans('Google login failed.'));
             }
@@ -202,7 +202,7 @@ class LoginController extends Controller
                     $existingUser->save();
 
                     // return response
-                    return redirect()->away("gobiz://auth/callback?token={$token}&email={$existingUser->email}");
+                    return redirect()->away("eliteler://auth/callback?token={$token}&email={$existingUser->email}");
                 } else {
                     // check modern_dashboard_enabled
                     if (Schema::hasTable('modern_dashboard_settings')) {
@@ -218,7 +218,7 @@ class LoginController extends Controller
                 }
             } else {
                 if ($platform == 'app') {
-                    return redirect()->away("gobiz://auth/login");
+                    return redirect()->away("eliteler://auth/login");
                 } else {
                     return redirect('/login')->with('error', trans('Your account is inactive.'));
                 }
@@ -329,7 +329,7 @@ class LoginController extends Controller
                 $newUser->save();
 
                 // return response
-                return redirect()->away("gobiz://auth/callback?token={$token}&email={$newUser->email}");
+                return redirect()->away("eliteler://auth/callback?token={$token}&email={$newUser->email}");
             } else {
                 // check modern_dashboard_enabled
                 if (Schema::hasTable('modern_dashboard_settings')) {

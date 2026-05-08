@@ -99,8 +99,8 @@
 
 {{-- Animation --}}
 @if ($theme !== '588969111160')
-    <script src="{{ url('js/gobiz-animation.min.js') }}"></script>
-    <script src="{{ url('js/gobiz-animation-scrolltrigger.min.js') }}"></script>
+    <script src="{{ url('js/eliteler-animation.min.js') }}"></script>
+    <script src="{{ url('js/eliteler-animation-scrolltrigger.min.js') }}"></script>
 @endif
 
 <script src="{{ url('templates/js/modern-animation.js') }}"></script>

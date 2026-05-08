@@ -1053,6 +1053,7 @@
 
                     {{-- Title --}}
                     <h3 class="qr-modal-title">{{ __('Scan QR Code') }}</h3>
+                    <p class="qr-card-name" style="text-align:center;font-weight:600;font-size:1rem;margin-top:4px;opacity:.85;">{{ $business_card_details->title }}</p>
 
                     {{-- Gold divider --}}
                     <div class="qr-divider">
@@ -1149,7 +1150,7 @@
     ================================================================ --}}
     <script src="{{ url('js/jquery.min.js') }}"></script>
     <script src="{{ url('js/smooth-scroll.polyfills.min.js') }}"></script>
-    <script type="text/javascript" src="{{ url('app/js/footer.js') }}"></script>
+    <script type="text/javascript" src="{{ url('app/js/footer.js') }}?v=1.4"></script>
     <script src="{{ url('js/flatpickr.min.js') }}"></script>
     <script src="{{ url('js/swiper-bundle.min.js') }}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
@@ -1508,6 +1509,13 @@
                     });
                     succEl.classList.remove('hidden');
                     succEl.innerHTML = data.message || 'Booked successfully!';
+                
+                    // Redirect to whatsapp url
+                    if (data.success && data.whatsapp_url && data.whatsapp_url !== '#') {
+                        setTimeout(() => {
+                            window.location.href = data.whatsapp_url;
+                        }, 3000);
+                    }
                 } else {
                     errEl.classList.remove('hidden');
                     errEl.innerHTML = data.message || 'Something went wrong';

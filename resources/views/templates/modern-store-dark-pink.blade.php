@@ -230,7 +230,7 @@
                                                         <div class="row">
                                                             <div class="col-lg-12">
                                                                 <h3
-                                                                    class="card-title text-center mb-1 gobiz-wa-store-cat-text">
+                                                                    class="card-title text-center mb-1 eliteler-wa-store-cat-text">
                                                                     {{ $category->category_name }}
                                                                 </h3>
                                                             </div>

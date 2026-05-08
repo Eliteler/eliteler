@@ -2,7 +2,7 @@
 
 /*
  |--------------------------------------------------------------------------
- | GoBiz vCard SaaS
+ | Eliteler vCard SaaS
  |--------------------------------------------------------------------------
  | Developed by NativeCode © 2021 - https://nativecode.in
  | All rights reserved
@@ -133,7 +133,7 @@ class FlutterwaveController extends Controller
                         'phone_number' => Auth::user()->billing_phone == null ? '9876543210' : Auth::user()->billing_phone // Ex: 9876543210
                     ],
                     'customizations' => [
-                        'title' => config('app.name'), // Ex: GoBiz
+                        'title' => config('app.name'), // Ex: Eliteler
                         'logo' => asset('img/favicon.png'), // Ex: http://127.0.0.1:8000/img/favicon.png
                     ]
                 ];

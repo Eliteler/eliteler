@@ -151,7 +151,7 @@
                                     </svg>
                                 </span>
                                 <span class="nav-link-title">
-                                    {{ __('Business Cards') }}
+                                    {{ __('eCards') }}
                                 </span>
                             </a>
                         </li>
@@ -201,7 +201,7 @@
                                     </svg>
                                 </span>
                                 <span class="nav-link-title">
-                                    {{ __('Business Cards') }}
+                                    {{ __('eCards') }}
                                 </span>
                             </a>
                         </li>

@@ -2,7 +2,7 @@
 
 /*
  |--------------------------------------------------------------------------
- | GoBiz vCard SaaS
+ | Eliteler vCard SaaS
  |--------------------------------------------------------------------------
  | Developed by NativeCode © 2021 - https://nativecode.in
  | All rights reserved
@@ -471,7 +471,7 @@ class BackupController extends Controller
                 str_contains($filePath, 'node_modules') ||
                 str_contains($filePath, '.git') ||
                 str_contains($filePath, 'storage/logs') ||
-                str_contains($filePath, 'gobiz-source-code.zip') ||
+                str_contains($filePath, 'eliteler-source-code.zip') ||
                 str_contains($filePath, '__MACOSX')
             ) {
                 continue;

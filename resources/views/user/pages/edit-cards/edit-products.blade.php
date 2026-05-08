@@ -193,6 +193,7 @@
                                             <button class="btn btn-primary btn-icon" type="button"
                                                 onclick="openMedia()">{{ __('Choose image') }}</button>
                                         </div>
+                                        <small class="form-hint text-muted mt-1 d-block"><i class="ti ti-photo me-1"></i>{{ __(':size px recommended', ['size' => '800 x 800 px']) }}</small>
                                     </div>
                                 </div>
                                 {{-- Product name --}}
@@ -311,6 +312,7 @@
                                             <button class="btn btn-primary btn-icon" type="button"
                                                 onclick="openMedia()">{{ __('Choose image') }}</button>
                                         </div>
+                                        <small class="form-hint text-muted mt-1 d-block"><i class="ti ti-photo me-1"></i>{{ __(':size px recommended', ['size' => '800 x 800 px']) }}</small>
                                     </div>
                                 </div>
                                 {{-- Product name --}}

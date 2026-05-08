@@ -99,6 +99,22 @@
                                                         onclick="openMedia({{ $galleries[$i]->id }})">{{ __('Choose
                                                         image') }}</button>
                                                 </div>
+                                                <small class="form-hint text-muted mt-1 d-block"><i class="ti ti-photo me-1"></i>{{ __(':size px recommended', ['size' => '800 x 600 px']) }}</small>
+                                                {{-- Image Preview --}}
+                                                @if($galleries[$i]->gallery_image)
+                                                <div class="mt-1" id="preview-wrap-{{ $galleries[$i]->id }}">
+                                                    <img src="{{ url($galleries[$i]->gallery_image) }}"
+                                                        id="img-preview-{{ $galleries[$i]->id }}"
+                                                        style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid #dee2e6;"
+                                                        alt="">
+                                                </div>
+                                                @else
+                                                <div class="mt-1" id="preview-wrap-{{ $galleries[$i]->id }}" style="display:none;">
+                                                    <img src="" id="img-preview-{{ $galleries[$i]->id }}"
+                                                        style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid #dee2e6;"
+                                                        alt="">
+                                                </div>
+                                                @endif
                                             </div>
                                         </div>
                                         <div class="col-md-6 col-xl-6">
@@ -192,7 +208,7 @@
         count++;
         var id = getRandomInt();
         var gallery =
-            "<div class='row' id="+ id +"><div class='col-md-6 col-xl-6'><div class='mb-3'><label class='form-label required'>{{ __('Gallery Image') }}</label><div class='input-group mb-2'><input type='text' class='image"+ id +" media-model form-control' name='gallery_image[]' placeholder='{{ __('Gallery Image') }}' required><button class='btn btn-primary btn-md' type='button' onclick='openMedia("+ id +")'>{{ __('Choose image') }}</button></div></div></div><div class='col-md-6 col-xl-6'> <div class='mb-3'> <label class='form-label'>{{ __('Image Caption') }}</label> <input type='text' class='form-control' name='caption[]' placeholder='{{ __('Image Caption') }}'> <a href='#' class='btn mt-3 btn-danger btn-sm' onclick='removeGallery("+id+")'>{{ __('Remove') }}</a> </div><br></div>";
+            "<div class='row' id="+ id +"><div class='col-md-6 col-xl-6'><div class='mb-3'><label class='form-label required'>{{ __('Gallery Image') }}</label><div class='input-group mb-2'><input type='text' class='image"+ id +" media-model form-control' name='gallery_image[]' placeholder='{{ __('Gallery Image') }}' required><button class='btn btn-primary btn-md' type='button' onclick='openMedia("+ id +")'>{{ __('Choose image') }}</button></div><div class='mt-1' id='preview-wrap-"+ id +"' style='display:none;'><img src='' id='img-preview-"+ id +"' style='width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid #dee2e6;' alt='preview'></div></div></div><div class='col-md-6 col-xl-6'> <div class='mb-3'> <label class='form-label'>{{ __('Image Caption') }}</label> <input type='text' class='form-control' name='caption[]' placeholder='{{ __('Image Caption') }}'> <a href='#' class='btn mt-3 btn-danger btn-sm' onclick='removeGallery("+id+")'>{{ __('Remove') }}</a> </div><br></div>";
             $("#more-gallery").append(gallery).html();
         }
     }
@@ -364,6 +380,17 @@
 
             // Place value in the field
             $('.image'+currentSelection).val(e.text);
+
+            // Show image preview (e.text is a relative path like storage/images/...)
+            var baseUrl = '{{ asset('') }}';
+            var previewWrap = $('#preview-wrap-' + currentSelection);
+            var previewImg  = $('#img-preview-' + currentSelection);
+            if (previewWrap.length) {
+                // Build full URL: if already has http, use as is, else prepend baseUrl
+                var imgSrc = e.text.startsWith('http') ? e.text : baseUrl + e.text;
+                previewImg.attr('src', imgSrc);
+                previewWrap.show();
+            }
 
             // Hide media modal
             $('#openMediaModel').modal('hide');

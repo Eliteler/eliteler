@@ -1,4 +1,4 @@
-/* GoBiz vCard SaaS
+/* Eliteler vCard SaaS
  |--------------------------------------------------------------------------
  | Designed by NativeCode - https://nativecode.in
  | All rights reserved
@@ -9,11 +9,71 @@ var scroll = new SmoothScroll('a[href*="#"]');
 function closeCookie() {
     $(".cookie-consent").fadeOut(300);
 }
-function downloadQr(e, t) {
+function downloadQr(url, size, name) {
     "use strict";
-    var o = new QRious({ value: e, size: t }),
-        n = document.createElement("a");
-    ((n.href = o.toDataURL("image/png")), (n.download = "qr.png"), n.click());
+    
+    var qrious = new QRious({ value: url, size: size });
+    var qrDataURL = qrious.toDataURL();
+    
+    // Create a temporary canvas for composition
+    var canvas = document.createElement("canvas");
+    var ctx = canvas.getContext("2d");
+    var padding = name ? 50 : 0; // Space for text at the top
+    
+    canvas.width = size;
+    canvas.height = size + padding;
+    
+    // Background
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw Text
+    if (name) {
+        ctx.fillStyle = "#000000";
+        ctx.font = "bold 20px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(name, canvas.width / 2, padding / 2);
+    }
+    
+    // Draw QR Code
+    var img = new Image();
+    img.onload = function() {
+        ctx.drawImage(img, 0, padding);
+        var combinedDataURL = canvas.toDataURL("image/png");
+        
+        // Trigger the server-side download
+        var form = document.createElement("form");
+        form.method = "POST";
+        form.action = "/download-qr-image";
+        form.style.display = "none";
+        
+        var csrf = document.querySelector('meta[name="csrf-token"]');
+        if (csrf) {
+            var csrfInput = document.createElement("input");
+            csrfInput.type = "hidden";
+            csrfInput.name = "_token";
+            csrfInput.value = csrf.content;
+            form.appendChild(csrfInput);
+        }
+        
+        var dataInput = document.createElement("input");
+        dataInput.type = "hidden";
+        dataInput.name = "image_data";
+        dataInput.value = combinedDataURL;
+        form.appendChild(dataInput);
+        
+        var fileInput = document.createElement("input");
+        fileInput.type = "hidden";
+        fileInput.name = "filename";
+        fileInput.value = "ecard-qr.png";
+        form.appendChild(fileInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+    };
+    img.src = qrDataURL;
 }
 function updateQr(e) {
     "use strict";

@@ -219,7 +219,7 @@
                                 </svg>
                             </span>
                             <span class="nav-link-title">
-                                {{ __('Business Card Intros') }}
+                                {{ __('eCard Intros') }}
                             </span>
                         </a>
                     </li>
@@ -281,7 +281,7 @@
                                 {{ __('Customers') }}
                             </a>
                             <a class="dropdown-item" href="{{ route('admin.created.cards') }}">
-                                {{ __('Created vCards') }}
+                                {{ __('Created eCards') }}
                             </a>
                             <a class="dropdown-item" href="{{ route('admin.created.stores') }}">
                                 {{ __('Created Stores') }}
@@ -309,13 +309,13 @@
                                 </svg>
                             </span>
                             <span class="nav-link-title">
-                                {{ __('vCard & Store') }}
+                                {{ __('eCard & Store') }}
                             </span>
                         </a>
                         <div class="dropdown-menu">
                             <a class="dropdown-item"
                                 href="{{ route('admin.create.vcard.store', ['id' => 'choose.card.type']) }}">
-                                {{ __('Create vCard') }}
+                                {{ __('Create eCard') }}
                             </a>
 
                             <a class="dropdown-item"
@@ -324,7 +324,7 @@
                             </a>
 
                             <a class="dropdown-item" href="{{ route('admin.create.vcard.store', ['id' => 'cards']) }}">
-                                {{ __('Manage created vCards') }}
+                                {{ __('Manage created eCards') }}
                             </a>
 
                             <a class="dropdown-item" href="{{ route('admin.create.vcard.store', ['id' => 'stores']) }}">

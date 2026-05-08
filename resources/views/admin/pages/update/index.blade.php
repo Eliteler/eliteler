@@ -89,9 +89,9 @@
                                         </button>
 
                                         {{-- Feature Request --}}
-                                        <a href="https://gobiz.feednote.io?ref={{ urlencode(config('app.url')) }}&size=source"
+                                        <a href="https://eliteler.feednote.io?ref={{ urlencode(config('app.url')) }}&size=source"
                                             target="_blank" class="btn btn-icon ms-2"
-                                            title="{{ __('GoBiz Future Request') }}">
+                                            title="{{ __('Eliteler Future Request') }}">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                                 stroke-linecap="round" stroke-linejoin="round"
@@ -153,7 +153,7 @@
                             <!-- Piracy warning -->
                             <div class="mb-3">
                                 <div class="card-body text-center">
-                                    <a href="https://codecanyon.net/item/gobiz-digital-business-card-in-laravel-saas-product-/33165916?ref={{ urlencode(config('app.url')) }}"
+                                    <a href="https://codecanyon.net/item/eliteler-digital-business-card-in-laravel-saas-product-/33165916?ref={{ urlencode(config('app.url')) }}"
                                         rel="noopener noreferrer" target="_blank">
                                         <img src="{{ asset('img/piracy.png') }}" class="img-fluid rounded"
                                             alt="Piracy Warning">

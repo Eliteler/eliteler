@@ -321,6 +321,7 @@ Route::group(['middleware' => 'Installer'], function () {
 
         // QR code maker
         Route::get('qr-maker', [WebToolsController::class, 'qrMaker'])->name('web.qrcode');
+        Route::post('download-qr-image', [WebToolsController::class, 'downloadQrImage'])->name('web.download.qr.image');
 
         // NFC Card Order System
         Route::get('nfc-cards', [WebsiteNFCCardOrderController::class, 'index'])->name('nfc.cards');

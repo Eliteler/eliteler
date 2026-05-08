@@ -210,6 +210,7 @@
                                                     <input type="file" class="form-control" id="cover"
                                                         placeholder="{{ __('Cover') }}"
                                                         accept=".jpeg,.jpg,.png,.gif,.svg" />
+                                                    <small class="form-hint text-muted mt-1 d-block"><i class="ti ti-photo me-1"></i>{{ __(':size px recommended', ['size' => '1200 x 400 px']) }}</small>
                                                     <input type="hidden" class="form-control" name="cover" value="{{ old('cover') }}">
                                                 </div>
                                             </div>
@@ -221,6 +222,7 @@
                                                     <input type="file" class="form-control" id="logo"
                                                         placeholder="{{ __('Logo') }}"
                                                         accept=".jpeg,.jpg,.png,.gif,.svg" required />
+                                                    <small class="form-hint text-muted mt-1 d-block"><i class="ti ti-photo me-1"></i>{{ __(':size px recommended', ['size' => '800 x 800 px']) }}</small>
                                                     <input type="hidden" class="form-control" name="logo" value="{{ old('logo') }}">
                                                 </div>
                                             </div>
