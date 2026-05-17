@@ -201,6 +201,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\BackupController;
+use App\Http\Controllers\Admin\AiCreditsPlanController;
+use App\Http\Controllers\Admin\AiCreditsTransactionController;
 
 /*
 |--------------------------------------------------------------------------
