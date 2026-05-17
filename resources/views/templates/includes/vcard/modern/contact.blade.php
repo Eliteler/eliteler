@@ -71,13 +71,19 @@
 @endforeach
 
 
+
 @php
     // List of excluded feature types
-    $excludedTypes = ['email', 'tel', 'instagram', 'snapchat', 'address', 'map', 'iframe', 'youtube'];
+    $excludedTypes = ['email', 'tel', 'instagram', 'snapchat', 'address', 'map', 'iframe', 'youtube', 'text'];
 
     // Filter the features to include only valid ones
     $validFeatures = collect($feature_details)->filter(function ($feature) use ($excludedTypes) {
         return isset($feature->type) && !in_array($feature->type, $excludedTypes);
+    });
+
+    // Filter text-type features separately
+    $textFeatures = collect($feature_details)->filter(function ($feature) {
+        return isset($feature->type) && $feature->type === 'text';
     });
 @endphp
 
@@ -97,8 +103,6 @@
                         $href = 'https://wa.me/' . $feature->content;
                     } elseif ($feature->type == 'email') {
                         $href = 'mailto:' . $feature->content;
-                    } elseif ($feature->type == 'text') {
-                        $href = 'javascript:void(0);';
                     }
                 @endphp
                 <!-- {{ $feature->label }} -->
@@ -118,4 +122,14 @@
             @endforeach
         </div>
     </div>
+@endif
+
+@if ($textFeatures->isNotEmpty())
+    @foreach ($textFeatures as $feature)
+        <div class="p-4 bg-green-50 rounded-2xl border border-green-600 mt-4" style="cursor:default; pointer-events:none;">
+            <i class="{{ $feature->icon }} text-green-800 text-2xl mb-1"></i>
+            <h2 class="text-green-800 text-md font-semibold">{{ $feature->label }}</h2>
+            <p class="text-gray-600 text-sm break-word">{{ $feature->content }}</p>
+        </div>
+    @endforeach
 @endif

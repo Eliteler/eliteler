@@ -59,8 +59,8 @@ class PlanController extends Controller
         $plans = DB::table('plans')->where('is_private', 0)->where('status', 1)->get();
         $config = DB::table('config')->get();
         $free_plan = Transaction::where('user_id', Auth::user()->id)->where('transaction_amount', '0.00')->orWhere('transaction_amount', '0')->count();
-        $plan = User::where('user_id', Auth::user()->user_id)->first();
-        $active_plan = json_decode($plan->plan_details);
+        $userRecord = User::where('user_id', Auth::user()->user_id)->first();
+        $active_plan = json_decode($userRecord->plan_details);
         $settings = Setting::where('status', 1)->first();
         $currency = Currency::where('iso_code', $config[1]->config_value)->first();
         $remaining_days = 0;
@@ -122,8 +122,10 @@ class PlanController extends Controller
             }
         }
 
-        // return view
-        return view('user.pages.plans.plans', compact('plans', 'settings', 'currency', 'active_plan', 'remaining_days', 'config', 'free_plan', 'cancelSubscription', 'subscriptionId'));
+        // Fetch the active plan record from plans table for the modal
+        $user = Auth::user();
+        $plan = $user->plan_id ? DB::table('plans')->where('plan_id', $user->plan_id)->first() : null;
+        return view('user.pages.plans.plans', compact('plans', 'settings', 'currency', 'active_plan', 'remaining_days', 'config', 'free_plan', 'cancelSubscription', 'subscriptionId', 'user', 'plan'));
     }
 
     // cancel subscription

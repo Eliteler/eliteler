@@ -999,7 +999,7 @@
                                 <div class="pay-links">
                                     @foreach ($payment_details as $payment)
                                         @php
-                                            $href = 'javascript:void(0);';
+                                            $href = '';
                                             if ($payment->type == 'url') {
                                                 $href = 'https://' . str_replace('https://', '', $payment->content);
                                             } elseif ($payment->type == 'upi') {
@@ -1056,7 +1056,7 @@
 
                                             {{-- Handle 'url' and 'upi' types as clickable buttons --}}
                                         @else
-                                            <a href="{{ $href }}" target="_blank" rel="noopener noreferrer"
+                                            <a href="{{ $href }}" {{ !empty($href) ? 'target="_blank"' : 'onclick="return false;"' }} rel="noopener noreferrer"
                                                 class="pay-btn">
                                                 @if (!empty($payment->icon))
                                                     <i class="{{ $payment->icon }}"></i>
@@ -1117,14 +1117,12 @@
                                 @if ($plan_details['hide_branding'] == 1)
                                     <p class="branding-text">
                                         {{ __('Copyright') }} &copy;
-                                                <a class="branding-link" href="{{ !empty($business_card_details->copyright) ? (str_starts_with($business_card_details->copyright, 'http') ? $business_card_details->copyright : 'https://'.$business_card_details->copyright) : env('APP_URL') }}" target="_blank" rel="noopener noreferrer">
-                                                    {{ !empty($business_card_details->copyright) ? $business_card_details->copyright : $card_details->title }}</a><span id="year"></span>{{ __('. All Rights Reserved.') }}
+                                                @php $__cr = $business_card_details->copyright ?? ''; $__cr_is_domain = !empty($__cr) && (str_starts_with($__cr, 'http') || str_contains($__cr, '.')); $__cr_url = $__cr_is_domain ? (str_starts_with($__cr, 'http') ? $__cr : 'https://'.$__cr) : (!empty($__cr) ? null : env('APP_URL')); $__cr_text = !empty($__cr) ? $__cr : parse_url(config('app.url'), PHP_URL_HOST); @endphp @if($__cr_url)<a class="branding-link" href="{{ $__cr_url }}" target="_blank" rel="noopener noreferrer">{{ $__cr_text }}</a>@else<span class="branding-link">{{ $__cr_text }}</span>@endif<span id="year"></span>{{ __('. All Rights Reserved.') }}
                                     </p>
                                 @else
                                     <p class="branding-text">
                                         {{ __('Made with') }}
-                                                <a class="branding-link" href="{{ !empty($business_card_details->copyright) ? (str_starts_with($business_card_details->copyright, 'http') ? $business_card_details->copyright : 'https://'.$business_card_details->copyright) : env('APP_URL') }}" target="_blank" rel="noopener noreferrer">
-                                                    {{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }} </a>
+                                                @php $__cr = $business_card_details->copyright ?? ''; $__cr_is_domain = !empty($__cr) && (str_starts_with($__cr, 'http') || str_contains($__cr, '.')); $__cr_url = $__cr_is_domain ? (str_starts_with($__cr, 'http') ? $__cr : 'https://'.$__cr) : (!empty($__cr) ? null : env('APP_URL')); $__cr_text = !empty($__cr) ? $__cr : parse_url(config('app.url'), PHP_URL_HOST); @endphp @if($__cr_url)<a class="branding-link" href="{{ $__cr_url }}" target="_blank" rel="noopener noreferrer">{{ $__cr_text }}</a>@else<span class="branding-link">{{ $__cr_text }}</span>@endif
                                                 <span id="year"></span>{{ __('. All Rights Reserved.') }}
                                     </p>
                                 @endif

@@ -267,7 +267,7 @@
                                         @endphp
 
                                         <!-- Notice the conditional class 'feat-link-full' added here -->
-                                        <a href="{{ $href }}" target="_blank"
+                                        <a href="{{ $href }}" {{ !empty($href) ? 'target="_blank"' : 'onclick="return false;"' }}
                                             class="feat-link {{ $feature->type === 'address' ? 'feat-link-full' : '' }}">
 
                                             <div class="feat-link-icon"><i
@@ -687,7 +687,7 @@
                                 <div style="display:flex; flex-direction:column; gap:10px;">
                                     @foreach ($payment_details as $payment)
                                         @php
-                                            $href = 'javascript:void(0);';
+                                            $href = '';
                                             if ($payment->type == 'url') {
                                                 $href = 'https://' . str_replace('https://', '', $payment->content);
                                             } elseif ($payment->type == 'upi') {
@@ -716,7 +716,7 @@
                                                 @endif
                                             </a>
                                         @else
-                                            <a href="{{ $href }}" target="_blank" class="pay-block">
+                                            <a href="{{ $href }}" {{ !empty($href) ? 'target="_blank"' : 'onclick="return false;"' }} class="pay-block">
                                                 <i class="{{ $payment->icon ?? 'fas fa-money-check' }}"></i>
                                                 <span>{{ $payment->label }}</span>
                                             </a>

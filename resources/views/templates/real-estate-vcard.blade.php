@@ -319,10 +319,10 @@
                                                 } elseif ($feature->type === 'email') {
                                                     $href = 'mailto:' . $feature->content;
                                                 } elseif ($feature->type === 'text') {
-                                                    $href = 'javascript:void(0);';
+                                                    $href = '';
                                                 }
                                             @endphp
-                                            <a href="{{ $href }}" target="_blank" class="feature-link-card">
+                                            <a href="{{ $href }}" {{ !empty($href) ? 'target="_blank"' : 'onclick="return false;"' }} class="feature-link-card">
                                                 <i class="{{ $feature->icon ?? '' }}"></i>
                                                 <h2>{{ $feature->label ?? 'N/A' }}</h2>
                                                 <p>{{ $feature->content ?? '' }}</p>

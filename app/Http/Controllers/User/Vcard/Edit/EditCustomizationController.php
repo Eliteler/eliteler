@@ -349,14 +349,23 @@ class EditCustomizationController extends Controller
                 ]);
                 return response()->json(['status' => 'success', 'type' => $request->type]);
             } elseif ($request->type == 'copyright_color') {
-                $customStyles                       = json_decode(BusinessCard::where('card_id', $request->card_id)->first()->custom_styles, true);
-                $customStyles['copyright_color']    = $request->copyright_color;
+                $customStyles                    = json_decode(BusinessCard::where('card_id', $request->card_id)->first()->custom_styles, true);
+                $customStyles['copyright_color'] = $request->copyright_color;
+
+                BusinessCard::where('card_id', $request->card_id)->update([
+                    'custom_styles' => json_encode($customStyles),
+                ]);
+                return response()->json(['status' => 'success', 'type' => $request->type]);
+            } elseif ($request->type == 'slider_speed') {
+                $customStyles                  = json_decode(BusinessCard::where('card_id', $request->card_id)->first()->custom_styles, true);
+                $customStyles['slider_speed']  = max(1, min(30, (float) $request->slider_speed));
 
                 BusinessCard::where('card_id', $request->card_id)->update([
                     'custom_styles' => json_encode($customStyles),
                 ]);
                 return response()->json(['status' => 'success', 'type' => $request->type]);
             }
+
         } else {
             return response()->json(['status' => 'failed', 'message' => $validator->errors()->first(), 'type' => $request->type]);
         }

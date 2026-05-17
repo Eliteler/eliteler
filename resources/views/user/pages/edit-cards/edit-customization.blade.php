@@ -439,6 +439,17 @@
                                             <div class="form-label">{{ __('Heading Color') }}</div>
                                             <input type="text" id="colorPickerHeading" value="{{ $custom_styles['heading_color'] ?? '#000000' }}" />
                                         </div>
+                                        {{-- Slider Speed --}}
+                                        <div class="mb-4">
+                                            <div class="form-label">{{ __('Slider Speed (seconds)') }}</div>
+                                            <input type="number" id="sliderSpeed" min="1" max="30" step="0.5"
+                                                value="{{ $custom_styles['slider_speed'] ?? '2.5' }}"
+                                                class="form-control"
+                                                onchange="updateCustomStyle('slider_speed')"
+                                                onkeyup="updateCustomStyle('slider_speed')" />
+                                            <small class="form-hint text-muted">{{ __('Controls the auto-scroll speed of all sliders (Services, Products, Gallery, Testimonials)') }}</small>
+                                        </div>
+
                                         {{-- Card Edge --}}
                                         <div class="mb-4">
                                             <div class="form-label">{{ __('Card Style') }}</div>
@@ -893,6 +904,7 @@
                 var title2_alignment = $('input[name="title2_alignment"]:checked').val();
                 var subtitle_alignment = $('input[name="subtitle_alignment"]:checked').val();
                 var subtitle2_alignment = $('input[name="subtitle2_alignment"]:checked').val();
+                var slider_speed = $('#sliderSpeed').val();
                 
                 var title2_color = $('#colorPickerTitle2').val();
                 var subtitle2_color = $('#colorPickerSubTitle2').val();
@@ -942,6 +954,7 @@
                 formData.append('title2_font_family', title2_font);
                 formData.append('subtitle2_font_family', subtitle2_font);
                 formData.append('copyright_color', copyright_color);
+                formData.append('slider_speed', slider_speed);
 
                 $.ajax({
                     url: "{{ route('user.update.customization') }}",

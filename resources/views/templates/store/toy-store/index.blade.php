@@ -547,7 +547,7 @@
                                     <span class="text-white">
                                         {{ __('Copyright') }} &copy;
                                         <span id="year"></span>
-                                        <a href="{{ !empty($business_card_details->copyright) ? (str_starts_with($business_card_details->copyright, 'http') ? $business_card_details->copyright : 'https://'.$business_card_details->copyright) : env('APP_URL') }}" target="_blank" rel="noopener noreferrer">{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : $business_card_details->title }}</a>.
+                                        <a href="{{ !empty($business_card_details->copyright) && (str_starts_with($business_card_details->copyright, 'http') || str_contains($business_card_details->copyright, '.')) ? (str_starts_with($business_card_details->copyright, 'http') ? $business_card_details->copyright : 'https://'.$business_card_details->copyright) : (empty($business_card_details->copyright) ? env('APP_URL') : '#') }}" @if(!empty($business_card_details->copyright) && !str_starts_with($business_card_details->copyright, 'http') && !str_contains($business_card_details->copyright, '.')) onclick="return false;" style="pointer-events:none;cursor:default;" @endif target="_blank" rel="noopener noreferrer">{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : 'eliteler.net' }}</a>.
                                         {{ __('All rights reserved.') }}
                                     </span>
                                 </div>

@@ -472,10 +472,10 @@
                                                         } elseif ($feature->type === 'email') {
                                                             $href = 'mailto:' . $feature->content;
                                                         } elseif ($feature->type === 'text') {
-                                                            $href = 'javascript:void(0);'; // Avoid empty hrefs
+                                                            $href = ''; // Avoid empty hrefs
                                                         }
                                                     @endphp
-                                                    <a href="{{ $href }}" target="_blank"
+                                                    <a href="{{ $href }}" {{ !empty($href) ? 'target="_blank"' : 'onclick="return false;"' }}
                                                         class="@if ($buttonBackgroundType == 'single_color') bg-[{{ $buttonBackgroundColor }}] @endif
                                                         @if ($buttonBackgroundType == 'gradient') bg-gradient-to-r from-[{{ $buttonGradientFrom }}] to-[{{ $buttonGradientTo }}] @endif
                                                         @if ($buttonEdge == 'rounded') rounded-2xl @endif p-4 flex flex-col focus:outline-none">
@@ -511,7 +511,7 @@
                                             "640": { "slidesPerView": 1 }, 
                                             "1024": { "slidesPerView": 2 } 
                                             }'
-                                            space-between="20" class="mySwiper" autoplay-delay="2500"
+                                            space-between="20" class="mySwiper" autoplay-delay="{{ ($custom_styles['slider_speed'] ?? 2.5) * 1000 }}"
                                             autoplay-disable-on-interaction="false" loop="true">
                                             {{-- All services --}}
                                             @foreach ($service_details as $service_detail)
@@ -573,7 +573,7 @@
                                                 "640": { "slidesPerView": 1 }, 
                                                 "1024": { "slidesPerView": 2 } 
                                             }'
-                                            space-between="20" class="mySwiper" autoplay-delay="2500"
+                                            space-between="20" class="mySwiper" autoplay-delay="{{ ($custom_styles['slider_speed'] ?? 2.5) * 1000 }}"
                                             autoplay-disable-on-interaction="false" loop="true">
                                             {{-- All products --}}
                                             @foreach ($product_details as $product_detail)
@@ -672,7 +672,7 @@
                                         </div>
                                         <div>
                                             <swiper-container slides-per-view="1" class="mySwiper" loop="true"
-                                                autoplay-delay="3000" autoplay-disable-on-interaction="false">
+                                                autoplay-delay="{{ ($custom_styles['slider_speed'] ?? 2.5) * 1000 }}" autoplay-disable-on-interaction="false">
                                                 {{-- Slider images --}}
                                                 @foreach ($galleries_details as $galleries_detail)
                                                     <swiper-slide class="p-0.5">
@@ -998,7 +998,7 @@
                                                 @php $__t_ar = $testimonials[0]->title_ar ?? ''; @endphp
                                                 {{ (App::isLocale('ar') && !empty($testimonials[0]->title_ar)) ? $testimonials[0]->title_ar : __($testimonials[0]->title) }}</h2>
                                         </div>
-                                        <swiper-container class="mySwiper" autoplay-delay="2000"
+                                        <swiper-container class="mySwiper" autoplay-delay="{{ ($custom_styles['slider_speed'] ?? 2.5) * 1000 }}"
                                             autoplay-disable-on-interaction="false">
                                             {{-- Client Reviews --}}
                                             @foreach ($testimonials as $testimonial)
@@ -1012,7 +1012,7 @@
                                                             "{{ $testimonial->review }}"
                                                         </p>
                                                         {{-- Image --}}
-                                                        <img class="w-16 h-16 mt-3 mb-1 object-cover {{ $custom_styles['profile_image_style'] == 'circle'
+                                                        <img class="w-32 h-32 mt-3 mb-1 object-cover {{ $custom_styles['profile_image_style'] == 'circle'
                                                             ? 'rounded-full'
                                                             : ($custom_styles['profile_image_style'] == 'square'
                                                                 ? 'rounded-none'
@@ -1248,8 +1248,8 @@
                                             <div class="mt-2 text-[{{ $custom_styles['sub_title_color'] }}]">
                                                 {{ __('Copyright') }} &copy;
                                                 <a class="text-[{{ $custom_styles['copyright_color'] ?? $custom_styles['title_color'] ?? '#000000' }}]"
-                                                    href="{{ !empty($business_card_details->copyright) ? (str_starts_with($business_card_details->copyright, 'http') ? $business_card_details->copyright : 'https://'.$business_card_details->copyright) : env('APP_URL') }}" target="_blank" rel="noopener noreferrer">
-                                                    {{ !empty($business_card_details->copyright) ? $business_card_details->copyright : $card_details->title }}</a><span
+                                                    href="{{ !empty($business_card_details->copyright) && (str_starts_with($business_card_details->copyright, 'http') || str_contains($business_card_details->copyright, '.')) ? (str_starts_with($business_card_details->copyright, 'http') ? $business_card_details->copyright : 'https://'.$business_card_details->copyright) : (empty($business_card_details->copyright) ? env('APP_URL') : '#') }}" @if(!empty($business_card_details->copyright) && !str_starts_with($business_card_details->copyright, 'http') && !str_contains($business_card_details->copyright, '.')) onclick="return false;" style="pointer-events:none;cursor:default;" @endif target="_blank" rel="noopener noreferrer">
+                                                    {{ !empty($business_card_details->copyright) ? $business_card_details->copyright : 'eliteler.net' }}</a><span
                                                     id="year"></span>{{ __('. All Rights Reserved.') }}
                                             </div>
                                         </div>

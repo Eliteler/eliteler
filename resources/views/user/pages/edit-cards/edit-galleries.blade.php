@@ -123,7 +123,7 @@
                                                 <input type="text" class="form-control" name="caption[]"
                                                     placeholder="{{ __('Image Caption') }}"
                                                     value="{{ $galleries[$i]->caption }}">
-                                                <button class='btn btn-danger btn-sm mt-2'
+                                                <button type="button" class='btn btn-danger btn-sm mt-2'
                                                     onclick='removeGallery({{ $i }})'>
                                                     {{ __('Remove') }}
                                                 </button>
@@ -160,6 +160,22 @@
         </div>
     </div>
     @include('user.includes.footer')
+
+    {{-- Delete Confirm Modal --}}
+    <div class="modal modal-blur fade" id="confirmDeleteModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="modal-title">{{ __('Are you sure?') }}</div>
+                    <div class="text-muted mt-1">{{ __('Do you want to delete this image?') }}</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary me-auto" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">{{ __('Yes, Delete') }}</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     {{-- Media Library --}} 
     <div class="modal modal-blur fade" id="openMediaModel" tabindex="-1" role="dialog" aria-hidden="true">
@@ -208,16 +224,28 @@
         count++;
         var id = getRandomInt();
         var gallery =
-            "<div class='row' id="+ id +"><div class='col-md-6 col-xl-6'><div class='mb-3'><label class='form-label required'>{{ __('Gallery Image') }}</label><div class='input-group mb-2'><input type='text' class='image"+ id +" media-model form-control' name='gallery_image[]' placeholder='{{ __('Gallery Image') }}' required><button class='btn btn-primary btn-md' type='button' onclick='openMedia("+ id +")'>{{ __('Choose image') }}</button></div><div class='mt-1' id='preview-wrap-"+ id +"' style='display:none;'><img src='' id='img-preview-"+ id +"' style='width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid #dee2e6;' alt='preview'></div></div></div><div class='col-md-6 col-xl-6'> <div class='mb-3'> <label class='form-label'>{{ __('Image Caption') }}</label> <input type='text' class='form-control' name='caption[]' placeholder='{{ __('Image Caption') }}'> <a href='#' class='btn mt-3 btn-danger btn-sm' onclick='removeGallery("+id+")'>{{ __('Remove') }}</a> </div><br></div>";
+            "<div class='row' id="+ id +"><div class='col-md-6 col-xl-6'><div class='mb-3'><label class='form-label required'>{{ __('Gallery Image') }}</label><div class='input-group mb-2'><input type='text' class='image"+ id +" media-model form-control' name='gallery_image[]' placeholder='{{ __('Gallery Image') }}' required><button class='btn btn-primary btn-md' type='button' onclick='openMedia("+ id +")'>{{ __('Choose image') }}</button></div><div class='mt-1' id='preview-wrap-"+ id +"' style='display:none;'><img src='' id='img-preview-"+ id +"' style='width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid #dee2e6;' alt='preview'></div></div></div><div class='col-md-6 col-xl-6'> <div class='mb-3'> <label class='form-label'>{{ __('Image Caption') }}</label> <input type='text' class='form-control' name='caption[]' placeholder='{{ __('Image Caption') }}'> <button type='button' class='btn mt-3 btn-danger btn-sm' onclick='removeGallery("+ id +")'>{{ __('Remove') }}</button> </div><br></div>";
             $("#more-gallery").append(gallery).html();
         }
     }
 
-    // Remove service
+    var pendingDeleteId = null;
+
+    // Remove gallery item with confirmation
     function removeGallery(id) {
-    "use strict";
-        $("#"+id).remove();
+        "use strict";
+        pendingDeleteId = id;
+        $('#confirmDeleteModal').modal('show');
     }
+
+    $('#confirmDeleteBtn').on('click', function() {
+        if (pendingDeleteId !== null) {
+            $("#" + pendingDeleteId).remove();
+            count--;
+            pendingDeleteId = null;
+        }
+        $('#confirmDeleteModal').modal('hide');
+    });
 
     // Generate random number
     function getRandomInt() {

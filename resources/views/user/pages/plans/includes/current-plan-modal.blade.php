@@ -47,7 +47,7 @@
                 </div>
 
                 <!-- vCard Features -->
-                @if ($plan->plan_type == 'BOTH' || $plan->plan_type == 'VCARD')
+                @if ($plan && ($plan->plan_type == 'BOTH' || $plan->plan_type == 'VCARD'))
                     <h5 class="fw-semibold mb-3">{{ __('vCard Features') }}</h5>
                     <div class="row g-3 mb-4">
                         @php
@@ -126,7 +126,7 @@
                 @endif
 
                 <!-- Store Features -->
-                @if ($plan->plan_type == 'BOTH' || $plan->plan_type == 'STORE')
+                @if ($plan && ($plan->plan_type == 'BOTH' || $plan->plan_type == 'STORE'))
                     <h5 class="fw-semibold mb-3">{{ __('Store Features') }}</h5>
                     <div class="row g-3 mb-4">
                         <div class="col-md-4">

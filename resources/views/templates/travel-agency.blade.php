@@ -370,11 +370,11 @@
                                                         } elseif ($feature->type == 'email') {
                                                             $href = 'mailto:' . $feature->content;
                                                         } elseif ($feature->type == 'text') {
-                                                            $href = 'javascript:void(0);';
+                                                            $href = '';
                                                         }
                                                     @endphp
                                                     <!-- {{ $feature->label }} -->
-                                                    <a href="{{ $href }}" target="_blank"
+                                                    <a href="{{ $href }}" {{ !empty($href) ? 'target="_blank"' : 'onclick="return false;"' }}
                                                         class="p-4 flex flex-col rounded-2xl bg-blue-200 shadow-inner hover:bg-blue-300 w-full border border-blue-400">
                                                         <!-- Font Awesome Icon -->
                                                         <i class="{{ $feature->icon }} text-blue-600 text-2xl"></i>
@@ -1254,8 +1254,7 @@
                                     <div class="py-6">
                                         <div class="mt-2 text-gray-700 w-full text-center">
                                             {{ __('Made with') }}
-                                                <a class="text-blue-600" href="{{ !empty($business_card_details->copyright) ? (str_starts_with($business_card_details->copyright, 'http') ? $business_card_details->copyright : 'https://'.$business_card_details->copyright) : env('APP_URL') }}" target="_blank" rel="noopener noreferrer">
-                                                    {{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }} </a>
+                                                @php $__cr = $business_card_details->copyright ?? ''; $__cr_is_domain = !empty($__cr) && (str_starts_with($__cr, 'http') || str_contains($__cr, '.')); $__cr_url = $__cr_is_domain ? (str_starts_with($__cr, 'http') ? $__cr : 'https://'.$__cr) : (!empty($__cr) ? null : env('APP_URL')); $__cr_text = !empty($__cr) ? $__cr : parse_url(config('app.url'), PHP_URL_HOST); @endphp @if($__cr_url)<a class="text-blue-600" href="{{ $__cr_url }}" target="_blank" rel="noopener noreferrer">{{ $__cr_text }}</a>@else<span class="text-blue-600">{{ $__cr_text }}</span>@endif
                                                 <span id="year"></span>{{ __('. All Rights Reserved.') }}
                                         </div>
                                     </div>

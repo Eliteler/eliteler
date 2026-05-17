@@ -273,6 +273,22 @@
         </div>
     </div>
 
+    {{-- Delete Confirm Modal --}}
+    <div class="modal modal-blur fade" id="confirmDeleteModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="modal-title">{{ __('Are you sure?') }}</div>
+                    <div class="text-muted mt-1">{{ __('Do you want to delete this item?') }}</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary me-auto" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">{{ __('Yes, Delete') }}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{-- Custom JS --}}
     @push('custom-js')
         <script type="text/javascript" src="{{ asset('js/fontawesome-iconpicker.min.js') }}"></script>
@@ -397,11 +413,22 @@
                 }
             }
 
+            var pendingDeleteId = null;
+
             function removeFeature(id) {
                 "use strict";
-                $("#" + id).remove();
-                count--;
+                pendingDeleteId = id;
+                $('#confirmDeleteModal').modal('show');
             }
+
+            $('#confirmDeleteBtn').on('click', function() {
+                if (pendingDeleteId !== null) {
+                    $("#" + pendingDeleteId).remove();
+                    count--;
+                    pendingDeleteId = null;
+                }
+                $('#confirmDeleteModal').modal('hide');
+            });
 
             function getRandomInt() {
                 min = Math.ceil(0);

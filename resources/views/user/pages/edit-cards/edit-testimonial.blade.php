@@ -134,7 +134,7 @@
                                                         <input type="text" class="form-control" name="review[]"
                                                             placeholder="{{ __('Review') }}"
                                                             value="{{ $testimonials[$i]->review }}" required>
-                                                        <button class='btn btn-danger btn-sm mt-2'
+                                                        <button type="button" class='btn btn-danger btn-sm mt-2'
                                                             onclick='removeTestimonial({{ $i }})'>
                                                             {{ __('Remove') }}
                                                         </button>
@@ -171,6 +171,22 @@
             </div>
         </div>
         @include('user.includes.footer')
+
+        {{-- Delete Confirm Modal --}}
+        <div class="modal modal-blur fade" id="confirmDeleteModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <div class="modal-body">
+                        <div class="modal-title">{{ __('Are you sure?') }}</div>
+                        <div class="text-muted mt-1">{{ __('Do you want to delete this review?') }}</div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary me-auto" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+                        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">{{ __('Yes, Delete') }}</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         {{-- Media Library --}}
         <div class="modal modal-blur fade" id="openMediaModel" tabindex="-1" role="dialog" aria-hidden="true">
@@ -224,17 +240,28 @@
                         id +
                         " media-model form-control' name='reviewer_image[]' placeholder='{{ __('Reviewer Image') }}' required><button class='btn btn-primary btn-md' type='button' onclick='openMedia(" +
                         id +
-                        ")'>{{ __('Choose image') }}</button></div></div></div><div class='col-md-6 col-xl-6'> <div class='mb-3'> <label class='form-label required'>{{ __('Reviewer Name') }}</label> <input type='text' class='form-control' name='reviewer_name[]' maxlength='191' placeholder='{{ __('Reviewer Name') }}' required></div></div> <div class='col-md-6 col-xl-6'> <div class='mb-3'> <label class='form-label required'>{{ __('Reviewer Subtext') }}</label> <input type='text' class='form-control' name='review_subtext[]' placeholder='{{ __('Reviewer Subtext') }}' required></div></div> <div class='col-md-6 col-xl-6'> <div class='mb-3'> <label class='form-label required'>{{ __('Review') }}</label> <input type='text' class='form-control' name='review[]' placeholder='{{ __('Review') }}' required> <a href='#' class='btn mt-3 btn-danger btn-sm' onclick='removeTestimonial(" +
-                        id + ")'>{{ __('Remove') }}</a>  </div><br></div>";
+                        ")'>{{ __('Choose image') }}</button></div></div></div><div class='col-md-6 col-xl-6'> <div class='mb-3'> <label class='form-label required'>{{ __('Reviewer Name') }}</label> <input type='text' class='form-control' name='reviewer_name[]' maxlength='191' placeholder='{{ __('Reviewer Name') }}' required></div></div> <div class='col-md-6 col-xl-6'> <div class='mb-3'> <label class='form-label required'>{{ __('Reviewer Subtext') }}</label> <input type='text' class='form-control' name='review_subtext[]' placeholder='{{ __('Reviewer Subtext') }}' required></div></div> <div class='col-md-6 col-xl-6'> <div class='mb-3'> <label class='form-label required'>{{ __('Review') }}</label> <input type='text' class='form-control' name='review[]' placeholder='{{ __('Review') }}' required> <button type='button' class='btn mt-3 btn-danger btn-sm' onclick='removeTestimonial(" +
+                        id + ")'>{{ __('Remove') }}</button>  </div><br></div>";
                     $("#more-testimonial").append(testimonial).html();
                 }
             }
 
-            // Remove service
+            var pendingDeleteId = null;
+
+            // Remove testimonial with confirmation
             function removeTestimonial(id) {
                 "use strict";
-                $("#" + id).remove();
+                pendingDeleteId = id;
+                $('#confirmDeleteModal').modal('show');
             }
+
+            $('#confirmDeleteBtn').on('click', function() {
+                if (pendingDeleteId !== null) {
+                    $("#" + pendingDeleteId).remove();
+                    pendingDeleteId = null;
+                }
+                $('#confirmDeleteModal').modal('hide');
+            });
 
             // Generate random number
             function getRandomInt() {

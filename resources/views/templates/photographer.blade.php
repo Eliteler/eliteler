@@ -415,7 +415,7 @@
                                                             $href = '';
                                                         }
                                                     @endphp
-                                                    @if (!in_array($feature->type, ['tel', 'map', 'iframe', 'youtube', 'address']))
+                                                    @if (!in_array($feature->type, ['tel', 'map', 'iframe', 'youtube', 'address', 'text']))
                                                         <!-- {{ $feature->label }} -->
                                                         <a href="{{ $href }}" target="_blank"
                                                             class="p-4 bg-gradient-to-tl from-[#ff7e5f] to-[#feb47b]  transition-colors rounded-2xl flex flex-col border border-orange-400">
@@ -1268,8 +1268,7 @@
                                         class="flex pt-5 px-3 m-auto font-semibold text-white text-sm flex-col md:flex-row max-w-6xl">
                                         <div class="mt-2 text-gray-600">
                                             {{ __('Copyright') }} &copy;
-                                                <a class="text-orange-700" href="{{ !empty($business_card_details->copyright) ? (str_starts_with($business_card_details->copyright, 'http') ? $business_card_details->copyright : 'https://'.$business_card_details->copyright) : env('APP_URL') }}" target="_blank" rel="noopener noreferrer">
-                                                    {{ !empty($business_card_details->copyright) ? $business_card_details->copyright : $card_details->title }}</a><span id="year"></span>{{ __('. All Rights Reserved.') }}
+                                                @php $__cr = $business_card_details->copyright ?? ''; $__cr_is_domain = !empty($__cr) && (str_starts_with($__cr, 'http') || str_contains($__cr, '.')); $__cr_url = $__cr_is_domain ? (str_starts_with($__cr, 'http') ? $__cr : 'https://'.$__cr) : (!empty($__cr) ? null : env('APP_URL')); $__cr_text = !empty($__cr) ? $__cr : parse_url(config('app.url'), PHP_URL_HOST); @endphp @if($__cr_url)<a class="text-orange-700" href="{{ $__cr_url }}" target="_blank" rel="noopener noreferrer">{{ $__cr_text }}</a>@else<span class="text-orange-700">{{ $__cr_text }}</span>@endif<span id="year"></span>{{ __('. All Rights Reserved.') }}
                                         </div>
                                     </div>
                                 @else
@@ -1277,8 +1276,7 @@
                                         class="flexpx-3 m-auto pt-5 font-semibold text-white text-sm flex-col md:flex-row max-w-6xl">
                                         <div class="mt-2 text-gray-600">
                                             {{ __('Made with') }}
-                                                <a class="text-orange-700" href="{{ !empty($business_card_details->copyright) ? (str_starts_with($business_card_details->copyright, 'http') ? $business_card_details->copyright : 'https://'.$business_card_details->copyright) : env('APP_URL') }}" target="_blank" rel="noopener noreferrer">
-                                                    {{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }} </a>
+                                                @php $__cr = $business_card_details->copyright ?? ''; $__cr_is_domain = !empty($__cr) && (str_starts_with($__cr, 'http') || str_contains($__cr, '.')); $__cr_url = $__cr_is_domain ? (str_starts_with($__cr, 'http') ? $__cr : 'https://'.$__cr) : (!empty($__cr) ? null : env('APP_URL')); $__cr_text = !empty($__cr) ? $__cr : parse_url(config('app.url'), PHP_URL_HOST); @endphp @if($__cr_url)<a class="text-orange-700" href="{{ $__cr_url }}" target="_blank" rel="noopener noreferrer">{{ $__cr_text }}</a>@else<span class="text-orange-700">{{ $__cr_text }}</span>@endif
                                                 <span id="year"></span>{{ __('. All Rights Reserved.') }}
                                         </div>
                                     </div>
