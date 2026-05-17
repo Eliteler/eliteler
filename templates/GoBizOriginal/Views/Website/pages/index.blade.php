@@ -603,6 +603,11 @@
         </div>
     </section>
 
+    {{-- Mobile Application Action --}}
+    @if ($template_config->app_action == 1 && ($template_config->google_play_store_link || $template_config->apple_app_store_link))
+        @include('GoBizOriginal::Website.includes.mobile-app-banner', ['template_config' => $template_config])
+    @endif
+
     {{-- Custom JS --}}
 @section('custom-js')
 @endsection

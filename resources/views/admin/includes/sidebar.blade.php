@@ -4,6 +4,7 @@
     use App\Transaction;
     use Carbon\Carbon;
     use App\User;
+    use App\AibuilderSetting;
 
     // Config
     $config = GoBizCommonService::config();
@@ -32,6 +33,7 @@
         'in_app_purchases' => 1,
         'vcard_store' => 1,
         'business_card_intros' => 1,
+        'ai_credits' => 1,
     ];
 
     // Merge permissions
@@ -61,6 +63,9 @@
 
     // Mobile app API check
     $mobile_app_api_enabled = is_dir(base_path('plugins/MobileAppAPI')) ? 1 : 0;
+
+    // Ai builder settings
+    $aibuilder_settings = AibuilderSetting::first();
 @endphp
 
 <!-- Sidebar -->
@@ -246,6 +251,40 @@
                                 {{ __('Plans') }}
                             </span>
                         </a>
+                    </li>
+                @endif
+
+                {{-- AI Credits Plans --}}
+                @if ($allowedPermissions['ai_credits'] && $aibuilder_settings->aibuilder == 1)
+                    <li
+                        class="nav-item {{ request()->is('admin/ai-credits-plans') || request()->is('admin/ai-credits/create-plan') || request()->is('admin/ai-credits/edit-plan/*') || request()->is('admin/ai-credits/transactions*') ? 'active' : '' }}">
+                        <a class="nav-link dropdown-toggle" href="#navbar-extra" data-bs-toggle="dropdown"
+                            role="button" aria-expanded="false">
+                            <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round"
+                                    class="icon icon-tabler icons-tabler-outline icon-tabler-credits">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M3 14a6 2 0 1 0 12 0a6 2 0 1 0 -12 0" />
+                                    <path d="M3 14v5c0 1.105 2.686 2 6 2s6 -.895 6 -2v-5" />
+                                    <path d="M9 5a6 2 0 1 0 12 0a6 2 0 1 0 -12 0" />
+                                    <path d="M9 5v3" />
+                                    <path d="M18.365 11.656c1.59 -.36 2.635 -.966 2.635 -1.656v-5" />
+                                </svg>
+                            </span>
+                            <span class="nav-link-title">
+                                {{ __('AI Credits') }}
+                            </span>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a class="dropdown-item" href="{{ route('admin.ai.credits.plans') }}">
+                                {{ __('Plans') }}
+                            </a>
+                            <a class="dropdown-item" href="{{ route('admin.ai.credits.transactions') }}">
+                                {{ __('Transactions') }}
+                            </a>
+                        </div>
                     </li>
                 @endif
 

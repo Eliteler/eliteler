@@ -838,6 +838,10 @@ body {
     }
 }
 
+#smooth-wrapper {
+    max-width: 100%;
+}
+
 /* ── Cover ── */
 .cover-photo {
     width: 100%;

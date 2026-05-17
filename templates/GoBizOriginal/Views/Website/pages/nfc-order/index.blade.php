@@ -21,7 +21,7 @@
             </p>
 
             <div class="flex flex-wrap -m-4">
-                @foreach ($availableNfcCards as $nfcCard)
+                @forelse ($availableNfcCards as $nfcCard)
                     <div class="w-full md:w-1/3 lg:w-1/3 p-4">
                         <div class="bg-{{ $template_config->template_color }}-50 p-8 h-full flex flex-col">
 
@@ -77,7 +77,15 @@
 
                         </div>
                     </div>
-                @endforeach
+                @empty
+                    <div class="w-full p-4">
+                        <div class="p-8 h-full flex items-center justify-center">
+                            <p class="text-xl font-bold text-center text-gray-500">
+                                {{ __('No NFC cards available for ordering.') }}
+                            </p>
+                        </div>
+                    </div>
+                @endforelse
             </div>
         </div>
     </section>

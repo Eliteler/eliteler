@@ -58,6 +58,8 @@ $defaultPermissions = [
     'referral_system' => 1,
     'in_app_purchases' => 1,
     'vcard_store' => 1,
+    'business_card_intros' => 1,
+    'ai_credits' => 1,
     ];
 
     // Merge default permissions with the current ones (current values take precedence)
@@ -224,7 +226,8 @@ $defaultPermissions = [
                                             name="currency_decimals_place" id="currency_decimals_place"
                                             value="{{ $config[56]->config_value }}"
                                             placeholder="{{ __('Decimals Places') }}" min="0" step="1"
-                                            max="3" required>
+                                            max="3" required
+                                            oninput="this.value = this.value.replace(/^0+(?=\d)/, '').replace(/[^0-9]/g, ''); if(this.value > 3) this.value = 3;">
                                         <small
                                             class="text-muted">{{ __('If you don\'t need decimal vale, set 0') }}</small>
                                     </div>
@@ -235,7 +238,8 @@ $defaultPermissions = [
                                     <div class="mb-3">
                                         <label class="form-label required"
                                             for="date_time_format">{{ __('Date Time Format') }}</label>
-                                        <select name="date_time_format" id="date_time_format" class="form-select" required>
+                                        <select name="date_time_format" id="date_time_format" class="form-select"
+                                            required>
                                             @php
                                                 $availableDateTimeFormats = getDateTimeFormats();
                                             @endphp

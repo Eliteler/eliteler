@@ -151,7 +151,7 @@ class CustomerController extends Controller
                 ->addColumn('created_at', fn($row) => formatDateForUser($row->created_at))
 
                 ->addColumn('status', function ($row) {
-                    return match ($row->status) {
+                    return match ((int) $row->status) {
                         0 => '<span class="badge bg-warning text-white">' . __('Deactive') . '</span>',
                         1 => '<span class="badge bg-success text-white">' . __('Active') . '</span>',
                         2 => '<span class="badge bg-danger text-white">' . __('Ban') . '</span>',
@@ -287,6 +287,13 @@ class CustomerController extends Controller
                 ->orderBy('nfc_card_order_transactions.id', 'desc')
                 ->get();
 
+            // Get all ai credits transactions of the customer
+            $ai_credits_transactions = DB::table('ai_credits_transactions')
+                ->join('ai_credits_plans', 'ai_credits_transactions.ai_credits_plan_id', '=', 'ai_credits_plans.ai_credits_plan_id')
+                ->where('ai_credits_transactions.user_id', $user_details->id)
+                ->orderBy('ai_credits_transactions.id', 'desc')
+                ->get(['ai_credits_transactions.*', 'ai_credits_plans.plan_name']);
+
             // Queries
             $settings = Setting::where('status', 1)->first();
             $config = DB::table('config')->get();
@@ -298,7 +305,7 @@ class CustomerController extends Controller
             // Get all available customers
             $customers = User::where('role_id', 2)->where('status', 1)->get();
 
-            return view('admin.pages.customers.view', compact('user_details', 'user_cards', 'user_stores', 'orders', 'transactions', 'nfc_transactions', 'customers', 'settings', 'config', 'symbol'));
+            return view('admin.pages.customers.view', compact('user_details', 'ai_credits_transactions', 'user_cards', 'user_stores', 'orders', 'transactions', 'nfc_transactions', 'customers', 'settings', 'config', 'symbol'));
         }
     }
 

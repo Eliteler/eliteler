@@ -150,13 +150,13 @@
                                         {{ $transaction->billing_details['from_billing_email'] }}</span><br>
 
                                     {{-- Phone --}}
-                                    @if ($transaction->billing_details['from_billing_phone'] != null)
+                                    @if ($transaction->billing_details['from_billing_phone'] ?? null)
                                         <span><strong>{{ __('Phone') }}</strong>:
                                             {{ $transaction->billing_details['from_billing_phone'] }}</span><br>
                                     @endif
 
                                     {{-- Tax Number --}}
-                                    @if ($transaction->billing_details['from_vat_number'] != null)
+                                    @if ($transaction->billing_details['from_vat_number'] ?? null)
                                         <span><strong>{{ __('Tax Number') }}</strong>:
                                             {{ $transaction->billing_details['from_vat_number'] }}</span><br>
                                     @endif
@@ -171,26 +171,31 @@
                             <div class="row mb-4">
                                 <div class="col-6">
                                     <h4 class="text-muted">{{ __('Bill To') }}</h4>
-                                    <span class="h4">{{ $transaction->billing_details['to_billing_name'] }}</span><br>
+                                    <span
+                                        class="h4">{{ $transaction->billing_details['to_billing_name'] ?? '' }}</span><br>
+                                    @if ($transaction->billing_details['to_billing_address'] ?? null)
                                     <span>
-                                        {{ $transaction->billing_details['to_billing_address'] }},
-                                        {{ $transaction->billing_details['to_billing_city'] }},
-                                        {{ $transaction->billing_details['to_billing_state'] }}
-                                        {{ $transaction->billing_details['to_billing_country'] }} <br>
+                                        {{ $transaction->billing_details['to_billing_address'] ?? '' }},
+                                        {{ $transaction->billing_details['to_billing_city'] ?? '' }},
+                                        {{ $transaction->billing_details['to_billing_state'] ?? '' }}
+                                        {{ $transaction->billing_details['to_billing_country'] ?? '' }} <br>
                                     </span>
+                                    @endif
 
                                     {{-- Email --}}
-                                    <span><strong>{{ __('Email') }}</strong>:
-                                        {{ $transaction->billing_details['to_billing_email'] }}</span><br>
+                                    @if ($transaction->billing_details['to_billing_email'] ?? null)
+                                        <span><strong>{{ __('Email') }}</strong>:
+                                            {{ $transaction->billing_details['to_billing_email'] }}</span><br>
+                                    @endif
 
                                     {{-- Phone --}}
-                                    @if ($transaction->billing_details['to_billing_phone'] != null)
+                                    @if ($transaction->billing_details['to_billing_phone'] ?? null)
                                         <span><strong>{{ __('Phone') }}</strong>:
                                             {{ $transaction->billing_details['to_billing_phone'] }}</span><br>
                                     @endif
 
                                     {{-- Tax Number --}}
-                                    @if ($transaction->billing_details['to_vat_number'] != null)
+                                    @if ($transaction->billing_details['to_vat_number'] ?? null)
                                         <span><strong>{{ __('Tax Number') }}</strong>:
                                             {{ $transaction->billing_details['to_vat_number'] }}</span><br>
                                     @endif

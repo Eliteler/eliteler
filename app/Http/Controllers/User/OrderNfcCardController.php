@@ -97,11 +97,6 @@ class OrderNfcCardController extends Controller
             return abort(404);
         }
 
-        // Check if the user has a plan
-        $active_plan = Plan::where('plan_id', Auth::user()->plan_id)->first();
-        $plan = User::where('user_id', Auth::user()->user_id)->first();
-        $active_plan = json_decode($plan->plan_details);
-
         // Get NFC Card details
         $nfcCardDetails = NfcCardDesign::where('nfc_card_id', $designId)->first();
 

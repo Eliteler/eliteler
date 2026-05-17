@@ -80,6 +80,7 @@
                                                 <select class="form-control used_for" name="used_for" required>
                                                     <option value="plan" {{ old('used_for') == 'plan' ? 'selected' : '' }}>{{ __('Plan') }}</option>
                                                     <option value="nfc" {{ old('used_for') == 'nfc' ? 'selected' : '' }}>{{ __('NFC Card') }}</option>
+                                                    <option value="ai_credits" {{ old('used_for') == 'ai_credits' ? 'selected' : '' }}>{{ __('AI Credits') }}</option>
                                                 </select>
                                             </div>
                                         </div>

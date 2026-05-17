@@ -209,6 +209,81 @@
                         </form>
                     </div>
 
+                    {{-- Mobile Application Action Banner --}}
+                    <form method="POST" action="{{ route('admin.web-template.gobiz-original.app-action-banner') }}">
+                        @csrf
+                        <div class="card mt-3">
+                            <div class="card-header">
+                                <h3 class="card-title">{{ __('Mobile Application Action Banner') }}</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4 col-xl-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">{{ __('Mobile Application Action Banner') }}</label>
+                                            <div class="form-select-wrapper">
+                                                <select name="app_action" id="app_action" class="form-select app_action"
+                                                    required>
+                                                    <option value="1"
+                                                        {{ $template_config->app_action == 1 ? 'selected' : '' }}>
+                                                        {{ __('Yes') }}</option>
+                                                    <option value="0"
+                                                        {{ $template_config->app_action == 0 ? 'selected' : '' }}>
+                                                        {{ __('No') }}</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-8 col-xl-8"></div>
+
+                                    {{-- App Heading --}}
+                                    <div class="col-md-6 col-xl-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">{{ __('App Heading') }}</label>
+                                            <input type="text" class="form-control" name="app_heading"
+                                                value="{{ $template_config->app_heading }}"
+                                                placeholder="{{ __('Example') }}: {{ __('Your Business, In Your Pocket') }}" required>
+                                        </div>
+                                    </div>
+
+                                    {{-- App Description --}}
+                                    <div class="col-md-6 col-xl-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">{{ __('App Description') }}</label>
+                                            <textarea class="form-control" name="app_description"
+                                                placeholder="{{ __('Example') }}: {{ __('Control your business cards, store, and NFC tools from a single mobile app. Stay connected and never miss an opportunity.') }}" required>{{ $template_config->app_description }}</textarea>
+                                        </div>
+                                    </div>
+
+                                    {{-- Google Play Store Link --}}
+                                    <div class="col-md-6 col-xl-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">{{ __('Google Play Store Link') }}</label>
+                                            <input type="url" class="form-control" name="google_play_store_link"
+                                                value="{{ $template_config->google_play_store_link }}"
+                                                placeholder="{{ __('Example') }}: https://play.google.com/store/apps/details?id=com.nativecode.gobiz">
+                                        </div>
+                                    </div>
+
+                                    {{-- Apple App Store Link --}}
+                                    <div class="col-md-6 col-xl-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">{{ __('Apple App Store Link') }}</label>
+                                            <input type="url" class="form-control" name="apple_app_store_link"
+                                                value="{{ $template_config->apple_app_store_link }}"
+                                                placeholder="{{ __('Example') }}: https://apps.apple.com/us/app/gobiz-vcard-saas/id1601234773">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer text-end">
+                                <button type="submit" class="btn btn-primary btn-md ms-auto">
+                                    {{ __('Save') }}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
                     {{-- Announcement Bar --}}
                     <form method="POST" action="{{ route('admin.web-template.gobiz-original.update-announcements') }}"
                         class="col-12 mb-1">
@@ -452,7 +527,7 @@
     <script src="{{ asset('js/fslightbox.js') }}"></script>
     <script>
         // Array of element IDs
-        var elementSelectors = ['theme_slider', 'announcement_marquee', 'popup_status'];
+        var elementSelectors = ['theme_slider', 'announcement_marquee', 'popup_status', 'app_action'];
 
         // Function to initialize TomSelect and enforce the "required" attribute
         function initializeTomSelectWithRequired(el) {

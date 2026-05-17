@@ -10,39 +10,6 @@
  |--------------------------------------------------------------------------
 */
 
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\BlogController;
-use App\Http\Controllers\HomeController;
-use App\Http\Controllers\ShareController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\WebToolsController;
-use App\Http\Controllers\SubdomainController;
-use App\Http\Controllers\User\CardController;
-use App\Http\Controllers\Admin\DemoController;
-use App\Http\Controllers\Admin\PlanController;
-use App\Http\Controllers\Admin\UserController;
-use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\NewsletterController;
-use App\Http\Controllers\User\MediaController;
-use App\Http\Controllers\User\StoreController;
-use App\Http\Controllers\Admin\GroupController;
-use App\Http\Controllers\Admin\ThemeController;
-use App\Http\Controllers\BookServiceController;
-use App\Http\Controllers\PublicThemeController;
-use App\Http\Controllers\ReadNfcCardController;
-use App\Http\Controllers\StorePolicyController;
-use App\Http\Controllers\Admin\BackupController;
-use App\Http\Controllers\Admin\PluginController;
-use App\Http\Controllers\Admin\PusherController;
-use App\Http\Controllers\Admin\UpdateController;
-use App\Http\Controllers\CustomDomainController;
-use App\Http\Controllers\User\BillingController;
-use App\Http\Controllers\User\ContactController;
-use App\Http\Controllers\User\InquiryController;
-use App\Http\Controllers\User\PreviewController;
-use App\Http\Controllers\User\VisitorController;
 use App\Http\Controllers\Admin\AccountController;
 use App\Http\Controllers\Admin\CouponsController;
 use App\Http\Controllers\Admin\CronJobController;
@@ -81,107 +48,194 @@ use App\Http\Controllers\Payment\ToyyibpayController;
 use App\Http\Controllers\User\OrderNfcCardController;
 use App\Http\Controllers\User\VerificationController;
 use App\Http\Controllers\Admin\BlogCategoryController;
-use App\Http\Controllers\Admin\CreatedCardsController;
-use App\Http\Controllers\Admin\EmailSettingController;
-use App\Http\Controllers\Admin\NfcCardOrderController;
-use App\Http\Controllers\Admin\TransactionsController;
-use App\Http\Controllers\User\ConnectDomainController;
-use App\Http\Controllers\User\ManageNfcCardController;
-use App\Http\Controllers\Admin\EmailTemplateController;
-use App\Http\Controllers\Admin\GoogleSettingController;
-use App\Http\Controllers\Admin\NfcCardDesignController;
-use App\Http\Controllers\Admin\PaymentMethodController;
-use App\Http\Controllers\Payment\FlutterwaveController;
-use App\Http\Controllers\Payment\MercadoPagoController;
-use App\Http\Controllers\User\ServiceBookingController;
-use App\Http\Controllers\WebsiteNFCCardOrderController;
-use App\Http\Controllers\Admin\CreateCustomerController;
-use App\Http\Controllers\Admin\InAppPurchasesController;
-use App\Http\Controllers\Admin\PaymentSettingController;
-use App\Http\Controllers\Admin\WebsiteSettingController;
-use App\Http\Controllers\User\ActivateNfcCardController;
-use App\Http\Controllers\Admin\SubdomainSettingController;
-use App\Http\Controllers\Payment\NFC\NFCIyzipayController;
 use App\Http\Controllers\Admin\BlogController as AdminBlog;
 use App\Http\Controllers\Admin\BusinessCardIntrosController;
-use App\Http\Controllers\Admin\MarketingCustomerController;
-use App\Http\Controllers\Auth\PublicVerificationController;
-use App\Http\Controllers\User\ManageOrderNfcCardController;
-use App\Http\Controllers\User\TransactionNfcCardController;
-use App\Http\Controllers\User\Vcard\Create\PopUpController;
-use App\Http\Controllers\User\Vcard\Create\CreateController;
-use App\Http\Controllers\User\Vcard\Create\BookingController;
-use App\Http\Controllers\User\Vcard\Create\GalleryController;
-use App\Http\Controllers\User\Vcard\Create\ProductController;
-use App\Http\Controllers\User\Vcard\Create\ServiceController;
-use App\Http\Controllers\Admin\CustomDomainRequestsController;
-use App\Http\Controllers\Admin\NfcCardKeyGenerationController;
-use App\Http\Controllers\User\Store\Edit\StoreOrderController;
-use App\Http\Controllers\User\AccountController as userAccount;
-use App\Http\Controllers\User\Vcard\Edit\EditBookingController;
-use App\Http\Controllers\User\Vcard\Create\SocialLinkController;
-use App\Http\Controllers\Admin\NfcCardOrderTransactionController;
-use App\Http\Controllers\User\Vcard\Create\AppointmentController;
-use App\Http\Controllers\User\Vcard\Create\ContactFormController;
-use App\Http\Controllers\User\Vcard\Create\PaymentLinkController;
-use App\Http\Controllers\User\Vcard\Create\TestimonialController;
-use App\Http\Controllers\User\Store\Edit\UpdateStoreSeoController;
-use App\Http\Controllers\User\Vcard\Create\BusinessHourController;
-use App\Http\Controllers\User\Vcard\Create\SectionTitleController;
-use App\Http\Controllers\Admin\ReferralWithdrawalRequestController;
-use App\Http\Controllers\User\DashboardController as userDashboard;
-use App\Http\Controllers\User\PlanController as UserPlanController;
-use App\Http\Controllers\User\Store\Edit\EditStorePopupsController;
-use App\Http\Controllers\User\Vcard\Create\CustomizationController;
-use App\Http\Controllers\User\CustomDomainCloudflareRulesController;
-use App\Http\Controllers\User\Store\Edit\UpdateStoreHoursController;
-use App\Http\Controllers\Admin\ReferralSystemConfigurationController;
-use App\Http\Controllers\User\Store\Edit\EditStorePoliciesController;
-use App\Http\Controllers\User\Vcard\Create\AdvancedSettingController;
-use App\Http\Controllers\User\Vcard\Edit\EditCustomizationController;
-use App\Http\Controllers\User\Store\Edit\UpdateStoreCategoryController;
-use App\Http\Controllers\User\Store\Edit\UpdateStoreSettingsController;
-use App\Http\Controllers\User\TransactionsController as userTransactions;
-use App\Http\Controllers\Payment\NFC\PaytrController as NFCPaytrController;
-use App\Http\Controllers\User\ReferralController as UserReferralController;
-use App\Http\Controllers\StoreOrderController as StoreOrderPlacedController;
-use App\Http\Controllers\User\Store\Edit\EditStoreAdvancedSettingController;
-use App\Http\Controllers\User\Store\Edit\UpdateStoreProductImportController;
-use App\Http\Controllers\Payment\NFC\MollieController as NFCMollieController;
-use App\Http\Controllers\Payment\NFC\PaddleController as NFCPaddleController;
-use App\Http\Controllers\Payment\NFC\PaypalController as NFCPaypalController;
-use App\Http\Controllers\Payment\NFC\StripeController as NFCStripeController;
-use App\Http\Controllers\Payment\NFC\XenditController as NFCXenditController;
-use App\Http\Controllers\Payment\NFC\OfflineController as NFCOfflineController;
-use App\Http\Controllers\Payment\NFC\PhonepeController as NFCPhonepeController;
-use App\Http\Controllers\User\NewsletterController as UserNewsletterController;
-use App\Http\Controllers\User\Vcard\Edit\PopUpController as EditPopUpController;
-use App\Http\Controllers\Payment\NFC\CashfreeController as NFCCashfreeController;
-use App\Http\Controllers\Payment\NFC\PaystackController as NFCPaystackController;
-use App\Http\Controllers\Payment\NFC\RazorpayController as NFCRazorpayController;
+use App\Http\Controllers\Admin\CampaignController;
+use App\Http\Controllers\Admin\CouponsController;
+use App\Http\Controllers\Admin\CreateCustomerController;
+use App\Http\Controllers\Admin\CreatedCardsController;
 use App\Http\Controllers\Admin\CreateStoreController as AdminCreateStoreController;
+use App\Http\Controllers\Admin\CronJobController;
+use App\Http\Controllers\Admin\CurrencyController;
+use App\Http\Controllers\Admin\CustomDomainRequestsController;
+use App\Http\Controllers\Admin\CustomerController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\DemoController;
+use App\Http\Controllers\Admin\EmailSettingController;
+use App\Http\Controllers\Admin\EmailTemplateController;
+use App\Http\Controllers\Admin\GoogleSettingController;
+use App\Http\Controllers\Admin\GroupController;
+use App\Http\Controllers\Admin\InAppPurchasesController;
+use App\Http\Controllers\Admin\MailgunController;
+use App\Http\Controllers\Admin\MaintenanceController;
+use App\Http\Controllers\Admin\MarketingCustomerController;
+use App\Http\Controllers\Admin\NfcCardDesignController;
+use App\Http\Controllers\Admin\NfcCardKeyGenerationController;
+use App\Http\Controllers\Admin\NfcCardOrderController;
+use App\Http\Controllers\Admin\NfcCardOrderTransactionController;
+use App\Http\Controllers\Admin\PaymentMethodController;
+use App\Http\Controllers\Admin\PaymentSettingController;
+use App\Http\Controllers\Admin\PlanController;
+use App\Http\Controllers\Admin\PluginController;
+use App\Http\Controllers\Admin\PusherController;
+use App\Http\Controllers\Admin\PusherNotification;
+use App\Http\Controllers\Admin\ReferralController;
+use App\Http\Controllers\Admin\ReferralSystemConfigurationController;
+use App\Http\Controllers\Admin\ReferralWithdrawalRequestController;
 use App\Http\Controllers\Admin\SearchController;
-use App\Http\Controllers\Payment\NFC\ToyyibpayController as NFCToyyibpayController;
-use App\Http\Controllers\User\AppointmentController as BookedAppointmentController;
-use App\Http\Controllers\User\Store\Edit\UpdateController as UpdateStoreController;
-use App\Http\Controllers\User\Vcard\Edit\GalleryController as EditGalleryController;
-use App\Http\Controllers\User\Vcard\Edit\ProductController as EditProductController;
-use App\Http\Controllers\User\Vcard\Edit\ServiceController as EditServiceController;
-use App\Http\Controllers\User\Store\Create\CreateController as CreateStoreController;
+use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\SitemapController;
+use App\Http\Controllers\Admin\SubdomainSettingController;
+use App\Http\Controllers\Admin\TaxSettingController;
+use App\Http\Controllers\Admin\ThemeController;
+use App\Http\Controllers\Admin\TransactionsController;
+use App\Http\Controllers\Admin\UpdateController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\WebsiteSettingController;
+use App\Http\Controllers\Admin\WebTemplateController;
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\PublicVerificationController;
+use App\Http\Controllers\BlogController;
+use App\Http\Controllers\BookAppointmentController;
+use App\Http\Controllers\BookServiceController;
+use App\Http\Controllers\CustomDomainController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\NewsletterController;
+use App\Http\Controllers\Payment\AICredits\CashfreeController as AICreditsCashfreeController;
+use App\Http\Controllers\Payment\AICredits\FlutterwaveController as AICreditsFlutterwaveController;
+use App\Http\Controllers\Payment\AICredits\IyzipayController as AICreditsIyzipayController;
+use App\Http\Controllers\Payment\AICredits\MercadoPagoController as AICreditsMercadoPagoController;
+use App\Http\Controllers\Payment\AICredits\MollieController as AICreditsMollieController;
+use App\Http\Controllers\Payment\AICredits\OfflineController as AICreditsOfflineController;
+use App\Http\Controllers\Payment\AICredits\PaddleController as AICreditsPaddleController;
+use App\Http\Controllers\Payment\AICredits\PaymentController as AICreditsPaymentController;
+use App\Http\Controllers\Payment\AICredits\PaypalController as AICreditsPaypalController;
+use App\Http\Controllers\Payment\AICredits\PaystackController as AICreditsPaystackController;
+use App\Http\Controllers\Payment\AICredits\PaytrController as AICreditsPaytrController;
+use App\Http\Controllers\Payment\AICredits\PhonepeController as AICreditsPhonepeController;
+use App\Http\Controllers\Payment\AICredits\RazorpayController as AICreditsRazorpayController;
+use App\Http\Controllers\Payment\AICredits\StripeController as AICreditsStripeController;
+use App\Http\Controllers\Payment\AICredits\ToyyibpayController as AICreditsToyyibpayController;
+use App\Http\Controllers\Payment\AICredits\XenditController as AICreditsXenditController;
+use App\Http\Controllers\Payment\CashfreeController;
+use App\Http\Controllers\Payment\FlutterwaveController;
+use App\Http\Controllers\Payment\IyzipayController;
+use App\Http\Controllers\Payment\MercadoPagoController;
+use App\Http\Controllers\Payment\MollieController;
+use App\Http\Controllers\Payment\NFC\CashfreeController as NFCCashfreeController;
 use App\Http\Controllers\Payment\NFC\FlutterwaveController as NFCFlutterwaveController;
 use App\Http\Controllers\Payment\NFC\MercadoPagoController as NFCMercadoPagoController;
+use App\Http\Controllers\Payment\NFC\MollieController as NFCMollieController;
+use App\Http\Controllers\Payment\NFC\NFCIyzipayController;
+use App\Http\Controllers\Payment\NFC\OfflineController as NFCOfflineController;
+use App\Http\Controllers\Payment\NFC\PaddleController as NFCPaddleController;
 use App\Http\Controllers\Payment\NFC\PaymentController as OrderNfcCardPaymentController;
-use App\Http\Controllers\User\Vcard\Edit\SocialLinkController as EditSocialLinkController;
-use App\Http\Controllers\User\Store\Edit\ProductController as UpdateStoreProductController;
-use App\Http\Controllers\User\Vcard\Edit\AppointmentController as EditAppointmentController;
-use App\Http\Controllers\User\Vcard\Edit\ContactFormController as EditContactFormController;
-use App\Http\Controllers\User\Vcard\Edit\PaymentLinkController as EditPaymentLinkController;
-use App\Http\Controllers\User\Vcard\Edit\TestimonialController as EditTestimonialController;
-use App\Http\Controllers\User\Store\Create\ProductController as CreateStoreProductController;
-use App\Http\Controllers\User\Vcard\Edit\BusinessHourController as EditBusinessHourController;
-use App\Http\Controllers\User\Vcard\Edit\SectionTitleController as EditSectionTitleController;
-use App\Http\Controllers\User\Vcard\Edit\AdvancedSettingController as EditAdvancedSettingController;
+use App\Http\Controllers\Payment\NFC\PaypalController as NFCPaypalController;
+use App\Http\Controllers\Payment\NFC\PaystackController as NFCPaystackController;
+use App\Http\Controllers\Payment\NFC\PaytrController as NFCPaytrController;
+use App\Http\Controllers\Payment\NFC\PhonepeController as NFCPhonepeController;
+use App\Http\Controllers\Payment\NFC\RazorpayController as NFCRazorpayController;
+use App\Http\Controllers\Payment\NFC\StripeController as NFCStripeController;
+use App\Http\Controllers\Payment\NFC\ToyyibpayController as NFCToyyibpayController;
+use App\Http\Controllers\Payment\NFC\XenditController as NFCXenditController;
+use App\Http\Controllers\Payment\OfflineController;
+use App\Http\Controllers\Payment\PaddleController;
+use App\Http\Controllers\Payment\PaymentController;
+use App\Http\Controllers\Payment\PaypalController;
+use App\Http\Controllers\Payment\PaystackController;
+use App\Http\Controllers\Payment\PaytrController;
+use App\Http\Controllers\Payment\PhonepeController;
+use App\Http\Controllers\Payment\RazorpayController;
+use App\Http\Controllers\Payment\StripeController;
+use App\Http\Controllers\Payment\ToyyibpayController;
+use App\Http\Controllers\Payment\XenditController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PublicThemeController;
+use App\Http\Controllers\ReadNfcCardController;
+use App\Http\Controllers\ShareController;
+use App\Http\Controllers\StoreOrderController as StoreOrderPlacedController;
+use App\Http\Controllers\StorePolicyController;
+use App\Http\Controllers\SubdomainController;
+use App\Http\Controllers\User\AccountController as userAccount;
+use App\Http\Controllers\User\ActivateNfcCardController;
+use App\Http\Controllers\User\AdditionalController;
+use App\Http\Controllers\User\AICreditsCheckOutController;
+use App\Http\Controllers\User\AiCreditsPlanController as UserAiCreditsPlanController;
+use App\Http\Controllers\User\AiCreditsTransactionController as UserAiCreditsTransactionController;
+use App\Http\Controllers\User\AppointmentController as BookedAppointmentController;
+use App\Http\Controllers\User\BillingController;
+use App\Http\Controllers\User\CardController;
+use App\Http\Controllers\User\CheckOutController;
+use App\Http\Controllers\User\ConnectDomainController;
+use App\Http\Controllers\User\ContactController;
+use App\Http\Controllers\User\CustomDomainCloudflareRulesController;
+use App\Http\Controllers\User\DashboardController as userDashboard;
+use App\Http\Controllers\User\DuplicateController;
+use App\Http\Controllers\User\EditCardController;
+use App\Http\Controllers\User\InquiryController;
 use App\Http\Controllers\User\IntroScreenController;
+use App\Http\Controllers\User\ManageNfcCardController;
+use App\Http\Controllers\User\ManageOrderNfcCardController;
+use App\Http\Controllers\User\MediaController;
+use App\Http\Controllers\User\NewsletterController as UserNewsletterController;
+use App\Http\Controllers\User\OrderNfcCardController;
+use App\Http\Controllers\User\PlanController as UserPlanController;
+use App\Http\Controllers\User\PreviewController;
+use App\Http\Controllers\User\ReferralController as UserReferralController;
+use App\Http\Controllers\User\ServiceBookingController;
+use App\Http\Controllers\User\Store\Create\CreateController as CreateStoreController;
+use App\Http\Controllers\User\Store\Create\ProductController as CreateStoreProductController;
+use App\Http\Controllers\User\Store\Edit\EditStoreAdvancedSettingController;
+use App\Http\Controllers\User\Store\Edit\EditStorePoliciesController;
+use App\Http\Controllers\User\Store\Edit\EditStorePopupsController;
+use App\Http\Controllers\User\Store\Edit\ProductController as UpdateStoreProductController;
+use App\Http\Controllers\User\Store\Edit\StoreOrderController;
+use App\Http\Controllers\User\Store\Edit\UpdateController as UpdateStoreController;
+use App\Http\Controllers\User\Store\Edit\UpdateStoreCategoryController;
+use App\Http\Controllers\User\Store\Edit\UpdateStoreHoursController;
+use App\Http\Controllers\User\Store\Edit\UpdateStoreProductImportController;
+use App\Http\Controllers\User\Store\Edit\UpdateStoreSeoController;
+use App\Http\Controllers\User\Store\Edit\UpdateStoreSettingsController;
+use App\Http\Controllers\User\StoreController;
+use App\Http\Controllers\User\TransactionNfcCardController;
+use App\Http\Controllers\User\TransactionsController as userTransactions;
+use App\Http\Controllers\User\Vcard\Create\AdvancedSettingController;
+use App\Http\Controllers\User\Vcard\Create\AppointmentController;
+use App\Http\Controllers\User\Vcard\Create\BookingController;
+use App\Http\Controllers\User\Vcard\Create\BusinessHourController;
+use App\Http\Controllers\User\Vcard\Create\ContactFormController;
+use App\Http\Controllers\User\Vcard\Create\CreateController;
+use App\Http\Controllers\User\Vcard\Create\CustomizationController;
+use App\Http\Controllers\User\Vcard\Create\GalleryController;
+use App\Http\Controllers\User\Vcard\Create\PaymentLinkController;
+use App\Http\Controllers\User\Vcard\Create\PopUpController;
+use App\Http\Controllers\User\Vcard\Create\ProductController;
+use App\Http\Controllers\User\Vcard\Create\SectionTitleController;
+use App\Http\Controllers\User\Vcard\Create\ServiceController;
+use App\Http\Controllers\User\Vcard\Create\SocialLinkController;
+use App\Http\Controllers\User\Vcard\Create\TestimonialController;
+use App\Http\Controllers\User\Vcard\Edit\AdvancedSettingController as EditAdvancedSettingController;
+use App\Http\Controllers\User\Vcard\Edit\AppointmentController as EditAppointmentController;
+use App\Http\Controllers\User\Vcard\Edit\BusinessHourController as EditBusinessHourController;
+use App\Http\Controllers\User\Vcard\Edit\ContactFormController as EditContactFormController;
+use App\Http\Controllers\User\Vcard\Edit\EditBookingController;
+use App\Http\Controllers\User\Vcard\Edit\EditCustomizationController;
+use App\Http\Controllers\User\Vcard\Edit\GalleryController as EditGalleryController;
+use App\Http\Controllers\User\Vcard\Edit\PaymentLinkController as EditPaymentLinkController;
+use App\Http\Controllers\User\Vcard\Edit\PopUpController as EditPopUpController;
+use App\Http\Controllers\User\Vcard\Edit\ProductController as EditProductController;
+use App\Http\Controllers\User\Vcard\Edit\SectionTitleController as EditSectionTitleController;
+use App\Http\Controllers\User\Vcard\Edit\ServiceController as EditServiceController;
+use App\Http\Controllers\User\Vcard\Edit\SocialLinkController as EditSocialLinkController;
+use App\Http\Controllers\User\Vcard\Edit\TestimonialController as EditTestimonialController;
+use App\Http\Controllers\User\VerificationController;
+use App\Http\Controllers\User\VisitorController;
+use App\Http\Controllers\WebsiteNFCCardOrderController;
+use App\Http\Controllers\WebToolsController;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -329,7 +383,7 @@ Route::group(['middleware' => 'Installer'], function () {
 
     Route::group(['as' => 'admin.', 'prefix' => 'admin', 'namespace' => 'Admin', 'middleware' => ['auth', 'admin', 'frame.destroyer', 'twofactor', 'scriptsanitizer'], 'where' => ['locale' => '[a-zA-Z]{2}']], function () {
         // Search
-        Route::get('page-search', [SearchController::class, 'search'])->name('page.search'); 
+        Route::get('page-search', [SearchController::class, 'search'])->name('page.search');
 
         // Dashboard
         Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -541,7 +595,7 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::get('nfc-card/edit-design/{id}', [NfcCardDesignController::class, "edit"])->name('edit.design')->middleware('user.page.permission:nfc_card_design');
         Route::post('nfc-card/update-design', [NfcCardDesignController::class, "update"])->name('update.design')->middleware(['user.page.permission:nfc_card_design', 'demo.mode']);
         Route::get('nfc-card/action-design', [NfcCardDesignController::class, "action"])->name('action.design')->middleware(['user.page.permission:nfc_card_design', 'demo.mode']);
- 
+
         // Manage NFC Card Orders
         Route::get('nfc-card/orders', [NfcCardOrderController::class, 'index'])->name('orders')->middleware('user.page.permission:nfc_card_orders');
         Route::get('nfc-card/order/{order}', [NfcCardOrderController::class, 'show'])->name('order.show')->middleware('user.page.permission:nfc_card_orders');
@@ -575,6 +629,20 @@ Route::group(['middleware' => 'Installer'], function () {
         // Greeting Letter (Key Generation)
         Route::get('nfc-card/key-greeting-letter/{key}', [NfcCardKeyGenerationController::class, 'keyGreetingLetter'])->name('key.greeting.letter')->middleware(['user.page.permission:nfc_card_orders', 'demo.mode']);
         Route::post('nfc-card/update-key-greeting-letter/{key}', [NfcCardKeyGenerationController::class, 'updateKeyGreetingLetter'])->name('update.key.greeting.letter')->middleware(['user.page.permission:nfc_card_orders', 'demo.mode']);
+
+        // AI Credits
+        Route::get('ai-credits-plans', [AiCreditsPlanController::class, 'index'])->name('ai.credits.plans')->middleware(['user.page.permission:ai_credits']);
+        Route::get('ai-credits/create-plan', [AiCreditsPlanController::class, 'createPlan'])->name('create.ai.credits.plan')->middleware(['user.page.permission:ai_credits']);
+        Route::post('ai-credits/save-plan', [AiCreditsPlanController::class, 'savePlan'])->name('save.ai.credits.plan')->middleware(['user.page.permission:ai_credits', 'demo.mode']);
+        Route::get('ai-credits/edit-plan/{id}', [AiCreditsPlanController::class, 'editAiCreditsPlan'])->name('edit.ai.credits.plan')->middleware(['user.page.permission:ai_credits']);
+        Route::post('ai-credits/update-plan/{id}', [AiCreditsPlanController::class, 'updateAiCreditsPlan'])->name('update.ai.credits.plan')->middleware(['user.page.permission:ai_credits', 'demo.mode']);
+        Route::get('ai-credits/status-plan', [AiCreditsPlanController::class, 'statusAiCreditsPlan'])->name('status.ai.credits.plan')->middleware(['user.page.permission:ai_credits', 'demo.mode']);
+        Route::get('ai-credits/delete-plan', [AiCreditsPlanController::class, 'deleteAiCreditsPlan'])->name('delete.ai.credits.plan')->middleware(['user.page.permission:ai_credits', 'demo.mode']);
+
+        // AI Credits Transactions
+        Route::get('ai-credits/transactions', [AiCreditsTransactionController::class, 'index'])->name('ai.credits.transactions')->middleware(['user.page.permission:ai_credits']);
+        Route::get('ai-credits/transaction/invoice/{id}', [AiCreditsTransactionController::class, 'viewInvoice'])->name('ai.credits.transaction.invoice')->middleware(['user.page.permission:ai_credits']);
+        Route::get('ai-credits/transaction/status/{id}/{status}', [AiCreditsTransactionController::class, 'updateStatus'])->name('ai.credits.transaction.status')->middleware(['user.page.permission:ai_credits', 'demo.mode']);
 
         // Get customer cards
         Route::post('get-customer-cards', [NfcCardKeyGenerationController::class, 'getCustomerCards'])->name('get.customer.cards')->middleware(['user.page.permission:nfc_card_key_generations', 'demo.mode']);
@@ -942,6 +1010,23 @@ Route::group(['middleware' => 'Installer'], function () {
         // Business Plans
         Route::get('plans', [UserPlanController::class, 'index'])->name('plans');
 
+        // AI Credits Plans
+        Route::get('ai-credits/plans', [UserAiCreditsPlanController::class, 'index'])->name('ai.credits.plans');
+        Route::get('ai-credits/transactions', [UserAiCreditsPlanController::class, 'index'])->name('ai.credits.transactions');
+
+        // AI Credits Purchase
+        Route::get('ai-credits/checkout/{planId}', [AICreditsCheckOutController::class, 'checkout'])->name('ai.credits.checkout');
+
+        // AI plans coupon
+        Route::post('ai-credits/checkout-coupon/{planId}', [AICreditsCheckOutController::class, 'aiCreditsCheckoutCoupon'])->name('ai.credits.checkout.coupon');
+
+        // Prepare AI Credits payment
+        Route::post('ai-credits/prepare-payment/{planId}', [AICreditsPaymentController::class, 'preparePayment'])->name('ai.credits.prepare.payment');
+
+        // AI Credits Transactions
+        Route::get('ai-credits/transactions', [UserAiCreditsTransactionController::class, 'index'])->name('ai.credits.transactions');
+        Route::get('ai-credits/transaction/invoice/{id}', [UserAiCreditsTransactionController::class, 'viewInvoice'])->name('ai.credits.transaction.invoice');
+
         // Order NFC Cards
         Route::get('nfc-cards/order', [OrderNfcCardController::class, 'index'])->name('order.nfc.cards');
         Route::get('nfc-cards/checkout/{id}', [OrderNfcCardController::class, 'nfcCardCheckout'])->name('order.nfc.card.checkout');
@@ -1186,6 +1271,77 @@ Route::group(['middleware' => 'Installer'], function () {
     // Offline
     Route::get('nfc/payment-offline/{nfcId}/{couponId}', [NFCOfflineController::class, 'nfcOfflineCheckout'])->name('nfcpaywithoffline');
     Route::post('nfc/mark-offline-payment', [NFCOfflineController::class, 'nfcMarkOfflinePayment'])->name('nfc.mark.payment.payment');
+
+    // AI Credits PayPal Payment Gateway
+    Route::get('/ai-credits/payment-paypal/{planId}/{couponId}', [AICreditsPaypalController::class, 'paywithpaypal'])->name('ai.credits.paywithpaypal');
+    Route::get('/ai-credits/paypal-payment-status', [AICreditsPaypalController::class, 'paypalPaymentStatus'])->name('ai.credits.paypal.payment.status');
+
+    // AI Credits RazorPay Payment Gateway
+    Route::get('/ai-credits/payment-razorpay/{planId}/{couponId}', [AICreditsRazorpayController::class, 'prepareRazorpay'])->name('ai.credits.prepare.razorpay');
+    Route::get('/ai-credits/razorpay-payment-status/{oid}/{status}', [AICreditsRazorpayController::class, 'razorpayPaymentStatus'])->name('ai.credits.razorpay.payment.status');
+
+    // AI Credits Phonepe Payment Gateway
+    Route::get('/ai-credits/payment-phonepe/{planId}/{couponId}', [AICreditsPhonepeController::class, 'preparePhonpe'])->name('ai.credits.prepare.phonepe');
+    Route::any('/ai-credits/phonepe-payment-status', [AICreditsPhonepeController::class, 'phonepePaymentStatus'])->name('ai.credits.phonepe.payment.status');
+
+    // AI Credits Stripe Payment Gateway
+    Route::get('/ai-credits/payment-stripe/{planId}/{couponId}', [AICreditsStripeController::class, 'stripeCheckout'])->name('ai.credits.prepare.stripe');
+    Route::get('/ai-credits/stripe-payment-status/{paymentId}', [AICreditsStripeController::class, 'stripePaymentStatus'])->name('ai.credits.stripe.payment.status');
+    Route::get('/ai-credits/stripe-payment-cancel/{paymentId}', [AICreditsStripeController::class, 'stripePaymentCancel'])->name('ai.credits.stripe.payment.cancel');
+
+    // AI Credits Paystack Payment Gateway
+    Route::get('/ai-credits/payment-paystack/{planId}/{couponId}', [AICreditsPaystackController::class, "paystackCheckout"])->name('ai.credits.prepare.paystack');
+    Route::get('/ai-credits/paystack-payment/callback', [AICreditsPaystackController::class, 'paystackHandleGatewayCallback'])->name('ai.credits.paystack.handle.gateway.callback');
+
+    // AI Credits Mollie Payment Gateway
+    Route::get('/ai-credits/payment-mollie/{planId}/{couponId}', [AICreditsMollieController::class, "prepareMollie"])->name('ai.credits.prepare.mollie');
+    Route::get('/ai-credits/mollie-payment-status', [AICreditsMollieController::class, "molliePaymentStatus"])->name('ai.credits.mollie.payment.status');
+
+    // AI Credits Mercado Pago Payment Gateway
+    Route::get('/ai-credits/payment-mercadopago/{planId}/{couponId}', [AICreditsMercadoPagoController::class, "prepareMercadoPago"])->name('ai.credits.prepare.mercadopago');
+    Route::get('/ai-credits/mercadopago-payment-status', [AICreditsMercadoPagoController::class, "mercadoPagoPaymentStatus"])->name('ai.credits.mercadopago.payment.status');
+    Route::get('/ai-credits/mercadopago-payment-failure', [AICreditsMercadoPagoController::class, "mercadoPagoPaymentFailure"])->name('ai.credits.mercadopago.payment.failure');
+    Route::get('/ai-credits/mercadopago-payment-pending', [AICreditsMercadoPagoController::class, "mercadoPagoPaymentPending"])->name('ai.credits.mercadopago.payment.pending');
+    Route::get('/ai-credits/mercadopago-callback', [AICreditsMercadoPagoController::class, "mercadoPagoCallback"])->name('ai.credits.mercadopago.callback');
+
+    // AI Credits Toyyibpay Payment Gateway
+    Route::get('/ai-credits/payment-toyyibpay/{planId}/{couponId}', [AICreditsToyyibpayController::class, "prepareToyyibpay"])->name('ai.credits.prepare.toyyibpay');
+    Route::get('/ai-credits/toyyibpay-payment-status', [AICreditsToyyibpayController::class, "toyyibpayPaymentStatus"])->name('ai.credits.toyyibpay.payment.status');
+    Route::get('/ai-credits/toyyibpay-payment-success', [AICreditsToyyibpayController::class, 'toyyibpayPaymentSuccess'])->name('ai.credits.toyyibpay.payment.success');
+
+    // AI Credits Flutterwave Payment Gateway
+    Route::get('/ai-credits/payment-flutterwave/{planId}/{couponId}', [AICreditsFlutterwaveController::class, "prepareFlutterwave"])->name('ai.credits.prepare.flutterwave');
+    Route::get('/ai-credits/flutterwave-payment-status', [AICreditsFlutterwaveController::class, "flutterwavePaymentStatus"])->name('ai.credits.flutterwave.payment.status');
+    Route::get('/ai-credits/flutterwave-callback', [AICreditsFlutterwaveController::class, 'flutterwaveCallback'])->name('ai.credits.flutterwave.callback')->withoutMiddleware('auth');
+
+    // AI Credits Paddle Payment Gateway
+    Route::get('/ai-credits/paddle/generate-payment-link/{planId}/{couponId}', [AICreditsPaddleController::class, 'generatePaymentLink'])->name('ai.credits.prepare.paddle');
+    Route::get('/ai-credits/paddle-payment-status', [AICreditsPaddleController::class, 'paddlePaymentStatus'])->name('ai.credits.paddle.payment.status');
+    Route::get('/ai-credits/paddle-payment-webhook', [AICreditsPaddleController::class, 'paddlePaymentWebhook'])->name('ai.credits.paddle.payment.webhook');
+
+    // AI Credits Paytr Payment Gateway
+    Route::get('/ai-credits/paytr/generate-payment-link/{planId}/{couponId}', [AICreditsPaytrController::class, 'generatePaymentLink'])->name('ai.credits.prepare.paytr');
+    Route::match(['get', 'post'], '/ai-credits/paytr-payment-status', [AICreditsPaytrController::class, 'paytrPaymentStatus'])->name('ai.credits.paytr.payment.status');
+    Route::match(['get', 'post'], '/ai-credits/paytr-payment-failure', [AICreditsPaytrController::class, 'paytrPaymentFailure'])->name('ai.credits.paytr.payment.failure');
+    Route::post('/ai-credits/paytr-payment-webhook', [AICreditsPaytrController::class, 'paytrPaymentWebhook'])->name('ai.credits.paytr.payment.webhook');
+
+    // AI Credits Xendit Payment Gatewa
+    Route::get('/ai-credits/xendit/generate-payment-link/{planId}/{couponId}', [AICreditsXenditController::class, 'generatePaymentLink'])->name('ai.credits.prepare.xendit');
+    Route::get('/ai-credits/xendit-payment-status/{transactionId}', [AICreditsXenditController::class, 'xenditPaymentStatus'])->name('ai.credits.xendit.payment.status');
+    Route::get('/ai-credits/xendit-payment-failure/{transactionId}', [AICreditsXenditController::class, "xenditPaymentFailure"])->name('ai.credits.xendit.payment.failure');
+    Route::get('/ai-credits/xendit-payment-webhook', [AICreditsXenditController::class, 'xenditPaymentWebhook'])->name('ai.credits.xendit.payment.webhook');
+
+    // AI Credits Cashfree Payment Gateway
+    Route::get('/ai-credits/cashfree/generate-payment-link/{planId}/{couponId}', [AICreditsCashfreeController::class, 'generatePaymentLink'])->name('ai.credits.prepare.cashfree');
+    Route::get('/ai-credits/cashfree-payment-status', [AICreditsCashfreeController::class, 'cashfreePaymentStatus'])->name('ai.credits.cashfree.payment.status');
+
+    // AI Credits Iyzipay Payment Gateway
+    Route::get('/ai-credits/iyzipay/generate-payment-link/{planId}/{couponId}', [AICreditsIyzipayController::class, 'generatePaymentLink'])->name('ai.credits.prepare.iyzipay');
+    Route::any('/ai-credits/iyzipay-payment-status', [AICreditsIyzipayController::class, 'iyzipayPaymentStatus'])->name('ai.credits.iyzipay.payment.status');
+
+    // AI Credits Offline Payment
+    Route::get('/ai-credits/payment-offline/{planId}/{couponId}', [AICreditsOfflineController::class, 'offlineCheckout'])->name('ai.credits.prepare.offline');
+    Route::post('/ai-credits/mark-offline-payment', [AICreditsOfflineController::class, 'markOfflinePayment'])->name('ai.credits.mark.payment.payment');
 
     // Google Auth
     Route::get('/google-login', [LoginController::class, 'redirectToProvider'])->name('login.google');

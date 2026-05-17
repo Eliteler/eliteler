@@ -49,7 +49,8 @@
                             </div>
                         </div>
                         <div class="col-12 col-md-10 d-flex flex-column">
-                            <form action="{{ route('user.update.section.title', ['id' => $business_card->card_id]) }}" method="post" id="myForm" enctype="multipart/form-data">
+                            <form action="{{ route('user.update.section.title', ['id' => $business_card->card_id]) }}"
+                                method="post" id="myForm" enctype="multipart/form-data">
                                 @csrf
                                 <div class="card-body">
                                     <h3 class="card-title mb-4">{{ __('Section Titles') }}</h3>
@@ -117,7 +118,11 @@
                                         @php
                                             $route = route('user.edit.intro-screen', Request::segment(3));
 
-                                            if ($plan_details->google_wallet == 1 && is_dir(base_path('plugins/GoogleWallet')) && $business_card->type != 'personal') {
+                                            if (
+                                                $plan_details->google_wallet == 1 &&
+                                                is_dir(base_path('plugins/GoogleWallet')) &&
+                                                $business_card->type != 'personal'
+                                            ) {
                                                 $route = route('user.edit.google-wallet', Request::segment(3));
                                             }
                                         @endphp
@@ -125,7 +130,7 @@
                                         <a href="{{ $route }}" class="btn btn-outline-primary ms-2">
                                             {{ __('Skip') }}
                                         </a>
-                                        
+
                                         <button id="saveOrder" class="btn btn-primary ms-auto">{{ __('Save') }}</button>
                                     </div>
                                 </div>

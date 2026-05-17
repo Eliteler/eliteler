@@ -224,7 +224,7 @@ class UserController extends Controller
                 'web_templates', 'blogs', 'users', 'custom_domain', 'backup', 'general_settings', 'translations',
                 'marketing', 'sitemap', 'invoice_tax', 'maintenance_mode', 'demo_mode', 'software_update',
                 'nfc_card_design', 'nfc_card_orders', 'nfc_card_order_transactions', 'nfc_card_key_generations', 'referral_system', 'email_templates', 'plugins', 'in_app_purchases', 'vcard_store',
-                'business_card_intros',
+                'business_card_intros', 'ai_credits'
             ];
 
             // Initialize an empty array for permissions

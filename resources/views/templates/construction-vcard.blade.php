@@ -255,14 +255,14 @@
                                 <div class="feat-grid">
                                     @foreach ($validFeatures as $feature)
                                         @php
-                                            $href =
-                                                'https://map.google.com/?q=' . urlencode($feature->content) ??
-                                                'javascript:void(0);';
-                                            if ($feature->type === 'url') {
-                                                $href =
-                                                    strpos($feature->content, 'http') === 0
-                                                        ? $feature->content
-                                                        : 'https://map.google.com/?q=' . urlencode($feature->content);
+                                            $href = $feature->content;
+
+                                            if ($feature->type === 'address') {
+                                                $href = 'https://www.google.com/maps?q=' . urlencode($feature->content);
+                                            } elseif ($feature->type === 'url') {
+                                                $href = strpos($feature->content, 'http') === 0
+                                                    ? $feature->content
+                                                    : 'https://' . $feature->content;
                                             }
                                         @endphp
 

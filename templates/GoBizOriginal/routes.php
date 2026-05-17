@@ -41,4 +41,7 @@ Route::middleware(['web', 'auth', 'admin'])->group(function () {
     // Update announcements
     Route::post('admin/web-template/gobiz-original/update-announcements', [GoBizOriginalController::class, "updateAnnouncement"])->name('admin.web-template.gobiz-original.update-announcements')->middleware(['user.page.permission:web_templates', 'demo.mode']);
     Route::post('admin/web-template/gobiz-original/update-popup', [GoBizOriginalController::class, "updatePopup"])->name('admin.web-template.gobiz-original.update-popup')->middleware(['user.page.permission:web_templates', 'demo.mode']);
+
+    // Mobile Application Action Banner
+    Route::post('admin/web-template/gobiz-original/app-action-banner', [GoBizOriginalController::class, "appActionBanner"])->name('admin.web-template.gobiz-original.app-action-banner')->middleware(['user.page.permission:web_templates', 'demo.mode']);
 });

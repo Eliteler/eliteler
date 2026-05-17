@@ -37,6 +37,11 @@ class GoBizOriginalServiceProvider extends ServiceProvider
             'theme_slider'   => 0,
             'banner_image'   => null,
             'auth_image'     => null,
+            'app_action'     => 0,
+            'app_heading'    => 'Your Business, In Your Pocket',
+            'app_description'=> 'Control your business cards, store, and NFC tools from a single mobile app. Stay connected and never miss an opportunity.',
+            'google_play_store_link' => null,
+            'apple_app_store_link'   => null,
             'custom_css'     => null,
             'custom_js'      => null,
         ];
@@ -50,6 +55,11 @@ class GoBizOriginalServiceProvider extends ServiceProvider
                 $table->boolean('theme_slider');
                 $table->string('banner_image');
                 $table->string('auth_image');
+                $table->boolean('app_action')->default(false);
+                $table->text('app_heading')->nullable();
+                $table->text('app_description')->nullable();
+                $table->text('google_play_store_link')->nullable();
+                $table->text('apple_app_store_link')->nullable();
                 $table->text('custom_css')->nullable();
                 $table->text('custom_js')->nullable();
                 $table->timestamp('created_at')->useCurrent();
@@ -63,6 +73,11 @@ class GoBizOriginalServiceProvider extends ServiceProvider
                 'theme_slider'   => getConfigData('show_home_slider'),
                 'banner_image'   => getConfigData('primary_image'),
                 'auth_image'     => getConfigData('secondary_image'),
+                'app_action'     => getConfigData('app_action'),
+                'app_heading'    => getConfigData('app_heading'),
+                'app_description'=> getConfigData('app_description'),
+                'google_play_store_link' => getConfigData('google_play_store_link'),
+                'apple_app_store_link'   => getConfigData('apple_app_store_link'),
                 'custom_css'     => $settings->custom_css ?? null,
                 'custom_js'      => $settings->custom_scripts ?? null,
             ]);

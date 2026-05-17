@@ -213,7 +213,7 @@ class SubdomainController extends Controller
                                 $products->orderBy('store_products.product_name', 'desc');
                                 break;
                             default:
-                                $products->orderBy('store_products.id', 'desc');
+                                $products->orderBy('store_products.id', 'asc');
                         }
 
                         // Delivery Options
@@ -235,6 +235,10 @@ class SubdomainController extends Controller
                         // Decode plan and SEO config only once
                         $planDetails = json_decode($business_card_details->plan_details, true);
                         $seoConfig = json_decode($business_card_details->seo_configurations ?? '{}');
+
+                        // Start URL
+                        $subdomainURL = route('subdomain.profile', $business_card_details->card_url);
+                        $startUrl = str_replace("http://", "https://", $subdomainURL);
 
                         // Meta Title Logic (branding)
                         $siteTitle = $config[0]->config_value ?? '';
@@ -266,12 +270,13 @@ class SubdomainController extends Controller
 
                         // Set Favicon or Profile Image
                         $imageUrl = !empty($seoConfig->favicon) ? url($seoConfig->favicon) : url($business_card_details->profile);
+
                         SEOTools::addImages([$imageUrl]);
                         OpenGraph::addImage([$imageUrl]);
                         JsonLd::addImage([$imageUrl]);
 
                         // Set OpenGraph URL
-                        OpenGraph::setUrl(url($business_card_details->card_url));
+                        OpenGraph::setUrl(url($startUrl));
 
                         // PWA
                         $icons = [
@@ -298,7 +303,7 @@ class SubdomainController extends Controller
                             [
                                 'name'        => $business_card_details->title,
                                 'description' => $business_card_details->sub_title,
-                                'url'         => asset($business_card_details->card_url),
+                                'url'         => $startUrl,
                                 'icons'       => [
                                     "src"     => url($business_card_details->profile),
                                     "purpose" => "any",
@@ -309,7 +314,7 @@ class SubdomainController extends Controller
                         $fill = [
                             "name"        => $business_card_details->title,
                             "short_name"  => $business_card_details->title,
-                            "start_url"   => asset($business_card_details->card_url),
+                            "start_url"   => $startUrl,
                             "theme_color" => "#ffffff",
                             "icons"       => $icons,
                             "splash"      => $splash,
@@ -318,13 +323,13 @@ class SubdomainController extends Controller
 
                         $out = $this->generateNew($fill);
 
-                        Storage::disk('public')->put("manifest/" . $business_card_details->card_id . '.json', json_encode($out));
+                        Storage::disk('public')->put("manifest/sub-" . $business_card_details->card_id . '.json', json_encode($out));
 
-                        $manifest = url("storage/manifest/" . $business_card_details->card_id . '.json');
+                        $manifest = url("storage/manifest/sub-" . $business_card_details->card_id . '.json');
 
                         // Generate service worker
                         $generateServiceWorker = new ServiceWorker();
-                        $generateServiceWorker->generateServiceWorker($business_card_details->card_id, $business_card_details->card_url);
+                        $generateServiceWorker->generateServiceWorker($business_card_details->card_id, $startUrl);
 
                         $plan_details  = json_decode($business_card_details->plan_details, true);
                         $store_details = json_decode($business_card_details->description, true);
@@ -456,6 +461,10 @@ class SubdomainController extends Controller
                         $planDetails = json_decode($business_card_details->plan_details, true);
                         $seoConfig = json_decode($business_card_details->seo_configurations ?? '{}');
 
+                        // Start URL
+                        $subdomainURL = route('subdomain.profile', $business_card_details->card_url);
+                        $startUrl = str_replace("http://", "https://", $subdomainURL);
+
                         // Meta Title Logic (branding)
                         $siteTitle = $config[0]->config_value ?? '';
                         $baseTitle = $seoConfig->meta_title ?? $business_card_details->title;
@@ -486,12 +495,13 @@ class SubdomainController extends Controller
 
                         // Set Favicon or Profile Image
                         $imageUrl = !empty($seoConfig->favicon) ? url($seoConfig->favicon) : url($business_card_details->profile);
+
                         SEOTools::addImages([$imageUrl]);
                         OpenGraph::addImage([$imageUrl]);
                         JsonLd::addImage([$imageUrl]);
 
                         // Set OpenGraph URL
-                        OpenGraph::setUrl(url($business_card_details->card_url));
+                        OpenGraph::setUrl(url($startUrl));
 
                         // PWA
                         $icons = [
@@ -518,7 +528,7 @@ class SubdomainController extends Controller
                             [
                                 'name'        => $business_card_details->title,
                                 'description' => $business_card_details->sub_title,
-                                'url'         => asset($business_card_details->card_url),
+                                'url'         => $startUrl,
                                 'icons'       => [
                                     "src"     => url($business_card_details->profile),
                                     "purpose" => "any",
@@ -529,7 +539,7 @@ class SubdomainController extends Controller
                         $fill = [
                             "name"        => $business_card_details->title,
                             "short_name"  => $business_card_details->title,
-                            "start_url"   => asset($business_card_details->card_url),
+                            "start_url"   => $startUrl,
                             "theme_color" => "#ffffff",
                             "icons"       => $icons,
                             "splash"      => $splash,
@@ -538,13 +548,13 @@ class SubdomainController extends Controller
 
                         $out = $this->generateNew($fill);
 
-                        Storage::disk('public')->put("manifest/" . $business_card_details->card_id . '.json', json_encode($out));
+                        Storage::disk('public')->put("manifest/sub-" . $business_card_details->card_id . '.json', json_encode($out));
 
-                        $manifest = url("storage/manifest/" . $business_card_details->card_id . '.json');
+                        $manifest = url("storage/manifest/sub-" . $business_card_details->card_id . '.json');
 
                         // Generate service worker
                         $generateServiceWorker = new ServiceWorker();
-                        $generateServiceWorker->generateServiceWorker($business_card_details->card_id, $business_card_details->card_url);
+                        $generateServiceWorker->generateServiceWorker($business_card_details->card_id, $startUrl);
 
                         $plan_details = json_decode($business_card_details->plan_details, true);
 
