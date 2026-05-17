@@ -64,7 +64,8 @@ class UpdateController extends Controller
                 'form_params' => [
                     'purchase_code' => $purchase_code,
                     'server_name' => $server_name,
-                    'version' => $config[32]->config_value
+                    'version' => $config[32]->config_value,
+                    'email' => $email
                 ]
             ]);
 
@@ -139,7 +140,7 @@ class UpdateController extends Controller
                     'purchase_code' => $request->purchase_code,
                     'server_name' => $server_name,
                     'version' => $config[32]->config_value,
-                    'email' => $config[99]->config_value
+                    'email' => $email
                 ]
             ]);
 

@@ -12,13 +12,14 @@
 
 namespace App\Classes;
 
+use App\AppliedCoupon;
 use App\Coupon;
 use App\NfcCardOrder;
-use App\AppliedCoupon;
-use Illuminate\Support\Str;
 use App\NfcCardOrderTransaction;
-use Illuminate\Support\Facades\DB;
+use App\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ZeroOrderNFC
 {
@@ -29,6 +30,9 @@ class ZeroOrderNFC
 
         // Check applied coupon
         $couponDetails = Coupon::where('used_for', 'nfc')->where('coupon_code', $couponId)->first();
+
+        // Get user data
+        $userData = User::where('id', Auth::user()->id)->first();
 
         // Applied tax in total
         $appliedTaxInTotal = 0;
@@ -80,8 +84,6 @@ class ZeroOrderNFC
             $amountToBePaid = ($nfcCard->nfc_card_price + $appliedTaxInTotal);
         }
 
-        $amountToBePaidPaise = $amountToBePaid;
-
         // Store transaction details in nfc_card_order_id table before redirecting to PayPal
         $nfcCardOrder = new NfcCardOrder();
         $nfcCardOrder->nfc_card_order_id = $nfcCardOrderId;
@@ -89,15 +91,15 @@ class ZeroOrderNFC
         $nfcCardOrder->nfc_card_id = $nfcId;
         $nfcCardOrder->nfc_card_order_transaction_id = $nfcTransactionId;
         $nfcCardOrder->order_details = json_encode($this->prepareOrderDetails($config, $amountToBePaid, $nfcCard, $appliedCoupon, $discountPrice));
-        $nfcCardOrder->delivery_address = json_encode($this->prepareDeliveryAddress($plan));
-        $nfcCardOrder->delivery_note = "-";
+        $nfcCardOrder->delivery_address = json_encode($this->prepareDeliveryAddress($userData));
+        $nfcCardOrder->delivery_note = "-"; 
         $nfcCardOrder->order_status = 'pending';
         $nfcCardOrder->status = 1;
         $nfcCardOrder->save();
 
         // Store transaction details in nfc_card_order_transactions table before redirecting to PayPal
         $transaction = new NfcCardOrderTransaction();
-        $transaction->nfc_card_order_transaction_id = $nfcTransactionId; 
+        $transaction->nfc_card_order_transaction_id = $nfcTransactionId;
         $transaction->nfc_card_order_id = $nfcCardOrderId;
         $transaction->payment_transaction_id = $nfcTransactionId;
         $transaction->payment_method = $payment_mode->payment_gateway_name ?? "-";

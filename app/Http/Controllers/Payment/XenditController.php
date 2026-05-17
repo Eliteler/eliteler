@@ -12,7 +12,7 @@
 
 namespace App\Http\Controllers\Payment;
 
-use App\Plan;
+use App\Plan; 
 use App\User;
 use App\Coupon;
 use App\Transaction;

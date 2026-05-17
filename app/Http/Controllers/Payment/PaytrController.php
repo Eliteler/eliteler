@@ -247,7 +247,7 @@ class PaytrController extends Controller
     }
 
     // Process Payment
-    public function paytrPaymentStatus(Request $request)
+    public function paytrPaymentStatus(Request $request) 
     {
         if (Auth::check()) {
             // Get the user
@@ -255,7 +255,6 @@ class PaytrController extends Controller
 
             // Get the user's latest successful transaction
             $paymentDetails = Transaction::where('user_id', $user->id)
-                ->where('payment_status', 'SUCCESS')
                 ->latest()
                 ->first();
 

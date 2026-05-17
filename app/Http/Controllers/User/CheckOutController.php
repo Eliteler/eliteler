@@ -53,7 +53,7 @@ class CheckOutController extends Controller
     {
         // Selected plan
         $selected_plan = Plan::where('plan_id', $id)->where('status', 1)->first();
-        $applied = false;
+        $applied = false; 
         $coupon_code = '';
 
         // check recurring payment gateways

@@ -204,7 +204,7 @@ class ProfileController extends Controller
                                 $products->orderBy('store_products.product_name', 'desc');
                                 break;
                             default:
-                                $products->orderBy('store_products.id', 'desc');
+                                $products->orderBy('store_products.id', 'asc');
                         }
 
                         // Delivery Options

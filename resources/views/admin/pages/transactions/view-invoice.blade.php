@@ -167,12 +167,14 @@
 
                                     <span class="h4">{{ $toName }}</span><br>
 
+                                    @if (!empty($toAddress))
                                     <span>
                                         {{ $toAddress }},
                                         {{ $toCity }},
                                         {{ $toState }}
                                         {{ $toCountry }} <br>
                                     </span>
+                                    @endif
 
                                     <span><strong>{{ __('Email') }}</strong>: {{ $toEmail }}</span><br>
 

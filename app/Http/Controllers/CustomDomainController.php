@@ -139,38 +139,38 @@ class CustomDomainController extends Controller
 
                     if ($business_card_details) {
                         $products = StoreProduct::join('store_categories', 'store_products.category_id', '=', 'store_categories.category_id')
-                        ->where('store_products.card_id', $card_details->card_id)
-                        ->where('store_categories.user_id', $business_card_details->user_id)
-                        ->where('store_products.product_status', 'instock')
-                        ->where('store_categories.status', 1)
-                        ->select(
-                            'store_products.id',
-                            'store_products.product_id',
-                            'store_products.product_name',
-                            'store_products.product_image',
-                            'store_products.product_short_description',
-                            'store_products.regular_price',
-                            'store_products.sales_price',
-                            'store_products.badge',
-                            'store_products.product_status',
-                            'store_categories.category_name',
-                            'store_categories.thumbnail',
-                            'store_categories.category_id'
-                        )
-                        ->groupBy(
-                            'store_products.id',
-                            'store_products.product_id',
-                            'store_products.product_name',
-                            'store_products.product_image',
-                            'store_products.product_short_description',
-                            'store_products.regular_price',
-                            'store_products.sales_price',
-                            'store_products.badge',
-                            'store_products.product_status',
-                            'store_categories.category_name',
-                            'store_categories.thumbnail',
-                            'store_categories.category_id'
-                        );
+                            ->where('store_products.card_id', $card_details->card_id)
+                            ->where('store_categories.user_id', $business_card_details->user_id)
+                            ->where('store_products.product_status', 'instock')
+                            ->where('store_categories.status', 1)
+                            ->select(
+                                'store_products.id',
+                                'store_products.product_id',
+                                'store_products.product_name',
+                                'store_products.product_image',
+                                'store_products.product_short_description',
+                                'store_products.regular_price',
+                                'store_products.sales_price',
+                                'store_products.badge',
+                                'store_products.product_status',
+                                'store_categories.category_name',
+                                'store_categories.thumbnail',
+                                'store_categories.category_id'
+                            )
+                            ->groupBy(
+                                'store_products.id',
+                                'store_products.product_id',
+                                'store_products.product_name',
+                                'store_products.product_image',
+                                'store_products.product_short_description',
+                                'store_products.regular_price',
+                                'store_products.sales_price',
+                                'store_products.badge',
+                                'store_products.product_status',
+                                'store_categories.category_name',
+                                'store_categories.thumbnail',
+                                'store_categories.category_id'
+                            );
 
                         // Filter: Price Range
                         if ($request->filled('min') && $request->filled('max')) {
@@ -204,7 +204,7 @@ class CustomDomainController extends Controller
                                 $products->orderBy('store_products.product_name', 'desc');
                                 break;
                             default:
-                                $products->orderBy('store_products.id', 'desc');
+                                $products->orderBy('store_products.id', 'asc');
                         }
 
                         // Delivery Options
@@ -226,6 +226,10 @@ class CustomDomainController extends Controller
                         // Decode plan and SEO config only once
                         $planDetails = json_decode($business_card_details->plan_details, true);
                         $seoConfig = json_decode($business_card_details->seo_configurations ?? '{}');
+
+                        // Start URL
+                        $subdomainURL = $business_card_details->custom_domain ? $business_card_details->custom_domain : route('vcard.profile', $business_card_details->card_url);
+                        $startUrl = str_replace("http://", "https://", $subdomainURL);
 
                         // Meta Title Logic (branding)
                         $siteTitle = $config[0]->config_value ?? '';
@@ -265,7 +269,7 @@ class CustomDomainController extends Controller
                         JsonLd::addImage([$imageUrl]);
 
                         // Set OpenGraph URL
-                        OpenGraph::setUrl(url($business_card_details->card_url));
+                        OpenGraph::setUrl(url($startUrl));
 
                         // PWA
                         $icons = [
@@ -292,7 +296,7 @@ class CustomDomainController extends Controller
                             [
                                 'name'        => $business_card_details->title,
                                 'description' => $business_card_details->sub_title,
-                                'url'         => asset($business_card_details->card_url),
+                                'url'         => $startUrl,
                                 'icons'       => [
                                     "src"     => url($business_card_details->profile),
                                     "purpose" => "any",
@@ -303,7 +307,7 @@ class CustomDomainController extends Controller
                         $fill = [
                             "name"        => $business_card_details->title,
                             "short_name"  => $business_card_details->title,
-                            "start_url"   => asset($business_card_details->card_url),
+                            "start_url"   => $startUrl,
                             "theme_color" => "#ffffff",
                             "icons"       => $icons,
                             "splash"      => $splash,
@@ -312,13 +316,13 @@ class CustomDomainController extends Controller
 
                         $out = $this->generateNew($fill);
 
-                        Storage::disk('public')->put("manifest/" . $business_card_details->card_id . '.json', json_encode($out));
+                        Storage::disk('public')->put("manifest/custom-" . $business_card_details->card_id . '.json', json_encode($out));
 
-                        $manifest = url("storage/manifest/" . $business_card_details->card_id . '.json');
+                        $manifest = url("storage/manifest/custom-" . $business_card_details->card_id . '.json');
 
                         // Generate service worker
                         $generateServiceWorker = new ServiceWorker();
-                        $generateServiceWorker->generateServiceWorker($business_card_details->card_id, $business_card_details->card_url);
+                        $generateServiceWorker->generateServiceWorker($business_card_details->card_id, $startUrl);
 
                         $plan_details  = json_decode($business_card_details->plan_details, true);
                         $store_details = json_decode($business_card_details->description, true);
@@ -417,19 +421,19 @@ class CustomDomainController extends Controller
 
                         // Iterate through the appointment slots and categorize them by day
                         foreach ($appointmentSlots as $slot) {
-                                                            // Assuming your `CardAppointmentTime` model has a `day` attribute and a `time` attribute
+                            // Assuming your `CardAppointmentTime` model has a `day` attribute and a `time` attribute
                             $day  = strtolower($slot->day); // Convert to lowercase to match array keys
                             $time = $slot->time_slots;      // Assuming this contains the time range string like "16:00 - 17:00"
 
                             // Check if the day exists in the time_slots array
                             if (array_key_exists($day, $appointment_slots)) {
                                 $appointment_slots[$day][] = $time; // Add the time to the appropriate day
-                                                                    // Get price
+                                // Get price
                                 $appointment_slots[$day][] = $slot->price;
                             }
 
                             $appointmentEnabled = true;
-                            
+
                             // Add appointment title to array
                             $appointment_slots['title'] = $appointmentSlots[0]->title;
                         }
@@ -449,6 +453,10 @@ class CustomDomainController extends Controller
                         // Decode plan and SEO config only once
                         $planDetails = json_decode($business_card_details->plan_details, true);
                         $seoConfig = json_decode($business_card_details->seo_configurations ?? '{}');
+
+                        // Start URL
+                        $subdomainURL = $business_card_details->custom_domain ? $business_card_details->custom_domain : route('vcard.profile', $business_card_details->card_url);
+                        $startUrl = str_replace("http://", "https://", $subdomainURL);
 
                         // Meta Title Logic (branding)
                         $siteTitle = $config[0]->config_value ?? '';
@@ -483,12 +491,13 @@ class CustomDomainController extends Controller
 
                         // Set Favicon or Profile Image
                         $imageUrl = !empty($seoConfig->favicon) ? url($seoConfig->favicon) : url($business_card_details->profile);
+
                         SEOTools::addImages([$imageUrl]);
                         OpenGraph::addImage([$imageUrl]);
                         JsonLd::addImage([$imageUrl]);
 
                         // Set OpenGraph URL
-                        OpenGraph::setUrl(url($business_card_details->card_url));
+                        OpenGraph::setUrl(url($startUrl));
 
                         // PWA
                         $icons = [
@@ -515,7 +524,7 @@ class CustomDomainController extends Controller
                             [
                                 'name'        => $business_card_details->title,
                                 'description' => $business_card_details->sub_title,
-                                'url'         => asset($business_card_details->card_url),
+                                'url'         => $startUrl,
                                 'icons'       => [
                                     "src"     => url($business_card_details->profile),
                                     "purpose" => "any",
@@ -526,7 +535,7 @@ class CustomDomainController extends Controller
                         $fill = [
                             "name"        => $business_card_details->title,
                             "short_name"  => $business_card_details->title,
-                            "start_url"   => asset($business_card_details->card_url),
+                            "start_url"   => $startUrl,
                             "theme_color" => "#ffffff",
                             "icons"       => $icons,
                             "splash"      => $splash,
@@ -535,13 +544,13 @@ class CustomDomainController extends Controller
 
                         $out = $this->generateNew($fill);
 
-                        Storage::disk('public')->put("manifest/" . $business_card_details->card_id . '.json', json_encode($out));
+                        Storage::disk('public')->put("manifest/custom-" . $business_card_details->card_id . '.json', json_encode($out));
 
-                        $manifest = url("storage/manifest/" . $business_card_details->card_id . '.json');
+                        $manifest = url("storage/manifest/custom-" . $business_card_details->card_id . '.json');
 
                         // Generate service worker
                         $generateServiceWorker = new ServiceWorker();
-                        $generateServiceWorker->generateServiceWorker($business_card_details->card_id, $business_card_details->card_url);
+                        $generateServiceWorker->generateServiceWorker($business_card_details->card_id, $startUrl);
 
                         $plan_details = json_decode($business_card_details->plan_details, true);
 
@@ -600,7 +609,7 @@ class CustomDomainController extends Controller
                             // Session password protected
                             Session::get('password_protected') == false;
                         }
-                        
+
                         return view('templates.' . $business_card_details->theme_code, $datas);
                     } else {
                         return redirect()->route('user.edit.card', $card_details->id)->with('failed', trans('Please fill out the basic business details.'));

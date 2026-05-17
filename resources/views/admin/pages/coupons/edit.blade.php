@@ -75,6 +75,7 @@
                                                 <select class="form-control used_for" name="used_for" required>
                                                     <option value="plan" {{ $couponDetails->used_for == 'plan' ? 'selected' : '' }}>{{ __('Plan') }}</option>
                                                     <option value="nfc" {{ $couponDetails->used_for == 'nfc' ? 'selected' : '' }}>{{ __('NFC Card') }}</option>
+                                                    <option value="ai_credits" {{ $couponDetails->used_for == 'ai_credits' ? 'selected' : '' }}>{{ __('AI Credits') }}</option>
                                                 </select>
                                             </div>
                                         </div>

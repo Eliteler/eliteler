@@ -34,7 +34,7 @@ class PaymentController extends Controller
     protected $pluginManager;
     /**
      * Create a new controller instance.
-     *
+     * 
      * @return void
      */
     public function __construct(PluginManager $pluginManager)

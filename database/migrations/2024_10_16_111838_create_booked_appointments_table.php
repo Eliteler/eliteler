@@ -28,7 +28,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('email');
             $table->string('phone');
-            $table->string('notes')->nullable();
+            $table->longText('notes')->nullable();
             $table->date('booking_date');
             $table->string('booking_time');
             $table->double('total_price', 15, 2)->default(0);

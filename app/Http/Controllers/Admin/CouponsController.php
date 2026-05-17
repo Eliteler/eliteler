@@ -58,7 +58,14 @@ class CouponsController extends Controller
             return DataTables::of($coupons)
                 ->addIndexColumn()
                 ->addColumn('used_for', function ($coupon) {
-                    return '<span class="badge bg-green text-white text-white">' . __($coupon->used_for == 'plan' ? 'Plan' : 'NFC Card') . '</span>';
+                    switch ($coupon->used_for) {
+                        case 'plan':
+                            return '<span class="badge bg-green text-white text-white">' . __('Plan') . '</span>';
+                        case 'nfc':
+                            return '<span class="badge bg-green text-white text-white">' . __('NFC Card') . '</span>';
+                        case 'ai_credits':
+                            return '<span class="badge bg-green text-white text-white">' . __('AI Credits') . '</span>';
+                    }
                 })
                 ->addColumn('coupon_code', function ($coupon) {
                     return '<span class="fw-bold text-uppercase">' . $coupon->coupon_code . '</span>';

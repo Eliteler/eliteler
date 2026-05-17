@@ -216,7 +216,7 @@
                                         </a>.
                                         {{ __('All rights reserved.') }} <br>
                                         @if (!isset($plan_details['hide_branding']) || $plan_details['hide_branding'] != 1)
-                                            {{ __('Made with') }} <i class="ti ti-heart text-white"></i> {{ config('app.name') }}
+                                            {{ __('Made with') }} <i class="ti ti-heart text-white"></i> <a href="{{ config('app.url') }}">{{ config('app.name') }}</a>.
                                         @endif
                                     </span>
                                 </div>

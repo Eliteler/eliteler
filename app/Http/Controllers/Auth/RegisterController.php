@@ -229,25 +229,7 @@ class RegisterController extends Controller
 
         // If user email verification is disabled, set the email as verified
         if (($config['disable_user_email_verification'] ?? '0') == '1') {
-            // Get Welcome email template
-            $emailTemplateDetails = EmailTemplate::where('email_template_id', '584922675213')->first();
-
-            // Generate signed verification link
-            $verificationUrl = URL::temporarySignedRoute(
-                'verification.verify.public',
-                now()->addMinutes(60),
-                ['id' => $userId, 'hash' => sha1($data['email'])]
-            );
-
-            $message = [
-                'status' => "",
-                'emailSubject' => $emailTemplateDetails->email_template_subject,
-                'emailContent' => $emailTemplateDetails->email_template_content,
-                'actionlink' => $verificationUrl,
-            ];
-
-            // Send email (using built-in Mailable or custom one)
-            Mail::to($data['email'])->send(new \App\Mail\AppointmentMail($message));
+            // Remove email verification requirement
         } else {
             // Send Welcome Email
             $emailTemplate = EmailTemplate::where('email_template_id', '584922675208')->first();

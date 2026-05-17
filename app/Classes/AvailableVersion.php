@@ -32,7 +32,8 @@ class AvailableVersion
                 'form_params' => [
                     'purchase_code' => config('app.code'),
                     'server_name' => $server_name,
-                    'version' => $this->getConfigValue(32)
+                    'version' => $this->getConfigValue(32),
+                    'email' => $this->getConfigValue(99)
                 ]
             ]);
 

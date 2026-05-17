@@ -211,26 +211,26 @@
                                                 <a href="#location" class="action-btn">
                                                     <span class="action-btn__icon"><i
                                                             class="{{ $feature->icon }}"></i></span>
-                                                    <span class="action-btn__label">{{ __('Location') }}</span>
+                                                    <span class="action-btn__label">{{ __($feature->label) }}</span>
                                                 </a>
                                             @elseif ($feature->type == 'tel')
                                                 <a href="tel:{{ $feature->content }}" class="action-btn">
                                                     <span class="action-btn__icon"><i
                                                             class="{{ $feature->icon }}"></i></span>
-                                                    <span class="action-btn__label">{{ __('Call') }}</span>
+                                                    <span class="action-btn__label">{{ __($feature->label) }}</span>
                                                 </a>
                                             @elseif ($feature->type == 'wa')
                                                 <a href="https://wa.me/{{ $feature->content }}" class="action-btn">
                                                     <span class="action-btn__icon"><i
                                                             class="{{ $feature->icon }}"></i></span>
-                                                    <span class="action-btn__label">{{ __('WhatsApp') }}</span>
+                                                    <span class="action-btn__label">{{ __($feature->label) }}</span>
                                                 </a>
                                             @elseif ($feature->type == 'instagram')
                                                 <a href="{{ $feature->content }}" target="_blank"
                                                     class="action-btn">
                                                     <span class="action-btn__icon"><i
                                                             class="{{ $feature->icon }}"></i></span>
-                                                    <span class="action-btn__label">{{ __('Instagram') }}</span>
+                                                    <span class="action-btn__label">{{ __($feature->label) }}</span>
                                                 </a>
                                             @endif
                                         @endif

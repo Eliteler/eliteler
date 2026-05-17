@@ -285,7 +285,8 @@ return [
   'vi' => 'Vietnamese',
   'hr' => 'Croatian',
   'pt_BR' => 'Brazilian Portuguese',
-], 
+        'ml' => 'Malayalam',
+    ], 
 
     'availableLanguages' => [
         'en' => 'English',
@@ -320,8 +321,7 @@ return [
         'vi' => 'Vietnamese',        
         'hr' => 'Croatian',        
         'pt_BR' => 'Brazilian Portuguese',
-
-
+        'ml' => 'Malayalam',
     ],
 
     'flag-icons' => [
@@ -357,6 +357,6 @@ return [
         'ur' => 'pk',
         'vi' => 'vn',        
         'pt_BR' => 'br',
-
+        'ml' => 'in',
     ],
 ];

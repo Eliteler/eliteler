@@ -53,10 +53,12 @@
                                         style="background-image: url({{ asset($user_details->profile_image == '' ? 'profile.png' : $user_details->profile_image) }})"></span>
                                     <h3 class="m-0 mb-1 text-center">{{ $user_details->name }}</h3>
                                     <div class="font-weight-bold">
-                                        {{ __('Email address') }} : <strong>{{ $user_details->email == '' ? __('Not Available') : $user_details->email }}</strong>
+                                        {{ __('Email address') }} :
+                                        <strong>{{ $user_details->email == '' ? __('Not Available') : $user_details->email }}</strong>
                                     </div>
                                     <div class="font-weight-bold">
-                                        {{ __('Mobile number') }} : <strong>{{ $user_details->mobile_number == '' ? __('Not Available') : $user_details->mobile_number }}</strong>
+                                        {{ __('Mobile number') }} :
+                                        <strong>{{ $user_details->mobile_number == '' ? __('Not Available') : $user_details->mobile_number }}</strong>
                                     </div>
                                     <div class="mt-3">
                                         <span
@@ -76,14 +78,18 @@
                                         {{ __('Email') }}
                                     </a>
                                     @if ($user_details->mobile_number != '' || $user_details->mobile_number != null)
-                                    <a href="tel:{{ $user_details->mobile_number == '' ? __('Not Available') : $user_details->mobile_number }}"
-                                        class="card-btn">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-phone">
-                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                            <path d="M5 4h4l2 5l-2.5 1.5a11 11 0 0 0 5 5l1.5 -2.5l5 2v4a2 2 0 0 1 -2 2a16 16 0 0 1 -15 -15a2 2 0 0 1 2 -2" />
-                                        </svg>
-                                        {{ __('Phone') }}
-                                    </a>
+                                        <a href="tel:{{ $user_details->mobile_number == '' ? __('Not Available') : $user_details->mobile_number }}"
+                                            class="card-btn">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                stroke-linecap="round" stroke-linejoin="round"
+                                                class="icon icon-tabler icons-tabler-outline icon-tabler-phone">
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                                <path
+                                                    d="M5 4h4l2 5l-2.5 1.5a11 11 0 0 0 5 5l1.5 -2.5l5 2v4a2 2 0 0 1 -2 2a16 16 0 0 1 -15 -15a2 2 0 0 1 2 -2" />
+                                            </svg>
+                                            {{ __('Phone') }}
+                                        </a>
                                     @endif
                                     <a href="#" class="card-btn"
                                         onclick="loginUser('{{ $user_details->user_id }}'); return false;">
@@ -139,23 +145,26 @@
                                                     </td>
                                                     <td>
                                                         <div class="dropdown text-end">
-                                                            <button class="btn-action"
-                                                                id="dropdownMenuButton" data-bs-boundary="viewport"
-                                                                data-bs-toggle="dropdown" aria-expanded="false">
+                                                            <button class="btn-action" id="dropdownMenuButton"
+                                                                data-bs-boundary="viewport" data-bs-toggle="dropdown"
+                                                                aria-expanded="false">
                                                                 <!-- Download SVG icon from http://tabler-icons.io/i/dots-vertical -->
                                                                 <svg xmlns="http://www.w3.org/2000/svg" width="24"
                                                                     height="24" viewBox="0 0 24 24" fill="none"
-                                                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                                                    stroke-linejoin="round"
+                                                                    stroke="currentColor" stroke-width="2"
+                                                                    stroke-linecap="round" stroke-linejoin="round"
                                                                     class="icon icon-tabler icons-tabler-outline icon-tabler-dots fw-bold">
-                                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                                                    <path stroke="none" d="M0 0h24v24H0z"
+                                                                        fill="none" />
                                                                     <path d="M4 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
                                                                     <path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
                                                                     <path d="M18 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
                                                                 </svg>
                                                             </button>
-                                                            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                                                                <a class="dropdown-item" onclick="assignCard('{{ $user_card->card_id }}', 'vcard')">{{ __('Copy to Another Customer') }}</a>
+                                                            <div class="dropdown-menu"
+                                                                aria-labelledby="dropdownMenuButton">
+                                                                <a class="dropdown-item"
+                                                                    onclick="assignCard('{{ $user_card->card_id }}', 'vcard')">{{ __('Copy to Another Customer') }}</a>
                                                             </div>
                                                         </div>
                                                     </td>
@@ -206,16 +215,17 @@
                                                     </td>
                                                     <td>
                                                         <div class="dropdown text-end">
-                                                            <button class="btn-action"
-                                                                id="dropdownMenuButton" data-bs-boundary="viewport"
-                                                                data-bs-toggle="dropdown" aria-expanded="false">
+                                                            <button class="btn-action" id="dropdownMenuButton"
+                                                                data-bs-boundary="viewport" data-bs-toggle="dropdown"
+                                                                aria-expanded="false">
                                                                 <!-- Download SVG icon from http://tabler-icons.io/i/dots-vertical -->
                                                                 <svg xmlns="http://www.w3.org/2000/svg" width="24"
                                                                     height="24" viewBox="0 0 24 24" fill="none"
-                                                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                                                    stroke-linejoin="round"
+                                                                    stroke="currentColor" stroke-width="2"
+                                                                    stroke-linecap="round" stroke-linejoin="round"
                                                                     class="icon icon-tabler icons-tabler-outline icon-tabler-dots fw-bold">
-                                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                                                    <path stroke="none" d="M0 0h24v24H0z"
+                                                                        fill="none" />
                                                                     <path d="M4 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
                                                                     <path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
                                                                     <path d="M18 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
@@ -223,7 +233,8 @@
                                                             </button>
                                                             <div class="dropdown-menu"
                                                                 aria-labelledby="dropdownMenuButton">
-                                                                <a class="dropdown-item" onclick="assignCard('{{ $user_store->card_id }}', 'store')">{{ __('Copy to Another Customer') }}</a>
+                                                                <a class="dropdown-item"
+                                                                    onclick="assignCard('{{ $user_store->card_id }}', 'store')">{{ __('Copy to Another Customer') }}</a>
                                                             </div>
                                                         </div>
                                                     </td>
@@ -236,7 +247,7 @@
                         </div>
 
                         {{-- NFC Card Orders --}}
-                        <div class="col-md-12 col-xl-12 mt-4">
+                        <div class="col-md-6 col-xl-6 mt-4">
                             <div class="card">
                                 <div class="card-header">
                                     <h3 class="card-title">{{ __('NFC Card Orders') }}</h3>
@@ -305,6 +316,81 @@
                                                         @elseif($order->order_status == 'printing process begun')
                                                             <span class="badge bg-dark text-white text-uppercase">
                                                                 {{ __('Printing Process Begun') }}
+                                                            </span>
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- AI Credits Transactions --}}
+                        <div class="col-md-6 col-xl-6 mt-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">{{ __('AI Credits Transactions') }}</h3>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table card-table table-vcenter text-nowrap datatable"
+                                        id="ai-credits-transactions-table">
+                                        <thead>
+                                            <tr>
+                                                <th>{{ __('#') }}</th>
+                                                <th>{{ __('Date') }}</th>
+                                                <th>{{ __('Payment Trans ID') }}</th>
+                                                <th>{{ __('Plan') }}</th>
+                                                <th>{{ __('Amount') }}</th>
+                                                <th>{{ __('Status') }}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($ai_credits_transactions as $ai_credits_transaction)
+                                                <tr>
+                                                    <td>{{ $loop->iteration }}</td>
+                                                    <td>{{ formatDateForUser($ai_credits_transaction->created_at) }}</td>
+                                                    <td class="fw-bold">
+                                                        <a href="{{ route('admin.ai.credits.transaction.invoice', $ai_credits_transaction->payment_transaction_id) }}"
+                                                            target="_blank">
+                                                            {{ $ai_credits_transaction->payment_transaction_id }}
+                                                        </a>
+                                                    </td>
+                                                    <td class="fw-bold">
+                                                        {{ $ai_credits_transaction->plan_name }}
+                                                    </td>
+                                                    <td class="fw-bold">
+                                                        {{ formatCurrency($ai_credits_transaction->amount) }}
+                                                    </td>
+                                                    <td class="fw-bold">
+                                                        @if ($ai_credits_transaction->payment_status == 'paid')
+                                                            <span class="badge bg-success text-white text-uppercase">
+                                                                {{ __('Paid') }}
+                                                            </span>
+                                                        @elseif($ai_credits_transaction->payment_status == 'failed')
+                                                            <span class="badge bg-danger text-white text-uppercase">
+                                                                {{ __('Failed') }}
+                                                            </span>
+                                                        @elseif($ai_credits_transaction->payment_status == 'pending')
+                                                            <span class="badge bg-warning text-white text-uppercase">
+                                                                {{ __('Pending') }}
+                                                            </span>
+                                                        @elseif($ai_credits_transaction->payment_status == 'processing')
+                                                            <span class="badge bg-primary text-white text-uppercase">
+                                                                {{ __('Processing') }}
+                                                            </span>
+                                                        @elseif($ai_credits_transaction->payment_status == 'cancelled')
+                                                            <span class="badge bg-danger text-white text-uppercase">
+                                                                {{ __('Cancelled') }}
+                                                            </span>
+                                                        @elseif($ai_credits_transaction->payment_status == 'refunded')
+                                                            <span class="badge bg-dark text-white text-uppercase">
+                                                                {{ __('Refunded') }}
+                                                            </span>
+                                                        @elseif($ai_credits_transaction->payment_status == 'partially_refunded')
+                                                            <span class="badge bg-dark text-white text-uppercase">
+                                                                {{ __('Partially Refunded') }}
                                                             </span>
                                                         @endif
                                                     </td>
@@ -525,15 +611,15 @@
                                     </select>
                                 </div>
                             </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
-                                {{ __('Cancel') }}
-                            </button>
-                            <button type="submit" class="btn btn-primary">
-                                {{ __('Copy') }}
-                            </button>
-                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">
+                            {{ __('Cancel') }}
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            {{ __('Copy') }}
+                        </button>
+                    </div>
                     </form>
                 </div>
             </div>
@@ -543,30 +629,30 @@
     @section('scripts')
         <script type="text/javascript" src="{{ asset('js/tom-select.base.min.js') }}"></script>
         <script>
-            $(document).ready(function () {
+            $(document).ready(function() {
                 "use strict";
 
                 // DataTable configuration
                 let tableConfig = {
                     language: {
-                        "sProcessing": `{{ __("Processing...") }}`,
-                        "sLengthMenu": `{{ __("Show _MENU_ entries") }}`,
-                        "sSearch": `{{ __("Search:") }}`,
+                        "sProcessing": `{{ __('Processing...') }}`,
+                        "sLengthMenu": `{{ __('Show _MENU_ entries') }}`,
+                        "sSearch": `{{ __('Search:') }}`,
                         "oPaginate": {
-                            "sNext": `{{ __("Next") }}`,
-                            "sPrevious": `{{ __("Previous") }}`
+                            "sNext": `{{ __('Next') }}`,
+                            "sPrevious": `{{ __('Previous') }}`
                         },
-                        "sInfo": `{{ __("Showing _START_ to _END_ of _TOTAL_ entries") }}`,
-                        "sInfoEmpty": `{{ __("Showing 0 to 0 of 0 entries") }}`,
-                        "sInfoFiltered": `{{ __("(filtered from _MAX_ total entries)") }}`,
+                        "sInfo": `{{ __('Showing _START_ to _END_ of _TOTAL_ entries') }}`,
+                        "sInfoEmpty": `{{ __('Showing 0 to 0 of 0 entries') }}`,
+                        "sInfoFiltered": `{{ __('(filtered from _MAX_ total entries)') }}`,
                         "sInfoPostFix": "",
                         "sUrl": "",
                         "oAria": {
-                            "sSortAscending": `{{ __(": activate to sort column in ascending order") }}`,
-                            "sSortDescending": `{{ __(": activate to sort column in descending order") }}`
+                            "sSortAscending": `{{ __(': activate to sort column in ascending order') }}`,
+                            "sSortDescending": `{{ __(': activate to sort column in descending order') }}`
                         },
-                        loadingRecords: `{{ __("Please wait - loading...") }}`,
-                        emptyTable: `{{ __("No data available in the table") }}` // Message for an empty table
+                        loadingRecords: `{{ __('Please wait - loading...') }}`,
+                        emptyTable: `{{ __('No data available in the table') }}` // Message for an empty table
                     },
                     "pageLength": 10,
                     "lengthMenu": [
@@ -580,7 +666,9 @@
                 };
 
                 // Initialize DataTables
-                $('#cardsTable, #storesTable, #ordersTable, #transactions-table, #nfc-transactions-table').DataTable(tableConfig);
+                $('#cardsTable, #storesTable, #ordersTable, #transactions-table, #nfc-transactions-table, #ai-credits-transactions-table')
+                    .DataTable(
+                        tableConfig);
             });
 
             // Copy card to another customer
@@ -600,7 +688,7 @@
 
             // Array of element IDs
             var elementSelectors = ['customer_id'];
-            
+
             // Function to initialize TomSelect and enforce the "required" attribute
             function initializeTomSelectWithRequired(el) {
                 new TomSelect(el, {
@@ -612,19 +700,21 @@
                     render: {
                         item: function(data, escape) {
                             if (data.customProperties) {
-                                return '<div><span class="dropdown-item-indicator">' + data.customProperties + '</span>' + escape(data.text) + '</div>';
+                                return '<div><span class="dropdown-item-indicator">' + data.customProperties +
+                                    '</span>' + escape(data.text) + '</div>';
                             }
                             return '<div>' + escape(data.text) + '</div>';
                         },
                         option: function(data, escape) {
                             if (data.customProperties) {
-                                return '<div><span class="dropdown-item-indicator">' + data.customProperties + '</span>' + escape(data.text) + '</div>';
+                                return '<div><span class="dropdown-item-indicator">' + data.customProperties +
+                                    '</span>' + escape(data.text) + '</div>';
                             }
                             return '<div>' + escape(data.text) + '</div>';
                         },
                     },
                 });
-            
+
                 // Ensure the "required" attribute is enforced
                 el.addEventListener('change', function() {
                     if (el.value) {
@@ -633,11 +723,11 @@
                         el.setCustomValidity('This field is required');
                     }
                 });
-            
+
                 // Trigger validation on load
                 el.dispatchEvent(new Event('change'));
             }
-            
+
             // Loop through each element ID
             elementSelectors.forEach(function(id) {
                 // Check if the element exists
@@ -647,6 +737,6 @@
                     initializeTomSelectWithRequired(el);
                 }
             });
-        </script> 
+        </script>
     @endsection
 @endsection

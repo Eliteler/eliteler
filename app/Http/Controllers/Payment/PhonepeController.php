@@ -148,7 +148,7 @@ class PhonePeController extends Controller
                     $invoice_details['tax_value'] = $config[25]->config_value;
                     $invoice_details['tax_amount'] = $appliedTaxInTotal;
                     $invoice_details['applied_coupon'] = $appliedCoupon;
-                    $invoice_details['discounted_price'] = $discountPrice;
+                    $invoice_details['discounted_price'] = $discountPrice; 
                     $invoice_details['invoice_amount'] = $amountToBePaid;
 
                     // Save transactions

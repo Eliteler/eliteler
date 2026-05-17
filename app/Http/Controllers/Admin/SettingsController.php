@@ -89,7 +89,7 @@ class SettingsController extends Controller
         foreach ($configUpdates as $key => $value) {
             DB::table('config')->where('config_key', $key)->update(['config_value' => $value]);
         }
-
+ 
         // === Language Updates ===
         $this->updateLanguages($request->languages, $request->default_language);
         app()->setLocale($request->default_language);

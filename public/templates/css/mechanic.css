@@ -636,6 +636,10 @@ body {
     }
 }
 
+#smooth-wrapper {
+    max-width: 100%;
+}
+
 /* ── Cover ── */
 .mechanic-theme .cover-photo {
     width: 100%;
@@ -1922,8 +1926,8 @@ select.form-control option {
 
 /* ── Swiper ── */
 .swiper-slide {
-  width: 100% !important;
-  box-sizing: border-box;
+    width: 100% !important;
+    box-sizing: border-box;
 }
 
 .swiper {

@@ -4,6 +4,7 @@
     use App\Plan;
     use App\BusinessCard;
     use Carbon\Carbon;
+    use App\AibuilderSetting;
 
     // Queries
     $config = DB::table('config')->get();
@@ -37,7 +38,8 @@
         $active_plan['storage'] = $active_plan['storage'] ?? $planDefaults->storage;
         $active_plan['service_booking'] = $active_plan['service_booking'] ?? $planDefaults->service_booking;
         $active_plan['google_wallet'] = $active_plan['google_wallet'] ?? $planDefaults->google_wallet;
-        $active_plan['no_of_google_wallets'] = $active_plan['no_of_google_wallets'] ?? $planDefaults->no_of_google_wallets;
+        $active_plan['no_of_google_wallets'] =
+            $active_plan['no_of_google_wallets'] ?? $planDefaults->no_of_google_wallets;
 
         // Update plan details if necessary
         if ($active_plan !== json_decode($plan->plan_details, true)) {
@@ -64,6 +66,9 @@
             $google_wallet_enabled = 1;
         }
     }
+
+    // AI Builder settings
+    $aibuilder_settings = DB::table('aibuilder_settings')->first();
 @endphp
 
 <!-- Sidebar -->
@@ -76,8 +81,9 @@
         <div class="navbar-brand navbar-brand-autodark">
             <a href="{{ route('user.dashboard') }}">
                 @if (file_exists(public_path('img/logo-light.png')))
-                    <img src="{{ optional(Auth::user())->choosed_theme == 'light' ? asset($settings->site_logo) : asset('img/logo-light.png') }}" width="200" height="50"
-                        alt="{{ $settings->site_name }}" class="navbar-brand-image custom-logo">
+                    <img src="{{ optional(Auth::user())->choosed_theme == 'light' ? asset($settings->site_logo) : asset('img/logo-light.png') }}"
+                        width="200" height="50" alt="{{ $settings->site_name }}"
+                        class="navbar-brand-image custom-logo">
                 @else
                     <img src="{{ $settings->site_logo }}" width="200" height="50" alt="{{ $settings->site_name }}"
                         class="navbar-brand-image custom-logo">
@@ -107,7 +113,8 @@
             </a>
         </div>
         <div class="collapse navbar-collapse" id="sidebar-menu">
-            <ul class="navbar-nav m-0 ml-lg-auto p-3 p-lg-0 overflow-y-auto bg-body-tertiary" style="z-index: 9999999 !important;">
+            <ul class="navbar-nav m-0 ml-lg-auto p-3 p-lg-0 overflow-y-auto bg-body-tertiary"
+                style="z-index: 9999999 !important;">
                 <li class="d-inline d-lg-none">
                     <button class="navbar-toggler float-right" type="button" data-bs-toggle="collapse"
                         data-bs-target="#sidebar-menu" aria-controls="sidebar-menu" aria-expanded="false"
@@ -135,7 +142,8 @@
                 {{-- Check type --}}
                 @if ($active_plan)
                     @if ($active_plan['plan_type'] == 'VCARD')
-                        <li class="nav-item {{ request()->is('user/cards') || request()->is('user/edit-*') || request()->is('user/choose-card-type') || request()->is('user/create-card') || request()->is('user/appointments*') || request()->is('user/inquiries*') ? 'active' : '' }}">
+                        <li
+                            class="nav-item {{ request()->is('user/cards') || request()->is('user/edit-*') || request()->is('user/choose-card-type') || request()->is('user/create-card') || request()->is('user/appointments*') || request()->is('user/inquiries*') ? 'active' : '' }}">
                             <a class="nav-link" href="{{ route('user.cards') }}">
                                 <span class="nav-link-icon d-md-none d-lg-inline-block">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-id"
@@ -158,7 +166,8 @@
                     @endif
 
                     @if ($active_plan['plan_type'] == 'STORE')
-                        <li class="nav-item {{ request()->is('user/stores*') || request()->is('user/categories*') ? 'active' : '' }}">
+                        <li
+                            class="nav-item {{ request()->is('user/stores*') || request()->is('user/categories*') ? 'active' : '' }}">
                             <a class="nav-link" href="{{ route('user.stores') }}">
                                 <span class="nav-link-icon d-md-none d-lg-inline-block">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-id"
@@ -181,11 +190,26 @@
                     @endif
 
                     @if ($active_plan['plan_type'] == 'BOTH')
-                        <li class="nav-item {{ request()->is('user/cards') || request()->is('user/edit-*') || request()->is('user/choose-card-type') || request()->is('user/create-card') || 
-                        request()->is('user/social-links*') || request()->is('user/payment-links*') || request()->is('user/services*') || request()->is('user/vproducts*') || 
-                        request()->is('user/galleries*') || request()->is('user/testimonials*') || request()->is('user/popups*') || 
-                        request()->is('user/business-hours*') || request()->is('user/appointment*') || request()->is('user/contact-form*') || 
-                        request()->is('user/service-booking*') || request()->is('user/appointments*') || request()->is('user/inquiries*') ? 'active' : '' }}">
+                        <li
+                            class="nav-item {{ request()->is('user/cards') ||
+                            request()->is('user/edit-*') ||
+                            request()->is('user/choose-card-type') ||
+                            request()->is('user/create-card') ||
+                            request()->is('user/social-links*') ||
+                            request()->is('user/payment-links*') ||
+                            request()->is('user/services*') ||
+                            request()->is('user/vproducts*') ||
+                            request()->is('user/galleries*') ||
+                            request()->is('user/testimonials*') ||
+                            request()->is('user/popups*') ||
+                            request()->is('user/business-hours*') ||
+                            request()->is('user/appointment*') ||
+                            request()->is('user/contact-form*') ||
+                            request()->is('user/service-booking*') ||
+                            request()->is('user/appointments*') ||
+                            request()->is('user/inquiries*')
+                                ? 'active'
+                                : '' }}">
                             <a class="nav-link" href="{{ route('user.cards') }}">
                                 <span class="nav-link-icon d-md-none d-lg-inline-block">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-id"
@@ -206,7 +230,8 @@
                             </a>
                         </li>
 
-                        <li class="nav-item {{ request()->is('user/stores*') || request()->is('user/store*') || request()->is('user/categories*') ? 'active' : '' }}">
+                        <li
+                            class="nav-item {{ request()->is('user/stores*') || request()->is('user/store*') || request()->is('user/categories*') ? 'active' : '' }}">
                             <a class="nav-link" href="{{ route('user.stores') }}">
                                 <span class="nav-link-icon d-md-none d-lg-inline-block">
                                     <svg xmlns="http://www.w3.org/2000/svg"
@@ -253,7 +278,8 @@
                 @if ($config[76]->config_value == '1')
                     @if ($active_plan)
                         @if (isset($active_plan['nfc_card']) && $active_plan['nfc_card'])
-                            <li class="nav-item {{ request()->is('user/nfc-cards/order') || request()->is('user/nfc-cards/checkout') || request()->is('user/nfc-cards/checkout*') ? 'active' : '' }}">
+                            <li
+                                class="nav-item {{ request()->is('user/nfc-cards/order') || request()->is('user/nfc-cards/checkout') || request()->is('user/nfc-cards/checkout*') ? 'active' : '' }}">
                                 <a class="nav-link" href="{{ route('user.order.nfc.cards') }}">
                                     <span class="nav-link-icon d-md-none d-lg-inline-block">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
@@ -377,7 +403,8 @@
                 </li>
 
                 {{-- Plans --}}
-                <li class="nav-item {{ request()->is('user/plans') || request()->is('user/checkout*') ? 'active' : '' }}">
+                <li
+                    class="nav-item {{ request()->is('user/plans') || request()->is('user/checkout*') ? 'active' : '' }}">
                     <a class="nav-link" href="{{ route('user.plans') }}">
                         <span class="nav-link-icon d-md-none d-lg-inline-block">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-id"
@@ -397,8 +424,44 @@
                     </a>
                 </li>
 
+                {{-- AI Credits Plans --}}
+                @if ($active_plan && $aibuilder_settings->aibuilder == 1)
+                    @if (isset($active_plan['ai_credits']) && $active_plan['ai_credits'])
+                        <li class="nav-item dropdown {{ request()->is('user/ai-credits*') ? 'active' : '' }}">
+                            <a class="nav-link dropdown-toggle" href="#navbar-help" data-bs-toggle="dropdown"
+                                data-bs-auto-close="outside" role="button" aria-expanded="false">
+                                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round"
+                                        class="icon icon-tabler icons-tabler-outline icon-tabler-credits">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                        <path d="M3 14a6 2 0 1 0 12 0a6 2 0 1 0 -12 0" />
+                                        <path d="M3 14v5c0 1.105 2.686 2 6 2s6 -.895 6 -2v-5" />
+                                        <path d="M9 5a6 2 0 1 0 12 0a6 2 0 1 0 -12 0" />
+                                        <path d="M9 5v3" />
+                                        <path d="M18.365 11.656c1.59 -.36 2.635 -.966 2.635 -1.656v-5" />
+                                    </svg>
+                                </span>
+                                <span class="nav-link-title">
+                                    {{ __('AI Credits') }}
+                                </span>
+                            </a>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item" href="{{ route('user.ai.credits.plans') }}">
+                                    {{ __('Plans') }}
+                                </a>
+                                <a class="dropdown-item" href="{{ route('user.ai.credits.transactions') }}">
+                                    {{ __('Transactions') }}
+                                </a>
+                            </div>
+                        </li>
+                    @endif
+                @endif
+
                 {{-- Transactions --}}
-                <li class="nav-item dropdown {{ request()->is('user/transactions*') || request()->is('user/nfc-cards/transactions') || request()->is('user/nfc-cards/transaction/invoice*') || request()->is('user/view-invoice*') ? 'active' : '' }}">
+                <li
+                    class="nav-item dropdown {{ request()->is('user/transactions*') || request()->is('user/nfc-cards/transactions') || request()->is('user/nfc-cards/transaction/invoice*') || request()->is('user/view-invoice*') ? 'active' : '' }}">
                     <a class="nav-link dropdown-toggle" href="#navbar-help" data-bs-toggle="dropdown"
                         data-bs-auto-close="outside" role="button" aria-expanded="false">
                         <span class="nav-link-icon d-md-none d-lg-inline-block">

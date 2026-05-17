@@ -527,6 +527,38 @@ class GoBizOriginalController extends Controller
         return redirect()->route('admin.web-template.gobiz-original.config')->with('success', trans('Updated!'));
     }
 
+    // Update mobile application action banner
+    public function appActionBanner(Request $request)
+    {
+        // Validate form data
+        $rules = [
+            'app_action' => 'required|in:1,0',
+            'app_heading' => 'required',
+            'app_description' => 'required',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        // Check validation
+        if ($validator->fails()) {
+            return back()->with('failed', $validator->messages()->first())->withInput();
+        }
+
+        // Update template config only with available fields
+        DB::table('gobiz_original_config')
+            ->where('id', 1)
+            ->update([
+                'app_action' => $request->app_action,
+                'app_heading' => $request->app_heading,
+                'app_description' => $request->app_description,
+                'google_play_store_link' => $request->google_play_store_link,
+                'apple_app_store_link'   => $request->apple_app_store_link,
+            ]);
+
+        // Page redirect
+        return redirect()->route('admin.web-template.gobiz-original.config')->with('success', trans('Updated!'));
+    }
+
     // Update announcements
     public function updateAnnouncement(Request $request)
     {
