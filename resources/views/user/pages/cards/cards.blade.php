@@ -404,7 +404,7 @@
                                     <span class="mx-1">${data.views}</span>
                                 </p>
 
-                                <p class="mt-4">${data.title}</p>
+                                <div class="mt-4">${data.title}</div>
                                 <p class="mb-2 fs-5">${data.card_url}</p>
 
                                 <div class="d-flex justify-content-between align-items-center mb-3">

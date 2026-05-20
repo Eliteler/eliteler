@@ -88,7 +88,17 @@ class CardController extends Controller
                         }
                     })
                     ->editColumn('title', function ($card) {
+                        $avatarUrl = !empty($card->profile) ? asset(ltrim($card->profile, '/')) : '';
+                        $avatarHtml = '';
+                        if ($avatarUrl) {
+                            $avatarHtml = '<span class="avatar avatar-md me-3 rounded-circle" style="background-image: url(' . $avatarUrl . '); background-size: cover; background-position: center; flex-shrink: 0;"></span>';
+                        } else {
+                            $firstLetter = strtoupper(mb_substr($card->title, 0, 1));
+                            $avatarHtml = '<span class="avatar avatar-md me-3 rounded-circle bg-primary-lt text-primary" style="flex-shrink: 0; font-weight: bold;">' . $firstLetter . '</span>';
+                        }
+
                         return '<div class="d-flex py-1 align-items-center">
+                                    ' . $avatarHtml . '
                                     <div class="flex-fill">
                                         <div class=""><a href="' . route('user.edit.card', $card->card_id) . '" class="text-reset fw-bold">' . $card->title . '</a></div>
                                         <div class="text-secondary">' . $card->sub_title . '</div>
