@@ -78,6 +78,7 @@
                                         <th>{{ __('#') }}</th>
                                         <th>{{ __('Date') }}</th>
                                         <th>{{ __('Name') }}</th>
+                                        <th>{{ __('Link') }}</th>
                                         <th>{{ __('Views') }}</th>
                                         <th>{{ __('Status') }}</th>
                                         <th class="w-1">{{ __('Actions') }}</th>
@@ -259,6 +260,7 @@ $(document).ready(function() {
             { data: 'DT_RowIndex', name: 'DT_RowIndex', searchable: false },
             { data: 'created_at', name: 'created_at' },
             { data: 'title', name: 'title' },
+            { data: 'card_url', name: 'card_url' },
             { data: 'views', name: 'views' },
             { data: 'card_status', name: 'card_status' },
             { data: 'action', name: 'action', orderable: false, searchable: false }
@@ -295,7 +297,7 @@ $(document).ready(function() {
 
                     for (let i = 0; i < 10; i++) {
                         placeholderRows += '<tr>' +
-                            '<td class="text-center"><div class="placeholder placeholder-xs col-12"></div></td>'.repeat(6) +
+                            '<td class="text-center"><div class="placeholder placeholder-xs col-12"></div></td>'.repeat(7) +
                             '</tr>';
                     }
                     $('#storesTable tbody').html(placeholderRows);
@@ -308,7 +310,7 @@ $(document).ready(function() {
             $('#storeCardView').removeClass('placeholder-glow');
 
             $('#storesTable tbody tr').each(function() {
-                const actionCell = $(this).find('td').eq(5);
+                const actionCell = $(this).find('td').eq(6);
                 if (actionCell.find('span.placeholder').length > 0) {
                     actionCell.empty();
                 }
@@ -360,7 +362,8 @@ $(document).ready(function() {
                             <span class="mx-1">${data.views}</span>
                         </p>
 
-                        <p class="mt-4">${data.title}</p>
+                        <div class="mt-4">${data.title}</div>
+                        <p class="mb-2 fs-5">${data.card_url}</p>
 
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <p class="text-muted fs-5">${data.created_at}</p>
