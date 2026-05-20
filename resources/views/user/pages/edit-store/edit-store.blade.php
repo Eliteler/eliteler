@@ -730,11 +730,13 @@ $('#searchInput').on('keyup', function() {
 });
 </script>
 <script>
+document.addEventListener("DOMContentLoaded", function() {
     // Array of element selectors
     var elementSelectors = ['.card_lang', '.country_code', '.currency'];
 
     // Function to initialize TomSelect on an element
     function initializeTomSelect(el) {
+        if (el.tomselect) return;
         new TomSelect(el, {
             copyClassesToDropdown: false,
             dropdownClass: 'dropdown-menu ts-dropdown',
@@ -759,10 +761,12 @@ $('#searchInput').on('keyup', function() {
 
         // Ensure the "required" attribute is enforced
         el.addEventListener('change', function() {
-            if (el.value) {
-                el.setCustomValidity('');
-            } else {
-                el.setCustomValidity('This field is required');
+            if (el.hasAttribute('required')) {
+                if (el.value) {
+                    el.setCustomValidity('');
+                } else {
+                    el.setCustomValidity('This field is required');
+                }
             }
         });
     
@@ -800,6 +804,7 @@ $('#searchInput').on('keyup', function() {
 
     // Configure the observer
     observer.observe(document.body, { childList: true, subtree: true });
+});
 </script>
 @endpush
 @endsection
