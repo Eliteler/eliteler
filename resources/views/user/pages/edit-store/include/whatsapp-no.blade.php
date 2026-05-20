@@ -247,8 +247,12 @@ $country_codes = [
 if (!function_exists('remove_country_code')) {
     function remove_country_code($number, $country_codes)
     {
-        foreach ($country_codes as $code => $label) {
-            if (strpos($number, $code) === 0) {
+        $keys = array_keys($country_codes);
+        usort($keys, function($a, $b) {
+            return strlen($b) - strlen($a);
+        });
+        foreach ($keys as $code) {
+            if (strpos($number, (string)$code) === 0) {
                 return substr($number, strlen($code));
             }
         }

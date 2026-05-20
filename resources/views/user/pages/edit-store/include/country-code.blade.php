@@ -2,10 +2,6 @@
 // Sample WhatsApp number
 $whatsapp_no = $store_details->whatsapp_no;
 
-// Extract the country code
-preg_match('/^\d+/', $whatsapp_no, $matches);
-$country_code = $matches[0];
-
 // Available country codes in the format "Country (+Code)"
 $country_codes = [
     '93' => 'Afghanistan (+93)',
@@ -248,6 +244,21 @@ $country_codes = [
     '263' => 'Zimbabwe (+263)',
 ];
 
+// Extract the country code
+$country_code = '';
+if (!empty($whatsapp_no)) {
+    // Sort keys by length descending to match longest code first (e.g. 1684 before 1)
+    $codes = array_keys($country_codes);
+    usort($codes, function($a, $b) {
+        return strlen($b) - strlen($a);
+    });
+    foreach ($codes as $code) {
+        if (strpos($whatsapp_no, (string)$code) === 0) {
+            $country_code = (string)$code;
+            break;
+        }
+    }
+}
 ?>
 
 <select name="country_code" id="country_code" class="form-control country_code">
