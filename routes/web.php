@@ -161,6 +161,7 @@ use App\Http\Controllers\User\Store\Edit\UpdateStoreCategoryController;
 use App\Http\Controllers\User\Store\Edit\UpdateStoreHoursController;
 use App\Http\Controllers\User\Store\Edit\UpdateStoreProductImportController;
 use App\Http\Controllers\User\Store\Edit\UpdateStoreSeoController;
+use App\Http\Controllers\User\Store\Edit\StoreSocialLinkController;
 use App\Http\Controllers\User\Store\Edit\UpdateStoreSettingsController;
 use App\Http\Controllers\User\StoreController;
 use App\Http\Controllers\User\TransactionNfcCardController;
@@ -950,6 +951,10 @@ Route::group(['middleware' => 'Installer'], function () {
         // Edit Store Advanced Settings
         Route::get('store/edit-store-advanced-setting/{id}', [EditStoreAdvancedSettingController::class, 'editStoreAdvancedSetting'])->name('edit.store.advanced.setting');
         Route::post('store/update-store-advanced-setting', [EditStoreAdvancedSettingController::class, 'updateStoreAdvancedSetting'])->name('update.store.advanced.setting');
+
+        // Store Social Links
+        Route::get('store/social-links/{id}', [StoreSocialLinkController::class, 'editStoreSocialLinks'])->name('edit.store.social.links');
+        Route::post('store/update-social-links/{id}', [StoreSocialLinkController::class, 'updateStoreSocialLinks'])->name('update.store.social.links');
 
         // Policies (Store Refund Policy, Delivery Policy, Terms & Conditions, Privacy Policy)
         Route::get('store/policies/{id}', [EditStorePoliciesController::class, 'editStorePolicies'])->name('edit.store.policies');

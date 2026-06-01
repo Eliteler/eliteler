@@ -42,6 +42,7 @@
     <link href="{{ url('css/tabler.min.css') }}" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
     <link href="{{ url('app/css/store.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url('css/fontawesome.min.css') }}" />
     {{-- Swiper CSS --}}
     <link rel="stylesheet" href="{{ url('css/swiper-bundle.min.css') }}">
 
@@ -573,32 +574,44 @@
                                         </span>
                                     </div>
                                     <div class="col-lg-6 text-lg-end">
-                                        <ul class="list-inline list-inline-dots mb-0">
-                                            <li class="list-inline-item">
-                                                <a href="{{ $shareComponent['facebook'] }}" target="_blank" class="link-light">
-                                                    <i class="ti ti-brand-facebook-filled text-rose"></i>
-                                                </a>
-                                            </li>
-                                            <li class="list-inline-item">
-                                                <a href="{{ $shareComponent['twitter'] }}" target="_blank" class="link-light">
-                                                    <i class="ti ti-brand-twitter-filled text-rose"></i>
-                                                </a>
-                                            </li>
-                                            <li class="list-inline-item">
-                                                <a href="{{ $shareComponent['linkedin'] }}" target="_blank" class="link-light">
-                                                    <i class="ti ti-brand-linkedin text-rose"></i>
-                                                </a>
-                                            </li>
-                                            <li class="list-inline-item">
-                                                <a href="{{ $shareComponent['telegram'] }}" target="_blank" class="link-light">
-                                                    <i class="ti ti-brand-telegram text-rose"></i>
-                                                </a>
-                                            </li>
-                                            <li class="list-inline-item">
-                                                <a href="{{ $shareComponent['whatsapp'] }}" target="_blank" class="link-light">
-                                                    <i class="ti ti-brand-whatsapp text-rose"></i>
-                                                </a>
-                                            </li>
+                                        <ul class="list-inline mb-0">
+                                            {{-- Show store social links if added, otherwise show share links --}}
+                                            @if (isset($storeSocialLinks) && $storeSocialLinks->count() > 0)
+                                                @foreach ($storeSocialLinks as $socialLink)
+                                                    <li class="list-inline-item">
+                                                        <a href="{{ $socialLink->type == 'wa' ? 'https://wa.me/' . $socialLink->content : $socialLink->content }}"
+                                                            target="_blank" class="link-light" title="{{ $socialLink->label ?: $socialLink->type }}">
+                                                            <i class="{{ $socialLink->icon }} fs-3 text-rose"></i>
+                                                        </a>
+                                                    </li>
+                                                @endforeach
+                                            @else
+                                                <li class="list-inline-item">
+                                                    <a href="{{ $shareComponent['facebook'] }}" target="_blank" class="link-light">
+                                                        <i class="ti ti-brand-facebook-filled text-rose"></i>
+                                                    </a>
+                                                </li>
+                                                <li class="list-inline-item">
+                                                    <a href="{{ $shareComponent['twitter'] }}" target="_blank" class="link-light">
+                                                        <i class="ti ti-brand-twitter-filled text-rose"></i>
+                                                    </a>
+                                                </li>
+                                                <li class="list-inline-item">
+                                                    <a href="{{ $shareComponent['linkedin'] }}" target="_blank" class="link-light">
+                                                        <i class="ti ti-brand-linkedin text-rose"></i>
+                                                    </a>
+                                                </li>
+                                                <li class="list-inline-item">
+                                                    <a href="{{ $shareComponent['telegram'] }}" target="_blank" class="link-light">
+                                                        <i class="ti ti-brand-telegram text-rose"></i>
+                                                    </a>
+                                                </li>
+                                                <li class="list-inline-item">
+                                                    <a href="{{ $shareComponent['whatsapp'] }}" target="_blank" class="link-light">
+                                                        <i class="ti ti-brand-whatsapp text-rose"></i>
+                                                    </a>
+                                                </li>
+                                            @endif
                                         </ul>
                                     </div>
                                 </div>

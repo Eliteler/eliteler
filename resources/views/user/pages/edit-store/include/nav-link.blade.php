@@ -19,6 +19,7 @@
     }
 @endphp
 
+
 <a href="{{ route('user.edit.store', Request::segment(4)) }}"
     class="list-group-item list-group-item-action d-flex align-items-center {{ $link == 'basic' ? 'active' : '' }}">{{ __('Basic Details') }}</a>
 <a href="{{ route('user.edit.categories', Request::segment(4)) }}"
@@ -31,6 +32,10 @@
     class="list-group-item list-group-item-action d-flex align-items-center {{ $link == 'seo' ? 'active' : '' }}">{{ __('SEO') }}</a>
 <a href="{{ route('user.edit.store.hours', Request::segment(4)) }}"
     class="list-group-item list-group-item-action d-flex align-items-center {{ $link == 'business-hours' ? 'active' : '' }}">{{ __('Business Hours') }}</a>
+
+{{-- Social Links --}}
+<a href="{{ route('user.edit.store.social.links', Request::segment(4)) }}"
+    class="list-group-item list-group-item-action d-flex align-items-center {{ $link == 'social-links' ? 'active' : '' }}">{{ __('Social Links') }}</a>
 
 {{-- Advanced Settings --}}
 @if ($plan_details['advanced_settings'] == 1)
@@ -63,3 +68,4 @@
 
 <a href="{{ route('user.edit.store.settings', Request::segment(4)) }}"
     class="list-group-item list-group-item-action d-flex align-items-center {{ $link == 'settings' ? 'active' : '' }}">{{ __('Settings') }}</a>
+

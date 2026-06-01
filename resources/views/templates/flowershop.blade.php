@@ -2063,7 +2063,7 @@
             "use strict";
 
             // From browser url to clipboard
-            navigator.clipboard.writeText(`{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}`);
+            navigator.clipboard.writeText(decodeURIComponent(`{{ $shareContent }}`.replace(/\+/g, ' ')));
             alert("Link copied to clipboard!");
         }
 

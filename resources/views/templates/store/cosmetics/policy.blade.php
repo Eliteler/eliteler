@@ -195,7 +195,7 @@
                                         <span class="text-muted">
                                             {{ __('Copyright') }} &copy;
                                             <span id="year"></span>
-                                            <a href="{{ url($business_card_details->{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}</a>.
+                                            <a href="{{ !empty($business_card_details->copyright) ? 'https://' . $business_card_details->copyright : config('app.url') }}" target="_blank">{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}</a>.
                                             {{ __('All rights reserved.') }} <br>
                                             @if (!isset($plan_details['hide_branding']) || $plan_details['hide_branding'] != 1)
                                                 {{ __('Made with') }} <i class="ti ti-heart text-danger"></i> {{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}
@@ -203,32 +203,44 @@
                                         </span>
                                     </div>
                                     <div class="col-lg-6 text-lg-end">
-                                        <ul class="list-inline list-inline-dots mb-0">
-                                            <li class="list-inline-item">
-                                                <a href="{{ $shareComponent['facebook'] }}" target="_blank" class="link-light">
-                                                    <i class="ti ti-brand-facebook-filled text-rose"></i>
-                                                </a>
-                                            </li>
-                                            <li class="list-inline-item">
-                                                <a href="{{ $shareComponent['twitter'] }}" target="_blank" class="link-light">
-                                                    <i class="ti ti-brand-twitter-filled text-rose"></i>
-                                                </a>
-                                            </li>
-                                            <li class="list-inline-item">
-                                                <a href="{{ $shareComponent['linkedin'] }}" target="_blank" class="link-light">
-                                                    <i class="ti ti-brand-linkedin text-rose"></i>
-                                                </a>
-                                            </li>
-                                            <li class="list-inline-item">
-                                                <a href="{{ $shareComponent['telegram'] }}" target="_blank" class="link-light">
-                                                    <i class="ti ti-brand-telegram text-rose"></i>
-                                                </a>
-                                            </li>
-                                            <li class="list-inline-item">
-                                                <a href="{{ $shareComponent['whatsapp'] }}" target="_blank" class="link-light">
-                                                    <i class="ti ti-brand-whatsapp text-rose"></i>
-                                                </a>
-                                            </li>
+                                        <ul class="list-inline mb-0">
+                                            {{-- Show store social links if added, otherwise show share links --}}
+                                            @if (isset($storeSocialLinks) && $storeSocialLinks->count() > 0)
+                                                @foreach ($storeSocialLinks as $socialLink)
+                                                    <li class="list-inline-item">
+                                                        <a href="{{ $socialLink->type == 'wa' ? 'https://wa.me/' . $socialLink->content : $socialLink->content }}"
+                                                            target="_blank" class="link-light" title="{{ $socialLink->label ?: $socialLink->type }}">
+                                                            <i class="{{ $socialLink->icon }} fs-3 text-reset"></i>
+                                                        </a>
+                                                    </li>
+                                                @endforeach
+                                            @else
+                                                <li class="list-inline-item">
+                                                    <a href="{{ $shareComponent['facebook'] }}" target="_blank" class="link-light">
+                                                        <i class="ti ti-brand-facebook-filled"></i>
+                                                    </a>
+                                                </li>
+                                                <li class="list-inline-item">
+                                                    <a href="{{ $shareComponent['twitter'] }}" target="_blank" class="link-light">
+                                                        <i class="ti ti-brand-twitter-filled"></i>
+                                                    </a>
+                                                </li>
+                                                <li class="list-inline-item">
+                                                    <a href="{{ $shareComponent['linkedin'] }}" target="_blank" class="link-light">
+                                                        <i class="ti ti-brand-linkedin"></i>
+                                                    </a>
+                                                </li>
+                                                <li class="list-inline-item">
+                                                    <a href="{{ $shareComponent['telegram'] }}" target="_blank" class="link-light">
+                                                        <i class="ti ti-brand-telegram"></i>
+                                                    </a>
+                                                </li>
+                                                <li class="list-inline-item">
+                                                    <a href="{{ $shareComponent['whatsapp'] }}" target="_blank" class="link-light">
+                                                        <i class="ti ti-brand-whatsapp"></i>
+                                                    </a>
+                                                </li>
+                                            @endif
                                         </ul>
                                     </div>
                                 </div>

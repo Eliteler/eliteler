@@ -1079,8 +1079,7 @@
         }
 
         function copyLinkStyled(btn) {
-            navigator.clipboard.writeText(
-                `{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}`).then(
+            navigator.clipboard.writeText(decodeURIComponent(`{{ $shareContent }}`.replace(/\+/g, ' '))).then(
                 () => {
                     const icon = btn.querySelector('i'),
                         span = btn.querySelector('span');
@@ -1096,8 +1095,7 @@
         }
 
         function copyLink() {
-            navigator.clipboard.writeText(
-                `{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}`);
+            navigator.clipboard.writeText(decodeURIComponent(`{{ $shareContent }}`.replace(/\+/g, ' ')));
             alert("{{ __('Link copied to clipboard!') }}");
         }
 

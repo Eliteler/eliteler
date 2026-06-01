@@ -374,7 +374,13 @@ class ProfileController extends Controller
                             Session::get('password_protected') == false;
                         }
 
-                        $datas = compact('card_details', 'plan_details', 'store_details', 'categories', 'business_card_details', 'products', 'settings', 'shareComponent', 'shareContent', 'config', 'enquiry_button', 'whatsapp_msg', 'currency', 'manifest', 'whatsAppNumberExists', 'deliveryOptions', 'businessHours');
+                        // Fetch store social links
+                        $storeSocialLinks = BusinessField::where('card_id', $card_details->card_id)
+                            ->where('field_source', 'store')
+                            ->orderBy('position', 'asc')
+                            ->get();
+
+                        $datas = compact('card_details', 'plan_details', 'store_details', 'categories', 'business_card_details', 'products', 'settings', 'shareComponent', 'shareContent', 'config', 'enquiry_button', 'whatsapp_msg', 'currency', 'manifest', 'whatsAppNumberExists', 'deliveryOptions', 'businessHours', 'storeSocialLinks');
                         return view('templates.store.' . $business_card_details->theme_code . '.index', $datas);
                     } else {
                         return redirect()->route('user.edit.card', $id)->with('failed', trans('Please fill out the basic business details.'));
@@ -725,7 +731,13 @@ class ProfileController extends Controller
             $shareComponent['telegram'] = "https://telegram.me/share/url?text=$shareContent&url=$url";
             $shareComponent['whatsapp'] = "https://api.whatsapp.com/send/?phone&text=$shareContent";
 
-            $datas = compact('card_details', 'plan_details', 'store_details', 'business_card_details', 'related_products', 'product_details', 'settings', 'shareComponent', 'shareContent', 'config', 'enquiry_button', 'whatsapp_msg', 'currency', 'whatsAppNumberExists', 'deliveryOptions', 'businessHours');
+            // Fetch store social links
+            $storeSocialLinks = BusinessField::where('card_id', $card_details->card_id)
+                ->where('field_source', 'store')
+                ->orderBy('position', 'asc')
+                ->get();
+
+            $datas = compact('card_details', 'plan_details', 'store_details', 'business_card_details', 'related_products', 'product_details', 'settings', 'shareComponent', 'shareContent', 'config', 'enquiry_button', 'whatsapp_msg', 'currency', 'whatsAppNumberExists', 'deliveryOptions', 'businessHours', 'storeSocialLinks');
             return view('templates.store.' . $business_card_details->theme_code . '.single-product', $datas);
         }
     }
@@ -829,7 +841,13 @@ class ProfileController extends Controller
             $shareComponent['telegram'] = "https://telegram.me/share/url?text=$shareContent&url=$url";
             $shareComponent['whatsapp'] = "https://api.whatsapp.com/send/?phone&text=$shareContent";
 
-            $datas = compact('card_details', 'plan_details', 'store_details', 'business_card_details', 'categories', 'settings', 'shareComponent', 'shareContent', 'config', 'enquiry_button', 'whatsapp_msg', 'currency', 'whatsAppNumberExists', 'deliveryOptions', 'businessHours');
+            // Fetch store social links
+            $storeSocialLinks = BusinessField::where('card_id', $card_details->card_id)
+                ->where('field_source', 'store')
+                ->orderBy('position', 'asc')
+                ->get();
+
+            $datas = compact('card_details', 'plan_details', 'store_details', 'business_card_details', 'categories', 'settings', 'shareComponent', 'shareContent', 'config', 'enquiry_button', 'whatsapp_msg', 'currency', 'whatsAppNumberExists', 'deliveryOptions', 'businessHours', 'storeSocialLinks');
             return view('templates.store.' . $business_card_details->theme_code . '.categories', $datas);
         }
     }

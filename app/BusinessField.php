@@ -19,10 +19,12 @@ class BusinessField extends Model
     // Fillable
     protected $fillable = [
         'card_id',
+        'title',
         'type',
         'icon',
         'label',
         'content',
-        'position'
+        'position',
+        'field_source',
     ];
 }
