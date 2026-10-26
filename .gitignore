@@ -1,15 +1,38 @@
 /node_modules
 /public/hot
+/public/hot-admin
 /public/storage
 /storage/*.key
-.env
 .env.backup
-gobiz-source-code.zip
 .phpunit.result.cache
 Homestead.json
 Homestead.yaml
 npm-debug.log
 yarn-error.log
-/vendor
-eliteler.zip
-elititlernewpackup.zip
+*.zip
+.claude
+.env
+.mcp.json
+.gitignore
+/plugins/ModernDashboard/Views/js/build
+
+# Ignore everything inside vendor
+/vendor/*
+
+# # Except openai-php
+# !/vendor/openai-php/
+# !/vendor/openai-php/client/
+# !/vendor/openai-php/client/**
+
+/public/build
+/public/build-admin
+/public/gobiz_modern_assets
+/public/gobiz_original_assets
+/public/gobiz_rich_assets
+/public/storage
+
+# macOS
+.DS_Store
+__MACOSX/
+new-en.json
+package-lock.json

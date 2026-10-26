@@ -48,22 +48,60 @@
     {{-- Check business details --}}
     @if ($business_card_details != null)
         @php
-            $custom_css = $business_card_details->custom_css;
-            $custom_js = $business_card_details->custom_js;
+            $custom_css = trim($business_card_details->custom_css ?? '');
+            $custom_js  = trim($business_card_details->custom_js ?? '');
 
-            // Ensure <style> tags for custom CSS
-            if (strpos($custom_css, '<style>') === false && strpos($custom_css, '</style>') === false) {
-                $custom_css = "<style>" . $custom_css . "</style>";
+            /*
+            |--------------------------------------------------------------------------
+            | Custom CSS
+            |--------------------------------------------------------------------------
+            */
+
+            if (
+                !empty($custom_css) &&
+                stripos($custom_css, '<style') === false
+            ) {
+                $custom_css = "<style>{$custom_css}</style>";
             }
 
-            // Ensure <script> tags for custom JS
-            if (strpos($custom_js, '<script>') === false && strpos($custom_js, '</script>') === false) {
-                $custom_js = "<script>" . $custom_js . "</script>";
+            /*
+            |--------------------------------------------------------------------------
+            | Split HTML tags and plain JS
+            |--------------------------------------------------------------------------
+            */
+
+            $include_custom_js = '';
+
+            if (!empty($custom_js)) {
+
+                // Extract HTML tags like meta, script, iframe, noscript, etc.
+                preg_match_all(
+                    '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/?>/is',
+                    $custom_js,
+                    $matches
+                );
+
+                $html_tags = implode("\n", $matches[0]);
+
+                // Remove extracted HTML tags from original content
+                $plain_js = trim(preg_replace(
+                    '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/?>/is',
+                    '',
+                    $custom_js
+                ));
+
+                // Add HTML tags directly
+                $include_custom_js .= $html_tags;
+
+                // Wrap remaining plain JS inside script tag
+                if (!empty($plain_js)) {
+                    $include_custom_js .= "\n<script>{$plain_js}</script>";
+                }
             }
         @endphp
 
         {!! $custom_css !!}
-        {!! $custom_js !!}
+        {!! $include_custom_js !!}
 
         {{-- Theme CSS --}}
         @if(!empty($business_card_details->theme_css))
@@ -466,6 +504,15 @@
                                     </div>
                                 </div>
                             @endif
+
+                            <!-- Start Instagram Section -->
+                            @include('templates.includes.instagram-embed', [
+                                'sectionClass' => 'py-5 px-3',
+                                'customHeader' => '<h2 class="w-full md:w-auto mt-2 mb-4 text-2xl font-bold">' . __('Instagram') . '</h2>',
+                                'cardClass'    => 'bg-white border border-gray-100 rounded-lg shadow overflow-hidden',
+                                'labelClass'   => 'p-3 text-d font-bold tracking-tight text-gray-900 text-center'
+                            ])
+                            <!-- End Instagram Section -->
 
                             {{-- Testimonials --}}
                             @if ($testimonials != null && !$testimonials->isEmpty())
@@ -1317,7 +1364,37 @@
     <script src="{{ url('js/flatpickr.min.js') }}"></script>
 
     {{-- Flatpickr JS --}}
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/{{ app()->getLocale() }}.js"></script>
+    @php
+        $flatpickrLocales = [
+            'pt_BR' => 'pt',
+            'zh' => 'zh',
+            'ar' => 'ar',
+            'bg' => 'bg',
+            'hr' => 'hr',
+            'nl' => 'nl',
+            'fr' => 'fr',
+            'de' => 'de',
+            'he' => 'he',
+            'hu' => 'hu',
+            'id' => 'id',
+            'it' => 'it',
+            'ja' => 'ja',
+            'lt' => 'lt',
+            'ms' => 'ms',
+            'pl' => 'pl',
+            'ro' => 'ro',
+            'ru' => 'ru',
+            'es' => 'es',
+            'sv' => 'sv',
+            'th' => 'th',
+            'tr' => 'tr',
+            'vi' => 'vn',
+        ];
+
+        $locale = $flatpickrLocales[app()->getLocale()] ?? 'en';
+    @endphp
+    
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/{{ $locale }}.js"></script>
     @php
         if (isset($service_booking_details) && $service_booking_details->service_booking == 1) {
             $service_booking_available_days = json_decode($service_booking_details->service_booking_available_days);
@@ -1350,7 +1427,7 @@
             flatpickr("#appointment-date", {
                 dateFormat: "Y-m-d",
                 minDate: "today",
-                locale: "{{ app()->getLocale() }}",
+                locale: "{{ $locale }}",
                 disable: [
                     function(date) {
                         const day = date.toLocaleString("en-us", {
@@ -1372,7 +1449,7 @@
             flatpickr("#service_start_date", {
                 dateFormat: "Y-m-d",
                 minDate: "today",
-                locale: "{{ app()->getLocale() }}",
+                locale: "{{ $locale }}",
                 disable: [
                     function(date) {
                         return !allowedDays.includes(date.getDay());
@@ -1383,7 +1460,7 @@
             flatpickr("#service_end_date", {
                 dateFormat: "Y-m-d",
                 minDate: "today",
-                locale: "{{ app()->getLocale() }}",
+                locale: "{{ $locale }}",
                 disable: [
                     function(date) {
                         return !allowedDays.includes(date.getDay());

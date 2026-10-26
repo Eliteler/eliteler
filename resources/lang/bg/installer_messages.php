@@ -1,63 +1,173 @@
 <?php
 
 return [
-
-    /*
-     *
-     * Shared translations.
-     *
-     */
-    'title' => 'تنصيب Laravel',
-    'next' => 'متابعة',
-
-    /*
-     *
-     * Home page translations.
-     *
-     */
-    'welcome' => [
-        'title'   => 'تنصيب Laravel',
-        'message' => 'أهلا بك في صفحة تنصيب Laravel',
-    ],
-
-    /*
-     *
-     * Requirements page translations.
-     *
-     */
-    'requirements' => [
-        'title' => 'المتطلبات',
-    ],
-
-    /*
-     *
-     * Permissions page translations.
-     *
-     */
-    'permissions' => [
-        'title' => 'تراخيص المجلدات',
-    ],
-
-    /*
-     *
-     * Environment page translations.
-     *
-     */
+    'back' => 'Предишен',
     'environment' => [
         'title' => 'الإعدادات',
         'save' => 'حفظ ملف .env',
         'success' => 'تم حفظ الإعدادات بنجاح',
         'errors' => 'حدث خطأ أثناء إنشاء ملف .env. رجاءا قم بإنشاءه يدويا',
+        'menu' => [
+            'templateTitle' => 'Стъпка 3 | ',
+            'title' => 'Монтаж',
+            'desc' => 'Моля, изберете как искате да конфигурирате файла <code>.env</code> на приложенията.',
+            'wizard-button' => 'Настройка на съветника за формуляри',
+            'classic-button' => 'Класически текстов редактор',
+        ],
+        'wizard' => [
+            'templateTitle' => 'Стъпка 3 | ',
+            'title' => 'Насочван съветник за <code>.env</code>',
+            'tabs' => [
+                'environment' => 'Околна среда',
+                'database' => 'База данни',
+                'application' => 'Приложение',
+            ],
+            'form' => [
+                'name_required' => 'Изисква се име на среда.',
+                'app_name_label' => 'Име на приложението',
+                'app_name_placeholder' => 'Име на приложението',
+                'app_environment_label' => 'App среда',
+                'app_environment_label_local' => 'Местен',
+                'app_environment_label_developement' => 'развитие',
+                'app_environment_label_qa' => 'Qa',
+                'app_environment_label_production' => 'производство',
+                'app_environment_label_other' => 'други',
+                'app_environment_placeholder_other' => 'Влезте във вашата среда...',
+                'app_debug_label' => 'Отстраняване на грешки в приложението',
+                'app_debug_label_true' => 'вярно',
+                'app_debug_label_false' => 'Невярно',
+                'app_log_level_label' => 'Ниво на регистър на приложението',
+                'app_log_level_label_debug' => 'отстраняване на грешки',
+                'app_log_level_label_info' => 'инфо',
+                'app_log_level_label_notice' => 'забележете',
+                'app_log_level_label_warning' => 'предупреждение',
+                'app_log_level_label_error' => 'грешка',
+                'app_log_level_label_critical' => 'критичен',
+                'app_log_level_label_alert' => 'предупреждение',
+                'app_log_level_label_emergency' => 'извънредна ситуация',
+                'app_url_label' => 'URL адрес на приложението',
+                'app_url_placeholder' => 'URL адрес на приложението',
+                'db_connection_failed' => 'Не може да се свърже с базата данни.',
+                'db_connection_label' => 'Връзка с база данни',
+                'db_connection_label_mysql' => 'mysql',
+                'db_connection_label_sqlite' => 'sqlite',
+                'db_connection_label_pgsql' => 'pgsql',
+                'db_connection_label_sqlsrv' => 'sqlsrv',
+                'db_host_label' => 'Хост на база данни',
+                'db_host_placeholder' => 'Хост на база данни',
+                'db_port_label' => 'Порт на база данни',
+                'db_port_placeholder' => 'Порт на база данни',
+                'db_name_label' => 'Име на база данни',
+                'db_name_placeholder' => 'Име на база данни',
+                'db_username_label' => 'Потребителско име на база данни',
+                'db_username_placeholder' => 'Потребителско име на база данни',
+                'db_password_label' => 'Парола за база данни',
+                'db_password_placeholder' => 'Парола за база данни',
+                'app_tabs' => [
+                    'more_info' => 'Повече информация',
+                    'broadcasting_title' => 'Излъчване, кеширане, сесия и опашка',
+                    'broadcasting_label' => 'Драйвер за излъчване',
+                    'broadcasting_placeholder' => 'Драйвер за излъчване',
+                    'cache_label' => 'Кеш драйвер',
+                    'cache_placeholder' => 'Кеш драйвер',
+                    'session_label' => 'Драйвер за сесия',
+                    'session_placeholder' => 'Драйвер за сесия',
+                    'queue_label' => 'Драйвер за опашка',
+                    'queue_placeholder' => 'Драйвер за опашка',
+                    'redis_label' => 'Redis драйвер',
+                    'redis_host' => 'Redis Хост',
+                    'redis_password' => 'Парола за Redis',
+                    'redis_port' => 'Порт Redis',
+                    'mail_label' => 'поща',
+                    'mail_driver_label' => 'Драйвер за поща',
+                    'mail_driver_placeholder' => 'Драйвер за поща',
+                    'mail_host_label' => 'Пощенски хост',
+                    'mail_host_placeholder' => 'Пощенски хост',
+                    'mail_port_label' => 'Пощенски порт',
+                    'mail_port_placeholder' => 'Пощенски порт',
+                    'mail_username_label' => 'Потребителско име за поща',
+                    'mail_username_placeholder' => 'Потребителско име за поща',
+                    'mail_password_label' => 'Парола за поща',
+                    'mail_password_placeholder' => 'Парола за поща',
+                    'mail_encryption_label' => 'Шифроване на пощата',
+                    'mail_encryption_placeholder' => 'Шифроване на пощата',
+                    'pusher_label' => 'Тласкач',
+                    'pusher_app_id_label' => 'Идент. № на приложението Pusher',
+                    'pusher_app_id_palceholder' => 'Идент. № на приложението Pusher',
+                    'pusher_app_key_label' => 'Ключ за приложението Pusher',
+                    'pusher_app_key_palceholder' => 'Ключ за приложението Pusher',
+                    'pusher_app_secret_label' => 'Тайна на приложението Pusher',
+                    'pusher_app_secret_palceholder' => 'Тайна на приложението Pusher',
+                ],
+                'buttons' => [
+                    'setup_database' => 'Настройка на база данни',
+                    'setup_application' => 'Приложение за настройка',
+                    'install' => 'Инсталирайте',
+                ],
+            ],
+        ],
+        'classic' => [
+            'templateTitle' => 'Стъпка 3 | ',
+            'title' => 'Класически редактор на среда',
+            'save' => 'Запазете .env',
+            'back' => 'Използвайте съветника за формуляри',
+            'install' => 'Запазете и инсталирайте',
+        ],
     ],
-
-    /*
-     *
-     * Final page translations.
-     *
-     */
     'final' => [
         'title' => 'النهاية',
         'finished' => 'تم تنصيب البرنامج بنجاح...',
         'exit' => 'إضغط هنا للخروج',
+        'templateTitle' => 'Инсталацията приключи',
+        'migration' => 'Изход от миграция и начална конзола:',
+        'console' => 'Изход от конзолата за приложения:',
+        'log' => 'Запис в регистрационния файл на инсталацията:',
+        'env' => 'Краен .env файл:',
+    ],
+    'finish' => 'Инсталирайте',
+    'forms' => [
+        'errorTitle' => 'Възникнаха следните грешки:',
+    ],
+    'install' => 'Инсталирайте',
+    'installed' => [
+        'success_log_message' => 'NativeCode Installer успешно ИНСТАЛИРА на',
+    ],
+    'next' => 'متابعة',
+    'permissions' => [
+        'title' => 'تراخيص المجلدات',
+        'templateTitle' => 'Стъпка 2 | ',
+        'next' => 'Конфигуриране на среда',
+    ],
+    'requirements' => [
+        'title' => 'المتطلبات',
+        'templateTitle' => 'Стъпка 1 | ',
+        'next' => 'Проверете разрешенията',
+    ],
+    'title' => 'تنصيب Laravel',
+    'updater' => [
+        'title' => 'Програма за актуализиране на Laravel',
+        'welcome' => [
+            'title' => 'Добре дошли в програмата за актуализиране',
+            'message' => 'Добре дошли в съветника за актуализиране.',
+        ],
+        'overview' => [
+            'title' => 'Преглед',
+            'message' => 'Има 1 актуализация.|Има :брой актуализации.',
+            'install_updates' => 'Инсталиране на актуализации',
+        ],
+        'final' => [
+            'title' => 'Готово',
+            'finished' => 'Базата данни на приложението е успешно актуализирана.',
+            'exit' => 'Щракнете тук, за да излезете',
+        ],
+        'log' => [
+            'success_message' => 'Инсталаторът на NativeCode успешно АКТУАЛИЗИРАН на',
+        ],
+    ],
+    'welcome' => [
+        'title' => 'تنصيب Laravel',
+        'message' => 'أهلا بك في صفحة تنصيب Laravel',
+        'templateTitle' => 'Добре дошли',
+        'next' => 'Проверка на изискванията',
     ],
 ];

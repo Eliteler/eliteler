@@ -50,67 +50,80 @@ class ManageNfcCardController extends Controller
         }
 
         // Check if the user has a plan
-        $active_plan = Plan::where('plan_id', Auth::user()->plan_id)->first();
         $plan = User::where('user_id', Auth::user()->user_id)->first();
         $active_plan = json_decode($plan->plan_details);
 
         if ($active_plan != null) {
-            // Check "nfc_card" is available in the plan
-            if ($active_plan->nfc_card == 1) {
                 if ($request->ajax()) {
-                    // Get nfc card key generations
-                    $nfcCardKeys = NfcCardOrder::join('nfc_card_keys', 'nfc_card_orders.order_details->unique_key', '=', 'nfc_card_keys.unqiue_key')
+                $nfcCardKeys = NfcCardOrder::join('nfc_card_keys', function ($join) {
+                    $join->whereRaw("
+                    JSON_CONTAINS(
+                        JSON_EXTRACT(nfc_card_orders.order_details, '$.unique_key'),
+                        JSON_QUOTE(nfc_card_keys.unqiue_key)
+                    )
+                ");
+                })
                         ->join('nfc_card_designs', 'nfc_card_orders.nfc_card_id', '=', 'nfc_card_designs.nfc_card_id')
-                        ->select('nfc_card_keys.*', 'nfc_card_orders.nfc_card_id', 'nfc_card_orders.order_details', 'nfc_card_orders.nfc_card_order_id', 'nfc_card_orders.created_at', 'nfc_card_designs.nfc_card_name')
+                    // Explicitly selected only the required columns to prevent SQL column name collisions
+                    ->select(
+                        'nfc_card_keys.nfc_card_key_id',
+                        'nfc_card_keys.card_id',
+                        'nfc_card_keys.link_status',
+                        'nfc_card_orders.nfc_card_id',
+                        'nfc_card_orders.order_details',
+                        'nfc_card_orders.nfc_card_order_id',
+                        'nfc_card_orders.created_at',
+                        'nfc_card_designs.nfc_card_name'
+                    )
                         ->where('nfc_card_orders.user_id', Auth::user()->id) 
-                        ->orderBy('nfc_card_orders.created_at', 'desc')
-                        ->get();
+                    ->orderBy('nfc_card_orders.created_at', 'desc');
 
                     return DataTables::of($nfcCardKeys)
                         ->addIndexColumn()
                         ->editColumn('created_at', function ($nfcCardKey) {
-                            return formatDateForUser($nfcCardKey->created_at);
+                        return '<span class="text-secondary">' . formatDateForUser($nfcCardKey->created_at) . '</span>';
                         })
                         ->editColumn('nfc_card_name', function ($nfcCardKey) {
-                            return '<a href="' . route('user.order.nfc.card.view', $nfcCardKey->nfc_card_order_id) . '" class="fw-bold">' . trans($nfcCardKey->nfc_card_name) . '</a>';
+                        return '<a href="' . route('user.order.nfc.card.view', $nfcCardKey->nfc_card_order_id) . '" class="fw-bold text-dark text-decoration-none">'
+                            . trans($nfcCardKey->nfc_card_name) .
+                            '</a>';
                         })
                         ->editColumn('card_id', function ($nfcCardKey) {
                             if ($nfcCardKey->card_id) {
                                 // Get card id wise business card
                                 $businessCard = BusinessCard::where('card_id', $nfcCardKey->card_id)->first();
 
-                                return '<a href="' . url($businessCard->card_url) . '" target="_blank">' . $businessCard->title . '</a>';
+                            return '<a href="' . url($businessCard->card_url) . '" target="_blank" class="fw-bold text-primary text-decoration-none">' . e($businessCard->title) . '</a>';
                             } else {
-                                return '<span class="fw-bold">' . __('-') . '</span>';
+                            return '<span class="text-muted fw-bold">' . __('-') . '</span>';
                             }
                         })
                         ->editColumn('link_status', function ($nfcCardKey) {
                             return $nfcCardKey->link_status == 'unlinked'
-                                ? '<span class="badge bg-red text-white">' . __('Unlinked') . '</span>'
-                                : '<span class="badge bg-green text-white">' . __('Linked') . '</span>';
+                            ? '<span class="badge bg-red-100 text-red-700 text-capitalize fw-semibold">' . __('Unlinked') . '</span>'
+                            : '<span class="badge bg-green-100 text-green-700 text-capitalize fw-semibold">' . __('Linked') . '</span>';
                         })
                         ->editColumn('action', function ($nfcCardKey) {
                             // Link / Unlink
                             if ($nfcCardKey->link_status == 'linked') {
-                                $actionBtn = '<a href="" onclick="updateStatus(\'' . $nfcCardKey->nfc_card_key_id . '\', \'unlink\'); return false;" class="dropdown-item"><svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-link-off"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 15l3 -3m2 -2l1 -1" /><path d="M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464" /><path d="M3 3l18 18" /><path d="M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463" /></svg>' . __('Unlink from NFC Card') . '</a>';
+                            $actionBtn = '<a href="" onclick="updateStatus(\'' . $nfcCardKey->nfc_card_key_id . '\', \'unlink\'); return false;" class="dropdown-item"><svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon me-2 icon-tabler icons-tabler-outline icon-tabler-link-off"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 15l3 -3m2 -2l1 -1" /><path d="M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464" /><path d="M3 3l18 18" /><path d="M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463" /></svg>' . __('Unlink from NFC Card') . '</a>';
                             } else {
-                                $actionBtn = '<a href="' . route('user.link.nfc.card', $nfcCardKey->nfc_card_key_id) . '" class="dropdown-item"><svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-link"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 15l6 -6" /><path d="M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464" /><path d="M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463" /></svg>' . __('Link to NFC Card') . '</a>';
+                            $actionBtn = '<a href="' . route('user.link.nfc.card', $nfcCardKey->nfc_card_key_id) . '" class="dropdown-item"><svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon me-2 icon-tabler icons-tabler-outline icon-tabler-link"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 15l6 -6" /><path d="M11 6l.463 -.536a5 5 0 0 1 7.071 7.072l-.534 .464" /><path d="M13 18l-.397 .534a5.068 5.068 0 0 1 -7.127 0a4.972 4.972 0 0 1 0 -7.071l.524 -.463" /></svg>' . __('Link to NFC Card') . '</a>';
                             }
 
-                            return '<a class="btn-action" href="#" data-toggle="dropdown" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
-                                        <!-- Download SVG icon from http://tabler-icons.io/i/dots-vertical -->
+                        return '<a class="btn-action text-decoration-none" href="#" data-toggle="dropdown" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24"
                                             height="24" viewBox="0 0 24 24" fill="none"
                                             stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                             stroke-linejoin="round"
-                                            class="icon icon-tabler icons-tabler-outline icon-tabler-dots fw-bold">
+                                class="icon icon-tabler icons-tabler-outline icon-tabler-dots">
                                             <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                                             <path d="M4 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
                                             <path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
                                             <path d="M18 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
                                         </svg>
                                     </a>
-                                    <div class="dropdown-menu dropdown-menu-end" style="">
+                        <div class="dropdown-menu dropdown-menu-end">
                                         <div class="nav-item dropdown">
                                             ' . $actionBtn . '
                                         </div>
@@ -119,9 +132,6 @@ class ManageNfcCardController extends Controller
                         ->rawColumns(['created_at', 'nfc_card_name', 'card_id', 'link_status', 'action'])
                         ->make(true);
                 }
-            } else {
-                return redirect()->route('user.plans')->with('failed', __('This feature is not available on your current plan. Upgrade to a plan that includes this feature.'));
-            }
 
             return view('user.pages.manage-nfc-cards.index', compact('settings', 'config'));
         } else {
@@ -146,13 +156,10 @@ class ManageNfcCardController extends Controller
         $plan = User::where('user_id', Auth::user()->user_id)->first();
         $active_plan = json_decode($plan->plan_details);
 
-        // Check "nfc_card" is available in the plan
-        if ($active_plan->nfc_card == 1) {
-
             // Get the key generation
             $nfcCardKey = NfcCardKey::where('nfc_card_key_id', $id)->first();
             // All Acyive business cards
-            $businessCards = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_status', 'activated')->get();
+        $businessCards = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_status', 'activated')->where('status', '1')->get();
 
             // Check if the key generation exists
             if (!$nfcCardKey) {
@@ -160,9 +167,6 @@ class ManageNfcCardController extends Controller
             }
 
             return view('user.pages.manage-nfc-cards.link', compact('settings', 'config', 'nfcCardKey', 'businessCards'));
-        } else {
-            return redirect()->route('user.plans')->with('failed', __('This feature is not available on your current plan. Upgrade to a plan that includes this feature.'));
-        }
     }
 
     public function updateCardLink(Request $request)

@@ -45,7 +45,7 @@ class PaytrController extends Controller
         $this->mode = $paytr_configuration[71]->config_value;
     }
 
-    public function nfcGeneratePaymentLink(Request $request, $nfcId, $couponId)
+    public function nfcGeneratePaymentLink(Request $request, $nfcId, $couponId, $quantity = 1)
     {
         if (Auth::user()) {
             // Queries
@@ -53,6 +53,9 @@ class PaytrController extends Controller
             $settings = Setting::where('status', 1)->first();
 
             $userData = User::where('id', Auth::user()->id)->first();
+
+            // Quantity
+            $quantity = max((int) $quantity, 1);
 
             // Get nfc card details
             $nfcDetails = NfcCardDesign::where('nfc_card_id', $nfcId)->where('status', 1)->first();
@@ -74,6 +77,9 @@ class PaytrController extends Controller
                 // Applied coupon
                 $appliedCoupon = null;
 
+                // Price
+                $subtotal = $nfcDetails->nfc_card_price * $quantity;
+
                 // NFC Card Order ID
                 $nfcCardOrderId = "OD" . preg_replace('/\D/', '', Str::uuid());
                 $nfcTransactionId = "TX" . preg_replace('/\D/', '', Str::uuid());
@@ -82,26 +88,26 @@ class PaytrController extends Controller
                 if ($couponDetails != null) {
                     if ($couponDetails->coupon_type == 'fixed') {
                         // Applied tax in total
-                        $appliedTaxInTotal = ((float)($nfcDetails->nfc_card_price) * (float)($config[25]->config_value) / 100);
+                        $appliedTaxInTotal = ((float)($subtotal) * (float)($config[25]->config_value) / 100);
 
                         // Get discount in nfc card price
                         $discountPrice = $couponDetails->coupon_amount;
 
                         // Total
-                        $amountToBePaid = ($nfcDetails->nfc_card_price + $appliedTaxInTotal) - $discountPrice;
+                        $amountToBePaid = ($subtotal + $appliedTaxInTotal) - $discountPrice;
                         $amountToBePaid = (float)number_format($amountToBePaid, 2, '.', '');
 
                         // Coupon is applied
                         $appliedCoupon = $couponDetails->coupon_code;
                     } else {
                         // Applied tax in total
-                        $appliedTaxInTotal = ((float)($nfcDetails->nfc_card_price) * (float)($config[25]->config_value) / 100);
+                        $appliedTaxInTotal = ((float)($subtotal) * (float)($config[25]->config_value) / 100);
 
                         // Get discount in nfc card price
-                        $discountPrice = $nfcDetails->nfc_card_price * $couponDetails->coupon_amount / 100;
+                        $discountPrice = $subtotal * $couponDetails->coupon_amount / 100;
 
                         // Total
-                        $amountToBePaid = ($nfcDetails->nfc_card_price + $appliedTaxInTotal) - $discountPrice;
+                        $amountToBePaid = ($subtotal + $appliedTaxInTotal) - $discountPrice;
                         $amountToBePaid = (float)number_format($amountToBePaid, 2, '.', '');
 
                         // Coupon is applied
@@ -109,13 +115,13 @@ class PaytrController extends Controller
                     }
                 } else {
                     // Applied tax in total
-                    $appliedTaxInTotal = ((float)($nfcDetails->nfc_card_price) * (float)($config[25]->config_value) / 100);
+                    $appliedTaxInTotal = ((float)($subtotal) * (float)($config[25]->config_value) / 100);
 
                     // Total
-                    $amountToBePaid = ($nfcDetails->nfc_card_price + $appliedTaxInTotal);
+                    $amountToBePaid = ($subtotal + $appliedTaxInTotal);
                 }
 
-                $amountToBePaidPaise = $amountToBePaid * 100;
+                $amountToBePaidPaise = round($amountToBePaid * 100);
 
                 // Store transaction details in nfc_card_order_id table before redirecting to Paytr
                 $nfcCardOrder = new NfcCardOrder();
@@ -123,7 +129,7 @@ class PaytrController extends Controller
                 $nfcCardOrder->user_id = Auth::id();
                 $nfcCardOrder->nfc_card_id = $nfcId;
                 $nfcCardOrder->nfc_card_order_transaction_id = $nfcTransactionId;
-                $nfcCardOrder->order_details = json_encode($this->prepareOrderDetails($config, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice));
+                $nfcCardOrder->order_details = json_encode($this->prepareOrderDetails($config, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice, $quantity));
                 $nfcCardOrder->delivery_address = json_encode($this->prepareDeliveryAddress($userData));
                 $nfcCardOrder->delivery_note = "-";
                 $nfcCardOrder->order_status = 'pending';
@@ -138,7 +144,7 @@ class PaytrController extends Controller
                 $transaction->payment_method = "Paytr";
                 $transaction->currency = $config[1]->config_value;
                 $transaction->amount = $amountToBePaid;
-                $transaction->invoice_details = json_encode($this->prepareInvoiceDetails($config, $userData, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice));
+                $transaction->invoice_details = json_encode($this->prepareInvoiceDetails($config, $userData, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice, $quantity));
                 $transaction->payment_status = "pending";
                 $transaction->save();
 
@@ -159,9 +165,9 @@ class PaytrController extends Controller
                     'user_ip' => $request->ip(),
                     'merchant_oid' => $nfcTransactionId, // Unique order ID
                     'email' => $userData->billing_email,
-                    'payment_amount' => $amountToBePaidPaise, // Amount in cents
+                    'payment_amount' => round($amountToBePaidPaise), // Amount in cents
                     'user_basket' => base64_encode(json_encode([
-                        ['NFC Card Purchase for' . $nfcDetails->nfc_card_name, $nfcDetails->nfc_card_price, 1],
+                        ['NFC Card Purchase for' . $nfcDetails->nfc_card_name, $nfcDetails->nfc_card_price, $quantity],
                     ])),
                     'debug_on' => 1,
                     'no_installment' => 0,
@@ -212,6 +218,7 @@ class PaytrController extends Controller
                         return view('user.pages.order.nfc-card.checkout.pay-with-paytr', [
                             'settings' => $settings,
                             'iframe_token' => $result['token'],
+                            'quantity' => $quantity,
                         ]);
                     }
                 } catch (\Exception $e) {
@@ -228,15 +235,44 @@ class PaytrController extends Controller
     // PayTR Payment Status
     public function nfcPaytrPaymentStatus(Request $request)
     {
+        // Check if the request is a PayTR background server notification (Webhook)
+        if ($request->has('hash') && $request->has('status') && $request->has('total_amount')) {
+            return $this->nfcPaytrPaymentWebhook($request);
+        }
+
+        $transactionId = $request->input('merchant_oid');
+
+        // Restore user session if dropped by browser SameSite policy on PayTR cross-domain POST
+        if (!Auth::check() && $transactionId) {
+            $paymentDetails = NfcCardOrder::join('nfc_card_order_transactions', 'nfc_card_order_transactions.nfc_card_order_id', '=', 'nfc_card_orders.nfc_card_order_id')
+                ->where('nfc_card_order_transactions.payment_transaction_id', $transactionId)
+                ->first();
+
+            if ($paymentDetails) {
+                Auth::loginUsingId($paymentDetails->user_id);
+            }
+        }
+
         if (Auth::check()) {
             // Get the user
             $user = Auth::user();
 
+            // Retrieve transaction based on merchant_oid if available, or fetch the latest
+            if ($transactionId) {
             $paymentDetails = NfcCardOrder::where('nfc_card_orders.user_id', $user->id)
                 ->join('nfc_card_order_transactions', 'nfc_card_order_transactions.nfc_card_order_id', '=', 'nfc_card_orders.nfc_card_order_id')
-                ->where('nfc_card_order_transactions.payment_status', 'success') // replace 'SUCCESS' with your actual status value
-                ->latest('nfc_card_order_transactions.created_at') // make sure to sort by a column
+                    ->where('nfc_card_order_transactions.payment_transaction_id', $transactionId)
                 ->first();
+            } else {
+                $paymentDetails = NfcCardOrder::where('nfc_card_orders.user_id', $user->id)
+                    ->join('nfc_card_order_transactions', 'nfc_card_order_transactions.nfc_card_order_id', '=', 'nfc_card_orders.nfc_card_order_id')
+                    ->latest('nfc_card_order_transactions.created_at')
+                    ->first();
+            }
+
+            if (!$paymentDetails) {
+                return redirect()->route('user.order.nfc.cards')->with('failed', trans('Payment failed'));
+            }
 
             try {
                 // Security: Verify PayTR's notification
@@ -256,8 +292,7 @@ class PaytrController extends Controller
             $config = DB::table('config')->get();
 
             // Check payment status
-            if ($paymentDetails['payment_status'] == "success") {
-
+            if ($paymentDetails['payment_status'] == "success" || $paymentDetails['payment_status'] == "pending") {
                 return redirect()->route('user.order.nfc.cards')->with('success', trans('Order has been successfully placed!. If you want to NFC Card Logo, please upload it from the "Manage NFC Cards" section.'));
             } else {
                 // Payment failed
@@ -266,13 +301,6 @@ class PaytrController extends Controller
 
                 return redirect()->route('user.order.nfc.cards')->with('failed', trans('Order failed!'));
             }
-
-            // Payment failed
-            // Handle the failed payment scenario
-            $order = new OrderNFC();
-            $order->paymentFailed($transactionId);
-
-            return redirect()->route('user.order.nfc.cards')->with('failed', trans('Order failed!'));
         } else {
             // Page redirect
             return redirect()->route('user.order.nfc.cards')->with('failed', trans('Payment failed'));
@@ -330,6 +358,11 @@ class PaytrController extends Controller
             return response('Transaction not found', 404);
         }
 
+        // Prevent duplicate processing if already completed
+        if ($transaction_details->payment_status == 'success') {
+            return response('OK', 200);
+        }
+
         if ($paymentDetails['status'] !== 'success') {
             // Mark transaction as failed
             $order = new OrderNFC();
@@ -350,8 +383,10 @@ class PaytrController extends Controller
         }
     }
 
-    private function prepareInvoiceDetails($config, $userData, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice)
+    private function prepareInvoiceDetails($config, $userData, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice, $quantity)
     {
+        $subtotal = $nfcDetails->nfc_card_price * $quantity;
+
         // Prepare invoice details
         $invoiceDetails = [
             'from_billing_name' => $config[16]->config_value,
@@ -369,7 +404,7 @@ class PaytrController extends Controller
             'to_billing_state' => $userData->billing_state,
             'to_billing_zipcode' => $userData->billing_zipcode,
             'to_billing_country' => $userData->billing_country,
-            'to_billing_phone' => $userData->billing_phone,
+            'to_billing_phone' => $userData->billing_country_code . $userData->billing_phone,
             'to_billing_email' => $userData->billing_email,
             'to_vat_number' => $userData->vat_number,
             'tax_name' => $config[24]->config_value,
@@ -378,32 +413,33 @@ class PaytrController extends Controller
             'applied_coupon' => $appliedCoupon,
             'discounted_price' => $discountPrice,
             'invoice_amount' => $amountToBePaid,
-            'subtotal' => $nfcDetails->nfc_card_price,
-            'tax_amount' => (float)($nfcDetails->nfc_card_price) * (float)($config[25]->config_value) / 100
+            'subtotal' => $subtotal,
+            'tax_amount' => (float)($subtotal) * (float)($config[25]->config_value) / 100
         ];
 
         return $invoiceDetails;
     }
 
-
     // Prepare oder details
-    private function prepareOrderDetails($config, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice)
+    private function prepareOrderDetails($config, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice, $quantity)
     {
+        $subtotal = $nfcDetails->nfc_card_price * $quantity;
+
         // Prepare invoice details
         $invoiceDetails = [
             'nfc_card_id' => $nfcDetails->nfc_card_id,
             'order_item' => $nfcDetails->nfc_card_name,
             'order_description' => $nfcDetails->nfc_card_description,
-            'order_quantity' => 1,
+            'order_quantity' => $quantity,
             'price' => $nfcDetails->nfc_card_price,
             'invoice_amount' => $amountToBePaid,
             'tax_name' => $config[24]->config_value,
             'tax_type' => $config[14]->config_value,
             'tax_value' => $config[25]->config_value,
-            'tax_amount' => (float)($nfcDetails->nfc_card_price) * (float)($config[25]->config_value) / 100,
+            'tax_amount' => (float)($subtotal) * (float)($config[25]->config_value) / 100,
             'applied_coupon' => $appliedCoupon,
             'discounted_price' => $discountPrice,
-            'subtotal' => $nfcDetails->nfc_card_price
+            'subtotal' => $subtotal
         ];
 
         return $invoiceDetails;
@@ -420,7 +456,7 @@ class PaytrController extends Controller
             'billing_state' => $userData->billing_state,
             'billing_zipcode' => $userData->billing_zipcode,
             'billing_country' => $userData->billing_country,
-            'billing_phone' => $userData->billing_phone,
+            'billing_phone' => $userData->billing_country_code . $userData->billing_phone,
             'billing_email' => $userData->billing_email,
             'shipping_name' => $userData->billing_name,
             'shipping_address' => $userData->billing_address,
@@ -428,7 +464,7 @@ class PaytrController extends Controller
             'shipping_state' => $userData->billing_state,
             'shipping_zipcode' => $userData->billing_zipcode,
             'shipping_country' => $userData->billing_country,
-            'shipping_phone' => $userData->billing_phone,
+            'shipping_phone' => $userData->billing_country_code . $userData->billing_phone,
             'shipping_email' => $userData->billing_email,
             'type' => $userData->type,
             'vat_number' => $userData->vat_number

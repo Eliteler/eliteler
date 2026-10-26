@@ -12,16 +12,14 @@
 
 namespace App\Http\Controllers\User\Vcard\Edit;
 
-use App\Setting;
 use App\BusinessCard;
-use Illuminate\Support\Str;
 use App\CardAppointmentTime;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\App;
 use App\Http\Controllers\Controller;
+use App\Setting;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
-use Razorpay\Api\Card;
+use Illuminate\Support\Facades\DB;
 
 class AppointmentController extends Controller
 {
@@ -143,8 +141,12 @@ class AppointmentController extends Controller
             }
 
             // Check type
-            if ($business_card->type == "personal") {
+            if ($business_card->type != 'business' && ($business_card->type != 'custom')) {
+                if ($plan_details->password_protected == 1 || $plan_details->advanced_settings == 1) {
+                    return redirect()->route('user.edit.advanced.setting', $id)->with('success', trans('Appointment details are updated.'));
+                } else {
                 return redirect()->route('user.cards')->with('success', trans('Appointment details are updated.'));
+                }
             } else {
                 // Redirect based on plan details
                 if ($plan_details->contact_form == 1) {

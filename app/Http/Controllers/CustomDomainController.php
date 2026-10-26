@@ -12,50 +12,53 @@
 
 namespace App\Http\Controllers;
 
-use App\Plan;
-use App\Setting;
-use App\Visitor;
-use App\Category;
-use App\Currency;
-use Carbon\Carbon;
-use App\Testimonial;
 use App\BusinessCard;
-use App\StoreProduct;
 use App\BusinessField;
-use App\StoreCategory;
-use App\ServiceBooking;
-use App\StoreBusinessHour;
-use Jenssegers\Agent\Agent;
 use App\CardAppointmentTime;
-use Illuminate\Http\Request;
+use App\Category;
 use App\Classes\ServiceWorker;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\URL;
-use Illuminate\Support\Facades\File;
+use App\Currency;
+use App\Helpers\StorageHelper;
+use App\Plan;
+use App\ServiceBooking;
+use App\Services\GoBizCommonService;
+use App\Setting;
+use App\StoreBusinessHour;
+use App\StoreCategory;
+use App\StoreProduct;
+use App\Testimonial;
+use App\Visitor;
 use Artesaos\SEOTools\Facades\JsonLd;
+use Artesaos\SEOTools\Facades\OpenGraph;
 use Artesaos\SEOTools\Facades\SEOMeta;
 use Artesaos\SEOTools\Facades\SEOTools;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Storage;
-use Artesaos\SEOTools\Facades\OpenGraph;
-use App\Services\GoBizCommonService;
+use Illuminate\Support\Facades\URL;
+use Jenssegers\Agent\Agent;
+use App\Support\Store\StoreTheme;
 
 class CustomDomainController extends Controller
 {
-    // Custom domain
+
+    // Custom domain routing logic
     public function customDomain(Request $request)
     {
         // Queries
         $config = GoBizCommonService::config();
         $plans = GoBizCommonService::plans();
 
-        // Get the current domain or customdomain from the request
-        $host = $request->getHost();
+        // Get the current domain or customdomain from the request with remove www.
+        $host = str_replace('www.', '', $request->getHost());
 
         // Get business details
-        $card_details = DB::table('business_cards')->where('custom_domain', $host)->where('card_status', 'activated')->first();
+        $card_details = DB::table('business_cards')->where('custom_domain', $host)->where('card_status', 'activated')->where('status', '1')->first();
         $currentUser = 0;
 
         if (!$card_details) {
@@ -93,7 +96,7 @@ class CustomDomainController extends Controller
             $currentUser = DB::table('users')->where('user_id', $card_details->user_id)->where('status', 1)->where('plan_validity', '>=', Carbon::now())->count();
         }
 
-        // Check if the host is the main domain (karthikeyan.com)
+        // Check if the host is the main domain
         if ($currentUser == 1 && $host === $card_details->custom_domain) {
             // Check whatsapp number exists
             $whatsAppNumberExists = BusinessField::where('card_id', $card_details->card_id)->where('type', 'wa')->exists();
@@ -138,6 +141,7 @@ class CustomDomainController extends Controller
                         ->first();
 
                     if ($business_card_details) {
+                        // Product query with has_variants support for custom domains
                         $products = StoreProduct::join('store_categories', 'store_products.category_id', '=', 'store_categories.category_id')
                             ->where('store_products.card_id', $card_details->card_id)
                             ->where('store_categories.user_id', $business_card_details->user_id)
@@ -153,10 +157,12 @@ class CustomDomainController extends Controller
                                 'store_products.sales_price',
                                 'store_products.badge',
                                 'store_products.product_status',
+                                'store_products.has_variants',
                                 'store_categories.category_name',
                                 'store_categories.thumbnail',
                                 'store_categories.category_id'
                             )
+                            ->selectSub(StoreProduct::minVariantPriceQuery(), 'min_variant_price')
                             ->groupBy(
                                 'store_products.id',
                                 'store_products.product_id',
@@ -167,6 +173,7 @@ class CustomDomainController extends Controller
                                 'store_products.sales_price',
                                 'store_products.badge',
                                 'store_products.product_status',
+                                'store_products.has_variants',
                                 'store_categories.category_name',
                                 'store_categories.thumbnail',
                                 'store_categories.category_id'
@@ -213,7 +220,7 @@ class CustomDomainController extends Controller
                         // Business Hours
                         $businessHours = StoreBusinessHour::where('store_id', $business_card_details->card_id)->first();
 
-                        // Paginate (consistent)
+                        // Paginate
                         $products = $products->paginate($request->filled('category') ? 9 : 8)->withQueryString();
 
                         // Get categories
@@ -231,7 +238,7 @@ class CustomDomainController extends Controller
                         $subdomainURL = $business_card_details->custom_domain ? $business_card_details->custom_domain : route('vcard.profile', $business_card_details->card_url);
                         $startUrl = str_replace("http://", "https://", $subdomainURL);
 
-                        // Meta Title Logic (branding)
+                        // Meta Title Logic
                         $siteTitle = $config[0]->config_value ?? '';
                         $baseTitle = $seoConfig->meta_title ?? $business_card_details->title;
                         $metaTitle = isset($planDetails['hide_branding']) && $planDetails['hide_branding'] == "1"
@@ -316,9 +323,12 @@ class CustomDomainController extends Controller
 
                         $out = $this->generateNew($fill);
 
-                        Storage::disk('public')->put("manifest/custom-" . $business_card_details->card_id . '.json', json_encode($out));
-
-                        $manifest = url("storage/manifest/custom-" . $business_card_details->card_id . '.json');
+                        // Save JSON manifest file
+                        $manifest = StorageHelper::uploadImage(
+                            json_encode($out),
+                            'manifest',
+                            'custom-' . $business_card_details->card_id . '.json'
+                        );
 
                         // Generate service worker
                         $generateServiceWorker = new ServiceWorker();
@@ -347,7 +357,6 @@ class CustomDomainController extends Controller
                         $shareContent = str_replace("{ business_url }", $url, $shareContent);
                         $shareContent = str_replace("{ appName }", $config[0]->config_value, $shareContent);
 
-                        // If branding enabled, then show app name.
                         if ($plan_details['hide_branding'] == "1") {
                             $shareContent = str_replace("{ appName }", $business_name, $shareContent);
                         } else {
@@ -357,7 +366,6 @@ class CustomDomainController extends Controller
                         $url          = urlencode($url);
                         $shareContent = urlencode($shareContent);
 
-                        // Set locale if not same as business card locale.
                         $locale = Session::get('locale') ?? $business_card_details->card_lang ?? config('app.locale');
                         App::setLocale($locale);
 
@@ -369,17 +377,13 @@ class CustomDomainController extends Controller
                         $shareComponent['telegram'] = "https://telegram.me/share/url?text=$shareContent&url=$url";
                         $shareComponent['whatsapp'] = "https://api.whatsapp.com/send/?phone&text=$shareContent";
 
-                        // Check password protected is enabled in user purchased plan
                         if ($plan_details['password_protected'] != 1) {
-                            // Update business card password
                             BusinessCard::where('card_id', $business_card_details->card_id)->update(['password' => null]);
-
-                            // Session password protected
                             Session::get('password_protected') == false;
                         }
 
                         $datas = compact('card_details', 'plan_details', 'store_details', 'categories', 'business_card_details', 'products', 'settings', 'shareComponent', 'shareContent', 'config', 'enquiry_button', 'whatsapp_msg', 'currency', 'manifest', 'whatsAppNumberExists', 'deliveryOptions', 'businessHours');
-                        return view('templates.store.' . $business_card_details->theme_code . '.index', $datas);
+                        return view('templates.stores.' . StoreTheme::resolve($business_card_details->theme_code)->view . '.index', $datas);
                     } else {
                         return redirect()->route('user.edit.card', $card_details->id)->with('failed', trans('Please fill out the basic business details.'));
                     }
@@ -404,10 +408,8 @@ class CustomDomainController extends Controller
                         $iframes           = DB::table('business_fields')->where('type', 'iframe')->where('card_id', $card_details->card_id)->orderBy('id', 'asc')->get();
                         $customTexts       = DB::table('business_fields')->where('type', 'text')->where('card_id', $card_details->card_id)->orderBy('id', 'asc')->get();
 
-                        // Appointment slots for the card
                         $appointmentSlots = CardAppointmentTime::where('card_id', $card_details->card_id)->orderBy('id', 'asc')->get();
 
-                        // Initialize the time slots array
                         $appointmentEnabled = false;
                         $appointment_slots  = [
                             'monday'    => [],
@@ -419,28 +421,21 @@ class CustomDomainController extends Controller
                             'sunday'    => [],
                         ];
 
-                        // Iterate through the appointment slots and categorize them by day
                         foreach ($appointmentSlots as $slot) {
-                            // Assuming your `CardAppointmentTime` model has a `day` attribute and a `time` attribute
-                            $day  = strtolower($slot->day); // Convert to lowercase to match array keys
-                            $time = $slot->time_slots;      // Assuming this contains the time range string like "16:00 - 17:00"
+                            $day  = strtolower($slot->day);
+                            $time = $slot->time_slots;
 
-                            // Check if the day exists in the time_slots array
                             if (array_key_exists($day, $appointment_slots)) {
-                                $appointment_slots[$day][] = $time; // Add the time to the appropriate day
-                                // Get price
+                                $appointment_slots[$day][] = $time;
                                 $appointment_slots[$day][] = $slot->price;
                             }
 
                             $appointmentEnabled = true;
-
-                            // Add appointment title to array
                             $appointment_slots['title'] = $appointmentSlots[0]->title;
                         }
 
-                        $appointment_slots = json_encode($appointment_slots); // Convert the array to JSON
+                        $appointment_slots = json_encode($appointment_slots);
 
-                        // service bookings 
                         $service_booking_details = ServiceBooking::where('vcard_id', $card_details->card_id)->first();
 
                         if ($make_enquiry != null) {
@@ -450,56 +445,44 @@ class CustomDomainController extends Controller
                         $settings = GoBizCommonService::settings();
                         $config   = GoBizCommonService::config();
 
-                        // Decode plan and SEO config only once
                         $planDetails = json_decode($business_card_details->plan_details, true);
                         $seoConfig = json_decode($business_card_details->seo_configurations ?? '{}');
 
-                        // Start URL
                         $subdomainURL = $business_card_details->custom_domain ? $business_card_details->custom_domain : route('vcard.profile', $business_card_details->card_url);
                         $startUrl = str_replace("http://", "https://", $subdomainURL);
 
-                        // Meta Title Logic (branding)
                         $siteTitle = $config[0]->config_value ?? '';
                         $baseTitle = $seoConfig->meta_title ?? $business_card_details->title;
                         $metaTitle = isset($planDetails['hide_branding']) && $planDetails['hide_branding'] == "1"
                             ? $baseTitle
                             : $baseTitle . ' - ' . $siteTitle;
 
-                        // Set Meta Titles
                         SEOTools::setTitle($metaTitle);
                         SEOMeta::setTitle($metaTitle);
                         OpenGraph::setTitle($metaTitle);
                         JsonLd::setTitle($metaTitle);
                         SEOMeta::addMeta('article:section', $metaTitle, 'property');
 
-                        // Set Description
                         $description = $seoConfig->meta_description ?? $business_card_details->sub_title;
                         SEOTools::setDescription($description);
                         SEOMeta::setDescription($description);
                         OpenGraph::setDescription($description);
                         JsonLd::setDescription($description);
 
-                        // Set Keywords
                         if (!empty($seoConfig->meta_keywords)) {
                             SEOMeta::addKeyword($seoConfig->meta_keywords);
                         } else {
                             SEOMeta::addKeyword([$metaTitle, "$metaTitle vcard online"]);
                         }
 
-                        // Add Canonical URL
                         SEOMeta::setCanonical(url()->current());
 
-                        // Set Favicon or Profile Image
                         $imageUrl = !empty($seoConfig->favicon) ? url($seoConfig->favicon) : url($business_card_details->profile);
-
                         SEOTools::addImages([$imageUrl]);
                         OpenGraph::addImage([$imageUrl]);
                         JsonLd::addImage([$imageUrl]);
-
-                        // Set OpenGraph URL
                         OpenGraph::setUrl(url($startUrl));
 
-                        // PWA
                         $icons = [
                             '512x512' => [
                                 'path'    => url($business_card_details->profile),
@@ -544,11 +527,12 @@ class CustomDomainController extends Controller
 
                         $out = $this->generateNew($fill);
 
-                        Storage::disk('public')->put("manifest/custom-" . $business_card_details->card_id . '.json', json_encode($out));
+                        $manifest = StorageHelper::uploadImage(
+                            json_encode($out),
+                            'manifest',
+                            'custom-' . $business_card_details->card_id . '.json'
+                        );
 
-                        $manifest = url("storage/manifest/custom-" . $business_card_details->card_id . '.json');
-
-                        // Generate service worker
                         $generateServiceWorker = new ServiceWorker();
                         $generateServiceWorker->generateServiceWorker($business_card_details->card_id, $startUrl);
 
@@ -562,7 +546,6 @@ class CustomDomainController extends Controller
                         $shareContent = str_replace("{ business_name }", $business_name, $shareContent);
                         $shareContent = str_replace("{ business_url }", $url, $shareContent);
 
-                        // If branding enabled, then show app name.
                         if ($plan_details['hide_branding'] == "1") {
                             $shareContent = str_replace("{ appName }", $business_name, $shareContent);
                         } else {
@@ -572,7 +555,6 @@ class CustomDomainController extends Controller
                         $url          = urlencode($url);
                         $shareContent = urlencode($shareContent);
 
-                        // Set locale if not same as business card locale.
                         $locale = Session::get('locale') ?? $business_card_details->card_lang ?? config('app.locale');
                         App::setLocale($locale);
 
@@ -584,11 +566,9 @@ class CustomDomainController extends Controller
                         $shareComponent['telegram'] = "https://telegram.me/share/url?text=$shareContent&url=$url";
                         $shareComponent['whatsapp'] = "https://api.whatsapp.com/send/?phone&text=$shareContent";
 
-                        // Datas
                         $datas = compact('card_details', 'plan_details', 'business_card_details', 'feature_details', 'service_details', 'product_details', 'galleries_details', 'testimonials', 'payment_details', 'appointmentEnabled', 'appointment_slots', 'business_hours', 'settings', 'shareComponent', 'shareContent', 'config', 'enquiry_button', 'iframes', 'customTexts', 'manifest', 'whatsAppNumberExists', 'service_booking_details');
 
                         try {
-                            // Google Wallet Details
                             $google_wallet_details = DB::table('google_wallets_vcard')->where('card_id', $business_card_details->card_id)->first();
 
                             if ($google_wallet_details) {
@@ -596,21 +576,16 @@ class CustomDomainController extends Controller
                                 $google_wallet_details->wallet_link = $wallet_url;
                             }
 
-                            // Push google wallet details in datas
                             $datas['google_wallet_details'] = $google_wallet_details;
                         } catch (\Throwable $th) {
                         }
 
-                        // Check password protected is enabled in user purchased plan
                         if ($plan_details['password_protected'] != 1) {
-                            // Update business card password
                             BusinessCard::where('card_id', $business_card_details->card_id)->update(['password' => null]);
-
-                            // Session password protected
                             Session::get('password_protected') == false;
                         }
 
-                        return view('templates.' . $business_card_details->theme_code, $datas);
+                        return view('templates.cards.' . $business_card_details->theme_code . '.index', $datas);
                     } else {
                         return redirect()->route('user.edit.card', $card_details->id)->with('failed', trans('Please fill out the basic business details.'));
                     }
@@ -621,12 +596,10 @@ class CustomDomainController extends Controller
             }
         }
 
-        // If no vCard is found, return a 404 page
         if (!$card_details) {
             abort(404, trans('Vcard not found.'));
         }
 
-        // Display the vCard for the custom domain
         return view('vcard.show', compact('vcard'));
     }
 

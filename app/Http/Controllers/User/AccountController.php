@@ -13,14 +13,15 @@
 namespace App\Http\Controllers\User;
 
 use App\BusinessCard;
-use App\User;
-use App\Setting;
-use Illuminate\Support\Str;
-use Illuminate\Http\Request;
+use App\Helpers\StorageHelper;
 use App\Http\Controllers\Controller;
+use App\Setting;
+use App\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class AccountController extends Controller
 {
@@ -66,18 +67,26 @@ class AccountController extends Controller
             // Validate
             $validator = Validator::make($request->all(), [
                 'name'  => 'required',
-                'email' => 'required',
+                'email' => 'required'
             ]);
 
             if ($validator->fails()) {
                 return back()->with('failed', $validator->messages()->all()[0])->withInput();
             }
 
+            // Check email address is already exists
+            if (User::where('email', $request->email)->where('user_id', '!=', Auth::user()->user_id)->exists()) {
+                return back()->with('failed', trans('Email address already exists. Please try with another email address.'))->withInput();
+            }
+
             // Update
             User::where('user_id', Auth::user()->user_id)->update([
                 'name'  => $request->name,
                 'email' => $request->email,
-                'mobile_number' => $request->mobile_number,
+                'country_code'  => $request->country_code ?? '',
+                'mobile_number' => $request->mobile_number ?? '',
+                'whatsapp_country_code' => $request->whatsapp_country_code ?? '',
+                'whatsapp_number'       => $request->whatsapp_number ?? '',
             ]);
 
             return redirect()->route('user.account')->with('success', trans('Profile Updated Successfully!'));
@@ -93,19 +102,16 @@ class AccountController extends Controller
 
             if ($request->hasFile('profile_picture') && $request->file('profile_picture')->isValid()) {
                 $file = $request->file('profile_picture');
-                $extension = $file->getClientOriginalExtension();
-
                 $allowedExtensions = ['jpeg', 'png', 'jpg', 'gif', 'svg'];
-                if (in_array(strtolower($extension), $allowedExtensions)) {
-                    $filename = 'IMG-' . uniqid() . '-' . time() . '.' . $extension;
 
-                    // Store the file in storage/app/public/profile_images
-                    Storage::disk('public')->putFileAs('profile-images', $file, $filename);
+                if (in_array(strtolower($file->getClientOriginalExtension()), $allowedExtensions)) {
+                    // Delete old profile image from storage
+                    StorageHelper::deleteFile(Auth::user()->profile_image);
 
-                    // Save the public path
-                    $profile_picture = 'storage/profile-images/' . $filename;
+                    // Upload new profile image and get relative path
+                    $profile_picture = StorageHelper::uploadImage($file, 'profile-images');
 
-                    // Update user
+                    // Update user profile image in database
                     User::where('user_id', Auth::user()->user_id)->update([
                         'profile_image' => $profile_picture,
                     ]);

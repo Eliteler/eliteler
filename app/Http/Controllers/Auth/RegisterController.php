@@ -12,25 +12,27 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Plan;
-use App\User;
-use App\Setting;
-use App\Referral;
-use Carbon\Carbon;
-use App\Transaction;
 use App\EmailTemplate;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\URL;
 use App\Http\Controllers\Controller;
-use App\Services\GoBizCommonService;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Cookie;
+use App\NfcCardKey;
+use App\Plan;
 use App\Providers\RouteServiceProvider;
-use Illuminate\Support\Facades\Validator;
+use App\Referral;
+use App\Services\GoBizCommonService;
+use App\Transaction;
+use App\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Auth\RegistersUsers;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
+use Plugins\Zapier\Helpers\ZapierHelper;
 
 class RegisterController extends Controller
 {
@@ -51,17 +53,44 @@ class RegisterController extends Controller
         $rules = [
             'name'           => ['required', 'string', 'min:2', 'max:100'],
             'email'          => ['required', 'string', 'email', 'max:191', 'unique:users'],
-            'mobile_number'  => ['nullable', 'string', 'max:15', 'regex:/^\+?[0-9]{7,15}$/'],
+            'country_code'  => ['nullable', 'string', 'max:10'],
+            'mobile_number' => ['nullable', 'string', 'max:20'],
             'password'       => ['required', 'string', 'min:6', 'confirmed'],
             'terms'          => ['required'],
             'referral_code'  => ['nullable', 'string', 'max:50', 'exists:users,user_id'],
         ];
 
-        if (env('RECAPTCHA_ENABLE') == 'on') {
-            $rules['g-recaptcha-response'] = ['recaptcha', 'required'];
+        // Check if reCAPTCHA is active
+        $recaptchaEnabled = in_array(env('RECAPTCHA_ENABLE'), ['1', 'on', true, 'true'], true);
+
+        if ($recaptchaEnabled) {
+            $rules['g-recaptcha-response'] = ['required'];
         }
 
-        return Validator::make($data, $rules); 
+        $messages = [
+            'g-recaptcha-response.required' => __('Please check the reCAPTCHA box.'),
+        ];
+
+        $validator = Validator::make($data, $rules, $messages);
+
+        // Verify token with Google API if reCAPTCHA is enabled
+        if ($recaptchaEnabled) {
+            $validator->after(function ($validator) use ($data) {
+                if (!empty($data['g-recaptcha-response'])) {
+                    $response = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
+                        'secret'   => env('RECAPTCHA_SECRET_KEY'),
+                        'response' => $data['g-recaptcha-response'],
+                        'remoteip' => request()->ip(),
+                    ]);
+
+                    if (!$response->json('success')) {
+                        $validator->errors()->add('g-recaptcha-response', __('reCAPTCHA verification failed. Please try again.'));
+                    }
+                }
+            });
+        }
+
+        return $validator;
     }
 
     /**
@@ -142,9 +171,25 @@ class RegisterController extends Controller
 
         $userId = uniqid();
 
+        // NFC Card Key
+        $nfc_ref = request()->get('nfc_ref');
+
+        // check nfc card key
+        if ($nfc_ref) {
+            // check nfc card key exists
+            $nfcKey = NfcCardKey::where('unqiue_key', $nfc_ref)->where('status', 1)->where('key_status', 'active')->first();
+
+            // if nfc card key not exists return error
+            if (empty($nfcKey)) {
+                throw ValidationException::withMessages([
+                    'email' => __('Invalid NFC Card Key Reference'),
+                ]);
+            }
+        }
+
         // Referral System
         if ($config['referral_system'] ?? false) {
-            if (!empty($data['referral_code'])) {
+            if (! empty($data['referral_code'])) {
                 $referralCode = User::where('user_id', $data['referral_code'])->first();
 
                 if ($referralCode) {
@@ -176,6 +221,7 @@ class RegisterController extends Controller
             'lang'         => config('app.locale') ?? 'en',
             'name'             => $data['name'],
             'email'            => $data['email'],
+            'country_code'      => $data['country_code'] ?? null,
             'mobile_number'    => $data['mobile_number'],
             'email_verified_at' => data_get($config, 'disable_user_email_verification') == '1' ? null : now(),
             'auth_type'        => 'Email',
@@ -185,6 +231,27 @@ class RegisterController extends Controller
         // Create new user
         $user = User::create($userData);
 
+        // Dispatch new user event to Zapier (Frontend Registration)
+        if (function_exists('zapier_dispatch')) {
+            zapier_dispatch('new_user', [
+                'registered_at'   => now()->toDateTimeString(),
+                'user_id'         => $user->user_id ?? $user->id,
+                'name'            => $user->name,
+                'email'           => $user->email,
+                'mobile_number'   => ($user->country_code ?? '') . ($user->mobile_number ?? ''),
+                'address'         => $user->billing_address ?? '',
+                'city'            => $user->billing_city ?? '',
+                'state'           => $user->billing_state ?? '',
+                'country'         => $user->billing_country ?? '',
+                'zipcode'         => $user->billing_zipcode ?? '',
+                'user_tax_number' => $user->billing_tax_number ?? $user->tax_number ?? '', // Global Tax ID / VAT / GSTIN
+                'registered_by'   => 'Customer (Frontend)',
+            ]);
+        }
+
+        if ($nfc_ref) {
+            session()->put('pending_nfc_ref', $nfc_ref);
+        } else {
         // Activate plan during registeration
         $activate_plan_during_registeration = $config['activate_plan_during_registeration'] ?? '0';
 
@@ -223,6 +290,7 @@ class RegisterController extends Controller
                 $user->save();
             }
         }
+        }
 
         // Remove referral cookie
         Cookie::queue(Cookie::forget('referral_code'));
@@ -260,5 +328,13 @@ class RegisterController extends Controller
     protected function redirectTo()
     {
         return '/user/dashboard';
+    }
+
+    protected function registered(Request $request, $user)
+    {
+        if ($nfcRef = session('pending_nfc_ref')) {
+            session()->put('nfc_ref', $nfcRef);
+            session()->forget('pending_nfc_ref');
+        }
     }
 }

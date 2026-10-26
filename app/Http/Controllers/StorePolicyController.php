@@ -17,9 +17,11 @@ use Artesaos\SEOTools\Facades\SEOMeta;
 use Artesaos\SEOTools\Facades\SEOTools;
 use Illuminate\Support\Facades\Session;
 use Artesaos\SEOTools\Facades\OpenGraph;
+use App\Support\Store\StoreTheme;
 
 class StorePolicyController extends Controller
 {
+
     /**
      * Show the application dashboard.
      *
@@ -31,7 +33,7 @@ class StorePolicyController extends Controller
         $route = $request->segment(2);
 
         // Get store details
-        $card_details = BusinessCard::where('card_url', $storeId)->where('card_status', 'activated')->first();
+        $card_details = BusinessCard::where('card_url', $storeId)->where('card_status', 'activated')->where('status', '1')->first();
 
         // Check if card is activated
         if (!$card_details) {
@@ -163,7 +165,9 @@ class StorePolicyController extends Controller
 
             $datas = compact('card_details', 'plan_details', 'store_details', 'business_card_details', 'settings', 'shareComponent', 'shareContent', 'config', 'enquiry_button', 'whatsapp_msg', 'currency', 'whatsAppNumberExists', 'deliveryOptions', 'businessHours', 'pageTitle', 'pageContent', 'storeSocialLinks');
 
-            return view('templates.store.' . $business_card_details->theme_code . '.policy', $datas);
+            return view('templates.stores.' . StoreTheme::resolve($business_card_details->theme_code)->view . '.policy', $datas);
         }
+
+        return view('errors.404');
     }
 }

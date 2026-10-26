@@ -2,17 +2,38 @@
 
 @section('content')
     <div class="page-wrapper">
-        <!-- Page title -->
+        <!-- Page header -->
         <div class="page-header d-print-none">
             <div class="container-fluid">
                 <div class="row g-2 align-items-center">
+                    <!-- Breadcrumb Navigation -->
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item">
+                                <a href="{{ route('user.dashboard') }}" class="text-secondary text-decoration-none">
+                                    {{ __('Dashboard') }}
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a href="{{ route('user.manage.nfc.orders') }}" class="text-secondary text-decoration-none">
+                                    {{ __('My Orders') }}
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">
+                                {{ __('NFC Card Order') }}
+                            </li>
+                        </ol>
+                    </nav>
                     <div class="col">
-                        <div class="page-pretitle">
-                            {{ __('Overview') }}
-                        </div>
+                        <!-- Page Title -->
                         <h2 class="page-title">
                             {{ __('NFC Card Order') }}
                         </h2>
+
+                        <!-- Descriptive Subtitle -->
+                        <div class="text-muted mt-1">
+                            {{ __('Detailed receipt, billing coordinates, tracking coordinates, and fulfillment items for your NFC card order.') }}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -21,8 +42,10 @@
         <!-- Page body -->
         <div class="page-body">
             <div class="container-fluid">
+                {{-- Success Alert --}}
                 @if (Session::has('success'))
-                    <div class="alert alert-important alert-success alert-dismissible mb-2" role="alert">
+                    <div class="alert alert-important alert-success alert-dismissible mb-3 border-0 shadow-sm"
+                        role="alert">
                         <div class="d-flex">
                             <div>
                                 {{ Session::get('success') }}
@@ -32,9 +55,10 @@
                     </div>
                 @endif
 
-                {{-- Failed --}}
+                {{-- Failed Alert --}}
                 @if (Session::has('failed'))
-                    <div class="alert alert-important alert-danger alert-dismissible mb-2" role="alert">
+                    <div class="alert alert-important alert-danger alert-dismissible mb-3 border-0 shadow-sm"
+                        role="alert">
                         <div class="d-flex">
                             <div>
                                 {{ Session::get('failed') }}
@@ -44,11 +68,11 @@
                     </div>
                 @endif
 
-                {{-- Order Details --}}
+                {{-- Order Details Card --}}
                 <div class="row mt-3">
                     <div class="col-12">
-                        <div class="card">
-                            <div class="card-header">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-transparent">
                                 <h3 class="card-title">{{ __('Order & Delivery Details') }}</h3>
                             </div>
                             <div class="card-body">
@@ -72,36 +96,39 @@
                                     <div class="datagrid-item mx-3 my-1 d-print-none">
                                         <div class="datagrid-title">{{ __('Delivery Status') }}</div>
                                         <div class="datagrid-content fw-bold">
+                                            {{-- Soft-muted contextual status badges --}}
                                             @if ($order->order_status == 'pending')
-                                                <span class="badge bg-warning text-white text-uppercase">
+                                                <span
+                                                    class="badge bg-yellow-100 text-yellow-800 text-uppercase fw-semibold">
                                                     {{ __('Pending') }}
                                                 </span>
                                             @elseif($order->order_status == 'processing')
-                                                <span class="badge bg-primary text-white text-uppercase">
+                                                <span class="badge bg-blue-100 text-blue-700 text-uppercase fw-semibold">
                                                     {{ __('Processing') }}
                                                 </span>
                                             @elseif($order->order_status == 'out for delivery')
-                                                <span class="badge bg-dark text-white text-uppercase">
+                                                <span class="badge bg-slate-100 text-slate-700 text-uppercase fw-semibold">
                                                     {{ __('Out for delivery') }}
                                                 </span>
                                             @elseif($order->order_status == 'delivered')
-                                                <span class="badge bg-success text-white text-uppercase">
+                                                <span class="badge bg-green-100 text-green-700 text-uppercase fw-semibold">
                                                     {{ __('Delivered') }}
                                                 </span>
                                             @elseif($order->order_status == 'cancelled')
-                                                <span class="badge bg-danger text-white text-uppercase">
+                                                <span class="badge bg-red-100 text-red-700 text-uppercase fw-semibold">
                                                     {{ __('Cancelled') }}
                                                 </span>
                                             @elseif($order->order_status == 'hold')
-                                                <span class="badge bg-warning text-white text-uppercase">
+                                                <span
+                                                    class="badge bg-yellow-100 text-yellow-800 text-uppercase fw-semibold">
                                                     {{ __('Hold') }}
                                                 </span>
                                             @elseif($order->order_status == 'shipped')
-                                                <span class="badge bg-success text-white text-uppercase">
+                                                <span class="badge bg-green-100 text-green-700 text-uppercase fw-semibold">
                                                     {{ __('Shipped') }}
                                                 </span>
                                             @elseif($order->order_status == 'printing process begun')
-                                                <span class="badge bg-dark text-white text-uppercase">
+                                                <span class="badge bg-blue-100 text-blue-700 text-uppercase fw-semibold">
                                                     {{ __('Printing Process Begun') }}
                                                 </span>
                                             @endif
@@ -113,7 +140,7 @@
                                     <div class="datagrid-item mx-3 my-1">
                                         <div class="datagrid-title">{{ __('Payment Mode') }}</div>
                                         <div class="datagrid-content fw-bold">
-                                            <span class="badge bg-dark text-white text-uppercase">
+                                            <span class="badge bg-slate-100 text-slate-700 text-uppercase fw-semibold">
                                                 {{ $order->payment_method ?? '-' }}
                                             </span>
                                         </div>
@@ -159,19 +186,20 @@
                                             <span>
                                                 <span class="fw-bold">{{ $billingName }}</span>
                                                 <br>
-                                                <a class="fw-bold"
+                                                <a class="fw-bold text-decoration-none"
                                                     href="http://maps.google.com/?q={{ $billingAddress }},{{ $billingCity }},{{ $billingPostcode }},{{ $billingCountry }}"
                                                     target="_blank">{{ $billingAddress }}, {{ $billingCity }},
                                                     {{ $billingPostcode }}, {{ $billingCountry }}</a>
                                                 <br>
                                                 {{ __('Phone Number') }} : <span class="fw-bold"><a
+                                                        class="text-decoration-none"
                                                         href="tel:0{{ $billingPhone }}">{{ $billingPhone }}</a></span>
                                                 <br>
-                                                {{ __('Email') }} : <span class="fw-bold"><a
+                                                {{ __('Email') }} : <span class="fw-bold"><a class="text-decoration-none"
                                                         href="mailto:{{ $billingEmail }}">{{ $billingEmail }}</a></span>
                                                 <br>
-                                                {{ __('VAT Number') }} : <span class="fw-bold">{{ $vatNumber }}
-                                                </span>
+                                                {{ __('VAT Number') }} : <span class="fw-bold">{{ $vatNumber }}</span>
+                                            </span>
                                         </div>
                                     </div>
 
@@ -195,19 +223,20 @@
                                             <span>
                                                 <span class="fw-bold">{{ $billingName }}</span>
                                                 <br>
-                                                <a class="fw-bold"
+                                                <a class="fw-bold text-decoration-none"
                                                     href="http://maps.google.com/?q={{ $billingAddress }},{{ $billingCity }},{{ $billingPostcode }},{{ $billingCountry }}"
                                                     target="_blank">{{ $billingAddress }}, {{ $billingCity }},
                                                     {{ $billingPostcode }}, {{ $billingCountry }}</a>
                                                 <br>
                                                 {{ __('Phone Number') }} : <span class="fw-bold"><a
+                                                        class="text-decoration-none"
                                                         href="tel:0{{ $billingPhone }}">{{ $billingPhone }}</a></span>
                                                 <br>
-                                                {{ __('Email') }} : <span class="fw-bold"><a
+                                                {{ __('Email') }} : <span class="fw-bold"><a class="text-decoration-none"
                                                         href="mailto:{{ $billingEmail }}">{{ $billingEmail }}</a></span>
                                                 <br>
-                                                {{ __('VAT Number') }} : <span class="fw-bold">{{ $vatNumber }}
-                                                </span>
+                                                {{ __('VAT Number') }} : <span class="fw-bold">{{ $vatNumber }}</span>
+                                            </span>
                                         </div>
                                     </div>
 
@@ -220,7 +249,7 @@
 
                                     <div class="datagrid-item mx-3 my-1">
                                         <div class="datagrid-title">{{ __('Total') }}</div>
-                                        <div class="datagrid-content fw-bold">
+                                        <div class="datagrid-content fw-bold text-primary">
                                             {{ formatCurrency(json_decode($order->order_details)->invoice_amount) }}
                                         </div>
                                     </div>
@@ -230,11 +259,11 @@
                     </div>
                 </div>
 
-                {{-- Order Items --}}
+                {{-- Order Items Table --}}
                 <div class="row mt-3">
                     <div class="col-12">
-                        <div class="card card-table">
-                            <div class="card-header">
+                        <div class="card card-table border-0 shadow-sm">
+                            <div class="card-header bg-transparent">
                                 <h3 class="card-title">{{ __('Order Items') }}</h3>
                             </div>
                             <div class="table-responsive">
@@ -260,7 +289,8 @@
                                             <td class="text-end">{{ json_decode($order->order_details)->order_quantity }}
                                             </td>
                                             <td class="text-end">
-                                                {{ formatCurrency(json_decode($order->order_details)->price) }}</td>
+                                                {{ formatCurrency(json_decode($order->order_details)->price * json_decode($order->order_details)->order_quantity) }}
+                                            </td>
                                         </tr>
                                         <tr>
                                             <td colspan="3" class="strong text-end">{{ __('Subtotal') }}</td>
@@ -297,8 +327,9 @@
                                             </tr>
                                         @endif
                                         <tr>
-                                            <td colspan="3" class="strong text-end">{{ __('Total') }}</td>
-                                            <td class="text-end">
+                                            <td colspan="3" class="strong text-end text-heading">{{ __('Total') }}
+                                            </td>
+                                            <td class="text-end text-primary">
                                                 {{ formatCurrency(json_decode($order->order_details)->invoice_amount) }}
                                             </td>
                                         </tr>

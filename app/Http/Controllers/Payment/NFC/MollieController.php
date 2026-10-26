@@ -43,13 +43,17 @@ class MollieController extends Controller
         Config::set("mollie.key", $mollie_configuration[37]->config_value);
     }
     
-    public function nfcPrepareMollie($nfcId, $couponId)
+    public function nfcPrepareMollie($nfcId, $couponId, $quantity = 1)
     {
         if (Auth::user()) {
 
             // Queries
             $config = DB::table('config')->get();
             $userData = User::where('id', Auth::user()->id)->first();
+
+            // Quantity
+            $quantity = max((int) $quantity, 1);
+
             $nfcDetails = NfcCardDesign::where('nfc_card_id', $nfcId)->where('status', 1)->first();
 
             // Check plan details
@@ -69,6 +73,9 @@ class MollieController extends Controller
                 // Applied coupon
                 $appliedCoupon = null;
 
+                // Price
+                $subtotal = $nfcDetails->nfc_card_price * $quantity;
+
                 // NFC Card Order ID
                 $nfcCardOrderId = "OD" . preg_replace('/\D/', '', Str::uuid());
                 $nfcTransactionId = "TX" . preg_replace('/\D/', '', Str::uuid());
@@ -77,26 +84,26 @@ class MollieController extends Controller
                 if ($couponDetails != null) {
                     if ($couponDetails->coupon_type == 'fixed') {
                         // Applied tax in total
-                        $appliedTaxInTotal = ((float)($nfcDetails->nfc_card_price) * (float)($config[25]->config_value) / 100);
+                        $appliedTaxInTotal = ((float)($subtotal) * (float)($config[25]->config_value) / 100);
 
                         // Get discount in plan price
                         $discountPrice = $couponDetails->coupon_amount;
 
                         // Total
-                        $amountToBePaid = ($nfcDetails->nfc_card_price + $appliedTaxInTotal) - $discountPrice;
+                        $amountToBePaid = ($subtotal + $appliedTaxInTotal) - $discountPrice;
                         $amountToBePaid = (float)number_format($amountToBePaid, 2, '.', '');
 
                         // Coupon is applied
                         $appliedCoupon = $couponDetails->coupon_code;
                     } else {
                         // Applied tax in total
-                        $appliedTaxInTotal = ((float)($nfcDetails->nfc_card_price) * (float)($config[25]->config_value) / 100);
+                        $appliedTaxInTotal = ((float)($subtotal) * (float)($config[25]->config_value) / 100);
 
                         // Get discount in plan price
-                        $discountPrice = $nfcDetails->nfc_card_price * $couponDetails->coupon_amount / 100;
+                        $discountPrice = $subtotal * $couponDetails->coupon_amount / 100;
 
                         // Total
-                        $amountToBePaid = ($nfcDetails->nfc_card_price + $appliedTaxInTotal) - $discountPrice;
+                        $amountToBePaid = ($subtotal + $appliedTaxInTotal) - $discountPrice;
                         $amountToBePaid = (float)number_format($amountToBePaid, 2, '.', '');
 
                         // Coupon is applied
@@ -104,10 +111,10 @@ class MollieController extends Controller
                     }
                 } else {
                     // Applied tax in total
-                    $appliedTaxInTotal = ((float)($nfcDetails->nfc_card_price) * (float)($config[25]->config_value) / 100);
+                    $appliedTaxInTotal = ((float)($subtotal) * (float)($config[25]->config_value) / 100);
 
                     // Total
-                    $amountToBePaid = ($nfcDetails->nfc_card_price + $appliedTaxInTotal);
+                    $amountToBePaid = ($subtotal + $appliedTaxInTotal);
                 }
                 
                 $amountToBePaidPaise = number_format($amountToBePaid, 2);
@@ -144,10 +151,10 @@ class MollieController extends Controller
                 $invoice_details['to_billing_state'] = $userData->billing_state;
                 $invoice_details['to_billing_zipcode'] = $userData->billing_zipcode;
                 $invoice_details['to_billing_country'] = $userData->billing_country;
-                $invoice_details['to_billing_phone'] = $userData->billing_phone;
+                $invoice_details['to_billing_phone'] = $userData->billing_country_code . $userData->billing_phone;
                 $invoice_details['to_billing_email'] = $userData->billing_email;
                 $invoice_details['to_vat_number'] = $userData->vat_number;
-                $invoice_details['subtotal'] = $nfcDetails->nfc_card_price;
+                $invoice_details['subtotal'] = $subtotal;
                 $invoice_details['tax_name'] = $config[24]->config_value;
                 $invoice_details['tax_type'] = $config[14]->config_value;
                 $invoice_details['tax_value'] = $config[25]->config_value;
@@ -162,7 +169,7 @@ class MollieController extends Controller
                 $nfcCardOrder->user_id = Auth::id();
                 $nfcCardOrder->nfc_card_id = $nfcId;
                 $nfcCardOrder->nfc_card_order_transaction_id = $nfcTransactionId;
-                $nfcCardOrder->order_details = json_encode($this->prepareOrderDetails($config, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice));
+                $nfcCardOrder->order_details = json_encode($this->prepareOrderDetails($config, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice, $quantity));
                 $nfcCardOrder->delivery_address = json_encode($this->prepareDeliveryAddress($userData));
                 $nfcCardOrder->delivery_note = "-";
                 $nfcCardOrder->order_status = 'pending';
@@ -177,7 +184,7 @@ class MollieController extends Controller
                 $transaction->payment_method = "Mollie";
                 $transaction->currency = $config[1]->config_value;
                 $transaction->amount = $amountToBePaid;
-                $transaction->invoice_details = json_encode($this->prepareInvoiceDetails($config, $userData, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice));
+                $transaction->invoice_details = json_encode($this->prepareInvoiceDetails($config, $userData, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice, $quantity));
                 $transaction->payment_status = "pending";
                 $transaction->save();
 
@@ -254,8 +261,10 @@ class MollieController extends Controller
     }
 
 
-    private function prepareInvoiceDetails($config, $userData, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice)
+    private function prepareInvoiceDetails($config, $userData, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice, $quantity)
     {
+        $subtotal = $nfcDetails->nfc_card_price * $quantity;
+
         // Prepare invoice details
         $invoiceDetails = [
             'from_billing_name' => $config[16]->config_value,
@@ -273,7 +282,7 @@ class MollieController extends Controller
             'to_billing_state' => $userData->billing_state,
             'to_billing_zipcode' => $userData->billing_zipcode,
             'to_billing_country' => $userData->billing_country,
-            'to_billing_phone' => $userData->billing_phone,
+            'to_billing_phone' => $userData->billing_country_code . $userData->billing_phone,
             'to_billing_email' => $userData->billing_email,
             'to_vat_number' => $userData->vat_number,
             'tax_name' => $config[24]->config_value,
@@ -282,8 +291,8 @@ class MollieController extends Controller
             'applied_coupon' => $appliedCoupon,
             'discounted_price' => $discountPrice,
             'invoice_amount' => $amountToBePaid,
-            'subtotal' => $nfcDetails->nfc_card_price,
-            'tax_amount' => (float)($nfcDetails->nfc_card_price) * (float)($config[25]->config_value) / 100
+            'subtotal' => $subtotal,
+            'tax_amount' => (float)($subtotal) * (float)($config[25]->config_value) / 100
         ];
 
         return $invoiceDetails;
@@ -291,23 +300,25 @@ class MollieController extends Controller
 
 
     // Prepare oder details
-    private function prepareOrderDetails($config, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice)
+    private function prepareOrderDetails($config, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice, $quantity)
     {
+        $subtotal = $nfcDetails->nfc_card_price * $quantity;
+
         // Prepare invoice details
         $invoiceDetails = [
             'nfc_card_id' => $nfcDetails->nfc_card_id,
             'order_item' => $nfcDetails->nfc_card_name,
             'order_description' => $nfcDetails->nfc_card_description,
-            'order_quantity' => 1,
+            'order_quantity' => $quantity,
             'price' => $nfcDetails->nfc_card_price,
             'invoice_amount' => $amountToBePaid,
             'tax_name' => $config[24]->config_value,
             'tax_type' => $config[14]->config_value,
             'tax_value' => $config[25]->config_value,
-            'tax_amount' => (float)($nfcDetails->nfc_card_price) * (float)($config[25]->config_value) / 100,
+            'tax_amount' => (float)($subtotal) * (float)($config[25]->config_value) / 100,
             'applied_coupon' => $appliedCoupon,
             'discounted_price' => $discountPrice,
-            'subtotal' => $nfcDetails->nfc_card_price
+            'subtotal' => $subtotal
         ];
 
         return $invoiceDetails;
@@ -324,7 +335,7 @@ class MollieController extends Controller
             'billing_state' => $userData->billing_state,
             'billing_zipcode' => $userData->billing_zipcode,
             'billing_country' => $userData->billing_country,
-            'billing_phone' => $userData->billing_phone,
+            'billing_phone' => $userData->billing_country_code . $userData->billing_phone,
             'billing_email' => $userData->billing_email,
             'shipping_name' => $userData->billing_name,
             'shipping_address' => $userData->billing_address,
@@ -332,7 +343,7 @@ class MollieController extends Controller
             'shipping_state' => $userData->billing_state,
             'shipping_zipcode' => $userData->billing_zipcode,
             'shipping_country' => $userData->billing_country,
-            'shipping_phone' => $userData->billing_phone,
+            'shipping_phone' => $userData->billing_country_code . $userData->billing_phone,
             'shipping_email' => $userData->billing_email,
             'type' => $userData->type,
             'vat_number' => $userData->vat_number

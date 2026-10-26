@@ -12,271 +12,146 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Theme;
-use App\Setting;
-use App\BusinessCard;
-use Illuminate\Support\Str;
-use Illuminate\Http\Request;
+use App\Helpers\StorageHelper;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Validator;
+use App\Theme;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Inertia\Inertia;
 
 class ThemeController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
+    // Placeholder theme used for customers' custom designs, never listed.
+    private const CUSTOM_THEME_ID = '588969111147';
+
+    // themes.theme_description value that marks store themes.
+    private const STORE = 'WhatsApp Store';
+
     public function __construct()
     {
         $this->middleware('auth');
     }
 
-    /**
-     * Show the application dashboard.
-     *
-     * @return \Illuminate\Contracts\Support\Renderable
-     */
-
-    // All Themes
-    public function themes($status)
+    // All themes, filtered by status (route), type and search (query)
+    public function themes(Request $request, $status)
     {
-        // Status
-        if ($status == 'all') {
-            $themes = Theme::withCount('businessCards')
-                ->where('theme_id', '!=', "588969111147")
-                ->orderByDesc('id')
-                ->paginate(12);
-        } else if ($status == 'active') {
-            $themes = Theme::where('status', 1)
-                ->withCount('businessCards')
-                ->where('theme_id', '!=', "588969111147")
-                ->orderByDesc('id')
-                ->paginate(12);
-        } else if ($status == 'disabled') {
-            $themes = Theme::where('status', 0)
-                ->withCount('businessCards')
-                ->where('theme_id', '!=', "588969111147")
-                ->orderByDesc('id')
-                ->paginate(12);
-        }
+        $status = in_array($status, ['all', 'active', 'disabled'], true) ? $status : 'all';
+        $type   = in_array($request->query('type'), ['vcard', 'store'], true) ? $request->query('type') : 'all';
+        $search = trim((string) $request->query('search', ''));
 
-        $settings = Setting::active()->first();
+        $base = Theme::where('theme_id', '!=', self::CUSTOM_THEME_ID)
+            ->when($status !== 'all', fn ($q) => $q->where('status', $status === 'active' ? 1 : 0))
+            ->when($search !== '', fn ($q) => $q->where('theme_name', 'like', "%{$search}%"));
 
-        return view('admin.pages.themes.index', compact('themes', 'settings'));
-    }
+        // Counts per type tab (within the current status and search)
+        $counts = (clone $base)
+            ->selectRaw('COUNT(*) as all_count, SUM(theme_description = ?) as store_count', [self::STORE])
+            ->first();
 
-    // Active Themes
-    public function activeThemes()
-    {
-        // Queries
-        $themes = Theme::where('status', 1)
-            ->withCount('businessCards')
-            ->where('theme_id', '!=', "588969111147")
-            ->orderByDesc('id')
-            ->paginate(12);
-
-        $settings = Setting::active()->first();
-
-        return view('admin.pages.themes.active-themes', compact('themes', 'settings'));
-    }
-
-    // Disabled Themes
-    public function disabledThemes()
-    {
-        // Queries
-        $themes = Theme::where('status', 0)
-            ->where('theme_id', '!=', "588969111147")
+        $themes = (clone $base)
+            ->when($type === 'vcard', fn ($q) => $q->where('theme_description', '!=', self::STORE))
+            ->when($type === 'store', fn ($q) => $q->where('theme_description', self::STORE))
             ->withCount('businessCards')
             ->orderByDesc('id')
-            ->paginate(12);
+            ->paginate(24)
+            ->withQueryString()
+            ->through(fn (Theme $theme) => $this->present($theme));
 
-        $settings = Setting::active()->first();
-
-        return view('admin.pages.themes.disabled-themes', compact('themes', 'settings'));
+        return Inertia::render('themes/index', [
+            'themes'  => $themes,
+            'filters' => compact('status', 'type', 'search'),
+            'counts'  => [
+                'all'   => (int) $counts->all_count,
+                'store' => (int) $counts->store_count,
+                'vcard' => (int) $counts->all_count - (int) $counts->store_count,
+            ],
+        ]);
     }
 
     // Edit theme
-    public function editTheme(Request $request, $id)
+    public function editTheme($id)
     {
-        // Queries
-        $theme_details = Theme::where('theme_id', $id)->first();
-        $settings      = Setting::where('status', 1)->first();
+        $theme = Theme::where('theme_id', $id)
+            ->where('theme_id', '!=', self::CUSTOM_THEME_ID)
+            ->withCount('businessCards')
+            ->first();
 
-        return view('admin.pages.themes.edit', compact('theme_details', 'settings'));
+        if (! $theme) {
+            return redirect()->route('admin.themes', ['status' => 'all'])->with('failed', __('Theme not found!'));
+        }
+
+        return Inertia::render('themes/edit', [
+            'theme' => [
+                ...$this->present($theme),
+                'css'       => $theme->theme_css ?? '',
+                'js'        => $theme->theme_js ?? '',
+                'updatedAt' => $theme->updated_at?->toIso8601String(),
+            ],
+            'maxUploadKb' => (int) env('SIZE_LIMIT', 2048),
+        ]);
     }
 
     // Update theme
     public function updateTheme(Request $request)
     {
-        // Validate theme name
         $validated = $request->validate([
-            'theme_name' => 'required|min:3',
+            'theme_id'        => ['required', Rule::exists('themes', 'theme_id')],
+            'theme_name'      => 'required|string|min:3|max:191',
+            'theme_thumbnail' => 'nullable|file|mimes:jpeg,png,jpg,gif,svg,webp|max:' . env('SIZE_LIMIT', 2048),
+            'css'             => 'nullable|string|max:25000',
+            'js'              => 'nullable|string|max:25000',
         ]);
 
-        // If thumbnail is uploaded
+        $theme = Theme::where('theme_id', $validated['theme_id'])->firstOrFail();
+
         if ($request->hasFile('theme_thumbnail')) {
-            $validator = Validator::make($request->all(), [
-                'theme_thumbnail' => 'required|mimes:jpeg,png,jpg,gif,svg|max:' . env('SIZE_LIMIT'),
-            ]);
-
-            if ($validator->fails()) {
-                return back()->with('failed', $validator->messages()->first())->withInput();
+            if (! empty($theme->theme_thumbnail)) {
+                StorageHelper::deleteFile($theme->theme_thumbnail, 'theme');
             }
 
-            // Handle upload
-            $file = $request->file('theme_thumbnail');
-
-            if ($file) {
-                $fileName = 'theme-' . time() . '.' . $file->getClientOriginalExtension();
-                $path = $fileName;
-
-                // Save to public storage
-                Storage::disk('theme')->put($path, file_get_contents($file));
-
-                // Update both name and thumbnail
-                Theme::where('theme_id', $request->theme_id)->update([
-                    'theme_name' => $request->theme_name,
-                    'theme_thumbnail' => $fileName,
-                ]);
-            }
-        } else {
-            // Update only theme name
-            Theme::where('theme_id', $request->theme_id)->update([
-                'theme_name' => $request->theme_name,
-            ]);
+            $theme->theme_thumbnail = StorageHelper::uploadImage(
+                $request->file('theme_thumbnail'),
+                '',
+                'theme-' . time(),
+                'theme'
+            );
         }
 
-        return redirect()->route('admin.edit.theme', $request->theme_id)->with('success', trans('Updated!'));
+        // CSS is injected inside a <style> block: drop any style/script tags
+        $css = preg_replace('/<\/?(style|script)[^>]*>/i', '', (string) ($validated['css'] ?? ''));
+
+        $theme->theme_name = $validated['theme_name'];
+        $theme->theme_css  = trim($css) !== '' ? trim($css) : null;
+        $theme->theme_js   = trim((string) ($validated['js'] ?? '')) !== '' ? trim($validated['js']) : null;
+        $theme->save();
+
+        return redirect()->route('admin.edit.theme', $theme->theme_id)
+            ->with('success', __('Theme updated successfully!'));
     }
 
-    // Update status
+    // Enable / disable theme
     public function updateThemeStatus(Request $request)
     {
-        // Parameters
-        if ($request->query('status') == 'enable') {
-            $status = '1';
-        } else {
-            $status = '0';
+        $validated = $request->validate([
+            'id'     => ['required', Rule::exists('themes', 'theme_id')],
+            'status' => 'required|in:enable,disable',
+        ]);
+
+        Theme::where('theme_id', $validated['id'])->update(['status' => $validated['status'] === 'enable' ? '1' : '0']);
+
+        return back()->with('success', $validated['status'] === 'enable' ? __('Theme enabled.') : __('Theme disabled.'));
         }
 
-        Theme::where('theme_id', $request->query('id'))->update(['status' => $status]);
-
-        return redirect()->back()->with('success', trans('Updated!'));
-    }
-
-    // Search theme
-    public function searchTheme(Request $request, $status)
+    private function present(Theme $theme): array
     {
-        // Parameters
-        $search = $request->query('query');
-
-        $settings = Setting::where('status', 1)->first();
-
-        $themes = Theme::where('theme_id', '!=', '588969111147')
-            ->when($search, function ($q) use ($search) {
-                $q->where(function ($qq) use ($search) {
-                    $qq->where('theme_name', 'like', "%{$search}%")
-                        ->orWhere('theme_description', 'like', "%{$search}%");
-                });
-            })
-            ->when($status !== 'all', function ($q) use ($status) {
-                $q->where('status', $status === 'active' ? 1 : 0);
-            })
-            ->orderBy('id', 'desc')
-            ->paginate(12)
-            ->withQueryString();
-
-        foreach ($themes as $theme) {
-            $theme->business_cards_count = BusinessCard::where('theme_id', $theme->theme_id)
-                ->where('theme_id', '!=', '588969111147')
-                ->count();
-        }
-
-        return view('admin.pages.themes.index', compact('themes', 'status', 'settings'));
-    }
-
-
-    // Add Theme CSS
-    public function addThemeCss(Request $request, $id)
-    {
-        // Check if theme exists
-        if (!Theme::where('theme_id', $id)->first()) {
-            return redirect()->route('admin.themes')->with('failed', trans('Theme not found!'));
-        }
-
-        // Get theme
-        $themeDetails = Theme::where('theme_id', $id)->first();
-        $settings = Setting::active()->first();
-
-        return view('admin.pages.themes.add-theme-css', compact('themeDetails', 'settings'));
-    }
-
-    // Update Theme CSS
-    public function updateThemeCss(Request $request)
-    {
-        $theme_id = $request->theme_id;
-        $css = $request->css;
-
-        // Remove <style> ... </style> (with attributes) and <script> ... </script>
-        $css = preg_replace('/<\/?style[^>]*>/i', '', $css);
-        $css = preg_replace('/<\/?script[^>]*>/i', '', $css);
-
-        // Trim spaces
-        $css = trim($css);
-
-        // Show error if CSS is empty
-        if (empty($css)) {
-            return redirect()->route('admin.edit.theme', $theme_id)
-                ->with('failed', trans('Invalid CSS code.'));
-        }
-
-        // Save CSS
-        $theme = Theme::where('theme_id', $theme_id)->first();
-        if ($theme) {
-            $theme->theme_css = $css;
-            $theme->save();
-        }
-
-        return redirect()->route('admin.edit.theme', $theme_id)
-            ->with('success', trans('Updated!'));
-    }
-
-    // Add Theme JS
-    public function addThemeJs(Request $request, $id)
-    {
-        // Check if theme exists
-        if (!Theme::where('theme_id', $id)->first()) {
-            return redirect()->route('admin.themes')->with('failed', trans('Theme not found!'));
-        }
-
-        // Get theme
-        $themeDetails = Theme::where('theme_id', $id)->first();
-        $settings = Setting::active()->first();
-
-        return view('admin.pages.themes.add-theme-js', compact('themeDetails', 'settings'));
-    }
-
-    // Update Theme JS
-    public function updateThemeJs(Request $request)
-    {
-        $theme_id = $request->theme_id;
-        $js = $request->js;
-
-        // Show error if JS is empty
-        if (empty($js)) {
-            return redirect()->route('admin.edit.theme', $theme_id)
-                ->with('failed', trans('Invalid JS code.'));
-        }
-
-        // Save JS
-        $theme = Theme::where('theme_id', $theme_id)->first();
-        if ($theme) {
-            $theme->theme_js = $js;
-            $theme->save();
-        }
-
-        return redirect()->route('admin.edit.theme', $theme_id)->with('success', trans("Updated!"));
+        return [
+            'id'        => $theme->theme_id,
+            'name'      => $theme->theme_name,
+            'type'      => $theme->theme_description === self::STORE ? 'store' : 'vcard',
+            'thumbnail' => $theme->theme_thumbnail ? asset('img/vCards/' . $theme->theme_thumbnail) : null,
+            'active'    => (string) $theme->status === '1',
+            'usage'     => (int) $theme->business_cards_count,
+            'customCode' => ! empty($theme->theme_css) || ! empty($theme->theme_js),
+        ];
     }
 }

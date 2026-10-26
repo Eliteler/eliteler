@@ -17,6 +17,8 @@ class GoBizCommonService
     // All Config
     public static function config()
     {
+        Cache::forget('config_all');
+
         return Cache::remember(
             'config_all',
             60,
@@ -28,6 +30,8 @@ class GoBizCommonService
     // All Plans
     public static function plans()
     {
+        Cache::forget('public_plans');
+
         return Cache::remember(
             'public_plans',
             60,
@@ -39,6 +43,8 @@ class GoBizCommonService
     // Settings
     public static function settings()
     {
+        Cache::forget('settings_main');
+
         return Cache::remember('settings_main', 60, function () {
             $settings = Setting::where('status', 1)->first();
 
@@ -66,24 +72,40 @@ class GoBizCommonService
     // Latest Blogs
     public static function blogs()
     {
-        return Blog::where('status', 1)
+        Cache::forget('blogs');
+
+        return Cache::remember(
+            'blogs',
+            60,
+            fn() =>
+            Blog::where('status', 1)
             ->with('blogCategory')
             ->latest()
             ->limit(3)
-            ->get();
+                ->get()
+        );
     }
 
     // All Blogs
     public static function allBlogs()
     {
-        return Blog::where('status', 1)
+        Cache::forget('all_blogs');
+
+        return Cache::remember(
+            'all_blogs',
+            60,
+            fn() =>
+            Blog::where('status', 1)
             ->with('blogCategory')
             ->latest()
-            ->paginate(6);
+                ->paginate(6)
+        );
     }
 
     public static function nfcCards()
     {
+        Cache::forget('nfc_cards');
+
         return Cache::remember(
             'nfc_cards',
             60,
@@ -95,6 +117,8 @@ class GoBizCommonService
     // All Themes
     public static function themes()
     {
+        Cache::forget('themes_preview');
+
         return Cache::remember(
             'themes_preview',
             60,
@@ -117,7 +141,7 @@ class GoBizCommonService
     // Directory
     public static function directorySettings()
     {
-        if (is_dir(base_path('plugins/Directory'))) {
+        if (plugin_active('Directory')) {
             if (! DB::table('information_schema.tables')
                 ->where('table_schema', config('database.connections.mysql.database'))
                 ->where('table_name', 'directory_settings')
@@ -193,6 +217,8 @@ class GoBizCommonService
     // Get currencies
     public static function currencies()
     {
+        Cache::forget('currencies');
+
         return Cache::remember(
             'currencies',
             60,
@@ -204,6 +230,8 @@ class GoBizCommonService
     // Get Single config value
     public static function singleConfig($key)
     {
+        Cache::forget('config_' . $key);
+
         return Cache::remember(
             'config_' . $key,
             60,
@@ -215,6 +243,9 @@ class GoBizCommonService
     // Get eliteler modern config values
     public static function gobizModernConfig()
     {
+        if (is_dir(base_path('templates/GoBizModern'))) {
+            Cache::forget('gobiz_modern_config');
+
         return Cache::remember(
             'gobiz_modern_config',
             60,
@@ -222,10 +253,28 @@ class GoBizCommonService
             DB::table('gobiz_modern_config')->first()
         );
     }
+    }
+
+    // Get gobiz rich config values
+    public static function gobizRichConfig()
+    {
+        if (is_dir(base_path('templates/GoBizRich'))) {
+            Cache::forget('gobiz_rich_config');
+
+            return Cache::remember(
+                'gobiz_rich_config',
+                60,
+                fn() =>
+                DB::table('gobiz_rich_config')->first()
+            );
+        }
+    }
 
     // Get eliteler original config values
     public static function gobizOriginalConfig()
     {
+        Cache::forget('gobiz_original_config');
+
         return Cache::remember(
             'gobiz_original_config',
             60,
@@ -237,6 +286,8 @@ class GoBizCommonService
     // Get template wise page content (all)
     public static function templatePageContentAll($templateId)
     {
+        Cache::forget('template_page_content_all' . $templateId);
+
         return Cache::remember(
             'template_page_content_all' . $templateId,
             60,
@@ -250,6 +301,8 @@ class GoBizCommonService
     // Get template wise page content
     public static function templatePageContentGet($pageName, $templateId)
     {
+        Cache::forget('template_page_content_get_' . $pageName . '_' . $templateId);
+
         return Cache::remember(
             'template_page_content_get_' . $pageName . '_' . $templateId,
             60,
@@ -266,6 +319,8 @@ class GoBizCommonService
     // Get template wise page content
     public static function templatePageContentFirst($pageName, $templateId)
     {
+        Cache::forget('template_page_content_first_' . $pageName . '_' . $templateId);
+
         return Cache::remember(
             'template_page_content_first_' . $pageName . '_' . $templateId,
             60,
@@ -281,6 +336,8 @@ class GoBizCommonService
     // Custom page content
     public static function customPageContent($pageName, $templateId)
     {
+        Cache::forget('custom_page_' . $pageName . '_' . $templateId);
+
         return Cache::remember(
             'custom_page_' . $pageName . '_' . $templateId,
             60,
@@ -296,6 +353,7 @@ class GoBizCommonService
     // Home directory
     public static function homeDirectoryQuery($forceEnableDirectory)
     {
+        if (plugin_active('Directory')) {
         return
             DB::table('business_cards')
             ->join('users', 'business_cards.user_id', '=', 'users.user_id')
@@ -310,5 +368,6 @@ class GoBizCommonService
             ->inRandomOrder()
             ->paginate(3)
             ->appends(request()->query());
+    }
     }
 }

@@ -14,6 +14,12 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\File;
 
+/**
+ * Website templates installed in /templates (each folder with a template.json).
+ *
+ * A template whose admin pages are still the old Blade views ("legacy") keeps
+ * serving the public website, but its admin pages ask for its new version.
+ */
 class TemplateManager
 {
     protected $templates = [];
@@ -37,7 +43,11 @@ class TemplateManager
 
             if (File::exists($templateJsonPath)) {
                 $templateData = json_decode(File::get($templateJsonPath), true);
+                if (! is_array($templateData)) {
+                    continue;
+                }
                 $templateData['path'] = $directory;
+                $templateData['legacy'] = self::isLegacy($templateData, $directory);
 
                 // add templates to the list
                 $this->templates[] = $templateData;
@@ -48,6 +58,20 @@ class TemplateManager
     public function getTemplates()
     {
         return $this->templates;
+    }
+
+    /**
+     * Old Blade-admin version of a template: it has admin pages (main_route)
+     * but no prebuilt React pages (dist/manifest.json). Works on a
+     * template.json read from disk or from an uploaded zip ($dir null).
+     */
+    public static function isLegacy(array $manifest, ?string $dir, bool $hasDist = false): bool
+    {
+        if (empty($manifest['main_route'])) {
+            return false;
+        }
+
+        return ! ($dir ? File::exists($dir . '/dist/manifest.json') : $hasDist);
     }
 
     public function deleteTemplate($id)

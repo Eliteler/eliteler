@@ -1,3 +1,18 @@
+@php
+    $currentHost = request()->getHost();
+    $masterHost = parse_url(config('app.url'), PHP_URL_HOST);
+    $isCustomDomainOrSubdomain = $currentHost !== $masterHost;
+
+    // Dynamic store base URL and product URL prefix
+    if ($isCustomDomainOrSubdomain) {
+        $storeUrl = url('/');
+        $productUrlPrefix = url('product');
+    } else {
+        $storeUrl = url($business_card_details->card_url);
+        $productUrlPrefix = url($business_card_details->card_url . '/product');
+    }
+@endphp
+
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
@@ -127,14 +142,12 @@
             left: -150%;
             width: 300%;
             height: 100%;
-            background: linear-gradient(
-                120deg,
+            background: linear-gradient(120deg,
                 rgba(255, 255, 255, 0) 0%,
                 rgba(255, 255, 255, 0.12) 35%,
                 rgba(255, 255, 255, 0.25) 50%,
                 rgba(255, 255, 255, 0.12) 65%,
-                rgba(255, 255, 255, 0) 100%
-            );
+                    rgba(255, 255, 255, 0) 100%);
             animation: shimmer 2.5s linear infinite;
             z-index: 1;
             pointer-events: none;
@@ -144,12 +157,13 @@
             0% {
                 left: -150%;
             }
+
             100% {
                 left: 100%;
             }
         }
 
-        .btn-effect-loop > * {
+        .btn-effect-loop>* {
             position: relative;
             z-index: 2;
         }
@@ -158,32 +172,72 @@
     {{-- Check business details --}}
     @if ($business_card_details != null)
         @php
-            $custom_css = $business_card_details->custom_css;
-            $custom_js = $business_card_details->custom_js;
+            $custom_css = trim($business_card_details->custom_css ?? '');
+            $custom_js = trim($business_card_details->custom_js ?? '');
 
-            // Ensure <style> tags for custom CSS
-            if (strpos($custom_css, '<style>') === false && strpos($custom_css, '</style>') === false) {
-                $custom_css = "<style>" . $custom_css . "</style>";
+            /*
+            |--------------------------------------------------------------------------
+            | Custom CSS
+            |--------------------------------------------------------------------------
+            */
+
+            if (!empty($custom_css) && stripos($custom_css, '<style') === false) {
+                $custom_css = "<style>{$custom_css}</style>";
             }
 
-            // Ensure <script> tags for custom JS
-            if (strpos($custom_js, '<script>') === false && strpos($custom_js, '</script>') === false) {
-                $custom_js = "<script>" . $custom_js . "</script>";
+            /*
+            |--------------------------------------------------------------------------
+            | Split HTML tags and plain JS
+            |--------------------------------------------------------------------------
+            */
+
+            $include_custom_js = '';
+
+            if (!empty($custom_js)) {
+                // Extract HTML tags like meta, script, iframe, noscript, etc.
+                preg_match_all(
+                '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/@endphp/is',
+        $custom_js,
+        $matches,
+    );
+
+    $html_tags = implode("\n", $matches[0]);
+
+    // Remove extracted HTML tags from original content
+    $plain_js = trim(
+        preg_replace(
+            '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/?>/is',
+            '',
+            $custom_js,
+        ),
+    );
+
+    // Add HTML tags directly
+    $include_custom_js .= $html_tags;
+
+    // Wrap remaining plain JS inside script tag
+    if (!empty($plain_js)) {
+        $include_custom_js .= "\n<script>
+            {
+                $plain_js
             }
-        @endphp
+        </script>";
+    }
+}
+?>
 
         {!! $custom_css !!}
-        {!! $custom_js !!}
+        {!! $include_custom_js !!}
 
         {{-- Theme CSS --}}
-        @if(!empty($business_card_details->theme_css))
+        @if (!empty($business_card_details->theme_css))
             <style>
                 {!! $business_card_details->theme_css !!}
             </style>
         @endif
 
         {{-- Theme JS --}}
-        @if(!empty($business_card_details->theme_js))
+        @if (!empty($business_card_details->theme_js))
             <script>
                 {!! $business_card_details->theme_js !!}
             </script>
@@ -289,13 +343,13 @@
                                 @if (is_array(json_decode($business_card_details->cover)) == true)
                                     @foreach (json_decode($business_card_details->cover) as $cover)
                                         <swiper-slide>
-                                            <img class="rounded-e-commerce w-100 h-100 object-fit-cover"
+                                            <img class="rounded-e-commerce img-fluid d-block mx-auto"
                                                 alt="{{ $business_card_details->title }}" src="{{ url($cover) }}" />
                                         </swiper-slide>
                                     @endforeach
                                 @else
                                     <swiper-slide>
-                                        <img class="rounded-e-commerce w-100 h-100 object-fit-cover"
+                                        <img class="rounded-e-commerce img-fluid d-block mx-auto"
                                             alt="{{ $business_card_details->title }}"
                                             src="{{ $business_card_details->cover ? url($business_card_details->cover) : asset('images/default-cover.png') }}" />
                                     </swiper-slide>
@@ -308,8 +362,7 @@
                             <div
                                 class="{{ request('category') ? 'bg-opacity card col-md-3 my-3 px-3' : 'col-md-12 my-3' }}">
                                 <div class="position-relative {{ request('category') ? 'd-none' : '' }}">
-                                    <img class="position-absolute"
-                                        src="{{ asset('img/templates/e-commerce/7.png') }}"
+                                    <img class="position-absolute" src="{{ asset('img/templates/e-commerce/7.png') }}"
                                         style="
                                             width: 120px;
                                             height: 120px;
@@ -376,14 +429,14 @@
                                     <!-- Foreach -->
                                     @foreach ($categories as $category)
                                         <swiper-slide class="cursor-pointer">
-                                            <a href="{{ url($business_card_details->card_url) . '?category=' . urlencode(strtolower($category->category_name)) }}" class="m-1 card">
+                                            <a href="{{ $storeUrl . '?category=' . urlencode(strtolower($category->category_name)) }}"
+                                                class="m-1 card">
                                                 <!-- Thumbnail -->
-                                                <div class="ratio ratio-1x1 d-flex align-items-center justify-content-center">
-                                                    <img
-                                                        src="{{ url($category->thumbnail) }}"
+                                                <div
+                                                    class="ratio ratio-1x1 d-flex align-items-center justify-content-center">
+                                                    <img src="{{ url($category->thumbnail) }}"
                                                         alt="{{ $category->category_name }}"
-                                                        class="img-fluid category-thumbnail"
-                                                    >
+                                                        class="img-fluid category-thumbnail">
                                                 </div>
                                                 <!-- Category Name -->
                                                 <h3 class="fs-3 text-truncate single-product text-dark text-center">
@@ -401,7 +454,7 @@
                                             <div class="d-flex align-items-center gap-2">
                                                 <img src="{{ asset('img/templates/all-categories.png') }}"
                                                     alt="All" class="rounded-e-commerce"
-                                                    style="width: 40px; height: 40px; object-fit: cover;">
+                                                    style="width: 40px; height: 40px; object-fit: contain;">
                                                 <h3 class="mb-0 text-dark fs-3">{{ __('All') }}</h3>
                                             </div>
                                         </a>
@@ -410,13 +463,13 @@
                                     @foreach ($categories as $category)
                                         <div class="py-3 border-top">
                                             <a
-                                                href="{{ url($business_card_details->card_url) . '?category=' . urlencode(strtolower($category->category_name)) }}">
+                                                href="{{ $storeUrl . '?category=' . urlencode(strtolower($category->category_name)) }}">
                                                 <div class="text-decoration-none">
                                                     <div class="d-flex align-items-center gap-2">
                                                         <!-- Thumbnail -->
                                                         <img src="{{ url($category->thumbnail) }}"
                                                             class="rounded-e-commerce"
-                                                            style="width: 40px; height: 40px; object-fit: cover;"
+                                                            style="width: 40px; height: 40px; object-fit: contain;"
                                                             alt="{{ $category->category_name }}" />
                                                         @php
                                                             $category_name = urlencode(
@@ -439,7 +492,8 @@
                             <!-- Products -->
                             <div class="{{ request('category') ? 'col-md-9 ps-lg-4 mt-2' : 'col-md-12' }}">
                                 <div class="position-relative {{ request('category') ? 'd-none' : '' }}">
-                                    <img class="position-absolute" src="{{ asset('img/templates/e-commerce/6.png') }}"
+                                    <img class="position-absolute"
+                                        src="{{ asset('img/templates/e-commerce/6.png') }}"
                                         style="
                                             width: 110px;
                                             height: 110px;
@@ -525,9 +579,9 @@
                                                         @php
                                                             $productImages = explode(',', $product->product_image);
                                                         @endphp
-                                                        <a
-                                                            href="{{ url($business_card_details->card_url . '/product/' . $product->id) }}">
-                                                            <div id="carousel-controls" class="carousel slide mb-3 card"
+                                                        <a href="{{ $productUrlPrefix . '/' . $product->id }}">
+                                                            <div id="carousel-controls"
+                                                                class="carousel slide mb-3 card"
                                                                 data-bs-ride="carousel">
                                                                 <!-- Carousel Images -->
                                                                 <div class="carousel-inner">
@@ -536,7 +590,7 @@
                                                                             class="carousel-item {{ $loop->index == 0 ? 'active' : '' }} ratio ratio-4x3">
                                                                             <img class="d-block w-100 h-100 rounded-e-commerce"
                                                                                 id="{{ $product->product_id }}_product_image"
-                                                                                style="object-fit: cover; object-position: center;"
+                                                                                style="object-fit: contain; object-position: center;"
                                                                                 alt="{{ $product->product_name }}"
                                                                                 src="{{ url($productImage) }}">
                                                                         </div>
@@ -605,8 +659,7 @@
                                                             @if ($product->product_status == 'instock')
                                                                 <a onclick="instantBuy('{{ $product->product_id }}')"
                                                                     class="btn btn-sm w-100 btn-dark btn-effect-loop fs-3 p-custom">
-                                                                    <i
-                                                                        class="ti ti-bolt text-white fs-2 pe-1"></i>
+                                                                    <i class="ti ti-bolt text-white fs-2 pe-1"></i>
                                                                         {{ __('Buy Now') }}
                                                                 </a>
                                                             @endif
@@ -713,8 +766,7 @@
                         <!-- Second Row: Policy Links -->
                         <div class="row mt-3">
                             <div class="col">
-                                <ul
-                                    class="list-inline list-inline-dots text-center text-md-start text-lg-start mb-0">
+                                <ul class="list-inline list-inline-dots text-center text-md-start text-lg-start mb-0">
                                     {{-- Privacy Policy --}}
                                     @if ($business_card_details->privacy_policy)
                                         <li class="list-inline-item">
@@ -825,7 +877,9 @@
                     <!-- Mobile -->
                     <div class="mb-3">
                         <label class="form-label required" for="cus_mobile">{{ __('Mobile') }}</label>
-                        <input type="number" class="form-control" placeholder="{{ __('Mobile number with country code, excluding +') }}" id="cus_mobile" required />
+                        <input type="number" class="form-control"
+                            placeholder="{{ __('Mobile number with country code, excluding +') }}" id="cus_mobile"
+                            required />
                     </div>
                     <!-- Address -->
                     <div class="mb-3">
@@ -915,7 +969,7 @@
                         </div>
                         <!-- Modal Body -->
                         <div class="modal-body">
-                            <form action="{{ config('app.url') }}/subscribe/store/newsletter" method="post">
+                            <form action="{{ url('subscribe/store/newsletter') }}" method="post">
                                 @csrf
                                 <div class="row">
                                     <input type="hidden" id="card_id" name="card_id"
@@ -991,7 +1045,7 @@
                                 {{-- Image --}}
                                 <div class="w-25 h-25 mb-2">
                                     <img src="{{ url($img) }}" alt="{{ $title }}"
-                                        class="img-fluid object-fit-cover rounded-4" />
+                                        class="img-fluid object-fit-contain rounded-4" />
                                 </div>
                                 {{-- Title --}}
                                 <div class="mb-2">
@@ -1120,9 +1174,7 @@
         };
 
         // Currencies
-        const currencies = {!! json_encode(App\Currency::where('status', 1)
-        ->select('iso_code', 'symbol', 'symbol_first')
-        ->get()) !!};
+        const currencies = {!! json_encode(App\Currency::where('status', 1)->select('iso_code', 'symbol', 'symbol_first')->get()) !!};
 
         // Determine currency symbol and position
         let currencySymbol = '';
@@ -1306,7 +1358,7 @@
                 // LEFT: Image
                 cart_items += `
                 <div class="me-3 flex-shrink-0" style="width: 100px; height: 100px;">
-                    <img src="${item.product_image}" class="img-fluid rounded-e-commerce object-fit-cover h-100 w-100" alt="${item.product_name}" />
+                    <img src="${item.product_image}" class="img-fluid rounded-e-commerce object-fit-contain h-100 w-100" alt="${item.product_name}" />
                 </div>`;
 
                 // RIGHT: Product Info
@@ -1479,9 +1531,8 @@
                 });
 
                 // Place order ajax
-                // Place order ajax
                 $.ajax({
-                    url: "{{ config('app.url') }}/order/place",
+                    url: "{{ url('order/place') }}",
                     method: "POST",
                     data: {
                         _token: '{{ csrf_token() }}',

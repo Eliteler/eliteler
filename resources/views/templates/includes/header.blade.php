@@ -1,8 +1,21 @@
+@php
+    $currentHost = request()->getHost();
+    $masterHost = parse_url(config('app.url'), PHP_URL_HOST);
+    $isCustomDomainOrSubdomain = $currentHost !== $masterHost;
+
+    // Dynamic store base URL
+    if ($isCustomDomainOrSubdomain) {
+        $storeUrl = url('/');
+    } else {
+        $storeUrl = url($business_card_details->card_url);
+    }
+@endphp
+
 <header class="navbar navbar-expand d-print-none p-2">
     <div class="container-xl mx-auto">
         <div class="navbar-brand navbar-brand-autodark d-none-navbar-horizontal pe-0 pe-md-3">
             <!-- Logo -->
-            <a href="{{ url($business_card_details->card_url) }}">
+            <a href="{{ $headerStoreUrl ?? $storeUrl }}">
                 <img src="{{ url($business_card_details->profile) }}" alt="{{ $business_card_details->title }}"
                     class="navbar-brand-image logo-height" />
             </a>

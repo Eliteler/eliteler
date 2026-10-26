@@ -1,14 +1,12 @@
 <?php
 
-/*
- |--------------------------------------------------------------------------
- | Eliteler vCard SaaS
- |--------------------------------------------------------------------------
- | Developed by NativeCode © 2021 - https://nativecode.in
- | All rights reserved
- | Unauthorized distribution is prohibited
- |--------------------------------------------------------------------------
-*/
+// --------------------------------------------------------------------------
+// Eliteler vCard SaaS
+// --------------------------------------------------------------------------
+// Developed by NativeCode © 2021 - https://nativecode.in
+// All rights reserved
+// Unauthorized distribution is prohibited
+// --------------------------------------------------------------------------
 
 namespace App;
 
@@ -21,6 +19,12 @@ class Blog extends Model
 {
     protected $table = 'blogs';
 
+    // Scope a query to only include published blogs (status = 1)
+    public function scopePublished($query)
+    {
+        return $query->where('status', 1);
+    }
+
     public function blogCategory()
     {
         return $this->belongsTo(BlogCategory::class, 'category', 'blog_category_id');
@@ -30,5 +34,4 @@ class Blog extends Model
     {
         return $this->belongsTo(User::class, 'published_by');
     }
-
 }

@@ -12,16 +12,17 @@
 
 namespace App\Http\Controllers\User;
 
-use App\Plan;
-use App\User;
-use App\Setting;
-use Carbon\Carbon;
-use App\Transaction;
 use App\BusinessCard;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use App\Plan;
+use App\Setting;
+use App\Transaction;
+use App\User;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class BillingController extends Controller
 {
@@ -61,13 +62,30 @@ class BillingController extends Controller
         $selected_plan = Plan::where('plan_id', $id)->where('status', 1)->first();
         $config = DB::table('config')->get();
 
+        // Validate
+        $validator = Validator::make($request->all(), [
+            'billing_name' => 'required',
+            'billing_email' => 'required',
+            'country_code' => 'required',
+            'mobile_number' => 'required',
+            'whatsapp_country_code' => 'required',
+            'whatsapp_number' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return back()->with('failed', $validator->messages()->all()[0])->withInput();
+        }
+
         // Update billing details
         User::where('user_id', Auth::user()->user_id)->update([
-            'mobile_number' => $request->billing_phone ?? "",
             'billing_name' => $request->billing_name,
             'billing_email' => $request->billing_email,
+            'country_code' => $request->country_code,
+            'mobile_number' => $request->mobile_number,
+            'whatsapp_country_code' => $request->whatsapp_country_code,
+            'whatsapp_number' => $request->whatsapp_number ?? "",
+            'billing_country_code' => $request->country_code,
             'billing_phone' => $request->billing_phone,
-            'whatsapp_number' => $request->billing_whatsapp ?? "",
             'billing_address' => $request->billing_address,
             'billing_city' => $request->billing_city,
             'billing_state' => $request->billing_state,
@@ -95,7 +113,7 @@ class BillingController extends Controller
         $invoice_details['to_billing_state'] = $request->billing_state;
         $invoice_details['to_billing_zipcode'] = $request->billing_zipcode;
         $invoice_details['to_billing_country'] = $request->billing_country;
-        $invoice_details['to_billing_phone'] = $request->billing_phone;
+        $invoice_details['to_billing_phone'] = $request->billing_country_code . $request->billing_phone;
         $invoice_details['to_billing_email'] = $request->billing_email;
         $invoice_details['to_vat_number'] = $request->vat_number;
         $invoice_details['tax_name'] = $config[24]->config_value;

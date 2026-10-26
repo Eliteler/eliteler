@@ -1,0 +1,106 @@
+/* GoBiz vCard SaaS
+|--------------------------------------------------------------------------
+| Developed by NativeCode © 2021 - https://nativecode.in
+| All rights reserved
+| Unauthorized distribution is prohibited
+|--------------------------------------------------------------------------
+*/
+
+/* Modern SaaS settings row pattern */
+.saas-setting-row {
+    padding: 1.5rem 0;
+    border-bottom: 1px solid var(--tblr-border-color-translucent);
+}
+
+.saas-setting-row:first-child {
+    padding-top: 0.5rem;
+}
+
+.saas-setting-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0.5rem;
+}
+
+.saas-setting-label {
+    font-weight: 600;
+    color: var(--tblr-body-color);
+    margin-bottom: 0.25rem;
+}
+
+.saas-setting-desc {
+    font-size: 0.8125rem;
+    color: var(--tblr-muted);
+    line-height: 1.4;
+    margin-bottom: 0;
+}
+
+/* Favicon branding avatar */
+.saas-favicon-preview {
+    width: 52px;
+    height: 52px;
+    border-radius: var(--tblr-border-radius);
+    border: 1px solid var(--tblr-border-color);
+    background: var(--tblr-bg-surface-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.saas-favicon-preview img {
+    max-width: 32px;
+    max-height: 32px;
+    object-fit: contain;
+}
+
+/* Search engine preview snippet */
+.saas-serp-preview {
+    background: var(--tblr-bg-surface-secondary);
+    border: 1px solid var(--tblr-border-color-translucent);
+    border-radius: var(--tblr-border-radius);
+    padding: 1.25rem;
+}
+
+.saas-serp-url {
+    font-size: 0.8125rem;
+    color: var(--tblr-muted);
+    margin-bottom: 0.2rem;
+}
+
+.saas-serp-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--tblr-primary);
+    line-height: 1.35;
+    margin-bottom: 0.35rem;
+    cursor: pointer;
+    word-break: break-word;
+}
+
+.saas-serp-title:hover {
+    text-decoration: underline;
+}
+
+.saas-serp-desc {
+    font-size: 0.875rem;
+    color: var(--tblr-body-color);
+    line-height: 1.45;
+    word-break: break-word;
+}
+
+.char-badge {
+    font-size: 0.75rem;
+    color: var(--tblr-muted);
+    font-weight: 500;
+}
+
+.input-icon {
+    width: 100% !important;
+}
+
+@media (max-width: 575.98px) {
+    .modal-dialog {
+        margin-top: 10vh;
+    }
+}

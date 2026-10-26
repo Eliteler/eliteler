@@ -3,7 +3,7 @@
     @include('user.includes.impersonate')
 @endif
 
-<header class="navbar navbar-expand-md d-none d-lg-flex d-print-none bg-body-tertiary">
+<header class="navbar navbar-expand-md d-none d-lg-flex d-print-none bg-body">
     <div class="container-{{ App::isLocale('ar') || App::isLocale('ur') || App::isLocale('he') ? 'xl' : 'fluid' }}">
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu"
             aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">

@@ -42,7 +42,7 @@ class OrderNfcCardController extends Controller
         // check modern_dashboard_enabled
         if (Schema::hasTable('modern_dashboard_settings')) {
             $is_modern_dashboard_enabled = DB::table('modern_dashboard_settings')->first()->modern_dashboard_enabled;
-            if (is_dir(base_path('plugins/ModernDashboard')) && $is_modern_dashboard_enabled == 1) {
+            if (plugin_active('ModernDashboard') && $is_modern_dashboard_enabled == 1) {
                 if (session()->has('success') || session()->has('failed')) {
                     session()->reflash();
                 }
@@ -66,16 +66,11 @@ class OrderNfcCardController extends Controller
         $active_plan = json_decode($plan->plan_details);
 
         if ($active_plan != null) {
-            // Check "nfc_card" is available in the plan
-            if ($active_plan->nfc_card == 1) {
                 // Available NFC Cards
                 $availableNfcCards = NfcCardDesign::where('status', 1)->get();
 
                 return view('user.pages.order.nfc-card.index', compact('availableNfcCards', 'settings', 'config', 'currency'));
             } else {
-                return redirect()->route('user.plans')->with('failed', __('This feature is not available on your current plan. Upgrade to a plan that includes this feature.'));
-            }
-        } else {
             return redirect()->route('user.plans');
         }
     }

@@ -1,63 +1,173 @@
 <?php
 
 return [
-
-    /*
-     *
-     * Shared translations.
-     *
-     */
-    'title' => 'NativeCode Installer',
-    'next' => 'Volgende stap',
-
-    /*
-     *
-     * Home page translations.
-     *
-     */
-    'welcome' => [
-        'title'   => 'Welkom bij het installatie proces...',
-        'message' => 'Welkom bij de installatiewizard',
-    ],
-
-    /*
-     *
-     * Requirements page translations.
-     *
-     */
-    'requirements' => [
-        'title' => 'Vereisten',
-    ],
-
-    /*
-     *
-     * Permissions page translations.
-     *
-     */
-    'permissions' => [
-        'title' => 'Permissies',
-    ],
-
-    /*
-     *
-     * Environment page translations.
-     *
-     */
+    'back' => 'Vorig',
     'environment' => [
         'title' => 'Environment Settings',
         'save' => '.env Opslaan',
         'success' => 'Uw .env bestand is opgeslagen.',
         'errors' => 'Het is niet mogelijk om een .env bestand aan te maken, maak a.u.b het bestand zelf aan.',
+        'menu' => [
+            'templateTitle' => 'Stap 3 | ',
+            'title' => 'Installatie',
+            'desc' => 'Selecteer hoe u het <code>.env</code>-bestand van de app wilt configureren.',
+            'wizard-button' => 'Formulierwizard instellen',
+            'classic-button' => 'Klassieke teksteditor',
+        ],
+        'wizard' => [
+            'templateTitle' => 'Stap 3 | ',
+            'title' => 'Begeleide <code>.env</code>-wizard',
+            'tabs' => [
+                'environment' => 'Omgeving',
+                'database' => 'Database',
+                'application' => 'Sollicitatie',
+            ],
+            'form' => [
+                'name_required' => 'Een omgevingsnaam is vereist.',
+                'app_name_label' => 'App-naam',
+                'app_name_placeholder' => 'App-naam',
+                'app_environment_label' => 'App-omgeving',
+                'app_environment_label_local' => 'Lokaal',
+                'app_environment_label_developement' => 'Ontwikkeling',
+                'app_environment_label_qa' => 'Qa',
+                'app_environment_label_production' => 'Productie',
+                'app_environment_label_other' => 'Ander',
+                'app_environment_placeholder_other' => 'Vul uw omgeving in...',
+                'app_debug_label' => 'App-foutopsporing',
+                'app_debug_label_true' => 'WAAR',
+                'app_debug_label_false' => 'Vals',
+                'app_log_level_label' => 'App-logniveau',
+                'app_log_level_label_debug' => 'debuggen',
+                'app_log_level_label_info' => 'informatie',
+                'app_log_level_label_notice' => 'kennisgeving',
+                'app_log_level_label_warning' => 'waarschuwing',
+                'app_log_level_label_error' => 'fout',
+                'app_log_level_label_critical' => 'kritisch',
+                'app_log_level_label_alert' => 'alert',
+                'app_log_level_label_emergency' => 'noodgeval',
+                'app_url_label' => 'App-URL',
+                'app_url_placeholder' => 'App-URL',
+                'db_connection_failed' => 'Kan geen verbinding maken met de database.',
+                'db_connection_label' => 'Databaseverbinding',
+                'db_connection_label_mysql' => 'mysql',
+                'db_connection_label_sqlite' => 'sqlite',
+                'db_connection_label_pgsql' => 'pgsql',
+                'db_connection_label_sqlsrv' => 'sqlsrv',
+                'db_host_label' => 'Databasehost',
+                'db_host_placeholder' => 'Databasehost',
+                'db_port_label' => 'Databasepoort',
+                'db_port_placeholder' => 'Databasepoort',
+                'db_name_label' => 'Databasenaam',
+                'db_name_placeholder' => 'Databasenaam',
+                'db_username_label' => 'Database-gebruikersnaam',
+                'db_username_placeholder' => 'Database-gebruikersnaam',
+                'db_password_label' => 'Databasewachtwoord',
+                'db_password_placeholder' => 'Databasewachtwoord',
+                'app_tabs' => [
+                    'more_info' => 'Meer informatie',
+                    'broadcasting_title' => 'Uitzenden, caching, sessie en wachtrij',
+                    'broadcasting_label' => 'Broadcast-stuurprogramma',
+                    'broadcasting_placeholder' => 'Broadcast-stuurprogramma',
+                    'cache_label' => 'Cache-stuurprogramma',
+                    'cache_placeholder' => 'Cache-stuurprogramma',
+                    'session_label' => 'Sessiechauffeur',
+                    'session_placeholder' => 'Sessiechauffeur',
+                    'queue_label' => 'Wachtrij-chauffeur',
+                    'queue_placeholder' => 'Wachtrij-chauffeur',
+                    'redis_label' => 'Redis-stuurprogramma',
+                    'redis_host' => 'Redis-host',
+                    'redis_password' => 'Redis-wachtwoord',
+                    'redis_port' => 'Redis-poort',
+                    'mail_label' => 'Mail',
+                    'mail_driver_label' => 'Mail-chauffeur',
+                    'mail_driver_placeholder' => 'Mail-chauffeur',
+                    'mail_host_label' => 'Mailhost',
+                    'mail_host_placeholder' => 'Mailhost',
+                    'mail_port_label' => 'Postpoort',
+                    'mail_port_placeholder' => 'Postpoort',
+                    'mail_username_label' => 'Mail-gebruikersnaam',
+                    'mail_username_placeholder' => 'Mail-gebruikersnaam',
+                    'mail_password_label' => 'E-mailwachtwoord',
+                    'mail_password_placeholder' => 'E-mailwachtwoord',
+                    'mail_encryption_label' => 'E-mailcodering',
+                    'mail_encryption_placeholder' => 'E-mailcodering',
+                    'pusher_label' => 'Opdringer',
+                    'pusher_app_id_label' => 'Pusher-app-ID',
+                    'pusher_app_id_palceholder' => 'Pusher-app-ID',
+                    'pusher_app_key_label' => 'Pusher-app-sleutel',
+                    'pusher_app_key_palceholder' => 'Pusher-app-sleutel',
+                    'pusher_app_secret_label' => 'Pusher-appgeheim',
+                    'pusher_app_secret_palceholder' => 'Pusher-appgeheim',
+                ],
+                'buttons' => [
+                    'setup_database' => 'Database instellen',
+                    'setup_application' => 'Applicatie instellen',
+                    'install' => 'Installeren',
+                ],
+            ],
+        ],
+        'classic' => [
+            'templateTitle' => 'Stap 3 | ',
+            'title' => 'Klassieke omgevingseditor',
+            'save' => 'Bewaar .env',
+            'back' => 'Gebruik de formulierwizard',
+            'install' => 'Opslaan en installeren',
+        ],
     ],
-
-    /*
-     *
-     * Final page translations.
-     *
-     */
     'final' => [
         'title' => 'Voltooid',
         'finished' => 'Applicatie is succesvol geïnstalleerd.',
         'exit' => 'Klik hier om af te sluiten.',
+        'templateTitle' => 'Installatie voltooid',
+        'migration' => 'Migratie- en Seed Console-uitvoer:',
+        'console' => 'Uitvoer van applicatieconsole:',
+        'log' => 'Installatieloginvoer:',
+        'env' => 'Laatste .env-bestand:',
+    ],
+    'finish' => 'Installeren',
+    'forms' => [
+        'errorTitle' => 'De volgende fouten zijn opgetreden:',
+    ],
+    'install' => 'Installeren',
+    'installed' => [
+        'success_log_message' => 'NativeCode Installer succesvol GEÏNSTALLEERD op',
+    ],
+    'next' => 'Volgende stap',
+    'permissions' => [
+        'title' => 'Permissies',
+        'templateTitle' => 'Stap 2 | ',
+        'next' => 'Omgeving configureren',
+    ],
+    'requirements' => [
+        'title' => 'Vereisten',
+        'templateTitle' => 'Stap 1 | ',
+        'next' => 'Controleer machtigingen',
+    ],
+    'title' => 'NativeCode Installer',
+    'updater' => [
+        'title' => 'Laravel-updater',
+        'welcome' => [
+            'title' => 'Welkom bij de updater',
+            'message' => 'Welkom bij de updatewizard.',
+        ],
+        'overview' => [
+            'title' => 'Overzicht',
+            'message' => 'Er is 1 update.|Er zijn :nummerupdates.',
+            'install_updates' => 'Updates installeren',
+        ],
+        'final' => [
+            'title' => 'Afgerond',
+            'finished' => 'De database van de toepassing is succesvol bijgewerkt.',
+            'exit' => 'Klik hier om af te sluiten',
+        ],
+        'log' => [
+            'success_message' => 'NativeCode Installer succesvol bijgewerkt op',
+        ],
+    ],
+    'welcome' => [
+        'title' => 'Welkom bij het installatie proces...',
+        'message' => 'Welkom bij de installatiewizard',
+        'templateTitle' => 'Welkom',
+        'next' => 'Controleer de vereisten',
     ],
 ];

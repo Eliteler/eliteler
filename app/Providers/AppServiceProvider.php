@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Spatie\CpuLoadHealthCheck\CpuLoadCheck;
 use Spatie\Health\Checks\Checks\DebugModeCheck;
@@ -61,6 +62,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        // Store themes: addresses + shared storefront settings for every templates.stores.* view
+        View::composer('templates.stores.*', \App\View\Composers\StorefrontComposer::class);
+
         Blade::directive('currency', function ($expression) {
             return "<?php echo currency($expression); ?>";
         });

@@ -51,39 +51,53 @@ class ZeroAICreditsOrder
 
         // Check coupon type
         if ($couponDetails != null) {
+
+            // Plan price
+            $planPrice = (float) $planDetails->plan_price;
+
+            // Calculate tax
+            $appliedTaxInTotal = ($planPrice * (float) $config[25]->config_value) / 100;
+
+            // Total including tax
+            $totalWithTax = $planPrice + $appliedTaxInTotal;
+
+            // Calculate coupon discount
             if ($couponDetails->coupon_type == 'fixed') {
-                // Applied tax in total
-                $appliedTaxInTotal = ((float)($planDetails->plan_price) * (float)($config[25]->config_value) / 100);
-
-                // Get discount in plan price
-                $discountPrice = $couponDetails->coupon_amount;
-
-                // Total
-                $amountToBePaid = ($planDetails->plan_price + $appliedTaxInTotal) - $discountPrice;
-                $amountToBePaid = (float)number_format($amountToBePaid, 2, '.', '');
-
-                // Coupon is applied
-                $appliedCoupon = $couponDetails->coupon_code;
+                $discountPrice = (float) $couponDetails->coupon_amount;
             } else {
-                // Applied tax in total
-                $appliedTaxInTotal = ((float)($planDetails->plan_price) * (float)($config[25]->config_value) / 100);
-
-                // Get discount in plan price
-                $discountPrice = $planDetails->plan_price * $couponDetails->coupon_amount / 100;
-
-                // Total
-                $amountToBePaid = ($planDetails->plan_price + $appliedTaxInTotal) - $discountPrice;
-                $amountToBePaid = (float)number_format($amountToBePaid, 2, '.', '');
-
-                // Coupon is applied
-                $appliedCoupon = $couponDetails->coupon_code;
+                // Percentage discount is applied to Plan + GST
+                $discountPrice = ($totalWithTax * (float) $couponDetails->coupon_amount) / 100;
             }
-        } else {
-            // Applied tax in total
-            $appliedTaxInTotal = ((float)($planDetails->plan_price) * (float)($config[25]->config_value) / 100);
 
-            // Total
-            $amountToBePaid = ($planDetails->plan_price + $appliedTaxInTotal);
+            // Prevent discount from exceeding total including tax
+            $discountPrice = min($discountPrice, $totalWithTax);
+
+            // Calculate amount to be paid
+            $amountToBePaid = $totalWithTax - $discountPrice;
+
+            // Prevent negative amount
+            $amountToBePaid = max($amountToBePaid, 0);
+
+            // Format values
+            $discountPrice = (float) number_format($discountPrice, 2, '.', '');
+            $appliedTaxInTotal = (float) number_format($appliedTaxInTotal, 2, '.', '');
+            $amountToBePaid = (float) number_format($amountToBePaid, 2, '.', '');
+
+            // Coupon is applied
+            $appliedCoupon = $couponDetails->coupon_code;
+        } else {
+
+            // Plan price
+            $planPrice = (float) $planDetails->plan_price;
+
+            // Calculate tax
+            $appliedTaxInTotal = ($planPrice * (float) $config[25]->config_value) / 100;
+
+            // Total without coupon
+            $amountToBePaid = $planPrice + $appliedTaxInTotal;
+
+            // Format amount
+            $amountToBePaid = (float) number_format($amountToBePaid, 2, '.', '');
         }
 
         // Get invoice number
@@ -100,7 +114,7 @@ class ZeroAICreditsOrder
         $aiCreditsTransaction->purchase_details = $planDetails->plan_name . " AI Credits Plan";
         $aiCreditsTransaction->payment_method = "FREE";
         $aiCreditsTransaction->currency = $config[1]->config_value;
-        $aiCreditsTransaction->amount = $amountToBePaid;
+        $aiCreditsTransaction->amount = 0;
         $aiCreditsTransaction->invoice_number = $invoiceNumber;
         $aiCreditsTransaction->invoice_prefix = $config[15]->config_value;
         $aiCreditsTransaction->invoice_details = json_encode($this->prepareInvoiceDetails($config, $userDetails, $amountToBePaid, $planDetails, $appliedCoupon, $discountPrice));
@@ -108,7 +122,7 @@ class ZeroAICreditsOrder
         $aiCreditsTransaction->save();
 
         // Coupon is not applied
-        if ($couponId != " ") { 
+        if ($couponId != " ") {
             // Save applied coupon
             $appliedCoupon = new AppliedCoupon;
             $appliedCoupon->applied_coupon_id = uniqid();
@@ -156,7 +170,7 @@ class ZeroAICreditsOrder
             'to_billing_state' => $userData->billing_state,
             'to_billing_zipcode' => $userData->billing_zipcode,
             'to_billing_country' => $userData->billing_country,
-            'to_billing_phone' => $userData->billing_phone,
+            'to_billing_phone' => $userData->billing_country_code . $userData->mobile_number,
             'to_billing_email' => $userData->billing_email,
             'to_vat_number' => $userData->vat_number,
             'tax_name' => $config[24]->config_value,
@@ -164,7 +178,7 @@ class ZeroAICreditsOrder
             'tax_value' => $config[25]->config_value,
             'applied_coupon' => $appliedCoupon,
             'discounted_price' => $discountPrice,
-            'invoice_amount' => $amountToBePaid,
+            'invoice_amount' => 0,
             'subtotal' => $planDetails->plan_price,
             'tax_amount' => (float)($planDetails->plan_price) * (float)($config[25]->config_value) / 100
         ];

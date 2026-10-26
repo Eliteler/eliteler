@@ -2,22 +2,61 @@
 
 {{-- Custom CSS --}}
 @section('css')
-<style>
-    .custom-payment-logo {
-       width: 75px;
-       height: 75px;
-       border-radius: 10px;
-    }
-
-    /* Media queries for responsiveness */
-    @media (max-width: 768px) {
-        .custom-payment-logo {
-            width: 40px;
-            height: 40px;
+    <link rel="stylesheet" href="{{ asset('plugins/intlTelInput/intlTelInput.css') }}" />
+    <script src="{{ asset('plugins/intlTelInput/intlTelInput.min.js') }}"></script>
+    <style>
+        .iti {
+            width: 100%;
         }
-    }
-</style>
+
+        .iti--fullscreen-popup.iti--container {
+            top: 50px !important;
+        }
+
+        .iti__search-input {
+            width: calc(100% - 20px) !important;
+            margin: 10px !important;
+            padding: 8px 12px !important;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+
+        .iti__country-list {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+    </style>
+    <style>
+        .custom-payment-logo {
+            width: 75px;
+            height: 75px;
+            border-radius: 10px;
+        }
+
+        /* Media queries for responsiveness */
+        @media (max-width: 768px) {
+            .custom-payment-logo {
+                width: 40px;
+                height: 40px;
+            }
+        }
+    </style>
 @endsection
+
+@php
+    use App\Services\GoBizCommonService;
+
+    // Load config once
+    $config = GoBizCommonService::config();
+
+    // Fetch default country code from admin config if profile value is missing
+    $admin_country = \App\Country::where('country_name', $config[23]->config_value ?? '')->first();
+    $default_code = $admin_country ? ltrim($admin_country->phone_code, '+') : '1';
+
+    $phone_code = Auth::user()->country_code ?: $default_code;
+    $whatsapp_code = Auth::user()->whatsapp_country_code ?: $default_code;
+@endphp
 
 @section('content')
     <div class="page-wrapper">
@@ -25,9 +64,10 @@
         <div class="page-header d-print-none border-bottom pb-3">
             <div class="container d-flex align-items-center justify-content-between gap-2">
                 <div class="d-flex align-item-center gap-2">
-                    <a href="{{ url()->previous() }}" class="border rounded-3 p-2 text-white">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    <a href="{{ url()->previous() }}" class="border rounded-3 p-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round"
                             class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-left icon-primary">
                             <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                             <path d="M5 12l14 0" />
@@ -43,11 +83,11 @@
                     <a href="{{ route('user.dashboard') }}">
                         @if (file_exists(public_path('img/logo-light.png')))
                             <img src="{{ optional(Auth::user())->choosed_theme == 'light' ? asset($settings->site_logo) : asset('img/logo-light.png') }}"
-                                width="200" height="50" alt="{{ $settings->site_name }}"
+                                width="200" height="50" alt="{{ config('app.name') }}"
                                 class="navbar-brand-image custom-logo">
                         @else
                             <img src="{{ $settings->site_logo }}" width="200" height="50"
-                                alt="{{ $settings->site_name }}" class="navbar-brand-image custom-logo">
+                                alt="{{ config('app.name') }}" class="navbar-brand-image custom-logo">
                         @endif
                     </a>
                 </div>
@@ -155,11 +195,10 @@
                                     <!-- Coupon Code -->
                                     <form id="couponForm" class="my-3">
                                         <div class="input-group">
-                                            <input type="text" class="form-control text-uppercase"
+                                            <input type="text" class="form-control"
                                                 placeholder="{{ __('Coupon Code') }}"
                                                 value="{{ old('coupon_code') ?? $coupon_code }}" name="coupon_code"
                                                 id="coupon_code">
-                                            <div class="px-2"></div>
                                             <button type="submit" class="btn btn-primary "
                                                 id="applyCoupon">{{ __('Apply') }}</button>
                                         </div>
@@ -206,23 +245,38 @@
                                                         {{-- Phone --}}
                                                         <div class="col-sm-6 col-xl-4">
                                                             <div class="mb-3">
-                                                                <label
-                                                                    class="form-label">{{ __('Mobile Number (With Country Code)') }}</label>
+
+                                                                <label class="form-label required">
+                                                                    {{ __('Mobile Number') }}
+                                                                </label>
+
+                                                                <input type="hidden" name="billing_phone_country_code"
+                                                                    id="billing_phone_country_code"
+                                                                    value="{{ old('billing_phone_country_code', Auth::user()->country_code ?: $phone_code) }}">
+
                                                                 <input type="tel" class="form-control"
-                                                                    name="billing_phone"
-                                                                    placeholder="{{ __('Example: 91 9876543210') }}"
-                                                                    value="{{ Auth::user()->billing_phone == null ? Auth::user()->mobile_number : Auth::user()->billing_phone }}">
+                                                                    id="billing_phone" name="billing_phone"
+                                                                    value="{{ old('billing_phone', Auth::user()->mobile_number) }}"
+                                                                    required>
                                                             </div>
                                                         </div>
+
                                                         {{-- WhatsApp Number --}}
                                                         <div class="col-sm-6 col-xl-4">
                                                             <div class="mb-3">
-                                                                <label
-                                                                    class="form-label">{{ __('WhatsApp Number (With Country Code)') }}</label>
-                                                                <input type="text" class="form-control"
-                                                                    name="billing_whatsapp"
-                                                                    placeholder="{{ __('Example: 91 9876543210') }}"
-                                                                    value="{{ Auth::user()->whatsapp_number }}">
+
+                                                                <label class="form-label required">
+                                                                    {{ __('WhatsApp Number') }}
+                                                                </label>
+
+                                                                <input type="hidden" name="billing_whatsapp_country_code"
+                                                                    id="billing_whatsapp_country_code"
+                                                                    value="{{ old('billing_whatsapp_country_code', Auth::user()->whatsapp_country_code ?: $whatsapp_code) }}">
+
+                                                                <input type="tel" class="form-control"
+                                                                    id="billing_whatsapp" name="billing_whatsapp"
+                                                                    value="{{ old('billing_whatsapp', Auth::user()->whatsapp_number) }}"
+                                                                    required>
                                                             </div>
                                                         </div>
                                                         {{-- Address --}}
@@ -322,43 +376,35 @@
                                                                 </h3>
                                                                 @foreach ($gateways as $gateway)
                                                                     <div class="col-xl-4 col-sm-6 mb-3">
-                                                                        <div
-                                                                            class="form-selectgroup form-selectgroup-boxes d-flex flex-column">
-                                                                            <label class="form-selectgroup-item flex-fill">
-                                                                                <input type="radio"
-                                                                                    name="payment_gateway_id"
-                                                                                    onclick="showAlert('one-time')"
-                                                                                    value="{{ $gateway->payment_gateway_id }}"
-                                                                                    class="form-selectgroup-input">
-                                                                                <div
-                                                                                    class="form-selectgroup-label d-flex align-items-center p-3">
-                                                                                    <div class="me-3">
-                                                                                        <span
-                                                                                            class="form-selectgroup-check"></span>
-                                                                                    </div>
-                                                                                    @php
-                                                                                        $file = public_path(
+                                                                        <label class="form-selectgroup-item w-100">
+                                                                            <input type="radio"
+                                                                                name="payment_gateway_id"
+                                                                                onclick="showAlert('one-time')"
+                                                                                value="{{ $gateway->payment_gateway_id }}"
+                                                                                class="form-selectgroup-input">
+                                                                            <div
+                                                                                class="form-selectgroup-label d-flex align-items-center p-3">
+                                                                                @php
+                                                                                    $file = public_path(
+                                                                                        $gateway->payment_gateway_logo,
+                                                                                    );
+                                                                                    $final = file_exists($file)
+                                                                                        ? asset(
                                                                                             $gateway->payment_gateway_logo,
+                                                                                        )
+                                                                                        : asset(
+                                                                                            'img/payment-method/default.png',
                                                                                         );
-                                                                                        $final = file_exists($file)
-                                                                                            ? asset(
-                                                                                                $gateway->payment_gateway_logo,
-                                                                                            )
-                                                                                            : asset(
-                                                                                                'img/payment-method/default.png',
-                                                                                            );
-                                                                                    @endphp
-
-                                                                                    <span class="avatar me-3"
-                                                                                        style="background-image: url('{{ $final }}')"></span>
-                                                                                    <div>
-                                                                                        <div class="font-weight-medium h4">
-                                                                                            {{ __($gateway->display_name) }}
-                                                                                        </div>
+                                                                                @endphp
+                                                                                <span class="avatar me-3"
+                                                                                    style="background-image: url('{{ $final }}')"></span>
+                                                                                <div>
+                                                                                    <div class="fw-bold">
+                                                                                        {{ __($gateway->display_name) }}
                                                                                     </div>
                                                                                 </div>
-                                                                            </label>
-                                                                        </div>
+                                                                            </div>
+                                                                        </label>
                                                                     </div>
                                                                 @endforeach
                                                             @endif
@@ -369,47 +415,37 @@
                                                                     {{ __('Recurring Payment methods') }}</h3>
                                                                 @foreach ($recurring_payment_gateways as $gateway)
                                                                     <div class="col-xl-4 col-sm-6 mb-3">
-                                                                        <div
-                                                                            class="form-selectgroup form-selectgroup-boxes d-flex flex-column">
-                                                                            <label class="form-selectgroup-item flex-fill">
-                                                                                <input type="radio"
-                                                                                    name="payment_gateway_id"
-                                                                                    onclick="showAlert('recurring')"
-                                                                                    value="{{ $gateway->payment_gateway_id }}"
-                                                                                    class="form-selectgroup-input">
-                                                                                <div
-                                                                                    class="form-selectgroup-label d-flex align-items-center p-3">
-                                                                                    <div class="me-3">
-                                                                                        <span
-                                                                                            class="form-selectgroup-check"></span>
-                                                                                    </div>
-                                                                                    @php
-                                                                                        $file = public_path(
+                                                                        <label class="form-selectgroup-item w-100">
+                                                                            <input type="radio"
+                                                                                name="payment_gateway_id"
+                                                                                onclick="showAlert('recurring')"
+                                                                                value="{{ $gateway->payment_gateway_id }}"
+                                                                                class="form-selectgroup-input">
+                                                                            <div
+                                                                                class="form-selectgroup-label d-flex align-items-center p-3">
+                                                                                @php
+                                                                                    $file = public_path(
+                                                                                        $gateway->payment_gateway_logo,
+                                                                                    );
+                                                                                    $final = file_exists($file)
+                                                                                        ? asset(
                                                                                             $gateway->payment_gateway_logo,
+                                                                                        )
+                                                                                        : asset(
+                                                                                            'img/payment-method/default.png',
                                                                                         );
-                                                                                        $final = file_exists($file)
-                                                                                            ? asset(
-                                                                                                $gateway->payment_gateway_logo,
-                                                                                            )
-                                                                                            : asset(
-                                                                                                'img/payment-method/default.png',
-                                                                                            );
-                                                                                    @endphp
+                                                                                @endphp
 
-                                                                                    <span
-                                                                                        class="me-3 d-flex align-items-center justify-content-center custom-payment-logo">
-                                                                                        <img src="{{ $final }}"
-                                                                                            alt="{{ $gateway->display_name }}"
-                                                                                            style="max-width:100%; max-height:100%; object-fit:contain; border-radius:10px;">
-                                                                                    </span>
-                                                                                    <div>
-                                                                                        <div class="font-weight-medium h4">
-                                                                                            {{ __($gateway->display_name) }}
-                                                                                        </div>
-                                                                                    </div>
+                                                                                <span class="me-3 custom-payment-logo">
+                                                                                    <img src="{{ $final }}"
+                                                                                        alt="{{ $gateway->display_name }}"
+                                                                                        style="max-width:100%; max-height:100%; object-fit:contain; border-radius:10px;">
+                                                                                </span>
+                                                                                <div class="fw-bold">
+                                                                                    {{ __($gateway->display_name) }}
                                                                                 </div>
-                                                                            </label>
-                                                                        </div>
+                                                                            </div>
+                                                                        </label>
                                                                     </div>
                                                                 @endforeach
                                                             @endif
@@ -434,17 +470,74 @@
                             </form>
                         </div>
                     </div>
-                    {{-- Footer --}}
-                    @include('user.includes.footer')
                 </div>
             @endif
         </div>
-    </div>
 
-    {{-- Custom JS --}}
+        {{-- Footer --}}
+        @include('user.includes.footer')
+    </div>
+@endsection
+
+{{-- Custom JS --}}
 @section('scripts')
     <script type="text/javascript" src="{{ asset('js/tom-select.base.min.js') }}"></script>
     <script src="{{ asset('js/confetti.browser.min.js') }}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            "use strict";
+
+            // Reusable helper function to setup intlTelInput
+            function initPhoneField(phoneSelector, countryCodeSelector) {
+                const phoneInput = document.querySelector(phoneSelector);
+                const countryCodeInput = document.querySelector(countryCodeSelector);
+
+                if (!phoneInput || !countryCodeInput) return null;
+
+                // 1. Initialize intlTelInput
+                const iti = window.intlTelInput(phoneInput, {
+                    separateDialCode: true,
+                    preferredCountries: ["in", "us", "gb", "ae"],
+                });
+
+                // 2. Extract dial code and phone number safely
+                let dialCode = countryCodeInput.value ? countryCodeInput.value.replace(/[^0-9]/g, '') : '';
+                let phoneNum = phoneInput.value ? phoneInput.value : '';
+
+                // 3. Set country flag & number on page load (Works even if phone number is empty!)
+                if (dialCode) {
+                    iti.setNumber('+' + dialCode + phoneNum);
+                }
+
+                // 4. Helper to update hidden country code field
+                function updateCountryCode() {
+                    const countryData = iti.getSelectedCountryData();
+                    if (countryData && countryData.dialCode) {
+                        countryCodeInput.value = '+' + countryData.dialCode;
+                    } else {
+                        countryCodeInput.value = '';
+                    }
+                }
+
+                // 5. Sync initially & on country flag change
+                updateCountryCode();
+                phoneInput.addEventListener("countrychange", updateCountryCode);
+
+                // 6. Sync on form submit
+                if (phoneInput.form) {
+                    phoneInput.form.addEventListener("submit", updateCountryCode);
+                }
+
+                return iti;
+            }
+
+            // Initialize Billing Phone
+            initPhoneField("#billing_phone", "#billing_phone_country_code");
+
+            // Initialize Billing WhatsApp
+            initPhoneField("#billing_whatsapp", "#billing_whatsapp_country_code");
+        });
+    </script>
     <script>
         // Array of element IDs
         var elementIds = ['billing_country', 'type'];
@@ -587,5 +680,4 @@
             }
         }
     </script>
-@endsection
 @endsection

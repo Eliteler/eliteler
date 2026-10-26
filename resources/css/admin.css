@@ -1,0 +1,323 @@
+/* Tailwind v4 (npm alias: the root "tailwindcss" package is v3, used by build:store) */
+/* Layer order. "plugin-utilities" sits below core utilities so a plugin's own copy of a
+   class (e.g. .flex-col) can never override core responsive variants (md:flex-row). */
+@layer theme, base, components, plugin-utilities, utilities;
+@import "tailwindcss-v4";
+@import "tw-animate-css";
+@import "./admin-theme.css";
+
+@source "../js/admin";
+
+/*
+ | Base palette: shadcn "Neutral".
+ | Accent tokens below are the neutral defaults and are overridden by a
+ | [data-accent="..."] block. Components must only use the tokens.
+ */
+:root {
+    --radius: 0.625rem;
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.145 0 0);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.145 0 0);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.145 0 0);
+    --primary: oklch(0.205 0 0);
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.967 0.001 286.375);
+    --secondary-foreground: oklch(0.21 0.006 285.885);
+    --muted: oklch(0.97 0 0);
+    --muted-foreground: oklch(0.556 0 0);
+    --accent: oklch(0.97 0 0);
+    --accent-foreground: oklch(0.205 0 0);
+    --destructive: oklch(0.577 0.245 27.325);
+    --success: oklch(0.627 0.17 149.214);
+    --warning: oklch(0.769 0.188 70.08);
+    --border: oklch(0.922 0 0);
+    --input: oklch(0.922 0 0);
+    --ring: oklch(0.708 0 0);
+    --chart-1: oklch(0.646 0.222 41.116);
+    --chart-2: oklch(0.6 0.118 184.704);
+    --chart-3: oklch(0.398 0.07 227.392);
+    --chart-4: oklch(0.828 0.189 84.429);
+    --chart-5: oklch(0.769 0.188 70.08);
+    --sidebar: oklch(0.985 0 0);
+    --sidebar-foreground: oklch(0.145 0 0);
+    --sidebar-primary: oklch(0.205 0 0);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.97 0 0);
+    --sidebar-accent-foreground: oklch(0.205 0 0);
+    --sidebar-border: oklch(0.922 0 0);
+    --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.205 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.922 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: oklch(0.274 0.006 286.033);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --accent: oklch(0.269 0 0);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --success: oklch(0.723 0.219 149.579);
+    --warning: oklch(0.828 0.189 84.429);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.556 0 0);
+    --chart-1: oklch(0.488 0.243 264.376);
+    --chart-2: oklch(0.696 0.17 162.48);
+    --chart-3: oklch(0.769 0.188 70.08);
+    --chart-4: oklch(0.627 0.265 303.9);
+    --chart-5: oklch(0.645 0.246 16.439);
+    --sidebar: oklch(0.205 0 0);
+    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-primary: oklch(0.488 0.243 264.376);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.269 0 0);
+    --sidebar-accent-foreground: oklch(0.985 0 0);
+    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-ring: oklch(0.556 0 0);
+}
+
+/*
+ | Accent: Blue.
+ | To add another accent later, copy these two blocks with a new
+ | data-accent value and register it in resources/js/admin/lib/theme.ts.
+ */
+[data-accent="blue"] {
+    /* shadcn preset b1Z5bahdI */
+    --primary: oklch(0.488 0.243 264.376);
+    --primary-foreground: oklch(0.97 0.014 254.604);
+    --ring: oklch(0.623 0.214 259.815);
+    --chart-1: oklch(0.809 0.105 251.813);
+    --chart-2: oklch(0.623 0.214 259.815);
+    --chart-3: oklch(0.546 0.245 262.881);
+    --chart-4: oklch(0.488 0.243 264.376);
+    --chart-5: oklch(0.424 0.199 265.638);
+    --sidebar-primary: oklch(0.546 0.245 262.881);
+    --sidebar-primary-foreground: oklch(0.97 0.014 254.604);
+    --sidebar-ring: oklch(0.623 0.214 259.815);
+}
+
+.dark[data-accent="blue"] {
+    --primary: oklch(0.424 0.199 265.638);
+    --primary-foreground: oklch(0.97 0.014 254.604);
+    --ring: oklch(0.546 0.245 262.881);
+    --chart-1: oklch(0.809 0.105 251.813);
+    --chart-2: oklch(0.623 0.214 259.815);
+    --chart-3: oklch(0.546 0.245 262.881);
+    --chart-4: oklch(0.488 0.243 264.376);
+    --chart-5: oklch(0.424 0.199 265.638);
+    --sidebar-primary: oklch(0.623 0.214 259.815);
+    --sidebar-primary-foreground: oklch(0.97 0.014 254.604);
+    --sidebar-ring: oklch(0.546 0.245 262.881);
+}
+
+/*
+ | More shadcn accents (chosen per browser in General settings → Accent colour).
+ | "neutral" uses the base tokens above as they are. Chart colours for these
+ | accents are derived from --primary (see the rule after the blocks).
+ */
+
+[data-accent="red"] {
+    --primary: oklch(0.577 0.245 27.325);
+    --primary-foreground: oklch(0.971 0.013 17.38);
+    --ring: oklch(0.704 0.191 22.216);
+    --sidebar-primary: oklch(0.577 0.245 27.325);
+    --sidebar-primary-foreground: oklch(0.971 0.013 17.38);
+    --sidebar-ring: oklch(0.704 0.191 22.216);
+}
+
+.dark[data-accent="red"] {
+    --primary: oklch(0.637 0.237 25.331);
+    --primary-foreground: oklch(0.971 0.013 17.38);
+    --ring: oklch(0.396 0.141 25.723);
+    --sidebar-primary: oklch(0.637 0.237 25.331);
+    --sidebar-primary-foreground: oklch(0.971 0.013 17.38);
+    --sidebar-ring: oklch(0.396 0.141 25.723);
+}
+
+[data-accent="rose"] {
+    --primary: oklch(0.586 0.253 17.585);
+    --primary-foreground: oklch(0.969 0.015 12.422);
+    --ring: oklch(0.712 0.194 13.428);
+    --sidebar-primary: oklch(0.586 0.253 17.585);
+    --sidebar-primary-foreground: oklch(0.969 0.015 12.422);
+    --sidebar-ring: oklch(0.712 0.194 13.428);
+}
+
+.dark[data-accent="rose"] {
+    --primary: oklch(0.645 0.246 16.439);
+    --primary-foreground: oklch(0.969 0.015 12.422);
+    --ring: oklch(0.41 0.159 10.272);
+    --sidebar-primary: oklch(0.645 0.246 16.439);
+    --sidebar-primary-foreground: oklch(0.969 0.015 12.422);
+    --sidebar-ring: oklch(0.41 0.159 10.272);
+}
+
+[data-accent="orange"] {
+    --primary: oklch(0.646 0.222 41.116);
+    --primary-foreground: oklch(0.98 0.016 73.684);
+    --ring: oklch(0.75 0.183 55.934);
+    --sidebar-primary: oklch(0.646 0.222 41.116);
+    --sidebar-primary-foreground: oklch(0.98 0.016 73.684);
+    --sidebar-ring: oklch(0.75 0.183 55.934);
+}
+
+.dark[data-accent="orange"] {
+    --primary: oklch(0.705 0.213 47.604);
+    --primary-foreground: oklch(0.98 0.016 73.684);
+    --ring: oklch(0.408 0.123 38.172);
+    --sidebar-primary: oklch(0.705 0.213 47.604);
+    --sidebar-primary-foreground: oklch(0.98 0.016 73.684);
+    --sidebar-ring: oklch(0.408 0.123 38.172);
+}
+
+[data-accent="green"] {
+    --primary: oklch(0.648 0.2 131.684);
+    --primary-foreground: oklch(0.986 0.031 120.757);
+    --ring: oklch(0.841 0.238 128.85);
+    --sidebar-primary: oklch(0.648 0.2 131.684);
+    --sidebar-primary-foreground: oklch(0.986 0.031 120.757);
+    --sidebar-ring: oklch(0.841 0.238 128.85);
+}
+
+.dark[data-accent="green"] {
+    --primary: oklch(0.648 0.2 131.684);
+    --primary-foreground: oklch(0.986 0.031 120.757);
+    --ring: oklch(0.405 0.101 131.063);
+    --sidebar-primary: oklch(0.648 0.2 131.684);
+    --sidebar-primary-foreground: oklch(0.986 0.031 120.757);
+    --sidebar-ring: oklch(0.405 0.101 131.063);
+}
+
+[data-accent="yellow"] {
+    --primary: oklch(0.795 0.184 86.047);
+    --primary-foreground: oklch(0.421 0.095 57.708);
+    --ring: oklch(0.852 0.199 91.936);
+    --sidebar-primary: oklch(0.795 0.184 86.047);
+    --sidebar-primary-foreground: oklch(0.421 0.095 57.708);
+    --sidebar-ring: oklch(0.852 0.199 91.936);
+}
+
+.dark[data-accent="yellow"] {
+    --primary: oklch(0.795 0.184 86.047);
+    --primary-foreground: oklch(0.421 0.095 57.708);
+    --ring: oklch(0.421 0.095 57.708);
+    --sidebar-primary: oklch(0.795 0.184 86.047);
+    --sidebar-primary-foreground: oklch(0.421 0.095 57.708);
+    --sidebar-ring: oklch(0.421 0.095 57.708);
+}
+
+[data-accent="violet"] {
+    --primary: oklch(0.541 0.281 293.009);
+    --primary-foreground: oklch(0.969 0.016 293.756);
+    --ring: oklch(0.702 0.183 293.541);
+    --sidebar-primary: oklch(0.541 0.281 293.009);
+    --sidebar-primary-foreground: oklch(0.969 0.016 293.756);
+    --sidebar-ring: oklch(0.702 0.183 293.541);
+}
+
+.dark[data-accent="violet"] {
+    --primary: oklch(0.606 0.25 292.717);
+    --primary-foreground: oklch(0.969 0.016 293.756);
+    --ring: oklch(0.432 0.232 292.759);
+    --sidebar-primary: oklch(0.606 0.25 292.717);
+    --sidebar-primary-foreground: oklch(0.969 0.016 293.756);
+    --sidebar-ring: oklch(0.432 0.232 292.759);
+}
+
+[data-accent="red"], [data-accent="rose"], [data-accent="orange"], [data-accent="green"], [data-accent="yellow"], [data-accent="violet"] {
+    --chart-1: var(--primary);
+    --chart-2: oklch(from var(--primary) calc(l + 0.12) calc(c * 0.75) h);
+    --chart-3: oklch(from var(--primary) calc(l - 0.12) c h);
+    --chart-4: oklch(from var(--primary) calc(l + 0.22) calc(c * 0.5) h);
+    --chart-5: oklch(from var(--primary) calc(l - 0.2) calc(c * 0.8) h);
+}
+
+@layer base {
+    * {
+        @apply border-border outline-ring/50;
+    }
+
+    body {
+        @apply bg-background text-foreground antialiased;
+    }
+
+    /* Grid items and cards default to min-width:auto, so a wide table or long
+       word would stretch the page sideways on phones. Let them shrink so tables
+       scroll inside their own box instead. */
+    .grid > *,
+    [data-slot="card"] {
+        min-width: 0;
+    }
+
+    /* Tailwind v4 resets buttons to the default cursor; show a pointer on everything clickable */
+    button,
+    [role="button"],
+    [role="checkbox"],
+    [role="radio"],
+    [role="switch"],
+    [role="tab"],
+    [role="menuitem"],
+    [role="menuitemcheckbox"],
+    [role="menuitemradio"],
+    [role="option"],
+    [role="combobox"],
+    select,
+    summary,
+    label[for],
+    input[type="checkbox"],
+    input[type="radio"],
+    input[type="file"],
+    input[type="color"],
+    input[type="range"] {
+        cursor: pointer;
+    }
+
+    :disabled,
+    [aria-disabled="true"],
+    [data-disabled] {
+        cursor: not-allowed;
+    }
+}
+
+/* Printing (invoices, greeting letters): only the page content */
+@media print {
+    [data-slot="sidebar"],
+    [data-slot="sidebar-gap"],
+    [data-print="hide"] {
+        display: none !important;
+    }
+
+    [data-slot="sidebar-inset"] {
+        margin: 0 !important;
+        box-shadow: none !important;
+    }
+
+    /* Remove card shadows, borders, and rounded corners */
+    [data-slot="card"] {
+        box-shadow: none !important;
+        border: 1px solid #ddd !important;
+        border-radius: 12px !important;
+        background: white !important;
+        break-inside: avoid;
+    }
+
+    [data-slot="card-content"],
+    [data-slot="card-header"] {
+        break-inside: avoid;
+    }
+
+    html,
+    body {
+        background: white !important;
+    }
+}

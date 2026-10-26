@@ -76,22 +76,62 @@
     {{-- Check business details --}}
     @if ($business_card_details != null)
         @php
-            $custom_css = $business_card_details->custom_css;
-            $custom_js = $business_card_details->custom_js;
+            $custom_css = trim($business_card_details->custom_css ?? '');
+            $custom_js = trim($business_card_details->custom_js ?? '');
 
-            // Ensure <style> tags for custom CSS
-            if (strpos($custom_css, '<style>') === false && strpos($custom_css, '</style>') === false) {
-                $custom_css = "<style>" . $custom_css . "</style>";
+            /*
+            |--------------------------------------------------------------------------
+            | Custom CSS
+            |--------------------------------------------------------------------------
+            */
+
+            if (!empty($custom_css) && stripos($custom_css, '<style') === false) {
+                $custom_css = "<style>{$custom_css}</style>";
             }
 
-            // Ensure <script> tags for custom JS
-            if (strpos($custom_js, '<script>') === false && strpos($custom_js, '</script>') === false) {
-                $custom_js = "<script>" . $custom_js . "</script>";
+            /*
+            |--------------------------------------------------------------------------
+            | Split HTML tags and plain JS
+            |--------------------------------------------------------------------------
+            */
+
+            $include_custom_js = '';
+
+            if (!empty($custom_js)) {
+                // Extract HTML tags like meta, script, iframe, noscript, etc.
+                preg_match_all(
+                '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/@endphp/is',
+        $custom_js,
+        $matches,
+    );
+
+    $html_tags = implode("\n", $matches[0]);
+
+    // Remove extracted HTML tags from original content
+    $plain_js = trim(
+        preg_replace(
+            '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/?>/is',
+            '',
+            $custom_js,
+        ),
+    );
+
+    // Add HTML tags directly
+    $include_custom_js .= $html_tags;
+
+    // Wrap remaining plain JS inside script tag
+    if (!empty($plain_js)) {
+        $include_custom_js .= "\n<script>
+            {
+                $plain_js
             }
-        @endphp
+        </script>";
+    }
+}
+?>
 
         {!! $custom_css !!}
-        {!! $custom_js !!}
+        {!! $include_custom_js !!}
 
         @if (!empty($business_card_details->theme_css))
             <style>
@@ -120,6 +160,7 @@
         body {
             direction: {{ App::isLocale('ar') || App::isLocale('ur') || App::isLocale('he') ? 'rtl' : 'ltr' }};
         }
+
         .relative {
             position: relative;
         }
@@ -190,6 +231,7 @@
                             {{-- Start vimeo cover video (auto play) --}}
                             @if ($business_card_details->cover_type == 'vimeo-ap')
                                 <iframe id="cover-vimeo" class="cover-media-item active"
+                                    referrerpolicy="strict-origin-when-cross-origin"
                                     src="https://player.vimeo.com/video/{{ $business_card_details->cover }}?autoplay=1&loop=1&autopause=0&muted=1&controls=0"
                                     allow="autoplay; fullscreen"></iframe>
                             @endif
@@ -198,6 +240,7 @@
                             {{-- Start vimeo cover video --}}
                             @if ($business_card_details->cover_type == 'vimeo')
                                 <iframe id="cover-vimeo" class="cover-media-item active"
+                                    referrerpolicy="strict-origin-when-cross-origin"
                                     src="https://player.vimeo.com/video/{{ $business_card_details->cover }}?autoplay=0&loop=1&autopause=0&muted=0&controls=1"
                                     allow="autoplay; fullscreen"></iframe>
                             @endif
@@ -206,6 +249,7 @@
                             {{-- Start youtube cover video (auto play) --}}
                             @if ($business_card_details->cover_type == 'youtube-ap')
                                 <iframe id="cover-yt" class="cover-media-item active"
+                                    referrerpolicy="strict-origin-when-cross-origin"
                                     src="https://www.youtube.com/embed/{{ $business_card_details->cover }}?autoplay=1&mute=1&controls=0&loop=1&playlist={{ $business_card_details->cover }}"
                                     id="vid-player" frameborder="0" allow="autoplay;"></iframe>
                             @endif
@@ -214,6 +258,7 @@
                             {{-- Start youtube cover video --}}
                             @if ($business_card_details->cover_type == 'youtube')
                                 <iframe id="cover-yt" class="cover-media-item active"
+                                    referrerpolicy="strict-origin-when-cross-origin"
                                     src="https://www.youtube.com/embed/{{ $business_card_details->cover }}?autoplay=0&mute=1&controls=0&loop=1&playlist={{ $business_card_details->cover }}"
                                     id="vid-player" frameborder="0" allow="autoplay;"></iframe>
                             @endif
@@ -305,7 +350,8 @@
                                 <div class="bento-box gsap-bento">
                                     {{-- Section Header --}}
                                     <div class="bento-header">
-                                        <h2 class="bento-title">{{ __($feature_details[0]->title ?? 'Information') }}</h2>
+                                        <h2 class="bento-title">{{ __($feature_details[0]->title ?? 'Information') }}
+                                        </h2>
                                     </div>
 
                                     {{-- 1. Render Address & Text as Full-Width Content Cards --}}
@@ -363,7 +409,8 @@
                             @if ($appointment_slots != null)
                                 <div class="bento-box highlight-box gsap-bento" id="booking-section">
 
-                                    <i class="far fa-calendar-check decor-icon anim-float" style="font-size:100px"></i>
+                                    <i class="far fa-calendar-check decor-icon anim-float"
+                                        style="font-size:100px"></i>
 
                                     <div class="bento-header">
                                         <h2 class="bento-title">
@@ -395,7 +442,8 @@
                                     <div style="position:relative; z-index:1">
 
                                         {{-- Date --}}
-                                        <input type="text" id="appointment-date" class="form-control flatpickr-input"
+                                        <input type="text" id="appointment-date"
+                                            class="form-control flatpickr-input"
                                             placeholder="{{ __('Select date') }}" required>
 
                                         {{-- Time Slot --}}
@@ -559,7 +607,8 @@
                                     @foreach ($galleries_details as $galleries_detail)
                                         <div class="gallery-item-wrapper">
                                             {{-- Dynamic Image Source --}}
-                                            <img src="{{ url($galleries_detail->gallery_image) }}" class="gallery-img"
+                                            <img src="{{ url($galleries_detail->gallery_image) }}"
+                                                class="gallery-img"
                                                 alt="{{ $galleries_detail->caption ?? 'Gallery Image' }}">
 
                                             {{-- Handle Caption (Overlay Style) --}}
@@ -574,6 +623,19 @@
                             </div>
                         @endif
                         <!-- End Visuals: Gallery -->
+
+                        <!-- Start Instagram (Bento Grid) -->
+                        @include('templates.includes.instagram-embed', [
+                            'columns'      => 1,
+                            'sectionClass' => 'bento-box gsap-bento relative',
+                            'customHeader' =>
+                                '<i class="fab fa-instagram decor-icon anim-float"></i><div class="bento-header"><h2 class="bento-title">' .
+                                __('Instagram') .
+                                '</h2></div>',
+                            'cardClass' => 'gallery-item-wrapper overflow-hidden',
+                            'labelClass' => 'gallery-caption',
+                        ])
+                        <!-- End Instagram -->
 
                         <!-- 9. Start Visuals: Video Slider (Bento Box) -->
                         @if ($feature_details->where('type', 'youtube')->count() > 0 || $feature_details->where('type', 'vimeo')->count() > 0)
@@ -595,11 +657,13 @@
                                                         <div class="video-frame">
                                                             @if ($feature->type == 'youtube')
                                                                 <iframe
+                                                                    referrerpolicy="strict-origin-when-cross-origin"
                                                                     src="https://www.youtube.com/embed/{{ $feature->content }}"
                                                                     frameborder="0" allowfullscreen>
                                                                 </iframe>
                                                             @elseif ($feature->type == 'vimeo')
                                                                 <iframe
+                                                                    referrerpolicy="strict-origin-when-cross-origin"
                                                                     src="https://player.vimeo.com/video/{{ $feature->content }}"
                                                                     frameborder="0" allowfullscreen>
                                                                 </iframe>
@@ -692,8 +756,9 @@
                                         @if ($feature->type == 'iframe')
                                             <div class="iframe-item-card">
                                                 {{-- Iframe Content --}}
-                                                <iframe referrerpolicy="strict-origin-when-cross-origin" width="100%"
-                                                    height="200" {{-- Adjusted height for Bento layout --}} src="{{ $feature->content }}"
+                                                <iframe referrerpolicy="strict-origin-when-cross-origin"
+                                                    width="100%" height="200" {{-- Adjusted height for Bento layout --}}
+                                                    src="{{ $feature->content }}"
                                                     title="{{ $feature->label ?? 'Custom Content' }}" frameborder="0"
                                                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                                     allowfullscreen>
@@ -727,8 +792,9 @@
                                     @if ($feature->type == 'map')
                                         <div class="location-map-card">
                                             <iframe src="https://www.google.com/maps/embed?{!! $feature->content !!}"
-                                                width="100%" height="180" {{-- Adjusted height for Bento layout --}} style="border:0;"
-                                                allowfullscreen="" loading="lazy">
+                                                width="100%" height="180" {{-- Adjusted height for Bento layout --}}
+                                                referrerpolicy="strict-origin-when-cross-origin"
+                                                style="border:0;" allowfullscreen="" loading="lazy">
                                             </iframe>
                                             {{-- Address below map --}}
                                             <p class="location-address">
@@ -760,7 +826,8 @@
                                                 @if ($business_hours->$day)
                                                     <div class="hour-row">
                                                         <span class="day-name">{{ __($day) }}</span>
-                                                        <span class="day-hours">{{ __($business_hours->$day) }}</span>
+                                                        <span
+                                                            class="day-hours">{{ __($business_hours->$day) }}</span>
                                                     </div>
                                                 @endif
                                             @endforeach
@@ -878,10 +945,12 @@
                                                 <label for="service_end_date"
                                                     class="form-label">{{ __('Service End DateTime') }}</label>
                                                 <div class="grid-2">
-                                                    <input type="date" id="service_end_date" name="service_end_date"
+                                                    <input type="date" id="service_end_date"
+                                                        name="service_end_date"
                                                         placeholder="{{ __('Service End Date') }}"
                                                         class="form-control" />
-                                                    <input type="time" name="service_end_time" id="service_end_time"
+                                                    <input type="time" name="service_end_time"
+                                                        id="service_end_time"
                                                         placeholder="{{ __('Service End Time') }}"
                                                         class="form-control timepicker" />
                                                 </div>
@@ -955,7 +1024,8 @@
                                         </div>
 
                                         <div class="flex flex-col mb-4">
-                                            <label for="phone" class="form-label">{{ __('Mobile Number') }}</label>
+                                            <label for="phone"
+                                                class="form-label">{{ __('Mobile Number') }}</label>
                                             <input type="tel" name="phone" id="phone"
                                                 placeholder="{{ __('Your Mobile Number') }}" class="form-control"
                                                 value="{{ old('phone') }}" required />
@@ -1280,7 +1350,8 @@
 
                     <!-- Copy Link Section -->
                     <div class="flex justify-center">
-                        <button onclick="copyLink()" class="btn-primary" style="border-radius:12px; font-weight:600;">
+                        <button onclick="copyLink()" class="btn-primary"
+                            style="border-radius:12px; font-weight:600;">
                             {{ __('Copy Link') }}
                         </button>
                     </div>
@@ -1303,14 +1374,16 @@
 
                     <!-- Input for WhatsApp number -->
                     <div class="mb-4">
-                        <label for="whatsappNumber" class="form-label mb-2">{{ __('Enter WhatsApp Number') }}:</label>
+                        <label for="whatsappNumber"
+                            class="form-label mb-2">{{ __('Enter WhatsApp Number') }}:</label>
                         <input type="text" id="whatsappNumber" placeholder="{{ __('e.g., +919876543210') }}"
                             class="form-control" />
                     </div>
 
                     <!-- Submit Button -->
                     <div class="flex justify-center">
-                        <button onclick="sendMessage()" class="btn-primary" style="border-radius:12px; font-weight:600;">
+                        <button onclick="sendMessage()" class="btn-primary"
+                            style="border-radius:12px; font-weight:600;">
                             {{ __('Send') }}
                         </button>
                     </div>
@@ -1327,7 +1400,8 @@
                     <div class="bento-header flex-col justify-center mb-4">
                         <i class="fas fa-qrcode anim-float"
                             style="font-size: 40px; color: var(--primary); margin-bottom: 15px;"></i>
-                        <h2 class="bento-title" style="font-size: 24px; justify-content: center;">{{ __('Scan My QR') }}
+                        <h2 class="bento-title" style="font-size: 24px; justify-content: center;">
+                            {{ __('Scan My QR') }}
                         </h2>
                     </div>
 
@@ -1434,7 +1508,37 @@
     @yield('custom-js')
 
     {{-- Flatpickr JS --}}
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/{{ app()->getLocale() }}.js"></script>
+    @php
+        $flatpickrLocales = [
+            'pt_BR' => 'pt',
+            'zh' => 'zh',
+            'ar' => 'ar',
+            'bg' => 'bg',
+            'hr' => 'hr',
+            'nl' => 'nl',
+            'fr' => 'fr',
+            'de' => 'de',
+            'he' => 'he',
+            'hu' => 'hu',
+            'id' => 'id',
+            'it' => 'it',
+            'ja' => 'ja',
+            'lt' => 'lt',
+            'ms' => 'ms',
+            'pl' => 'pl',
+            'ro' => 'ro',
+            'ru' => 'ru',
+            'es' => 'es',
+            'sv' => 'sv',
+            'th' => 'th',
+            'tr' => 'tr',
+            'vi' => 'vn',
+        ];
+
+        $locale = $flatpickrLocales[app()->getLocale()] ?? 'en';
+    @endphp
+
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/{{ $locale }}.js"></script>
     <script>
         "use strict";
 
@@ -1466,7 +1570,7 @@
             flatpickr("#appointment-date", {
                 dateFormat: "Y-m-d",
                 minDate: "today",
-                locale: "{{ app()->getLocale() }}",
+                locale: "{{ $locale }}",
                 disable: [
                     function(date) {
                         const day = date.toLocaleString("en-us", {
@@ -1488,7 +1592,7 @@
             flatpickr("#service_start_date", {
                 dateFormat: "Y-m-d",
                 minDate: "today",
-                locale: "{{ app()->getLocale() }}",
+                locale: "{{ $locale }}",
                 disable: [
                     function(date) {
                         return !allowedDays.includes(date.getDay());
@@ -1499,7 +1603,7 @@
             flatpickr("#service_end_date", {
                 dateFormat: "Y-m-d",
                 minDate: "today",
-                locale: "{{ app()->getLocale() }}",
+                locale: "{{ $locale }}",
                 disable: [
                     function(date) {
                         return !allowedDays.includes(date.getDay());

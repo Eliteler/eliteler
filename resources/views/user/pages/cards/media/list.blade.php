@@ -1,68 +1,98 @@
-{{-- Alert message --}}
-<div id="showAlert"></div>
-            
-{{-- Media images --}}
-<div class="row" id="mediaCardsContainer"></div>
+{{-- ==========================================================
+     Media grid container
+========================================================== --}}
+<div class="row g-3 mb-3" id="mediaCardsContainer" data-route="{{ route('user.media') }}"></div>
 
-{{-- Empty media --}}
-<div class="row" id="noImagesFound">
-    <div class="col-sm-12 col-lg-12">
-        <div class="container-fluid d-flex flex-column justify-content-center">
-            <div class="empty">
-                <div class="empty-img">
-                    <img id="empty" src="{{ asset('img/empty.svg') }}" height="128" alt="">
-                </div>
-                <p class="empty-title">{{ __('No images found') }}</p>
-            </div>
+{{-- ==========================================================
+     Empty state
+========================================================== --}}
+<div class="text-center py-5" id="noImagesFound" style="display: none;">
+    <div class="empty">
+        <div class="empty-img mb-3">
+            <img id="empty" src="{{ asset('img/empty.svg') }}" height="110" alt="{{ __('No images found') }}">
         </div>
-    </div>
-</div>
-
-{{-- Pagination --}}
-<div class="card pagination-card" id="showPagination">
-    <div class="card-footer pagination-card-footer d-flex align-items-center" id="paginationLinks">
-        <p class="m-0 text-muted">{{ __('') }} <span id="paginationStartIndex"></span> {{ __('to') }}
-            <span id="paginationEndIndex"></span> {{ __('of') }} <span id="paginationTotalCount"></span> {{ __('results') }}
+        <p class="empty-title h4 mb-1">{{ __('Your media library is empty') }}</p>
+        <p class="empty-subtitle text-secondary small mb-0">
+            {{ __('Drag and drop images or click upload above to get started.') }}
         </p>
-        <nav class="custom-nav">
-            <ul class="pagination">
-                <li class="btn btn-sm btn-primary li-link" id="prevPageBtn" onclick="loadPreviousPage()">{{ __('Previous') }}</li>
-                <li class="btn btn-sm btn-primary li-link" id="nextPageBtn" onclick="loadNextPage()">{{ __('Next') }}</li>
-            </ul>
-        </nav>
     </div>
 </div>
 
-{{-- Delete --}}
-<div class="modal modal-blur fade" id="delete-modal" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-md modal-dialog-centered" role="document">
-        <div class="modal-content">
-            <div class="modal-status"></div>
-            <div class="modal-body text-center py-4">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon mb-2 text-danger icon-lg" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                    <path d="M12 9v2m0 4v.01" />
-                    <path d="M5 19h14a2 2 0 0 0 1.84 -2.75l-7.1 -12.25a2 2 0 0 0 -3.5 0l-7.1 12.25a2 2 0 0 0 1.75 2.75" />
-                </svg>
-                <h3>{{ __('Are you sure?') }}</h3>
-                <div id="delete_status" class="text-muted"></div>
-            </div>
-            <div class="modal-footer">
-                <div class="w-100">
-                    <div class="row">
-                        <div class="col">
-                            <button type="button" class="btn w-100" data-bs-dismiss="modal">
-                                {{ __('Cancel') }}
-                            </button>
-                        </div>
-                        <div class="col">
-                            <a class="btn btn-danger w-100" id="delete_id">
-                                {{ __('Yes, proceed') }}
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
+{{-- ==========================================================
+     Modern Clean Pagination UI
+========================================================== --}}
+<div id="showPagination" class="pagination-wrapper">
+    <div class="d-flex flex-column flex-sm-row align-items-center justify-content-between gap-3" id="paginationLinks">
+
+        {{-- Results Info Text --}}
+        <div class="pagination-info text-secondary small">
+            {{ __('Showing') }} <span class="fw-bold text-dark" id="paginationStartIndex">1</span>
+            {{ __('to') }} <span class="fw-bold text-dark" id="paginationEndIndex">12</span>
+            {{ __('of') }} <span class="fw-bold text-dark" id="paginationTotalCount">37</span>
+            {{ __('results') }}
         </div>
+
+        {{-- Previous & Next Action Buttons --}}
+        <div class="pagination-actions d-flex align-items-center gap-2" aria-label="{{ __('Media pagination') }}">
+            <button type="button" class="btn btn-pagination" id="prevPageBtn" onclick="loadPreviousPage()">
+                <i class="ti ti-chevron-left me-1"></i> {{ __('Previous') }}
+            </button>
+            <button type="button" class="btn btn-pagination" id="nextPageBtn" onclick="loadNextPage()">
+                {{ __('Next') }} <i class="ti ti-chevron-right ms-1"></i>
+            </button>
+        </div>
+
     </div>
 </div>
+
+<style>
+    /* 1. Force Remove Outer Card / Box Borders */
+    #showPagination,
+    #showPagination .card,
+    #showPagination .card-footer {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* 2. Modern Border Top Divider */
+    .pagination-wrapper {
+        border-top: 1px solid #e2e8f0 !important;
+        padding-top: 1rem !important;
+        margin-top: 1.25rem !important;
+    }
+
+    /* 3. Modern Sleek Action Buttons */
+    .btn-pagination {
+        background-color: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #334155 !important;
+        font-size: 0.8125rem !important;
+        font-weight: 500 !important;
+        padding: 0.4rem 0.85rem !important;
+        border-radius: 6px !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        transition: all 0.15s ease-in-out !important;
+    }
+
+    .btn-pagination:hover:not(:disabled) {
+        background-color: #f8fafc !important;
+        border-color: #94a3b8 !important;
+        color: #0f172a !important;
+    }
+
+    /* 4. Disabled State */
+    .btn-pagination:disabled,
+    .btn-pagination.disabled,
+    #showPagination .page-item.disabled .btn-pagination {
+        opacity: 0.5 !important;
+        cursor: not-allowed !important;
+        background-color: #f1f5f9 !important;
+        border-color: #e2e8f0 !important;
+        box-shadow: none !important;
+    }
+</style>

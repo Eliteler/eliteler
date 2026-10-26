@@ -23,113 +23,179 @@ use Illuminate\Support\Str;
 
 class ZeroOrderNFC
 {
-    public function zero($couponId, $nfcCard, $nfcId, $plan, $payment_mode)
+    public function zero($couponId, $nfcCard, $nfcId, $plan, $payment_mode, $quantity = 1)
     {
-        // Queries
+        // Config
         $config = DB::table('config')->get();
 
-        // Check applied coupon
-        $couponDetails = Coupon::where('used_for', 'nfc')->where('coupon_code', $couponId)->first();
+        // Coupon
+        $couponDetails = Coupon::where('used_for', 'nfc')
+            ->where('coupon_code', $couponId)
+            ->first();
 
-        // Get user data
+        // User
         $userData = User::where('id', Auth::user()->id)->first();
 
-        // Applied tax in total
+        // Tax
         $appliedTaxInTotal = 0;
 
-        // Discount price
+        // Discount
         $discountPrice = 0;
 
         // Applied coupon
         $appliedCoupon = null;
 
-        // NFC Card Order ID
-        $nfcCardOrderId = "OD" . preg_replace('/\D/', '', Str::uuid());
-        $nfcTransactionId = "TX" . preg_replace('/\D/', '', Str::uuid());
+        // Price
+        $subtotal = $nfcCard->nfc_card_price * $quantity;
 
-        // Check coupon type
+        // IDs
+        $nfcCardOrderId = 'OD' . preg_replace('/\D/', '', Str::uuid());
+        $nfcTransactionId = 'TX' . preg_replace('/\D/', '', Str::uuid());
+
+        /*
+|--------------------------------------------------------------------------
+| Coupon Calculation
+|--------------------------------------------------------------------------
+*/
+
         if ($couponDetails != null) {
+
+            // TAX
+            $appliedTaxInTotal = (float) (($subtotal * (float) $config[25]->config_value) / 100);
+
+            // SUBTOTAL INCLUDING TAX
+            $subtotalWithTax = $subtotal + $appliedTaxInTotal;
+
+            // FIXED
             if ($couponDetails->coupon_type == 'fixed') {
-                // Applied tax in total
-                $appliedTaxInTotal = ((float)($nfcCard->nfc_card_price) * (float)($config[25]->config_value) / 100);
-
-                // Get discount in plan price
-                $discountPrice = $couponDetails->coupon_amount;
-
-                // Total
-                $amountToBePaid = ($nfcCard->nfc_card_price + $appliedTaxInTotal) - $discountPrice;
-                $amountToBePaid = (float)number_format($amountToBePaid, 2, '.', '');
-
-                // Coupon is applied
-                $appliedCoupon = $couponDetails->coupon_code;
+                $discountPrice = (float) $couponDetails->coupon_amount;
             } else {
-                // Applied tax in total
-                $appliedTaxInTotal = ((float)($nfcCard->nfc_card_price) * (float)($config[25]->config_value) / 100);
-
-                // Get discount in plan price
-                $discountPrice = $nfcCard->nfc_card_price * $couponDetails->coupon_amount / 100;
-
-                // Total
-                $amountToBePaid = ($nfcCard->nfc_card_price + $appliedTaxInTotal) - $discountPrice;
-                $amountToBePaid = (float)number_format($amountToBePaid, 2, '.', '');
-
-                // Coupon is applied
-                $appliedCoupon = $couponDetails->coupon_code;
-            }
-        } else {
-            // Applied tax in total
-            $appliedTaxInTotal = ((float)($nfcCard->nfc_card_price) * (float)($config[25]->config_value) / 100);
-
-            // Total
-            $amountToBePaid = ($nfcCard->nfc_card_price + $appliedTaxInTotal);
+                // PERCENTAGE
+                $discountPrice = ($subtotalWithTax * (float) $couponDetails->coupon_amount) / 100;
         }
 
-        // Store transaction details in nfc_card_order_id table before redirecting to PayPal
+            // PREVENT DISCOUNT FROM EXCEEDING TOTAL
+            $discountPrice = min($discountPrice, $subtotalWithTax);
+
+            // TOTAL
+            $amountToBePaid = $subtotalWithTax - $discountPrice;
+            $amountToBePaid = max($amountToBePaid, 0);
+            $amountToBePaid = (float) number_format($amountToBePaid, 2, '.', '');
+
+            // FORMAT DISCOUNT
+            $discountPrice = (float) number_format($discountPrice, 2, '.', '');
+
+            // Applied
+            $appliedCoupon = $couponDetails->coupon_code;
+        } else {
+
+            // WITHOUT COUPON
+            $appliedTaxInTotal = ($subtotal * (float) $config[25]->config_value) / 100;
+
+            $amountToBePaid = $subtotal + $appliedTaxInTotal;
+            $amountToBePaid = (float) number_format($amountToBePaid, 2, '.', '');
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | ORDER
+        |--------------------------------------------------------------------------
+        */
+
         $nfcCardOrder = new NfcCardOrder();
+
         $nfcCardOrder->nfc_card_order_id = $nfcCardOrderId;
         $nfcCardOrder->user_id = Auth::id();
         $nfcCardOrder->nfc_card_id = $nfcId;
         $nfcCardOrder->nfc_card_order_transaction_id = $nfcTransactionId;
-        $nfcCardOrder->order_details = json_encode($this->prepareOrderDetails($config, $amountToBePaid, $nfcCard, $appliedCoupon, $discountPrice));
-        $nfcCardOrder->delivery_address = json_encode($this->prepareDeliveryAddress($userData));
-        $nfcCardOrder->delivery_note = "-"; 
+        $nfcCardOrder->order_details = json_encode(
+            $this->prepareOrderDetails(
+                $config,
+                $amountToBePaid,
+                $nfcCard,
+                $appliedCoupon,
+                $discountPrice,
+                $quantity
+            )
+        );
+        $nfcCardOrder->delivery_address = json_encode(
+            $this->prepareDeliveryAddress($userData)
+        );
+        $nfcCardOrder->delivery_note = '-';
         $nfcCardOrder->order_status = 'pending';
         $nfcCardOrder->status = 1;
+
         $nfcCardOrder->save();
 
-        // Store transaction details in nfc_card_order_transactions table before redirecting to PayPal
+        /*
+        |--------------------------------------------------------------------------
+        | TRANSACTION
+        |--------------------------------------------------------------------------
+        */
+
         $transaction = new NfcCardOrderTransaction();
+
         $transaction->nfc_card_order_transaction_id = $nfcTransactionId;
         $transaction->nfc_card_order_id = $nfcCardOrderId;
         $transaction->payment_transaction_id = $nfcTransactionId;
-        $transaction->payment_method = $payment_mode->payment_gateway_name ?? "-";
+        $transaction->payment_method = $payment_mode->payment_gateway_name ?? '-';
         $transaction->currency = $config[1]->config_value;
-        $transaction->amount = $amountToBePaid;
-        $transaction->invoice_details = json_encode($this->prepareInvoiceDetails($config, $plan, $amountToBePaid, $nfcCard, $appliedCoupon, $discountPrice));
-        $transaction->payment_status = "pending";
+        $transaction->amount = 0;
+        $transaction->invoice_details = json_encode(
+            $this->prepareInvoiceDetails(
+                $config,
+                $userData,
+                $amountToBePaid,
+                $nfcCard,
+                $appliedCoupon,
+                $discountPrice,
+                $quantity
+            )
+        );
+        $transaction->payment_status = 'pending';
+
         $transaction->save();
 
-        // Coupon is not applied
-        if ($couponId != " ") {
-            // Save applied coupon
-            $appliedCoupon = new AppliedCoupon;
-            $appliedCoupon->applied_coupon_id = uniqid();
-            $appliedCoupon->transaction_id = $nfcTransactionId;
-            $appliedCoupon->user_id = Auth::user()->id;
-            $appliedCoupon->coupon_id = $couponId;
-            $appliedCoupon->status = 0;
-            $appliedCoupon->save();
+        /*
+        |--------------------------------------------------------------------------
+        | Coupon Save
+        |--------------------------------------------------------------------------
+        */
+
+        if ($couponId != ' ') {
+            $appliedCouponData = new AppliedCoupon();
+
+            $appliedCouponData->applied_coupon_id = uniqid();
+            $appliedCouponData->transaction_id = $nfcTransactionId;
+            $appliedCouponData->user_id = Auth::user()->id;
+            $appliedCouponData->coupon_id = $couponId;
+            $appliedCouponData->status = 0;
+
+            $appliedCouponData->save();
         }
 
-        // Place order
+        /*
+        |--------------------------------------------------------------------------
+        | Order Place
+        |--------------------------------------------------------------------------
+        */
+
         $order = new OrderNFC();
+
         $order->order($nfcTransactionId, $nfcCardOrderId);
     }
 
-    private function prepareInvoiceDetails($config, $userData, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice)
+    /*
+    |--------------------------------------------------------------------------
+    | Invoice Details
+    |--------------------------------------------------------------------------
+    */
+
+    private function prepareInvoiceDetails($config, $userData, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice, $quantity)
     {
-        // Prepare invoice details
-        $invoiceDetails = [
+        $subtotal = $nfcDetails->nfc_card_price * $quantity;
+
+        return [
             'from_billing_name' => $config[16]->config_value,
             'from_billing_address' => $config[19]->config_value,
             'from_billing_city' => $config[20]->config_value,
@@ -145,7 +211,7 @@ class ZeroOrderNFC
             'to_billing_state' => $userData->billing_state,
             'to_billing_zipcode' => $userData->billing_zipcode,
             'to_billing_country' => $userData->billing_country,
-            'to_billing_phone' => $userData->billing_phone,
+            'to_billing_phone' => $userData->billing_country_code . $userData->billing_phone,
             'to_billing_email' => $userData->billing_email,
             'to_vat_number' => $userData->vat_number,
             'tax_name' => $config[24]->config_value,
@@ -153,50 +219,55 @@ class ZeroOrderNFC
             'tax_value' => $config[25]->config_value,
             'applied_coupon' => $appliedCoupon,
             'discounted_price' => $discountPrice,
-            'invoice_amount' => $amountToBePaid,
-            'subtotal' => $nfcDetails->nfc_card_price,
-            'tax_amount' => (float)($nfcDetails->nfc_card_price) * (float)($config[25]->config_value) / 100
+            'invoice_amount' => 0,
+            'subtotal' => $subtotal,
+            'tax_amount' => ($subtotal * (float) $config[25]->config_value) / 100,
         ];
-
-        return $invoiceDetails;
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Order Details
+    |--------------------------------------------------------------------------
+    */
 
-    // Prepare oder details
-    private function prepareOrderDetails($config, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice)
+    private function prepareOrderDetails($config, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice, $quantity)
     {
-        // Prepare invoice details
-        $invoiceDetails = [
+        $subtotal = $nfcDetails->nfc_card_price * $quantity;
+
+        return [
             'nfc_card_id' => $nfcDetails->nfc_card_id,
             'order_item' => $nfcDetails->nfc_card_name,
             'order_description' => $nfcDetails->nfc_card_description,
-            'order_quantity' => 1,
+            'order_quantity' => $quantity,
             'price' => $nfcDetails->nfc_card_price,
             'invoice_amount' => $amountToBePaid,
             'tax_name' => $config[24]->config_value,
             'tax_type' => $config[14]->config_value,
             'tax_value' => $config[25]->config_value,
-            'tax_amount' => (float)($nfcDetails->nfc_card_price) * (float)($config[25]->config_value) / 100,
+            'tax_amount' => ($subtotal * (float) $config[25]->config_value) / 100,
             'applied_coupon' => $appliedCoupon,
             'discounted_price' => $discountPrice,
-            'subtotal' => $nfcDetails->nfc_card_price
+            'subtotal' => $subtotal,
         ];
-
-        return $invoiceDetails;
     }
 
-    // Prepare delivery address
+    /*
+    |--------------------------------------------------------------------------
+    | Delivery Address
+    |--------------------------------------------------------------------------
+    */
+
     private function prepareDeliveryAddress($userData)
     {
-        // Prepare delivery address
-        $deliveryAddress = [
+        return [
             'billing_name' => $userData->billing_name,
             'billing_address' => $userData->billing_address,
             'billing_city' => $userData->billing_city,
             'billing_state' => $userData->billing_state,
             'billing_zipcode' => $userData->billing_zipcode,
             'billing_country' => $userData->billing_country,
-            'billing_phone' => $userData->billing_phone,
+            'billing_phone' => $userData->billing_country_code . $userData->billing_phone,
             'billing_email' => $userData->billing_email,
             'shipping_name' => $userData->billing_name,
             'shipping_address' => $userData->billing_address,
@@ -204,12 +275,10 @@ class ZeroOrderNFC
             'shipping_state' => $userData->billing_state,
             'shipping_zipcode' => $userData->billing_zipcode,
             'shipping_country' => $userData->billing_country,
-            'shipping_phone' => $userData->billing_phone,
+            'shipping_phone' => $userData->billing_country_code . $userData->billing_phone,
             'shipping_email' => $userData->billing_email,
             'type' => $userData->type,
-            'vat_number' => $userData->vat_number
+            'vat_number' => $userData->vat_number,
         ];
-
-        return $deliveryAddress;
     }
 }

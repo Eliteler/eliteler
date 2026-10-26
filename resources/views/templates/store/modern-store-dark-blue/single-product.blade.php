@@ -1,3 +1,18 @@
+@php
+    $currentHost = request()->getHost();
+    $masterHost = parse_url(config('app.url'), PHP_URL_HOST);
+    $isCustomDomainOrSubdomain = ($currentHost !== $masterHost);
+
+    // Dynamic store base URL and product URL prefix
+    if ($isCustomDomainOrSubdomain) {
+        $storeUrl = url('/');
+        $productUrlPrefix = url('product');
+    } else {
+        $storeUrl = url($business_card_details->card_url);
+        $productUrlPrefix = url($business_card_details->card_url . '/product');
+    }
+@endphp
+
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
@@ -152,7 +167,7 @@
                                             <div class="ratio ratio-16x9 mb-2">
                                                 <img src="{{ url($productImages[0]) }}" id="product_image"
                                                     alt="{{ $product_details->product_name }}"
-                                                    class="w-100 rounded object-fit-cover">
+                                                    class="w-100 rounded object-fit-contain">
                                             </div>
                                         </a>
                                         <swiper-container space-between="10" class="mySwiper" autoplay-delay="2500"
@@ -166,7 +181,7 @@
                                                 <swiper-slide>
                                                     <a href="{{ url($productImage) }}" data-fslightbox="gallery">
                                                         <div class="product-image-wrapper">
-                                                            <img class="img-fluid w-100 h-100 object-fit-cover rounded"
+                                                            <img class="img-fluid w-100 h-100 object-fit-contain rounded"
                                                                 onclick="updateSrc(this)"
                                                                 alt="{{ $product_details->product_name }}"
                                                                 src="{{ url($productImage) }}">
@@ -220,7 +235,12 @@
                                         <!-- Cart Button -->
                                         @if ($product_details->product_status == 'instock')
                                             <div class="col-12 col-md-6">
-                                                <a onclick="addToCart('{{ $product_details->product_id }}')"
+                                                <a onclick="addToCart('{{ $product_details->product_id }}', this)"
+                                                    data-id="{{ $product_details->product_id }}"
+                                                    data-name="{{ $product_details->product_name }}"
+                                                    data-price="{{ $product_details->sales_price }}"
+                                                    data-image="{{ url(explode(',', $product_details->product_image)[0] ?? '') }}"
+                                                    data-subtitle="{{ $product_details->product_short_description }}"
                                                     class="cursor-pointer btn btn-blue btn-lg w-100 radius-img fs-2 fw-bold btn-effect">
                                                     <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-shopping-bag-plus"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12.5 21h-3.926a3 3 0 0 1 -2.965 -2.544l-1.255 -8.152a2 2 0 0 1 1.977 -2.304h11.339a2 2 0 0 1 1.977 2.304l-.263 1.708" /><path d="M16 19h6" /><path d="M19 16v6" /><path d="M9 11v-5a3 3 0 0 1 6 0v5" /></svg> &nbsp; {{ __('Add to Cart') }}
                                                 </a>
@@ -263,7 +283,7 @@
                                                                 $productImages = explode(',', $product->product_image);
                                                             @endphp
                                                             <a
-                                                                href="{{ url($business_card_details->card_url . '/product/' . $product->id) }}">
+                                                                href="{{ $productUrlPrefix . '/' . $product->id }}">
                                                                 <!-- Carousel Images -->
                                                                 <div id="carousel-controls"
                                                                     class="carousel slide mb-3"
@@ -272,7 +292,7 @@
                                                                         @foreach ($productImages as $productImage)
                                                                             <div
                                                                                 class="carousel-item {{ $loop->index == 0 ? 'active' : '' }} ratio ratio-4x3">
-                                                                                <img class="d-block img-fluid object-fit-cover w-100 rounded"
+                                                                                <img class="d-block img-fluid object-fit-contain w-100 rounded"
                                                                                     id="{{ $product->product_id }}_product_image"
                                                                                     style="object-fit: contain;"
                                                                                     alt="{{ $product->product_name }}"
@@ -332,7 +352,12 @@
 
                                                                 <!-- Icon Button -->
                                                                 @if ($product->product_status == 'instock')
-                                                                    <a onclick="addToCart('{{ $product->product_id }}')"
+                                                                    <a onclick="addToCart('{{ $product->product_id }}', this)"
+                                                                        data-id="{{ $product->product_id }}"
+                                                                        data-name="{{ $product->product_name }}"
+                                                                        data-price="{{ $product->sales_price }}"
+                                                                        data-image="{{ url(explode(',', $product->product_image)[0] ?? '') }}"
+                                                                        data-subtitle="{{ $product->product_short_description }}"
                                                                         class="cursor-pointer">
                                                                         <i
                                                                             class="ti ti-shopping-bag-plus bg-blue text-white p-custom fs-1 rounded-4"></i>
@@ -515,7 +540,7 @@
     </div>
 
     {{-- Place order --}}
-    <div class="modal modal-blur fade" id="orderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal modal-bg fade" id="orderModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-md modal-dialog-centered" role="document">
             <div class="modal-content">
                 <!-- Modal Header -->
@@ -750,19 +775,21 @@
         }
 
         // Add to cart function
-        function addToCart(pid) {
-            var productName = $("#product_name").text();
-            var price = $("#price").text();
-            var product_image = $("#product_image").attr("src");
-            var subtitle = $("#subtitle").text();
+        function addToCart(pid, btn) {
+
+            var productName = $(btn).data('name');
+            var price = $(btn).data('price');
+            var product_image = $(btn).data('image');
+            var subtitle = $(btn).data('subtitle');
 
             var found = cart.findIndex(item => item.product_id == pid);
+
             if (found !== -1) {
                 cart[found].qty++;
-                successAlert('{{ __('Cart updated') }}');
+                successAlert('{{ __("Cart updated") }}');
             } else {
                 cart.push({
-                    product_name: $.trim(productName),
+                    product_name: productName,
                     price: price,
                     product_id: pid,
                     currency: currency,
@@ -770,8 +797,10 @@
                     product_image: product_image,
                     subtitle: subtitle
                 });
-                successAlert("{{ __('Item added to cart') }}");
+
+                successAlert('{{ __("Item added to cart") }}');
             }
+
             updateList();
             updateBadge();
             updateStorage();
@@ -797,7 +826,7 @@
                 // LEFT: Image
                 cart_items += `
                 <div class="me-3 flex-shrink-0" style="width: 100px; height: 100px;">
-                    <img src="${item.product_image}" class="img-fluid rounded object-fit-cover h-100 w-100" alt="${item.product_name}" />
+                    <img src="${item.product_image}" class="img-fluid rounded object-fit-contain h-100 w-100" alt="${item.product_name}" />
                 </div>`;
 
                 // RIGHT: Product Info
@@ -812,11 +841,11 @@
 
                 // Round buttons
                 cart_items +=
-                    `<button onclick="reduceQty(${index})" class="btn text-white d-flex align-items-center justify-content-center" style="width:35px;height:35px;"><svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="m-0 icon icon-tabler icons-tabler-outline icon-tabler-minus"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0" /></svg></button>`;
+                    `<button onclick="reduceQty(${index})" class="btn text-dark d-flex align-items-center justify-content-center" style="width:35px;height:35px;"><svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="m-0 icon icon-tabler icons-tabler-outline icon-tabler-minus"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0" /></svg></button>`;
                 cart_items +=
                     `<span class="text-white p-0 d-flex align-items-center justify-content-center fs-3 fw-bold" style="width:35px;height:35px;">${item.qty}</span>`;
                 cart_items +=
-                    `<button onclick="addQty(${index})" class="btn text-white d-flex align-items-center justify-content-center" style="width:35px;height:35px;"><svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-plus m-0"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg></button>`;
+                    `<button onclick="addQty(${index})" class="btn text-dark d-flex align-items-center justify-content-center" style="width:35px;height:35px;"><svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-plus m-0"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg></button>`;
                 cart_items +=
                     `<button onclick="removeFromCart(${index})" class="ms-3 btn btn-danger p-0 d-flex align-items-center justify-content-center" style="width:35px;height:35px;"><svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-trash m-0"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg></button>`;
 
@@ -970,9 +999,8 @@
                 });
 
                 // Place order ajax
-                // Place order ajax
                 $.ajax({
-                    url: "{{ config('app.url') }}/order/place",
+                    url: "{{ url('order/place') }}",
                     method: "POST",
                     data: {
                         _token: '{{ csrf_token() }}',
@@ -985,7 +1013,7 @@
                         order_items: cart,
                         total_price: grandTotal,
                     },
-                    success: function (data) {
+                    success: function(data) {
                         // Check if order was placed successfully
                         if (data.status == "success") {
                             // Map of dynamic delivery type values to translated strings
@@ -1019,7 +1047,8 @@
                             waShareContent += productsList + `*${whatsAppMessage}*`;
 
                             // Construct WhatsApp link and open in new tab
-                            const link = `https://api.whatsapp.com/send/?phone=${whatsAppNumber}&text=${encodeURI(waShareContent)}`;
+                            const link =
+                                `https://api.whatsapp.com/send/?phone=${whatsAppNumber}&text=${encodeURI(waShareContent)}`;
                             // Confirm before opening
                             const opened = window.open(link, '_blank');
 
@@ -1039,7 +1068,7 @@
                             errorAlert(data.message);
                         }
                     },
-                    error: function (error) {
+                    error: function(error) {
                         // Show error message
                         errorAlert(error.responseJSON.message);
                     }

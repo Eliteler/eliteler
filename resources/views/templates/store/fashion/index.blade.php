@@ -9,6 +9,22 @@
     {{-- CSRF Token --}}
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
+    {{-- Store dynamic URL detection --}}
+    @php
+        $currentHost = request()->getHost();
+        $masterHost = parse_url(config('app.url'), PHP_URL_HOST);
+        $isCustomDomainOrSubdomain = $currentHost !== $masterHost;
+
+        // Dynamic store base URL and product URL prefix
+        if ($isCustomDomainOrSubdomain) {
+            $storeUrl = url('/');
+            $productUrlPrefix = url('product');
+        } else {
+            $storeUrl = url($business_card_details->card_url);
+            $productUrlPrefix = url($business_card_details->card_url . '/product');
+        }
+    @endphp
+
     {{-- Store icon and color --}}
     @php
         $seo = null;
@@ -51,7 +67,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
 
-
     <style>
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
@@ -73,7 +88,11 @@
 
         .card,
         input,
-        select, .rounded-modern, textarea, .alert, .badge {
+        select,
+        .rounded-modern,
+        textarea,
+        .alert,
+        .badge {
             border-radius: 0px !important;
         }
 
@@ -89,7 +108,7 @@
             width: 75px !important;
         }
 
-        .bottom-bar-custom{
+        .bottom-bar-custom {
             bottom: 22px !important;
             height: 3px !important;
             width: 75px !important;
@@ -99,32 +118,72 @@
     {{-- Check business details --}}
     @if ($business_card_details != null)
         @php
-            $custom_css = $business_card_details->custom_css;
-            $custom_js = $business_card_details->custom_js;
+            $custom_css = trim($business_card_details->custom_css ?? '');
+            $custom_js = trim($business_card_details->custom_js ?? '');
 
-            // Ensure <style> tags for custom CSS
-            if (strpos($custom_css, '<style>') === false && strpos($custom_css, '</style>') === false) {
-                $custom_css = "<style>" . $custom_css . "</style>";
+            /*
+            |--------------------------------------------------------------------------
+            | Custom CSS
+            |--------------------------------------------------------------------------
+            */
+
+            if (!empty($custom_css) && stripos($custom_css, '<style') === false) {
+                $custom_css = "<style>{$custom_css}</style>";
             }
 
-            // Ensure <script> tags for custom JS
-            if (strpos($custom_js, '<script>') === false && strpos($custom_js, '</script>') === false) {
-                $custom_js = "<script>" . $custom_js . "</script>";
+            /*
+            |--------------------------------------------------------------------------
+            | Split HTML tags and plain JS
+            |--------------------------------------------------------------------------
+            */
+
+            $include_custom_js = '';
+
+            if (!empty($custom_js)) {
+                // Extract HTML tags like meta, script, iframe, noscript, etc.
+                preg_match_all(
+                '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/@endphp/is',
+        $custom_js,
+        $matches,
+    );
+
+    $html_tags = implode("\n", $matches[0]);
+
+    // Remove extracted HTML tags from original content
+    $plain_js = trim(
+        preg_replace(
+            '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/?>/is',
+            '',
+            $custom_js,
+        ),
+    );
+
+    // Add HTML tags directly
+    $include_custom_js .= $html_tags;
+
+    // Wrap remaining plain JS inside script tag
+    if (!empty($plain_js)) {
+        $include_custom_js .= "\n<script>
+            {
+                $plain_js
             }
-        @endphp
+        </script>";
+    }
+}
+?>
 
         {!! $custom_css !!}
-        {!! $custom_js !!}
+        {!! $include_custom_js !!}
 
         {{-- Theme CSS --}}
-        @if(!empty($business_card_details->theme_css))
+        @if (!empty($business_card_details->theme_css))
             <style>
                 {!! $business_card_details->theme_css !!}
             </style>
         @endif
 
         {{-- Theme JS --}}
-        @if(!empty($business_card_details->theme_js))
+        @if (!empty($business_card_details->theme_js))
             <script>
                 {!! $business_card_details->theme_js !!}
             </script>
@@ -230,20 +289,19 @@
                                 @if (is_array(json_decode($business_card_details->cover)) == true)
                                     @foreach (json_decode($business_card_details->cover) as $cover)
                                         <swiper-slide>
-                                            <img class="rounded-modern w-100 h-100 object-fit-cover"
+                                            <img class="rounded-modern img-fluid d-block mx-auto"
                                                 alt="{{ $business_card_details->title }}" src="{{ url($cover) }}" />
                                         </swiper-slide>
                                     @endforeach
                                 @else
                                     <swiper-slide>
-                                        <img class="rounded-modern w-100 h-100 object-fit-cover"
+                                        <img class="rounded-modern img-fluid d-block mx-auto"
                                             alt="{{ $business_card_details->title }}"
                                             src="{{ $business_card_details->cover ? url($business_card_details->cover) : asset('images/default-cover.png') }}" />
                                     </swiper-slide>
                                 @endif
                             </swiper-container>
                         </div>
-
 
                         <div class="row {{ request('category') ? 'ps-2 ps-lg-3' : '' }}">
                             <!-- Categories -->
@@ -259,19 +317,22 @@
 
                                     <!-- Min Price -->
                                     <div class="col-md-4 col-6">
-                                        <input type="number" name="min" class="form-control" placeholder="{{ __('Min') }}"
-                                            step="0.01" min="0" value="{{ request('min') }}">
+                                        <input type="number" name="min" class="form-control"
+                                            placeholder="{{ __('Min') }}" step="0.01" min="0"
+                                            value="{{ request('min') }}">
                                     </div>
 
                                     <!-- Max Price -->
                                     <div class="col-md-4 col-6">
-                                        <input type="number" name="max" class="form-control" placeholder="{{ __('Max') }}"
-                                            step="0.01" min="0" value="{{ request('max') }}">
+                                        <input type="number" name="max" class="form-control"
+                                            placeholder="{{ __('Max') }}" step="0.01" min="0"
+                                            value="{{ request('max') }}">
                                     </div>
 
                                     <!-- Submit -->
                                     <div class="col-md-4 mt-2 mt-md-0">
-                                        <button type="submit" class="btn btn-dark w-100">{{ __('Filter') }}</button>
+                                        <button type="submit"
+                                            class="btn btn-dark w-100">{{ __('Filter') }}</button>
                                     </div>
                                 </form>
 
@@ -303,16 +364,17 @@
                                     @foreach ($categories as $category)
                                         <swiper-slide class="cursor-pointer">
                                             <a
-                                                href="{{ url($business_card_details->card_url) . '?category=' . urlencode(strtolower($category->category_name)) }}">
+                                                href="{{ $storeUrl . '?category=' . urlencode(strtolower($category->category_name)) }}">
                                                 <div class="card rounded-modern">
                                                     <div
                                                         class="card-body d-flex flex-column align-items-center justify-content-center gap-2 p-3">
                                                         <!-- Thumbnail -->
-                                                        <div class="ratio ratio-1x1 d-flex align-items-center justify-content-center">
+                                                        <div
+                                                            class="ratio ratio-1x1 d-flex align-items-center justify-content-center">
                                                             <img src="{{ url($category->thumbnail) }}"
                                                                 class="img-fluid category-thumbnail"
                                                                 alt="{{ $category->category_name }}" />
-                                                        </div>≈
+                                                        </div>
                                                         <!-- Category Name -->
                                                         <h3 class="mt-2 mb-0 fs-3 text-truncate single-product"
                                                             style="max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">
@@ -332,7 +394,7 @@
                                             <div class="d-flex align-items-center gap-2">
                                                 <img src="{{ asset('img/templates/all-categories.png') }}"
                                                     alt="All" class="rounded-modern"
-                                                    style="width: 40px; height: 40px; object-fit: cover;">
+                                                    style="width: 40px; height: 40px; object-fit: contain;">
                                                 <h3 class="mb-0 text-secondary fs-3">{{ __('All') }}</h3>
                                             </div>
                                         </a>
@@ -341,16 +403,18 @@
                                     @foreach ($categories as $category)
                                         <div class="py-3 border-top">
                                             <a
-                                                href="{{ url($business_card_details->card_url) . '?category=' . urlencode(strtolower($category->category_name)) }}">
+                                                href="{{ $storeUrl . '?category=' . urlencode(strtolower($category->category_name)) }}">
                                                 <div class="text-decoration-none">
                                                     <div class="d-flex align-items-center gap-2">
                                                         <!-- Thumbnail -->
                                                         <img src="{{ url($category->thumbnail) }}"
                                                             class="rounded-modern"
-                                                            style="width: 40px; height: 40px; object-fit: cover;"
+                                                            style="width: 40px; height: 40px; object-fit: contain;"
                                                             alt="{{ $category->category_name }}" />
                                                         @php
-                                                            $category_name = urlencode(strtolower($category->category_name));
+                                                            $category_name = urlencode(
+                                                                strtolower($category->category_name),
+                                                            );
                                                         @endphp
                                                         <!-- Category Name -->
                                                         <h3
@@ -438,8 +502,7 @@
                                                         @php
                                                             $productImages = explode(',', $product->product_image);
                                                         @endphp
-                                                        <a
-                                                            href="{{ url($business_card_details->card_url . '/product/' . $product->id) }}">
+                                                        <a href="{{ $productUrlPrefix . '/' . $product->id }}">
                                                             <div id="carousel-controls" class="carousel slide mb-3"
                                                                 data-bs-ride="carousel">
                                                                 <!-- Carousel Images -->
@@ -447,7 +510,7 @@
                                                                     @foreach ($productImages as $productImage)
                                                                         <div
                                                                             class="carousel-item {{ $loop->index == 0 ? 'active' : '' }} ratio ratio-4x3">
-                                                                            <img class="d-block img-fluid object-fit-cover w-100 rounded-modern"
+                                                                            <img class="d-block img-fluid object-fit-contain w-100 rounded-modern"
                                                                                 id="{{ $product->product_id }}_product_image"
                                                                                 style="object-fit: contain;"
                                                                                 alt="{{ $product->product_name }}"
@@ -507,11 +570,14 @@
                                                             @if ($product->product_status == 'instock')
                                                                 <a onclick="addToCart('{{ $product->product_id }}')"
                                                                     class="cursor-pointer btn btn-dark btn-lg w-100 rounded-modern fs-3 fw-bold btn-effect">
-                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                                                        viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                                                        width="24" height="24"
+                                                                        viewBox="0 0 24 24" fill="none"
+                                                                        stroke="currentColor" stroke-width="2"
+                                                                        stroke-linecap="round" stroke-linejoin="round"
                                                                         class="icon icon-tabler icons-tabler-outline icon-tabler-shopping-bag-plus">
-                                                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                                                        <path stroke="none" d="M0 0h24v24H0z"
+                                                                            fill="none" />
                                                                         <path
                                                                             d="M12.5 21h-3.926a3 3 0 0 1 -2.965 -2.544l-1.255 -8.152a2 2 0 0 1 1.977 -2.304h11.339a2 2 0 0 1 1.977 2.304l-.263 1.708" />
                                                                         <path d="M16 19h6" />
@@ -621,46 +687,53 @@
                                 <!-- Second Row: Policy Links -->
                                 <div class="row mt-3">
                                     <div class="col">
-                                        <ul class="list-inline list-inline-dots text-center text-md-start text-lg-start mb-0">
+                                        <ul
+                                            class="list-inline list-inline-dots text-center text-md-start text-lg-start mb-0">
                                             {{-- Privacy Policy --}}
                                             @if ($business_card_details->privacy_policy)
                                                 <li class="list-inline-item">
-                                                    <a href="{{ route('store.privacy.policy', $business_card_details->card_url) }}" class="link-secondary">{{ __('Privacy Policy') }}</a>
+                                                    <a href="{{ route('store.privacy.policy', $business_card_details->card_url) }}"
+                                                        class="link-secondary">{{ __('Privacy Policy') }}</a>
                                                 </li>
                                             @endif
                                             
                                             {{-- Terms and Conditions --}}
                                             @if ($business_card_details->terms_and_conditions)
                                                 <li class="list-inline-item">
-                                                    <a href="{{ route('store.terms.and.conditions', $business_card_details->card_url) }}" class="link-secondary">{{ __('Terms & Conditions') }}</a>
+                                                    <a href="{{ route('store.terms.and.conditions', $business_card_details->card_url) }}"
+                                                        class="link-secondary">{{ __('Terms & Conditions') }}</a>
                                                 </li>
                                             @endif
 
                                             {{-- Return/Refund Policy --}}
                                             @if ($business_card_details->refund_policy)
                                                 <li class="list-inline-item">
-                                                    <a href="{{ route('store.refund.policy', $business_card_details->card_url) }}" class="link-secondary">{{ __('Return/Refund Policy') }}</a>
+                                                    <a href="{{ route('store.refund.policy', $business_card_details->card_url) }}"
+                                                        class="link-secondary">{{ __('Return/Refund Policy') }}</a>
                                                 </li>
                                             @endif
 
                                             {{-- Shipping Policy --}}
                                             @if ($business_card_details->shipping_policy)
                                                 <li class="list-inline-item">
-                                                    <a href="{{ route('store.shipping.policy', $business_card_details->card_url, $business_card_details->card_url) }}" class="link-secondary">{{ __('Shipping Policy') }}</a>
+                                                    <a href="{{ route('store.shipping.policy', $business_card_details->card_url, $business_card_details->card_url) }}"
+                                                        class="link-secondary">{{ __('Shipping Policy') }}</a>
                                                 </li>
                                             @endif
 
                                             {{-- Cookie Policy --}}
                                             @if ($business_card_details->cookie_policy)
                                                 <li class="list-inline-item">
-                                                    <a href="{{ route('store.cookie.policy', $business_card_details->card_url) }}" class="link-secondary">{{ __('Cookie Policy') }}</a>
+                                                    <a href="{{ route('store.cookie.policy', $business_card_details->card_url) }}"
+                                                        class="link-secondary">{{ __('Cookie Policy') }}</a>
                                                 </li>
                                             @endif
 
                                             {{-- Contact Information / Customer Support Policy --}}
                                             @if ($business_card_details->customer_support_policy)
                                                 <li class="list-inline-item">
-                                                    <a href="{{ route('store.contact.information', $business_card_details->card_url) }}" class="link-secondary">{{ __('Contact Us') }}</a>
+                                                    <a href="{{ route('store.contact.information', $business_card_details->card_url) }}"
+                                                        class="link-secondary">{{ __('Contact Us') }}</a>
                                                 </li>
                                             @endif
                                         </ul>
@@ -728,7 +801,9 @@
                     <!-- Mobile -->
                     <div class="mb-3">
                         <label class="form-label required" for="cus_mobile">{{ __('Mobile') }}</label>
-                        <input type="number" class="form-control" placeholder="{{ __('Mobile number with country code, excluding +') }}" id="cus_mobile" required />
+                        <input type="number" class="form-control"
+                            placeholder="{{ __('Mobile number with country code, excluding +') }}" id="cus_mobile"
+                            required />
                     </div>
                     <!-- Address -->
                     <div class="mb-3">
@@ -780,8 +855,9 @@
 
                     {{-- Customer Notes --}}
                     <div class="mb-3">
-                        <small>{{ __("Customer Notes") }}: </small>
-                        <small class="text-muted">{{ __("After you click the Confirm button, WhatsApp will open. Tap 'Send' in WhatsApp to send your order to the shop owner.") }}</small>
+                        <small>{{ __('Customer Notes') }}: </small>
+                        <small
+                            class="text-muted">{{ __("After you click the Confirm button, WhatsApp will open. Tap 'Send' in WhatsApp to send your order to the shop owner.") }}</small>
                     </div>
                 </div>
                 <!-- Modal Footer -->
@@ -800,28 +876,36 @@
     {{-- Newsletter Popup --}}
     @if ($business_card_details != null)
         {{-- Check Newsletter --}}
-        @if (!empty($business_card_details->is_newsletter_pop_active) && $business_card_details->is_newsletter_pop_active == 1 && !request()->cookie('newsletter_' . $business_card_details->card_id))
-            <div class="modal fade" id="newsletterModal" tabindex="-1" aria-hidden="true" style="background: rgba(0, 0, 0, 0.7);">
+        @if (
+            !empty($business_card_details->is_newsletter_pop_active) &&
+                $business_card_details->is_newsletter_pop_active == 1 &&
+                !request()->cookie('newsletter_' . $business_card_details->card_id))
+            <div class="modal fade" id="newsletterModal" tabindex="-1" aria-hidden="true"
+                style="background: rgba(0, 0, 0, 0.7);">
                 <div class="modal-dialog modal-md modal-dialog-centered" role="document">
                     <div class="modal-content">
                         <!-- Modal Header -->
                         <div class="modal-header">
                             <h3 class="modal-title fs-2">{{ __('Subscribe to our newsletter') }}</h3>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                aria-label="Close"></button>
                         </div>
                         <!-- Modal Body -->
                         <div class="modal-body">
-                            <form action="{{ config('app.url') }}/subscribe/store/newsletter" method="post">
+                            <form action="{{ url('subscribe/store/newsletter') }}" method="post">
                                 @csrf
                                 <div class="row">
-                                    <input type="hidden" name="card_id" value="{{ $business_card_details->card_id }}">
+                                    <input type="hidden" name="card_id"
+                                        value="{{ $business_card_details->card_id }}">
                                     <!-- Email -->
                                     <div class="col-8">
-                                        <input type="email" class="form-control" name="email" placeholder="{{ __('Your email address') }}" required />
+                                        <input type="email" class="form-control" name="email"
+                                            placeholder="{{ __('Your email address') }}" required />
                                     </div>
                                     <!-- Button -->
                                     <div class="col-4">
-                                        <button type="submit" class="btn btn-dark w-100">{{ __('Subscribe') }}</button>
+                                        <button type="submit"
+                                            class="btn btn-dark w-100">{{ __('Subscribe') }}</button>
                                     </div>
                                 </div>
                             </form>
@@ -832,7 +916,7 @@
 
             {{-- Auto Open Modal --}}
             <script>
-                document.addEventListener("DOMContentLoaded", function () {
+                document.addEventListener("DOMContentLoaded", function() {
                     "use strict";
 
                     const newsletterModal = new bootstrap.Modal(document.getElementById('newsletterModal'), {
@@ -872,12 +956,14 @@
                         <!-- Modal Body -->
                         <div class="modal-body">
                             <div class="d-flex justify-content-end align-items-center">
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
                             </div>
                             <div class="row d-flex justify-content-center align-items-center">
                                 {{-- Image --}}
                                 <div class="w-25 h-25 mb-2">
-                                    <img src="{{ url($img) }}" alt="{{ __($title) }}" class="img-fluid object-fit-cover rounded-4" />
+                                    <img src="{{ url($img) }}" alt="{{ __($title) }}"
+                                        class="img-fluid object-fit-contain rounded-4" />
                                 </div>
                                 {{-- Title --}}
                                 <div class="mb-2">
@@ -886,7 +972,8 @@
                                 </div>
                                 {{-- Button --}}
                                 <div class="d-flex justify-content-center align-items-center">
-                                    <a href="{{ $button_url }}" target="_blank" class="btn btn-dark w-100">{{ __($button_text) }}</a>
+                                    <a href="{{ $button_url }}" target="_blank"
+                                        class="btn btn-dark w-100">{{ __($button_text) }}</a>
                                 </div>
                             </div>
                         </div>
@@ -896,7 +983,7 @@
 
             {{-- Auto Open Modal --}}
             <script>
-                document.addEventListener("DOMContentLoaded", function () {
+                document.addEventListener("DOMContentLoaded", function() {
                     "use strict";
 
                     const informationModal = new bootstrap.Modal(document.getElementById('informationModal'), {
@@ -934,14 +1021,19 @@
                             useWorker: true
                         });
 
-                        const randomColors = Array.from({ length: 7 }, () =>
+                        const randomColors = Array.from({
+                                length: 7
+                            }, () =>
                             '#' + Math.floor(Math.random() * 16777215).toString(16)
                         );
 
                         myConfetti({
                             particleCount: window.innerWidth > 768 ? 200 : 100,
                             spread: 120,
-                            origin: { x: 0.5, y: 0.75 },
+                            origin: {
+                                x: 0.5,
+                                y: 0.75
+                            },
                             colors: randomColors
                         });
 
@@ -996,9 +1088,7 @@
         };
 
         // Currencies
-        const currencies = {!! json_encode(App\Currency::where('status', 1)
-        ->select('iso_code', 'symbol', 'symbol_first')
-        ->get()) !!};
+        const currencies = {!! json_encode(App\Currency::where('status', 1)->select('iso_code', 'symbol', 'symbol_first')->get()) !!};
 
         // Determine currency symbol and position
         let currencySymbol = '';
@@ -1151,7 +1241,7 @@
                 // LEFT: Image
                 cart_items += `
                 <div class="me-3 flex-shrink-0" style="width: 100px; height: 100px;">
-                    <img src="${item.product_image}" class="img-fluid rounded-modern object-fit-cover h-100 w-100" alt="${item.product_name}" />
+                    <img src="${item.product_image}" class="img-fluid rounded-modern object-fit-contain h-100 w-100" alt="${item.product_name}" />
                 </div>`;
 
                 // RIGHT: Product Info
@@ -1325,7 +1415,7 @@
 
                 // Place order ajax
                 $.ajax({
-                    url: "{{ config('app.url') }}/order/place",
+                    url: "{{ url('order/place') }}",
                     method: "POST",
                     data: {
                         _token: '{{ csrf_token() }}',
@@ -1338,7 +1428,7 @@
                         order_items: cart,
                         total_price: grandTotal,
                     },
-                    success: function (data) {
+                    success: function(data) {
                         // Check if order was placed successfully
                         if (data.status == "success") {
                             // Map of dynamic delivery type values to translated strings
@@ -1372,7 +1462,8 @@
                             waShareContent += productsList + `*${whatsAppMessage}*`;
 
                             // Construct WhatsApp link and open in new tab
-                            const link = `https://api.whatsapp.com/send/?phone=${whatsAppNumber}&text=${encodeURI(waShareContent)}`;
+                            const link =
+                                `https://api.whatsapp.com/send/?phone=${whatsAppNumber}&text=${encodeURI(waShareContent)}`;
                             // Confirm before opening
                             const opened = window.open(link, '_blank');
 
@@ -1392,7 +1483,7 @@
                             errorAlert(data.message);
                         }
                     },
-                    error: function (error) {
+                    error: function(error) {
                         // Show error message
                         errorAlert(error.responseJSON.message);
                     }

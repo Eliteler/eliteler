@@ -1,63 +1,173 @@
 <?php
 
 return [
-
-    /*
-     *
-     * Shared translations.
-     *
-     */
-    'title' => 'تنصيب Laravel',
-    'next' => 'متابعة',
-
-    /*
-     *
-     * Home page translations.
-     *
-     */
-    'welcome' => [
-        'title'   => 'تنصيب Laravel',
-        'message' => 'أهلا بك في صفحة تنصيب Laravel',
-    ],
-
-    /*
-     *
-     * Requirements page translations.
-     *
-     */
-    'requirements' => [
-        'title' => 'المتطلبات',
-    ],
-
-    /*
-     *
-     * Permissions page translations.
-     *
-     */
-    'permissions' => [
-        'title' => 'تراخيص المجلدات',
-    ],
-
-    /*
-     *
-     * Environment page translations.
-     *
-     */
+    'back' => 'முந்தைய',
     'environment' => [
         'title' => 'الإعدادات',
         'save' => 'حفظ ملف .env',
         'success' => 'تم حفظ الإعدادات بنجاح',
         'errors' => 'حدث خطأ أثناء إنشاء ملف .env. رجاءا قم بإنشاءه يدويا',
+        'menu' => [
+            'templateTitle' => 'படி 3 | ',
+            'title' => 'நிறுவல்',
+            'desc' => 'ஆப்ஸ் <code>.env</code> கோப்பை எவ்வாறு உள்ளமைக்க விரும்புகிறீர்கள் என்பதைத் தேர்ந்தெடுக்கவும்.',
+            'wizard-button' => 'படிவ வழிகாட்டி அமைப்பு',
+            'classic-button' => 'கிளாசிக் உரை திருத்தி',
+        ],
+        'wizard' => [
+            'templateTitle' => 'படி 3 | ',
+            'title' => 'வழிகாட்டி <code>.env</code> வழிகாட்டி',
+            'tabs' => [
+                'environment' => 'சுற்றுச்சூழல்',
+                'database' => 'தரவுத்தளம்',
+                'application' => 'விண்ணப்பம்',
+            ],
+            'form' => [
+                'name_required' => 'சுற்றுச்சூழல் பெயர் தேவை.',
+                'app_name_label' => 'பயன்பாட்டின் பெயர்',
+                'app_name_placeholder' => 'பயன்பாட்டின் பெயர்',
+                'app_environment_label' => 'பயன்பாட்டு சூழல்',
+                'app_environment_label_local' => 'உள்ளூர்',
+                'app_environment_label_developement' => 'வளர்ச்சி',
+                'app_environment_label_qa' => 'கா',
+                'app_environment_label_production' => 'உற்பத்தி',
+                'app_environment_label_other' => 'மற்றவை',
+                'app_environment_placeholder_other' => 'உங்கள் சூழலை உள்ளிடவும்...',
+                'app_debug_label' => 'பயன்பாட்டு பிழைத்திருத்தம்',
+                'app_debug_label_true' => 'உண்மை',
+                'app_debug_label_false' => 'பொய்',
+                'app_log_level_label' => 'பயன்பாட்டு பதிவு நிலை',
+                'app_log_level_label_debug' => 'பிழைத்திருத்தம்',
+                'app_log_level_label_info' => 'தகவல்',
+                'app_log_level_label_notice' => 'அறிவிப்பு',
+                'app_log_level_label_warning' => 'எச்சரிக்கை',
+                'app_log_level_label_error' => 'பிழை',
+                'app_log_level_label_critical' => 'முக்கியமான',
+                'app_log_level_label_alert' => 'எச்சரிக்கை',
+                'app_log_level_label_emergency' => 'அவசரநிலை',
+                'app_url_label' => 'பயன்பாட்டு Url',
+                'app_url_placeholder' => 'பயன்பாட்டு Url',
+                'db_connection_failed' => 'தரவுத்தளத்துடன் இணைக்க முடியவில்லை.',
+                'db_connection_label' => 'தரவுத்தள இணைப்பு',
+                'db_connection_label_mysql' => 'mysql',
+                'db_connection_label_sqlite' => 'sqlite',
+                'db_connection_label_pgsql' => 'pgsql',
+                'db_connection_label_sqlsrv' => 'sqlsrv',
+                'db_host_label' => 'தரவுத்தள ஹோஸ்ட்',
+                'db_host_placeholder' => 'தரவுத்தள ஹோஸ்ட்',
+                'db_port_label' => 'தரவுத்தள போர்ட்',
+                'db_port_placeholder' => 'தரவுத்தள போர்ட்',
+                'db_name_label' => 'தரவுத்தளத்தின் பெயர்',
+                'db_name_placeholder' => 'தரவுத்தளத்தின் பெயர்',
+                'db_username_label' => 'தரவுத்தள பயனர் பெயர்',
+                'db_username_placeholder' => 'தரவுத்தள பயனர் பெயர்',
+                'db_password_label' => 'தரவுத்தள கடவுச்சொல்',
+                'db_password_placeholder' => 'தரவுத்தள கடவுச்சொல்',
+                'app_tabs' => [
+                    'more_info' => 'மேலும் தகவல்',
+                    'broadcasting_title' => 'ஒளிபரப்பு, கேச்சிங், அமர்வு மற்றும் வரிசை',
+                    'broadcasting_label' => 'ஒலிபரப்பு இயக்கி',
+                    'broadcasting_placeholder' => 'ஒலிபரப்பு இயக்கி',
+                    'cache_label' => 'கேச் டிரைவர்',
+                    'cache_placeholder' => 'கேச் டிரைவர்',
+                    'session_label' => 'அமர்வு டிரைவர்',
+                    'session_placeholder' => 'அமர்வு டிரைவர்',
+                    'queue_label' => 'வரிசை டிரைவர்',
+                    'queue_placeholder' => 'வரிசை டிரைவர்',
+                    'redis_label' => 'ரெடிஸ் டிரைவர்',
+                    'redis_host' => 'ரெடிஸ் ஹோஸ்ட்',
+                    'redis_password' => 'ரெடிஸ் கடவுச்சொல்',
+                    'redis_port' => 'ரெடிஸ் போர்ட்',
+                    'mail_label' => 'அஞ்சல்',
+                    'mail_driver_label' => 'அஞ்சல் ஓட்டுனர்',
+                    'mail_driver_placeholder' => 'அஞ்சல் ஓட்டுனர்',
+                    'mail_host_label' => 'அஞ்சல் புரவலன்',
+                    'mail_host_placeholder' => 'அஞ்சல் புரவலன்',
+                    'mail_port_label' => 'அஞ்சல் துறைமுகம்',
+                    'mail_port_placeholder' => 'அஞ்சல் துறைமுகம்',
+                    'mail_username_label' => 'மின்னஞ்சல் பயனர்பெயர்',
+                    'mail_username_placeholder' => 'மின்னஞ்சல் பயனர்பெயர்',
+                    'mail_password_label' => 'அஞ்சல் கடவுச்சொல்',
+                    'mail_password_placeholder' => 'அஞ்சல் கடவுச்சொல்',
+                    'mail_encryption_label' => 'அஞ்சல் குறியாக்கம்',
+                    'mail_encryption_placeholder' => 'அஞ்சல் குறியாக்கம்',
+                    'pusher_label' => 'தள்ளுபவர்',
+                    'pusher_app_id_label' => 'புஷர் ஆப் ஐடி',
+                    'pusher_app_id_palceholder' => 'புஷர் ஆப் ஐடி',
+                    'pusher_app_key_label' => 'புஷர் ஆப் கீ',
+                    'pusher_app_key_palceholder' => 'புஷர் ஆப் கீ',
+                    'pusher_app_secret_label' => 'புஷர் ஆப் ரகசியம்',
+                    'pusher_app_secret_palceholder' => 'புஷர் ஆப் ரகசியம்',
+                ],
+                'buttons' => [
+                    'setup_database' => 'தரவுத்தளத்தை அமைக்கவும்',
+                    'setup_application' => 'அமைவு பயன்பாடு',
+                    'install' => 'நிறுவவும்',
+                ],
+            ],
+        ],
+        'classic' => [
+            'templateTitle' => 'படி 3 | ',
+            'title' => 'கிளாசிக் சுற்றுச்சூழல் ஆசிரியர்',
+            'save' => 'சேமி .env',
+            'back' => 'படிவ வழிகாட்டியைப் பயன்படுத்தவும்',
+            'install' => 'சேமித்து நிறுவவும்',
+        ],
     ],
-
-    /*
-     *
-     * Final page translations.
-     *
-     */
     'final' => [
         'title' => 'النهاية',
         'finished' => 'تم تنصيب البرنامج بنجاح...',
         'exit' => 'إضغط هنا للخروج',
+        'templateTitle' => 'நிறுவல் முடிந்தது',
+        'migration' => 'இடம்பெயர்வு & விதை கன்சோல் வெளியீடு:',
+        'console' => 'பயன்பாட்டு கன்சோல் வெளியீடு:',
+        'log' => 'நிறுவல் பதிவு உள்ளீடு:',
+        'env' => 'இறுதி .env கோப்பு:',
+    ],
+    'finish' => 'நிறுவவும்',
+    'forms' => [
+        'errorTitle' => 'பின்வரும் பிழைகள் ஏற்பட்டன:',
+    ],
+    'install' => 'நிறுவவும்',
+    'installed' => [
+        'success_log_message' => 'NativeCode நிறுவி வெற்றிகரமாக நிறுவப்பட்டது',
+    ],
+    'next' => 'متابعة',
+    'permissions' => [
+        'title' => 'تراخيص المجلدات',
+        'templateTitle' => 'படி 2 | ',
+        'next' => 'சூழலை கட்டமைக்கவும்',
+    ],
+    'requirements' => [
+        'title' => 'المتطلبات',
+        'templateTitle' => 'படி 1 | ',
+        'next' => 'அனுமதிகளை சரிபார்க்கவும்',
+    ],
+    'title' => 'تنصيب Laravel',
+    'updater' => [
+        'title' => 'லாராவெல் அப்டேட்டர்',
+        'welcome' => [
+            'title' => 'புதுப்பித்தலுக்கு வரவேற்கிறோம்',
+            'message' => 'புதுப்பிப்பு வழிகாட்டிக்கு வரவேற்கிறோம்.',
+        ],
+        'overview' => [
+            'title' => 'கண்ணோட்டம்',
+            'message' => '1 புதுப்பிப்பு உள்ளது.|அங்கே :எண் புதுப்பிப்புகள்.',
+            'install_updates' => 'புதுப்பிப்புகளை நிறுவவும்',
+        ],
+        'final' => [
+            'title' => 'முடிந்தது',
+            'finished' => 'பயன்பாட்டின் தரவுத்தளம் வெற்றிகரமாக புதுப்பிக்கப்பட்டது.',
+            'exit' => 'வெளியேற இங்கே கிளிக் செய்யவும்',
+        ],
+        'log' => [
+            'success_message' => 'NativeCode நிறுவி வெற்றிகரமாக புதுப்பிக்கப்பட்டது',
+        ],
+    ],
+    'welcome' => [
+        'title' => 'تنصيب Laravel',
+        'message' => 'أهلا بك في صفحة تنصيب Laravel',
+        'templateTitle' => 'வரவேற்கிறோம்',
+        'next' => 'தேவைகளை சரிபார்க்கவும்',
     ],
 ];

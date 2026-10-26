@@ -13,7 +13,7 @@
 }
 .alert-float {
     position: fixed;
-    border-radius: 0px !important;
+    border-radius: 50px !important;
     color: #ffffff !important;
     bottom: -100px;
     left: 50%;
@@ -295,11 +295,11 @@ body.preloader-site {
 textarea,
 input,
 select {
-    border-radius: 0px !important;
+    border-radius: 50px !important;
 }
 
 .alert {
-    border-radius: 0px;
+    border-radius: 50px;
     text-align: center;
     width: 100%;
     padding: 14px;
@@ -308,11 +308,11 @@ select {
 }
 
 .card {
-    border-radius: 0px;
+    border-radius: 50px;
     box-shadow: 0 0 6px rgba(0, 0, 0, 0.1) !important;
 }
 .btn {
-    border-radius: 0px !important;
+    border-radius: 50px !important;
     border: none;
     color: #ffffff;
 }

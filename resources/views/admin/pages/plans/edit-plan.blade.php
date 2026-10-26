@@ -11,25 +11,44 @@
 
 @section('content')
     <div class="page-wrapper">
-        <div class="container-fluid">
-            <!-- Page title -->
-            <div class="page-header d-print-none">
+        <!-- Page title header wrapper -->
+        <div class="page-header d-print-none">
+            <div class="container-fluid">
                 <div class="row align-items-center">
+                    <!-- Breadcrumbs -->
+                    <div class="mb-1 ms-0">
+                        <ol class="breadcrumb" aria-label="breadcrumbs">
+                            <li class="breadcrumb-item">
+                                <a href="{{ route('admin.dashboard') }}" class="text-secondary text-decoration-none">
+                                    {{ __('Dashboard') }}
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item" aria-current="page">
+                                <a href="{{ route('admin.plans') }}" class="text-secondary text-decoration-none">
+                                    {{ __('Plans') }}
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">
+                                <a href="#">{{ __('Update') }}</a>
+                            </li>
+                        </ol>
+                    </div>
                     <div class="col">
-                        <div class="page-pretitle">
-                            {{ __('Update') }}
-                        </div>
                         <h2 class="page-title">
                             <span class="me-1">{{ __($plan_details->plan_name) }}</span>
                             {{ __('Details') }}
                         </h2>
+                        <div class="text-muted mt-1">
+                            {{ __('Modify features, pricing specifications, or add custom limits to this subscription plan.') }}
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+
         <div class="page-body">
             <div class="container-fluid">
-                {{-- Failed --}}
+                {{-- Failed alert --}}
                 @if (Session::has('failed'))
                     <div class="alert alert-important alert-danger alert-dismissible mb-2" role="alert">
                         <div class="d-flex">
@@ -41,7 +60,7 @@
                     </div>
                 @endif
 
-                {{-- Success --}}
+                {{-- Success alert --}}
                 @if (Session::has('success'))
                     <div class="alert alert-important alert-success alert-dismissible mb-2" role="alert">
                         <div class="d-flex">
@@ -54,599 +73,596 @@
                 @endif
 
                 <div class="row row-deck row-cards">
-                    <div class="col-sm-12 col-lg-12">
-                        <form action="{{ route('admin.update.plan') }}" method="post" class="card">
+                    <div class="col-12">
+                        <form action="{{ route('admin.update.plan') }}" method="post" class="card border-0 shadow-sm">
                             @csrf
-                            <div class="card-header">
-                                <h4 class="page-title">{{ __('Plan Details') }}</h4>
-                            </div>
                             <div class="card-body">
                                 <div class="row">
                                     <div class="col-xl-12">
-                                        <div class="row">
-                                            <input type="hidden" class="form-control" name="plan_id"
-                                                placeholder="{{ __('Plan ID') }}" value="{{ $plan_details->plan_id }}"
-                                                readonly>
-                                            {{-- Recommended --}}
-                                            <div class="col-md-4 col-xl-4">
+                                        <div class="row g-3">
+                                            <input type="hidden" name="plan_id" value="{{ $plan_details->plan_id }}">
+
+                                            <div class="col-12">
+                                                <h2 class="page-title mb-2 fs-3">{{ __('Basic Details') }}</h2>
+                                            </div>
+
+                                            {{-- Recommended Plan (Form Switch) --}}
+                                            <div class="col-md-4 col-lg-3">
                                                 <div class="mb-3">
-                                                    <div class="form-label">{{ __('Recommended Plan') }}</div>
-                                                    <select class="form-select recommended" name="recommended">
-                                                        <option value="on"
-                                                            {{ $plan_details->recommended == 1 ? 'selected' : '' }}>
-                                                            {{ __('Yes') }}</option>
-                                                        <option value="off"
-                                                            {{ $plan_details->recommended == 0 ? 'selected' : '' }}>
-                                                            {{ __('No') }}</option>
-                                                    </select>
+                                                    <label class="form-label mb-2">{{ __('Recommended Plan') }}</label>
+                                                    <label class="form-check form-switch mt-2">
+                                                        <input type="hidden" name="recommended" value="off">
+                                                        <input class="form-check-input" type="checkbox" name="recommended"
+                                                            id="recommended" value="on"
+                                                            {{ $plan_details->recommended == 1 ? 'checked' : '' }}>
+                                                        <span class="form-check-label">{{ __('Yes') }}</span>
+                                                    </label>
+                                                    <small
+                                                        class="text-muted d-block mt-1">{{ __('Highlight this plan as the recommended option.') }}</small>
                                                 </div>
                                             </div>
-                                            {{-- Private Plan --}}
-                                            <div class="col-md-4 col-xl-4">
+
+                                            {{-- Private Plan (Form Switch) --}}
+                                            <div class="col-md-4 col-lg-3">
                                                 <div class="mb-3">
-                                                    <div class="form-label">{{ __('Private Plan') }}</div>
-                                                    <select class="form-select is_private" name="is_private">
-                                                        <option value="on"
-                                                            {{ $plan_details->is_private == 1 ? 'selected' : '' }}>
-                                                            {{ __('Yes') }}</option>
-                                                        <option value="off"
-                                                            {{ $plan_details->is_private == 0 ? 'selected' : '' }}>
-                                                            {{ __('No') }}</option>
-                                                    </select>
+                                                    <label class="form-label mb-2">{{ __('Private Plan') }}</label>
+                                                    <label class="form-check form-switch mt-2">
+                                                        <input type="hidden" name="is_private" value="off">
+                                                        <input class="form-check-input" type="checkbox" name="is_private"
+                                                            id="is_private" value="on"
+                                                            {{ $plan_details->is_private == 1 ? 'checked' : '' }}>
+                                                        <span class="form-check-label">{{ __('Yes') }}</span>
+                                                    </label>
+                                                    <small
+                                                        class="text-muted d-block mt-1">{{ __('This plan is not publicly available. Only the admin can assign it to specific customers.') }}</small>
                                                 </div>
                                             </div>
+
                                             {{-- Plan Type --}}
                                             <input type="hidden" name="plan_type" value="{{ $plan_details->plan_type }}">
 
-                                            {{-- Plan Name --}}
-                                            <div class="col-md-4 col-xl-4">
+                                            {{-- Plan Name (Input) --}}
+                                            <div class="col-md-4 col-lg-3">
                                                 <div class="mb-3">
                                                     <label class="form-label required">{{ __('Plan Name') }}</label>
                                                     <input type="text" class="form-control" name="plan_name"
-                                                        placeholder="{{ __('Plan Name') }}"
+                                                        placeholder="{{ __('Enter plan name') }}"
                                                         value="{{ $plan_details->plan_name }}" required>
                                                 </div>
                                             </div>
-                                            {{-- Description --}}
-                                            <div class="col-md-4 col-xl-4">
+
+                                            {{-- Description (Input) --}}
+                                            <div class="col-md-8 col-lg-3">
                                                 <div class="mb-3">
                                                     <label class="form-label required">{{ __('Description') }}</label>
                                                     <input type="text" class="form-control" name="plan_description"
-                                                        placeholder="{{ __('Description') }}"
+                                                        placeholder="{{ __('Enter a short description') }}"
                                                         value="{{ $plan_details->plan_description }}" required>
-
                                                 </div>
                                             </div>
-                                            <h2 class="page-title my-3">
-                                                {{ __('Plan Prices') }}
-                                            </h2>
-                                            <div class="col-md-4 col-xl-3">
+
+                                            <div class="col-12 mt-4">
+                                                <h2 class="page-title mb-2 fs-3">{{ __('Pricing') }}</h2>
+                                            </div>
+
+                                            {{-- Price --}}
+                                            <div class="col-md-4 col-lg-4">
                                                 <div class="mb-3">
                                                     <label class="form-label required">{{ __('Price') }}</label>
-                                                    <input type="number" class="form-control" name="plan_price"
-                                                        min="0" step="0.01" placeholder="{{ __('Price') }}"
-                                                        value="{{ $plan_details->plan_price }}" required>
-                                                    <small class="text-muted">{{ __('For free, enter 0') }} </small>
+                                                    <input type="number" class="form-control" id="plan_price"
+                                                        name="plan_price" min="0" step="0.01"
+                                                        placeholder="{{ __('Price') }}"
+                                                        value="{{ $plan_details->plan_price }}"
+                                                        oninput="handlePricingLogic()" required>
+                                                    <small
+                                                        class="text-muted d-block mt-1">{{ __('Use 0 to make this a free plan.') }}</small>
                                                 </div>
                                             </div>
 
-                                            <div class="col-md-4 col-xl-3">
+                                            {{-- Validity (Days) --}}
+                                            <div class="col-md-4 col-lg-4">
                                                 <div class="mb-3">
-                                                    <label class="form-label required">{{ __('Validity') }}</label>
-                                                    <input type="number" class="form-control" name="validity"
-                                                        min="0" max="9999" placeholder="{{ __('Validity') }}"
+                                                    <label class="form-label required">{{ __('Validity (Days)') }}</label>
+                                                    <input type="number" class="form-control" id="validity"
+                                                        name="validity" min="0" max="9999"
+                                                        placeholder="{{ __('Validity') }}"
                                                         value="{{ $plan_details->validity }}" required>
-                                                    <small class="text-muted">{{ __('For forever, enter 9999') }} </small>
+                                                    <small
+                                                        class="text-muted d-block mt-1">{{ __('Use 9999 for forever validity.') }}</small>
                                                 </div>
                                             </div>
 
                                             {{-- Trial period --}}
-                                            <div class="col-md-4 col-xl-3">
+                                            <div class="col-md-4 col-lg-4">
                                                 <div class="mb-3">
                                                     <label class="form-label required">{{ __('Trial period') }}</label>
                                                     <input type="number" class="form-control" name="trial_period"
                                                         min="0" max="9999"
-                                                        placeholder="{{ __('Trial period') }}"
+                                                        placeholder="{{ __('Enter trial period in days') }}"
                                                         value="{{ $plan_details->trial }}" required>
                                                     <small
-                                                        class="text-muted">{{ __('Setting the value to 0 disables the trial period, meaning users will not receive any free trial access.') }}
-                                                    </small>
+                                                        class="text-muted d-block mt-1">{{ __('Enter 0 to disable the free trial.') }}</small>
                                                 </div>
                                             </div>
 
-                                            {{-- vCard Features --}}
+                                            {{-- Business Card Features --}}
                                             @if ($plan_details->plan_type == 'BOTH' || $plan_details->plan_type == 'VCARD')
-                                                <div class="row" id="vcard-features">
-                                                    <h2 class="page-title my-3">
-                                                        {{ __('vCard Features') }}
-                                                    </h2>
+                                                <div class="row g-3" id="vcard-features">
+                                                    <div class="col-12 mt-4">
+                                                        <h2 class="page-title mb-2 fs-3">
+                                                            {{ __('Business Card Features') }}</h2>
+                                                    </div>
 
-                                                    {{-- No. of vCards --}}
-                                                    <div class="col-md-4 col-sm-6">
+                                                    {{-- No. of Business Cards --}}
+                                                    <div class="col-md-4 col-lg-3">
                                                         <div class="mb-3">
                                                             <label
-                                                                class="form-label required">{{ __('No. of vCards') }}</label>
+                                                                class="form-label required">{{ __('No. of Business Cards') }}</label>
                                                             <input type="number" class="form-control"
                                                                 name="no_of_vcards" min="0" max="999"
-                                                                placeholder="{{ __('No. of vCards') }}"
+                                                                placeholder="{{ __('Enter no. of business cards') }}"
                                                                 value="{{ $plan_details->no_of_vcards }}" required>
-                                                            <small class="text-muted">{{ __('For unlimited, enter 999') }}
-                                                            </small>
+                                                            <small
+                                                                class="text-muted d-block mt-1">{{ __('Use 999 for unlimited access to this feature.') }}</small>
                                                         </div>
                                                     </div>
 
                                                     {{-- No. of Services --}}
-                                                    <div class="col-md-4 col-sm-6">
+                                                    <div class="col-md-4 col-lg-3">
                                                         <div class="mb-3">
                                                             <label
                                                                 class="form-label required">{{ __('No. of Services') }}</label>
                                                             <input type="number" class="form-control"
                                                                 name="no_of_services" min="0" max="999"
-                                                                placeholder="{{ __('No. of Services') }}"
+                                                                placeholder="{{ __('Enter no. of services') }}"
                                                                 value="{{ $plan_details->no_of_services }}" required>
-                                                            <small class="text-muted">{{ __('For unlimited, enter 999') }}
-                                                            </small>
+                                                            <small
+                                                                class="text-muted d-block mt-1">{{ __('Use 999 for unlimited access to this feature.') }}</small>
                                                         </div>
                                                     </div>
 
                                                     {{-- No. of Products --}}
-                                                    <div class="col-md-4 col-sm-6">
+                                                    <div class="col-md-4 col-lg-3">
                                                         <div class="mb-3">
                                                             <label
                                                                 class="form-label required">{{ __('No. of Products') }}</label>
                                                             <input type="number" class="form-control"
                                                                 name="no_of_vcard_products" min="0" max="999"
-                                                                placeholder="{{ __('No. of Products') }}"
+                                                                placeholder="{{ __('Enter no. of products') }}"
                                                                 value="{{ $plan_details->no_of_vcard_products }}"
                                                                 required>
-                                                            <small class="text-muted">{{ __('For unlimited, enter 999') }}
-                                                            </small>
+                                                            <small
+                                                                class="text-muted d-block mt-1">{{ __('Use 999 for unlimited access to this feature.') }}</small>
                                                         </div>
                                                     </div>
 
                                                     {{-- No. of Links --}}
-                                                    <div class="col-md-4 col-sm-6">
+                                                    <div class="col-md-4 col-lg-3">
                                                         <div class="mb-3">
                                                             <label
                                                                 class="form-label required">{{ __('No. of Links') }}</label>
                                                             <input type="number" class="form-control" name="no_of_links"
                                                                 min="0" max="999"
-                                                                placeholder="{{ __('No. of Links') }}"
+                                                                placeholder="{{ __('Enter no. of links') }}"
                                                                 value="{{ $plan_details->no_of_links }}" required>
-                                                            <small class="text-muted">{{ __('For unlimited, enter 999') }}
-                                                            </small>
+                                                            <small
+                                                                class="text-muted d-block mt-1">{{ __('Use 999 for unlimited access to this feature.') }}</small>
                                                         </div>
                                                     </div>
 
                                                     {{-- No. of Payment Listed --}}
-                                                    <div class="col-md-4 col-sm-6">
+                                                    <div class="col-md-4 col-lg-3">
                                                         <div class="mb-3">
                                                             <label
                                                                 class="form-label required">{{ __('No. of Payment Listed') }}</label>
                                                             <input type="number" class="form-control"
                                                                 name="no_of_payments" min="0" max="999"
-                                                                placeholder="{{ __('No. of Payment Listed') }}"
+                                                                placeholder="{{ __('Enter no. of payments') }}"
                                                                 value="{{ $plan_details->no_of_payments }}" required>
-                                                            <small class="text-muted">{{ __('For unlimited, enter 999') }}
-                                                            </small>
+                                                            <small
+                                                                class="text-muted d-block mt-1">{{ __('Use 999 for unlimited access to this feature.') }}</small>
                                                         </div>
                                                     </div>
 
                                                     {{-- No. of Testimonials --}}
-                                                    <div class="col-md-4 col-sm-6">
+                                                    <div class="col-md-4 col-lg-3">
                                                         <div class="mb-3">
                                                             <label
                                                                 class="form-label required">{{ __('No. of Testimonials') }}</label>
                                                             <input type="number" class="form-control"
                                                                 name="no_testimonials" min="0" max="999"
-                                                                placeholder="{{ __('No. of Testimonials') }}"
+                                                                placeholder="{{ __('Enter no. of testimonials') }}"
                                                                 value="{{ $plan_details->no_testimonials }}" required>
-                                                            <small class="text-muted">{{ __('For unlimited, enter 999') }}
-                                                            </small>
+                                                            <small
+                                                                class="text-muted d-block mt-1">{{ __('Use 999 for unlimited access to this feature.') }}</small>
                                                         </div>
                                                     </div>
 
                                                     {{-- No. of Galleries --}}
-                                                    <div class="col-md-4 col-sm-6">
+                                                    <div class="col-md-4 col-lg-3">
                                                         <div class="mb-3">
                                                             <label
                                                                 class="form-label required">{{ __('No. of Galleries') }}</label>
                                                             <input type="number" class="form-control"
                                                                 name="no_of_galleries" min="0" max="999"
-                                                                placeholder="{{ __('No. of Galleries') }}"
+                                                                placeholder="{{ __('Enter no. of galleries') }}"
                                                                 value="{{ $plan_details->no_of_galleries }}" required>
-                                                            <small class="text-muted">{{ __('For unlimited, enter 999') }}
-                                                            </small>
-                                                        </div>
-                                                    </div>
-
-                                                    {{-- Business Hours --}}
-                                                    <div class="col-md-4 col-sm-6">
-                                                        <div class="mb-3">
-                                                            <div class="form-label required">{{ __('Business Hours') }}
-                                                            </div>
-                                                            <select class="form-select business_hours"
-                                                                name="business_hours" required>
-                                                                <option value="on"
-                                                                    {{ $plan_details->business_hours == 1 ? 'selected' : '' }}>
-                                                                    {{ __('Yes') }}</option>
-                                                                <option value="off"
-                                                                    {{ $plan_details->business_hours == 0 ? 'selected' : '' }}>
-                                                                    {{ __('No') }}</option>
-                                                            </select>
-                                                        </div>
-                                                    </div>
-
-                                                    {{-- Appointment --}}
-                                                    <div class="col-md-4 col-sm-6">
-                                                        <div class="mb-3">
-                                                            <div class="form-label required">{{ __('Appointment') }}</div>
-                                                            <select class="form-select appointment" name="appointment"
-                                                                required>
-                                                                <option value="on"
-                                                                    {{ $plan_details->appointment == 1 ? 'selected' : '' }}>
-                                                                    {{ __('Yes') }}</option>
-                                                                <option value="off"
-                                                                    {{ $plan_details->appointment == 0 ? 'selected' : '' }}>
-                                                                    {{ __('No') }}</option>
-                                                            </select>
-                                                        </div>
-                                                    </div>
-
-                                                    {{-- Service Booking --}}
-                                                    <div class="col-md-4 col-sm-6">
-                                                        <div class="mb-3">
-                                                            <div class="form-label required">{{ __('Service Booking') }}
-                                                            </div>
-                                                            <select class="form-select service_booking"
-                                                                name="service_booking" required>
-                                                                <option value="on"
-                                                                    {{ $plan_details->service_booking == 1 ? 'selected' : '' }}>
-                                                                    {{ __('Yes') }}</option>
-                                                                <option value="off"
-                                                                    {{ $plan_details->service_booking == 0 ? 'selected' : '' }}>
-                                                                    {{ __('No') }}</option>
-                                                            </select>
-                                                        </div>
-                                                    </div>
-
-                                                    {{-- Contact Form --}}
-                                                    <div class="col-md-4 col-sm-6">
-                                                        <div class="mb-3">
-                                                            <div class="form-label required">{{ __('Contact Form') }}
-                                                            </div>
-                                                            <select class="form-select contact_form" name="contact_form"
-                                                                required>
-                                                                <option value="on"
-                                                                    {{ $plan_details->contact_form == 1 ? 'selected' : '' }}>
-                                                                    {{ __('Yes') }}</option>
-                                                                <option value="off"
-                                                                    {{ $plan_details->contact_form == 0 ? 'selected' : '' }}>
-                                                                    {{ __('No') }}</option>
-                                                            </select>
-                                                        </div>
-                                                    </div>
-
-                                                    {{-- Password Protected --}}
-                                                    <div class="col-md-4 col-sm-6">
-                                                        <div class="mb-3">
-                                                            <div class="form-label required">
-                                                                {{ __('Password Protected') }}</div>
-                                                            <select class="form-select password_protected"
-                                                                name="password_protected" required>
-                                                                <option value="on"
-                                                                    {{ $plan_details->password_protected == 1 ? 'selected' : '' }}>
-                                                                    {{ __('Yes') }}</option>
-                                                                <option value="off"
-                                                                    {{ $plan_details->password_protected == 0 ? 'selected' : '' }}>
-                                                                    {{ __('No') }}</option>
-                                                            </select>
+                                                            <small
+                                                                class="text-muted d-block mt-1">{{ __('Use 999 for unlimited access to this feature.') }}</small>
                                                         </div>
                                                     </div>
 
                                                     {{-- No. of Enquiries --}}
-                                                    <div class="col-md-4 col-sm-6">
+                                                    <div class="col-md-4 col-lg-3">
                                                         <div class="mb-3">
-                                                            <div class="form-label required">{{ __('No. of Enquiries') }}
-                                                            </div>
+                                                            <label
+                                                                class="form-label required">{{ __('No. of Enquiries') }}</label>
                                                             <input type="number" class="form-control"
                                                                 name="no_of_enquires" min="0" max="999"
-                                                                placeholder="{{ __('No. of Enquiries') }}"
+                                                                placeholder="{{ __('Enter no. of enquiries') }}"
                                                                 value="{{ $plan_details->no_of_enquires }}" required>
-                                                            <small class="text-muted">{{ __('For unlimited, enter 999') }}
-                                                            </small>
+                                                            <small
+                                                                class="text-muted d-block mt-1">{{ __('Use 999 for unlimited access to this feature.') }}</small>
+                                                        </div>
+                                                    </div>
+
+                                                    {{-- No. of AI Credits --}}
+                                                    <div class="col-md-4 col-lg-3 mt-3">
+                                                        <div class="mb-3">
+                                                            <label class="form-label required">{{ __('AI Credits') }}
+                                                                <span id="popover-element"
+                                                                    class="form-help bg-primary text-white ms-1"
+                                                                    data-bs-toggle="popover" data-bs-placement="top"
+                                                                    data-bs-html="true"
+                                                                    data-bs-content="<p>{{ __('1 AI Credit allows the customer to generate 1 Digital Business Card using AI. AI credits never expire and can be used at any time.') }}</p>">
+                                                                    <small style="font-family: monospace;">i</small>
+                                                                </span></label>
+                                                            <input type="number" class="form-control" name="ai_credits"
+                                                                min="-1"
+                                                                placeholder="{{ __('Enter no. of AI credit') }}"
+                                                                value="{{ $plan_details->ai_credits }}" required>
+                                                            <small
+                                                                class="text-muted d-block mt-1">{{ __('Use -1 for unlimited, or 0 if this plan should not include AI credits.') }}</small>
+                                                        </div>
+                                                    </div>
+
+                                                    {{-- No. of trial AI Business Cards --}}
+                                                    <div class="col-md-4 col-lg-3 mt-3">
+                                                        <div class="mb-3">
+                                                            <label
+                                                                class="form-label required">{{ __('AI Credits for Trial Period') }}
+                                                                <span id="popover-element"
+                                                                    class="form-help bg-primary text-white ms-1"
+                                                                    data-bs-toggle="popover" data-bs-placement="top"
+                                                                    data-bs-html="true"
+                                                                    data-bs-content="<p>{{ __('Any unused AI credits will automatically expire when the trial ends.') }}</p>">
+                                                                    ?
+                                                                </span>
+                                                            </label>
+                                                            <input type="number" class="form-control"
+                                                                name="trial_ai_credits" min="-1"
+                                                                placeholder="{{ __('Enter no. of AI credit') }}"
+                                                                value="{{ $plan_details->trial_ai_credits }}" required>
+                                                            <small
+                                                                class="text-muted d-block mt-1">{{ __('Use 0 if you do not want to provide AI credits with this plan.') }}</small>
+                                                        </div>
+                                                    </div>
+
+                                                    {{-- Business Hours (Form Switch) --}}
+                                                    <div class="col-md-4 col-lg-3">
+                                                        <div class="mb-3">
+                                                            <label
+                                                                class="form-label mb-2">{{ __('Business Hours') }}</label>
+                                                            <label class="form-check form-switch mt-2">
+                                                                <input type="hidden" name="business_hours"
+                                                                    value="off">
+                                                                <input class="form-check-input" type="checkbox"
+                                                                    name="business_hours" value="on"
+                                                                    {{ $plan_details->business_hours == 1 ? 'checked' : '' }}>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+
+                                                    {{-- Appointment / Appointments (Form Switch) --}}
+                                                    <div class="col-md-4 col-lg-3">
+                                                        <div class="mb-3">
+                                                            <label
+                                                                class="form-label mb-2">{{ __('Appointments') }}</label>
+                                                            <label class="form-check form-switch mt-2">
+                                                                <input type="hidden" name="appointment" value="off">
+                                                                <input class="form-check-input" type="checkbox"
+                                                                    name="appointment" value="on"
+                                                                    {{ $plan_details->appointment == 1 ? 'checked' : '' }}>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+
+                                                    {{-- Service Booking (Form Switch) --}}
+                                                    <div class="col-md-4 col-lg-3">
+                                                        <div class="mb-3">
+                                                            <label
+                                                                class="form-label mb-2">{{ __('Service Booking') }}</label>
+                                                            <label class="form-check form-switch mt-2">
+                                                                <input type="hidden" name="service_booking"
+                                                                    value="off">
+                                                                <input class="form-check-input" type="checkbox"
+                                                                    name="service_booking" value="on"
+                                                                    {{ $plan_details->service_booking == 1 ? 'checked' : '' }}>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+
+                                                    {{-- Contact Form (Form Switch) --}}
+                                                    <div class="col-md-4 col-lg-3">
+                                                        <div class="mb-3">
+                                                            <label
+                                                                class="form-label mb-2">{{ __('Contact Form') }}</label>
+                                                            <label class="form-check form-switch mt-2">
+                                                                <input type="hidden" name="contact_form" value="off">
+                                                                <input class="form-check-input" type="checkbox"
+                                                                    name="contact_form" value="on"
+                                                                    {{ $plan_details->contact_form == 1 ? 'checked' : '' }}>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+
+                                                    {{-- Password Protected / Password Protection (Form Switch) --}}
+                                                    <div class="col-md-4 col-lg-3">
+                                                        <div class="mb-3">
+                                                            <label
+                                                                class="form-label mb-2">{{ __('Password Protection') }}</label>
+                                                            <label class="form-check form-switch mt-2">
+                                                                <input type="hidden" name="password_protected"
+                                                                    value="off">
+                                                                <input class="form-check-input" type="checkbox"
+                                                                    name="password_protected" value="on"
+                                                                    {{ $plan_details->password_protected == 1 ? 'checked' : '' }}>
+                                                            </label>
                                                         </div>
                                                     </div>
 
                                                     {{-- Check Google Wallet --}}
                                                     @if (is_dir(base_path('plugins/GoogleWallet')))
-                                                        {{-- Google Wallet --}}
-                                                        <div class="col-md-4 col-sm-6">
+                                                        <div class="col-md-4 col-lg-3">
                                                             <div class="mb-3">
-                                                                <div class="form-label required">{{ __('Google Wallet') }}
-                                                                </div>
-                                                                <select class="form-select google_wallet"
-                                                                    name="google_wallet" required>
-                                                                    <option value="on"
-                                                                        {{ $plan_details->google_wallet == 1 ? 'selected' : '' }}>
-                                                                        {{ __('Yes') }}</option>
-                                                                    <option value="off"
-                                                                        {{ $plan_details->google_wallet == 0 ? 'selected' : '' }}>
-                                                                        {{ __('No') }}</option>
-                                                                </select>
+                                                                <label
+                                                                    class="form-label mb-2">{{ __('Google Wallet') }}</label>
+                                                                <label class="form-check form-switch mt-2">
+                                                                    <input type="hidden" name="google_wallet"
+                                                                        value="off">
+                                                                    <input class="form-check-input" type="checkbox"
+                                                                        name="google_wallet" value="on"
+                                                                        {{ $plan_details->google_wallet == 1 ? 'checked' : '' }}>
+                                                                </label>
                                                             </div>
                                                         </div>
 
-                                                        {{-- No. of Wallets --}}
-                                                        <div class="col-md-4 col-sm-6">
+                                                        <div class="col-md-4 col-lg-3">
                                                             <div class="mb-3">
-                                                                <div class="form-label required">
-                                                                    {{ __('No. of Wallets') }}
-                                                                </div>
+                                                                <label
+                                                                    class="form-label required">{{ __('No. of Wallets') }}</label>
                                                                 <input type="number" class="form-control"
                                                                     name="no_of_google_wallets" min="0"
                                                                     max="999"
-                                                                    placeholder="{{ __('No. of Wallets') }}"
+                                                                    placeholder="{{ __('Enter no. of wallets') }}"
                                                                     value="{{ $plan_details->no_of_google_wallets }}"
                                                                     required>
                                                                 <small
-                                                                    class="text-muted">{{ __('For unlimited, enter 999') }}
-                                                                </small>
+                                                                    class="text-muted d-block mt-1">{{ __('Use 999 for unlimited access to this feature.') }}</small>
                                                             </div>
                                                         </div>
                                                     @endif
-                                                </div>
-
-                                                {{-- No. of AI vCards --}}
-                                                <div class="col-md-3 col-sm-6">
-                                                    <div class="mb-3">
-                                                        <label class="form-label required">{{ __('AI Credits') }}
-                                                            <span id="popover-element"
-                                                                class="form-help bg-primary text-white ms-1"
-                                                                data-bs-toggle="popover" data-bs-placement="top"
-                                                                data-bs-html="true"
-                                                                data-bs-content="<p>{{ __('1 Credit = 1 AI Generation') }}</p>">
-                                                                ?
-                                                            </span></label>
-                                                        <input type="number" class="form-control" name="ai_credits"
-                                                            min="0" max="999"
-                                                            placeholder="{{ __('limit') }}"
-                                                            value="{{ $plan_details->ai_credits }}" required>
-                                                        <small
-                                                            class="text-muted">{{ __('Enter 999 for unlimited. Enter 0 to disable.') }}</small>
-                                                    </div>
                                                 </div>
                                             @endif
 
                                             {{-- Store Features --}}
                                             @if ($plan_details->plan_type == 'BOTH' || $plan_details->plan_type == 'STORE')
-                                                <div class="row" id="store-features">
-                                                    <h2 class="page-title my-3">
-                                                        {{ __('Store Features') }}
-                                                    </h2>
-                                                    <div class="col-md-4 col-sm-6">
+                                                <div class="row g-3" id="store-features">
+                                                    <div class="col-12 mt-4">
+                                                        <h2 class="page-title mb-2 fs-3">{{ __('Store Features') }}</h2>
+                                                    </div>
+                                                    <div class="col-md-4 col-lg-4">
                                                         <div class="mb-3">
                                                             <label
                                                                 class="form-label required">{{ __('No. of Stores') }}</label>
                                                             <input type="number" class="form-control"
                                                                 name="no_of_stores" min="0" max="999"
-                                                                placeholder="{{ __('No. of Stores') }}"
+                                                                placeholder="{{ __('Enter no. of stores') }}"
                                                                 value="{{ $plan_details->no_of_stores }}" required>
                                                             <small
-                                                                class="text-muted">{{ __('For unlimited, enter 999') }}
-                                                            </small>
+                                                                class="text-muted d-block mt-1">{{ __('Use 999 for unlimited access to this feature.') }}</small>
                                                         </div>
                                                     </div>
-                                                    <div class="col-md-4 col-sm-6">
+                                                    <div class="col-md-4 col-lg-4">
                                                         <div class="mb-3">
                                                             <label
                                                                 class="form-label required">{{ __('No. of Categories') }}</label>
                                                             <input type="number" class="form-control"
                                                                 name="no_of_categories" min="0" max="999"
-                                                                placeholder="{{ __('No. of Categories') }}"
+                                                                placeholder="{{ __('Enter no. of categories') }}"
                                                                 value="{{ $plan_details->no_of_categories }}" required>
                                                             <small
-                                                                class="text-muted">{{ __('For unlimited, enter 999') }}
-                                                            </small>
+                                                                class="text-muted d-block mt-1">{{ __('Use 999 for unlimited access to this feature.') }}</small>
                                                         </div>
                                                     </div>
-                                                    <div class="col-md-4 col-sm-6">
+                                                    <div class="col-md-4 col-lg-4">
                                                         <div class="mb-3">
                                                             <label
                                                                 class="form-label required">{{ __('No. of Products') }}</label>
                                                             <input type="number" class="form-control"
                                                                 name="no_of_store_products" min="0" max="999"
-                                                                placeholder="{{ __('No. of Products') }}"
+                                                                placeholder="{{ __('Enter no. of products') }}"
                                                                 value="{{ $plan_details->no_of_store_products }}"
                                                                 required>
                                                             <small
-                                                                class="text-muted">{{ __('For unlimited, enter 999') }}
-                                                            </small>
+                                                                class="text-muted d-block mt-1">{{ __('Use 999 for unlimited access to this feature.') }}</small>
                                                         </div>
                                                     </div>
                                                 </div>
                                             @endif
 
-                                            <div class="row">
-                                                <h2 class="page-title my-3">
-                                                    {{ __('Others') }}
-                                                </h2>
+                                            <div class="row g-3">
+                                                <div class="col-12 mt-4">
+                                                    <h2 class="page-title mb-2 fs-3">{{ __('Others') }}</h2>
+                                                </div>
 
                                                 {{-- Storage --}}
-                                                <div class="col-md-3 col-sm-6">
+                                                <div class="col-md-4 col-lg-4">
                                                     <div class="mb-3">
                                                         <label class="form-label required">{{ __('Storage') }}</label>
                                                         <div class="input-group mb-2">
                                                             <input type="number" class="form-control" name="storage"
                                                                 min="0" max="999"
-                                                                placeholder="{{ __('Storage') }}"
+                                                                placeholder="{{ __('Enter storage') }}"
                                                                 value="{{ $plan_details->storage }}" required>
                                                             <span class="input-group-text">{{ __('MB per user') }}</span>
                                                         </div>
                                                         <small
-                                                            class="text-muted">{{ __('For unlimited, enter 999') }}</small>
+                                                            class="text-muted d-block mt-1">{{ __('Use 999 for unlimited access to this feature.') }}</small>
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            <h2 class="page-title my-3">
-                                                {{ __('Additional features') }}
-                                            </h2>
+                                            <div class="col-12 mt-4">
+                                                <h2 class="page-title mb-2 fs-3">{{ __('Additional features') }}</h2>
+                                            </div>
 
-                                            {{-- Custom domain --}}
-                                            <div class="col-md-3 col-sm-6">
-                                                <div class="mb-3">
-                                                    <div class="form-label">{{ __('Custom Domain') }}</div>
-                                                    <div class="form-check form-switch">
-                                                        <input class="form-check-input" type="checkbox"
-                                                            name="custom_domain" value="on"
-                                                            {{ $plan_details->custom_domain == 1 ? 'checked' : '' }}>
-                                                        <label class="form-check-label"
-                                                            for="custom_domain">{{ __('Yes') }}</label>
-                                                    </div>
-                                                </div>
+                                            {{-- Custom domain (Form Switch) --}}
+                                            <div class="col-md-3 col-lg-3">
+                                                <label class="form-check form-switch mt-2">
+                                                    <input type="hidden" name="custom_domain" value="off">
+                                                    <input class="form-check-input" type="checkbox" id="custom_domain"
+                                                        name="custom_domain" value="on"
+                                                        {{ $plan_details->custom_domain == 1 ? 'checked' : '' }}>
+                                                    <span class="form-check-label">{{ __('Custom Domain') }}</span>
+                                                </label>
                                             </div>
 
                                             {{-- NFC Card --}}
-                                            <div class="col-md-3 col-sm-6 d-none">
-                                                <div class="mb-3">
-                                                    <div class="form-label">{{ __('NFC Card') }}
-                                                        <span id="popover-element" class="form-help bg-primary text-white"
+                                            <div class="col-md-3 col-lg-3 d-none">
+                                                <label class="form-check form-switch mt-2">
+                                                    <input type="hidden" name="nfc_card" value="off">
+                                                    <input class="form-check-input" type="checkbox" id="nfc_card"
+                                                        name="nfc_card" value="on"
+                                                        {{ $plan_details->nfc_card == 1 ? 'checked' : '' }}>
+                                                    <span class="form-check-label">{{ __('NFC Card') }}</span>
+                                                </label>
+                                            </div>
+
+                                            {{-- PWA (Form Switch) --}}
+                                            <div class="col-md-3 col-lg-3">
+                                                <div class="d-flex align-items-center justify-content-between mt-2">
+                                                    <div class="d-flex align-items-center">
+                                                        <label class="form-check form-switch mb-0">
+                                                            <input type="hidden" name="pwa" value="off">
+                                                            <input class="form-check-input" type="checkbox"
+                                                                id="pwa" name="pwa" value="on"
+                                                                {{ $plan_details->pwa == 1 ? 'checked' : '' }}>
+                                                        </label>
+
+                                                        <label for="pwa" class="form-check-label mb-0">
+                                                            {{ __('PWA') }}
+                                                        </label>
+
+                                                        <span class="form-help bg-primary text-white ms-2"
                                                             data-bs-toggle="popover" data-bs-placement="top"
                                                             data-bs-html="true"
-                                                            data-bs-content="<p>{{ __('NFC stands for Near Field Communication. NFC is a wireless technology that allows two devices to communicate with each other directly, without the need for a wired connection.') }}</p>">?</span>
-                                                    </div>
-                                                    <div class="form-check form-switch">
-                                                        <input class="form-check-input" type="checkbox" name="nfc_card"
-                                                            value="on"
-                                                            {{ $plan_details->nfc_card == 1 ? 'checked' : '' }}>
-                                                        <label class="form-check-label"
-                                                            for="nfc_card">{{ __('Yes') }}</label>
+                                                            data-bs-content="<p>{{ __('PWA stands for Progressive Web Application. PWAs are web applications that are built using common web technologies like HTML, CSS, JavaScript, and WebAssembly. They are designed to work on any platform with a standards-compliant browser, including desktop and mobile devices.') }}</p>">
+                                                            <small style="font-family: monospace;">i</small>
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </div>
 
-                                            {{-- PWA --}}
-                                            <div class="col-md-3 col-sm-6">
-                                                <div class="mb-3">
-                                                    <div class="form-label">{{ __('PWA') }}
-                                                        <span id="popover-element" class="form-help bg-primary text-white"
-                                                            data-bs-toggle="popover" data-bs-placement="top"
-                                                            data-bs-html="true"
-                                                            data-bs-content="<p>{{ __('PWA stands for Progressive Web Application. PWAs are web applications that are built using common web technologies like HTML, CSS, JavaScript, and WebAssembly. They are designed to work on any platform with a standards-compliant browser, including desktop and mobile devices.') }}</p>">?</span>
-                                                    </div>
-                                                    <div class="form-check form-switch">
-                                                        <input class="form-check-input" type="checkbox" name="pwa"
-                                                            value="on"
-                                                            {{ $plan_details->pwa == 1 ? 'checked' : '' }}>
-                                                        <label class="form-check-label"
-                                                            for="pwa">{{ __('Yes') }}</label>
-                                                    </div>
-                                                </div>
+                                            {{-- Advanced Settings (Form Switch) --}}
+                                            <div class="col-md-3 col-lg-3">
+                                                <label class="form-check form-switch mt-2">
+                                                    <input type="hidden" name="advanced_settings" value="off">
+                                                    <input class="form-check-input" type="checkbox"
+                                                        id="advanced_settings" name="advanced_settings" value="on"
+                                                        {{ $plan_details->advanced_settings == 1 ? 'checked' : '' }}>
+                                                    <span class="form-check-label">{{ __('Advanced Settings') }}</span>
+                                                </label>
                                             </div>
 
-                                            {{-- Advanced Settings --}}
-                                            <div class="col-md-3 col-sm-6">
-                                                <div class="mb-3">
-                                                    <div class="form-label">{{ __('Advanced Settings') }}</div>
-                                                    <div class="form-check form-switch">
-                                                        <input class="form-check-input" type="checkbox"
-                                                            name="advanced_settings" value="on"
-                                                            {{ $plan_details->advanced_settings == 1 ? 'checked' : '' }}>
-                                                        <label class="form-check-label"
-                                                            for="advanced_settings">{{ __('Yes') }}</label>
-                                                    </div>
-                                                </div>
+                                            {{-- Personalized Link (Form Switch) --}}
+                                            <div class="col-md-3 col-lg-3">
+                                                <label class="form-check form-switch mt-2">
+                                                    <input type="hidden" name="personalized_link" value="off">
+                                                    <input class="form-check-input" type="checkbox"
+                                                        id="personalized_link" name="personalized_link" value="on"
+                                                        {{ $plan_details->personalized_link == 1 ? 'checked' : '' }}>
+                                                    <span class="form-check-label">{{ __('Personalized Link') }}</span>
+                                                </label>
                                             </div>
 
-                                            {{-- Personalized Link --}}
-                                            <div class="col-md-3 col-sm-6">
-                                                <div class="mb-3">
-                                                    <div class="form-label">{{ __('Personalized Link') }}</div>
-                                                    <div class="form-check form-switch">
-                                                        <input class="form-check-input" type="checkbox"
-                                                            name="personalized_link" value="on"
-                                                            {{ $plan_details->personalized_link == 1 ? 'checked' : '' }}>
-                                                        <label class="form-check-label"
-                                                            for="personalized_link">{{ __('Yes') }}</label>
-                                                    </div>
-                                                </div>
+                                            {{-- Hide Branding (Form Switch) --}}
+                                            <div class="col-md-3 col-lg-3 mt-3">
+                                                <label class="form-check form-switch mt-2">
+                                                    <input type="hidden" name="hide_branding" value="off">
+                                                    <input class="form-check-input" type="checkbox" id="hide_branding"
+                                                        name="hide_branding" value="on"
+                                                        {{ $plan_details->hide_branding == 1 ? 'checked' : '' }}>
+                                                    <span class="form-check-label">{{ __('Hide Branding') }}</span>
+                                                </label>
                                             </div>
 
-                                            {{-- Hide Branding --}}
-                                            <div class="col-md-3 col-sm-6">
-                                                <div class="mb-3">
-                                                    <div class="form-label">{{ __('Hide Branding') }}</div>
-                                                    <div class="form-check form-switch">
-                                                        <input class="form-check-input" type="checkbox"
-                                                            name="hide_branding" value="on"
-                                                            {{ $plan_details->hide_branding == 1 ? 'checked' : '' }}>
-                                                        <label class="form-check-label"
-                                                            for="hide_branding">{{ __('Yes') }}</label>
-                                                    </div>
-                                                </div>
+                                            {{-- Free Setup (Form Switch) --}}
+                                            <div class="col-md-3 col-lg-3 mt-3">
+                                                <label class="form-check form-switch mt-2">
+                                                    <input type="hidden" name="free_setup" value="off">
+                                                    <input class="form-check-input" type="checkbox" id="free_setup"
+                                                        name="free_setup" value="on"
+                                                        {{ $plan_details->free_setup == 1 ? 'checked' : '' }}>
+                                                    <span class="form-check-label">{{ __('Free Setup') }}</span>
+                                                </label>
                                             </div>
 
-                                            {{-- Free Setup --}}
-                                            <div class="col-md-3 col-sm-6">
-                                                <div class="mb-3">
-                                                    <div class="form-label">{{ __('Free Setup') }}</div>
-                                                    <div class="form-check form-switch">
-                                                        <input class="form-check-input" type="checkbox" name="free_setup"
-                                                            value="on"
-                                                            {{ $plan_details->free_setup == 1 ? 'checked' : '' }}>
-                                                        <label class="form-check-label"
-                                                            for="free_setup">{{ __('Yes') }}</label>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {{-- Free Support --}}
-                                            <div class="col-md-3 col-sm-6">
-                                                <div class="mb-3">
-                                                    <div class="form-label">{{ __('Free Support') }}</div>
-                                                    <div class="form-check form-switch">
-                                                        <input class="form-check-input" type="checkbox"
-                                                            name="free_support" value="on"
-                                                            {{ $plan_details->free_support == 1 ? 'checked' : '' }}>
-                                                        <label class="form-check-label"
-                                                            for="free_support">{{ __('Yes') }}</label>
-                                                    </div>
-                                                </div>
+                                            {{-- Free Support (Form Switch) --}}
+                                            <div class="col-md-3 col-lg-3 mt-3">
+                                                <label class="form-check form-switch mt-2">
+                                                    <input type="hidden" name="free_support" value="off">
+                                                    <input class="form-check-input" type="checkbox" id="free_support"
+                                                        name="free_support" value="on"
+                                                        {{ $plan_details->free_support == 1 ? 'checked' : '' }}>
+                                                    <span class="form-check-label">{{ __('Free Support') }}</span>
+                                                </label>
                                             </div>
 
                                             {{-- Paddle Plan Price ID --}}
                                             @if (is_dir(base_path('plugins/PaddleRecurring')))
-                                                <h2 class="page-title my-3">
-                                                    {{ __('Paddle Product Details') }}
-                                                </h2>
+                                                <div class="col-12 mt-4">
+                                                    <h2 class="page-title mb-2 fs-3">{{ __('Paddle Product Details') }}
+                                                    </h2>
+                                                </div>
 
                                                 {{-- Price ID --}}
-                                                <div class="col-md-3 col-sm-6">
+                                                <div class="col-md-4 col-lg-4">
                                                     <div class="mb-3">
                                                         <label class="form-label">{{ __('Price ID') }}</label>
                                                         <input type="text" class="form-control"
                                                             name="paddle_plan_price_id"
                                                             value="{{ $plan_details->paddle_plan_price_id }}"
-                                                            placeholder="{{ __('Price ID') }}">
+                                                            placeholder="{{ __('Enter price ID') }}">
                                                     </div>
                                                 </div>
                                             @endif
 
                                             {{-- Dodo Payments Plan Price ID --}}
                                             @if (is_dir(base_path('plugins/DodoPaymentsRecurring')))
-                                                <h2 class="page-title my-3">
-                                                    {{ __('Dodo Payments Product Details') }}
-                                                </h2>
+                                                <div class="col-12 mt-4">
+                                                    <h2 class="page-title mb-2 fs-3">
+                                                        {{ __('Dodo Payments Product Details') }}</h2>
+                                                </div>
 
                                                 {{-- Plan ID --}}
-                                                <div class="col-md-3 col-sm-6">
+                                                <div class="col-md-4 col-lg-4">
                                                     <div class="mb-3">
                                                         <label class="form-label">{{ __('Product ID') }}</label>
                                                         <input type="text" class="form-control"
                                                             name="dodo_payments_plan_price_id"
                                                             value="{{ $plan_details->dodo_payments_plan_price_id }}"
-                                                            placeholder="{{ __('Product ID') }}">
+                                                            placeholder="{{ __('Enter price ID') }}">
                                                     </div>
                                                 </div>
                                             @endif
@@ -656,6 +672,35 @@
                                                 <h2 class="page-title my-3">
                                                     {{ __('In-App Purchase Details (Mobile App)') }}
                                                 </h2>
+
+                                                {{-- Purchase Type --}}
+                                                <div class="col-md-3 col-sm-6">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">{{ __('Purchase Type') }}</label>
+                                                        <select onchange="toggleProductID(this.value)"
+                                                            class="form-select in_app_purchase_type"
+                                                            name="in_app_purchase_type">
+                                                            <option value="one_time"
+                                                                {{ $plan_details->in_app_purchase_type == 'one_time' ? 'selected' : '' }}>
+                                                                {{ __('One Time') }}</option>
+                                                            <option value="recurring"
+                                                                {{ $plan_details->in_app_purchase_type == 'recurring' ? 'selected' : '' }}>
+                                                                {{ __('Recurring') }}</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+                                                {{-- Product ID --}}
+                                                <div id="in_app_product_id"
+                                                    class="col-md-3 col-sm-6 {{ $plan_details->in_app_purchase_type == 'recurring' ? '' : 'd-none' }}">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">{{ __('Product ID') }}</label>
+                                                        <input type="text" class="form-control"
+                                                            name="in_app_product_id"
+                                                            placeholder="{{ __('Product ID') }}"
+                                                            value="{{ $plan_details->in_app_product_id }}">
+                                                    </div>
+                                                </div>
 
                                                 {{-- Plan ID --}}
                                                 <div class="col-md-3 col-sm-6">
@@ -667,41 +712,96 @@
                                                     </div>
                                                 </div>
                                             @endif
+
+                                            {{-- Paypal Payment Plan ID --}}
+                                            @if (is_dir(base_path('plugins/PaypalRecurring')))
+                                                <div class="col-12 mt-4">
+                                                    <h2 class="page-title mb-2 fs-3">{{ __('Paypal Payment Plan ID') }}
+                                                    </h2>
+                                                </div>
+
+                                                {{-- Plan ID --}}
+                                                <div class="col-md-4 col-lg-4">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">{{ __('Plan ID') }}</label>
+                                                        <input type="text" class="form-control" name="paypal_plan_id"
+                                                            placeholder="{{ __('Enter plan ID') }}"
+                                                            value="{{ $plan_details->paypal_plan_id }}">
+                                                    </div>
+                                                </div>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
                             </div>
+
                             <div class="card-footer text-end">
-                                <button type="submit" class="btn btn-primary">{{ __('Save') }}</button>
+                                <button type="submit" class="btn btn-primary btn-md d-inline-flex align-items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                        class="icon icon-tabler icon-tabler-device-floppy me-2" width="24"
+                                        height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                        fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                        <path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2" />
+                                        <path d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+                                        <path d="M14 4l0 4h-6l0 -4" />
+                                    </svg>
+                                    {{ __('Save') }}
+                                </button>
                             </div>
                         </form>
                     </div>
                 </div>
             </div>
         </div>
+
         @include('admin.includes.footer')
     </div>
+@endsection
 
-    {{-- Custom JS --}}
+{{-- Custom JS --}}
 @section('scripts')
     <script type="text/javascript" src="{{ asset('js/tom-select.base.min.js') }}"></script>
     <script>
+        // Synchronize Plan Price with Validity on Edit Page
+        function handlePricingLogic() {
+            "use strict";
+            const priceInput = $("input[name='plan_price']").val();
+            const price = parseFloat(priceInput);
+            const validity = $("input[name='validity']");
+
+            // If price is 0, enforce 9999 (Forever) and make readonly
+            if (!isNaN(price) && price === 0) {
+                validity.val(9999).prop("readonly", true);
+            } else {
+                validity.prop("readonly", false);
+            }
+        }
+
+        // Initialize check on DOM ready
+        $(document).ready(function() {
+            handlePricingLogic();
+            $("input[name='plan_price']").on("input change", handlePricingLogic);
+        });
+
         document.addEventListener('DOMContentLoaded', () => {
             const popoverElement = document.getElementById('popover-element');
-            const popover = new bootstrap.Popover(popoverElement, {
-                trigger: 'manual'
-            });
+            if (popoverElement) {
+                const popover = new bootstrap.Popover(popoverElement, {
+                    trigger: 'manual'
+                });
 
-            popoverElement.addEventListener('click', (e) => {
-                e.stopPropagation();
-                popover.toggle();
-            });
+                popoverElement.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    popover.toggle();
+                });
 
-            document.addEventListener('click', (e) => {
-                if (!popoverElement.contains(e.target)) {
-                    popover.hide();
-                }
-            });
+                document.addEventListener('click', (e) => {
+                    if (!popoverElement.contains(e.target)) {
+                        popover.hide();
+                    }
+                });
+            }
         });
     </script>
     <script>
@@ -710,34 +810,26 @@
             var planType = type.value;
             switch (planType) {
                 case 'VCARD':
-
-                    // Remove store inputs "required" attributes
                     $("input[name='no_of_stores']").removeAttr('required');
                     $("input[name='no_of_categories']").removeAttr('required');
                     $("input[name='no_of_store_products']").removeAttr('required');
 
-                    // Hidden store
                     $("#store-features").attr("class", "row d-none");
 
-                    // Add vcard inputs "required" attributes
                     $("input[name='no_of_vcards']").attr('required', 'required');
                     $("input[name='no_of_services']").attr('required', 'required');
                     $("input[name='no_of_vcard_products']").attr('required', 'required');
                     $("input[name='no_of_links']").attr('required', 'required');
                     $("input[name='no_of_payments']").attr('required', 'required');
                     $("input[name='no_of_galleries']").attr('required', 'required');
-                    $("input[name='no_testimonials']").attr('required');
                     $("input[name='business_hours']").attr('required', 'required');
+                    $("input[name='no_testimonials']").attr('required');
                     $("input[name='contact_form']").attr('required', 'required');
                     $("input[name='no_of_enquires']").attr('required', 'required');
 
-                    // Enable vcard
                     $("#vcard-features").attr("class", "row");
-
                     break;
                 case 'STORE':
-
-                    // Remove vcard inputs "required" attributes
                     $("input[name='no_of_vcards']").removeAttr('required');
                     $("input[name='no_of_services']").removeAttr('required');
                     $("input[name='no_of_vcard_products']").removeAttr('required');
@@ -749,20 +841,15 @@
                     $("input[name='no_testimonials']").removeAttr('required');
                     $("input[name='no_of_enquires']").removeAttr('required');
 
-                    // Hidden vcard
                     $("#vcard-features").attr("class", "row d-none");
 
-                    // Add store inputs "required" attributes
                     $("input[name='no_of_stores']").attr('required', 'required');
                     $("input[name='no_of_categories']").attr('required', 'required');
                     $("input[name='no_of_store_products']").attr('required', 'required');
 
-                    // Enable Store
                     $("#store-features").attr("class", "row");
-
                     break;
                 default:
-                    // Add vcard/store inputs "required" attributes
                     $("input[name='no_of_vcards']").attr('required', 'required');
                     $("input[name='no_of_services']").attr('required', 'required');
                     $("input[name='no_of_vcard_products']").attr('required', 'required');
@@ -770,31 +857,23 @@
                     $("input[name='no_of_payments']").attr('required', 'required');
                     $("input[name='no_of_galleries']").attr('required', 'required');
                     $("input[name='business_hours']").attr('required', 'required');
-                    $("input[name='no_testimonials']").attr('required');
                     $("input[name='contact_form']").attr('required', 'required');
+                    $("input[name='no_testimonials']").attr('required');
                     $("input[name='no_of_enquires']").attr('required', 'required');
 
                     $("input[name='no_of_stores']").attr('required', 'required');
                     $("input[name='no_of_categories']").attr('required', 'required');
                     $("input[name='no_of_store_products']").attr('required', 'required');
 
-                    // Enable vcard
                     $("#vcard-features").attr("class", "row");
-                    // Enable Store
                     $("#store-features").attr("class", "row");
             }
         }
     </script>
 
     <script>
-        // Array of element selectors
-        var elementSelectors = ['.plan_type', '.business_hours', '.contact_form', '.pwa', '.password_protected',
-            '.appointment', '.custom_domain', '.advanced_settings', '.additional_tools', '.personalized_link',
-            '.google_wallet',
-            '.hide_branding', '.free_setup', '.free_support', '.recommended', '.is_private'
-        ];
+        var elementSelectors = ['.plan_type', '.in_app_purchase_type'];
 
-        // Function to initialize TomSelect on an element
         function initializeTomSelect(el) {
             new TomSelect(el, {
                 copyClassesToDropdown: false,
@@ -821,7 +900,6 @@
             });
         }
 
-        // Initialize TomSelect on existing elements
         elementSelectors.forEach(function(selector) {
             var elements = document.querySelectorAll(selector);
             elements.forEach(function(el) {
@@ -829,16 +907,14 @@
             });
         });
 
-        // Observe the document for dynamically added elements
         var observer = new MutationObserver(function(mutations) {
             mutations.forEach(function(mutation) {
                 mutation.addedNodes.forEach(function(node) {
-                    if (node.nodeType === 1) { // Ensure it's an element node
+                    if (node.nodeType === 1) {
                         elementSelectors.forEach(function(selector) {
                             if (node.matches(selector)) {
                                 initializeTomSelect(node);
                             }
-                            // Also check if new nodes have children that match
                             var childElements = node.querySelectorAll(selector);
                             childElements.forEach(function(childEl) {
                                 initializeTomSelect(childEl);
@@ -849,11 +925,18 @@
             });
         });
 
-        // Configure the observer
         observer.observe(document.body, {
             childList: true,
             subtree: true
         });
+
+        function toggleProductID(value) {
+            "use strict";
+            if (value == "recurring") {
+                $("#in_app_product_id").removeClass("d-none");
+            } else {
+                $("#in_app_product_id").addClass("d-none");
+            }
+        }
     </script>
-@endsection
 @endsection

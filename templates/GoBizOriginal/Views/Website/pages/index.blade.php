@@ -345,11 +345,13 @@
                                         {{-- AI Credits --}}
                                         @if ($aibuilder_settings->aibuilder == 1)
                                             <li class="flex items-center font-heading font-medium text-base text-gray-400">
-                                                <i class="ti ti-{{ __($plan->ai_credits > 0 ? 'check' : 'x') }} mr-2.5 text-{{ $plan->ai_credits > 0 || $plan->recommended == 1 ? 'green-500' : 'gray-400' }}"
+                                                <i class="ti ti-{{ ($plan->ai_credits > 0 || $plan->ai_credits == -1) ? 'check' : 'x' }} mr-2.5 text-{{ ($plan->ai_credits > 0 || $plan->ai_credits == -1) ? 'green-500' : 'gray-400' }}"
                                                     style="font-size: 20px;"></i>
+
                                                 <p class="text-{{ $plan->recommended == 1 ? 'white' : 'black' }}">
-                                                    {{ __($plan->ai_credits == '999' ? 'Unlimited' : ($plan->ai_credits != 0 ? $plan->ai_credits : '')) }}
-                                                    {{ __('AI Credits') }}</p>
+                                                    {{ $plan->ai_credits == -1 ? __('Unlimited') : ($plan->ai_credits > 0 ? $plan->ai_credits : '') }}
+                                                    {{ __('AI Credit') }}
+                                                </p>
                                             </li>
                                         @endif
 
@@ -604,8 +606,12 @@
     </section>
 
     {{-- Mobile Application Action --}}
-    @if ($template_config->app_action == 1 && ($template_config->google_play_store_link || $template_config->apple_app_store_link))
-        @include('GoBizOriginal::Website.includes.mobile-app-banner', ['template_config' => $template_config])
+    @if (
+        $template_config->app_action == 1 &&
+            ($template_config->google_play_store_link || $template_config->apple_app_store_link))
+        @include('GoBizOriginal::Website.includes.mobile-app-banner', [
+            'template_config' => $template_config,
+        ])
     @endif
 
     {{-- Custom JS --}}

@@ -12,21 +12,22 @@
 
 namespace App\Http\Controllers\Payment;
 
-use App\Plan;
-use App\User;
-use App\Coupon;
-use App\Setting;
-use App\Referral;
-use Carbon\Carbon;
-use App\Transaction;
-use App\BusinessCard;
 use App\AppliedCoupon;
+use App\BusinessCard;
+use App\Coupon;
+use App\Http\Controllers\Controller;
+use App\Plan;
+use App\Referral;
+use App\Setting;
+use App\Transaction;
+use App\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+use Plugins\Zapier\Helpers\ZapierHelper;
 
 class PaytrController extends Controller
 {
@@ -112,7 +113,7 @@ class PaytrController extends Controller
                     $amountToBePaid = ($plan_details->plan_price + $appliedTaxInTotal);
                 }
 
-                $amountToBePaidPaise = $amountToBePaid * 100;
+                $amountToBePaidPaise = round($amountToBePaid * 100);
 
                 // Transaction ID
                 $transactionId = uniqid();
@@ -135,7 +136,7 @@ class PaytrController extends Controller
                 $invoice_details['to_billing_state'] = $userData->billing_state;
                 $invoice_details['to_billing_zipcode'] = $userData->billing_zipcode;
                 $invoice_details['to_billing_country'] = $userData->billing_country;
-                $invoice_details['to_billing_phone'] = $userData->billing_phone;
+                $invoice_details['to_billing_phone'] = $userData->billing_country_code . $userData->billing_phone;
                 $invoice_details['to_billing_email'] = $userData->billing_email;
                 $invoice_details['to_vat_number'] = $userData->vat_number;
                 $invoice_details['subtotal'] = $plan_details->plan_price;
@@ -145,7 +146,7 @@ class PaytrController extends Controller
                 $invoice_details['tax_amount'] = $appliedTaxInTotal;
                 $invoice_details['applied_coupon'] = $appliedCoupon;
                 $invoice_details['discounted_price'] = $discountPrice;
-                $invoice_details['invoice_amount'] = $amountToBePaid;
+                $invoice_details['invoice_amount'] = round($amountToBePaid, 2);
 
                 // Save transactions
                 $transaction = new Transaction();
@@ -156,7 +157,7 @@ class PaytrController extends Controller
                 $transaction->plan_id = $plan_details->plan_id;
                 $transaction->desciption = $plan_details->plan_name . " Plan";
                 $transaction->payment_gateway_name = "Paytr";
-                $transaction->transaction_amount = $amountToBePaid;
+                $transaction->transaction_amount = round($amountToBePaid, 2);
                 $transaction->transaction_currency = $config[1]->config_value;
                 $transaction->invoice_details = json_encode($invoice_details);
                 $transaction->payment_status = "PENDING";
@@ -179,7 +180,7 @@ class PaytrController extends Controller
                     'user_ip' => $request->ip(),
                     'merchant_oid' => $transactionId, // Unique order ID
                     'email' => $userData->billing_email,
-                    'payment_amount' => $amountToBePaidPaise, // Amount in cents
+                    'payment_amount' => round($amountToBePaidPaise), // Amount in cents
                     'user_basket' => base64_encode(json_encode([
                         ['Plan Purchase for' . $plan_details->plan_name, $plan_details->plan_price, 1],
                     ])),
@@ -249,14 +250,39 @@ class PaytrController extends Controller
     // Process Payment
     public function paytrPaymentStatus(Request $request) 
     {
+        // Check if the request is a PayTR background server notification (Webhook)
+        if ($request->has('hash') && $request->has('status') && $request->has('total_amount')) {
+            return $this->paytrPaymentWebhook($request);
+        }
+
+        $transactionId = $request->input('merchant_oid');
+
+        // Restore user session if dropped by browser SameSite policy on PayTR cross-domain POST
+        if (!Auth::check() && $transactionId) {
+            $paymentDetails = Transaction::where('transaction_id', $transactionId)->first();
+            if ($paymentDetails) {
+                Auth::loginUsingId($paymentDetails->user_id);
+            }
+        }
+
         if (Auth::check()) {
             // Get the user
             $user = Auth::user();
 
-            // Get the user's latest successful transaction
+            // Retrieve transaction based on merchant_oid if available, or fetch the latest
+            if ($transactionId) {
+                $paymentDetails = Transaction::where('user_id', $user->id)
+                    ->where('transaction_id', $transactionId)
+                    ->first();
+            } else {
             $paymentDetails = Transaction::where('user_id', $user->id)
                 ->latest()
                 ->first();
+            }
+
+            if (!$paymentDetails) {
+                return redirect()->route('user.plans')->with('failed', trans('Payment failed'));
+            }
 
             // Security: Verify PayTR's notification
             $hash = base64_encode(hash_hmac(
@@ -272,24 +298,13 @@ class PaytrController extends Controller
             $config = DB::table('config')->get();
 
             // Check payment status
-            if ($paymentDetails['payment_status'] == "SUCCESS") {
+            if ($paymentDetails['payment_status'] == "SUCCESS" || $paymentDetails['payment_status'] == "PENDING") {
                 // Page redirect
                 return redirect()->route('user.plans')->with('success', trans('Plan activation success!'));
             } else {
-
-                // Update tranaction details
-                Transaction::where('transaction_id', $transactionId)->update([
-                    'payment_status' => 'FAILED',
-                ]);
-
                 // Page redirect
                 return redirect()->route('user.plans')->with('failed', trans('Payment failed'));
             }
-
-            // Payment failed
-            // Handle the failed payment scenario
-            // Page redirect
-            return redirect()->route('user.plans')->with('failed', trans('Payment failed'));
         } else {
             // Page redirect
             return redirect()->route('user.plans')->with('failed', trans('Payment failed'));
@@ -342,9 +357,14 @@ class PaytrController extends Controller
         }
 
         // Retrieve transaction details
-        $transaction_details = Transaction::where('transaction_id', $transactionId)->where('status', 1)->first();
+        $transaction_details = Transaction::where('transaction_id', $transactionId)->first();
         if (!$transaction_details) {
             return response('Transaction not found', 404);
+        }
+
+        // Prevent duplicate processing if already completed
+        if ($transaction_details->payment_status == 'SUCCESS') {
+            return response('OK', 200);
         }
 
         if ($paymentDetails['status'] !== 'success') {
@@ -367,6 +387,11 @@ class PaytrController extends Controller
 
     protected function activatePlan($transaction_details, $paymentDetails)
     {
+        // Prevent duplicate execution
+        if ($transaction_details->payment_status == 'SUCCESS') {
+            return;
+        }
+
         // Retrieve user and plan details
         $user_details = User::find($transaction_details->user_id);
         if (!$user_details) {
@@ -382,11 +407,20 @@ class PaytrController extends Controller
         $config = DB::table('config')->get();
 
         // Compute new plan validity
-        $plan_validity = $user_details->plan_validity ?: now();
-        if ($term_days === '9999') {
+        if ($term_days === 9999 || (string)$term_days === '9999') {
             $plan_validity = Carbon::createFromFormat('Y-m-d H:i:s', '2050-12-30 23:23:59');
         } else {
-            $plan_validity = Carbon::parse($plan_validity)->addDays($term_days);
+            // If the plan has changed, start fresh from current time
+            if ($user_details->plan_id != $transaction_details->plan_id) {
+                $plan_validity = Carbon::now()->addDays($term_days);
+            } else {
+                // If it is the same plan renewal, extend if still active, otherwise start from now
+                if ($user_details->plan_validity && Carbon::parse($user_details->plan_validity)->isFuture()) {
+                    $plan_validity = Carbon::parse($user_details->plan_validity)->addDays($term_days);
+                } else {
+                    $plan_validity = Carbon::now()->addDays($term_days);
+                }
+            }
         }
 
         // Update user details
@@ -421,6 +455,7 @@ class PaytrController extends Controller
 
         // Generate invoice details
         $encode = json_decode($transaction_details['invoice_details'], true);
+
         $details = [
             'from_billing_name' => $encode['from_billing_name'],
             'from_billing_email' => $encode['from_billing_email'],
@@ -449,6 +484,41 @@ class PaytrController extends Controller
             Mail::to($encode['to_billing_email'])->send(new \App\Mail\SendEmailInvoice($details));
         } catch (\Exception $e) {
             Log::error('Invoice email sending failed: ' . $e->getMessage());
+        }
+
+        // Decode invoice details safely
+        $encode = json_decode($transaction_details['invoice_details'] ?? '{}', true);
+
+        // Safely format user billing address
+        $userAddress = $user_details->billing_address ?? '';
+        $userCity = $user_details->billing_city ?? '';
+        $userState = $user_details->billing_state ?? '';
+        $userCountry = $user_details->billing_country ?? '';
+        $userZip = $user_details->billing_zipcode ?? '';
+
+        // Dispatch plan purchase event to Zapier
+        if (function_exists('zapier_dispatch')) {
+            zapier_dispatch('plan_purchase', [
+                'transaction_id'  => $transaction_details->transaction_id ?? $transaction_details->gobiz_transaction_id,
+                'invoice_id'      => ($config[15]->config_value ?? 'INV-') . $invoice_number,
+                'user_name'       => $user_details->name ?? ($encode['to_billing_name'] ?? 'Customer'),
+                'user_address'    => !empty($userAddress) ? $userAddress : ($encode['to_billing_address'] ?? ''),
+                'user_city'       => !empty($userCity) ? $userCity : ($encode['to_billing_city'] ?? ''),
+                'user_state'      => !empty($userState) ? $userState : ($encode['to_billing_state'] ?? ''),
+                'user_country'    => !empty($userCountry) ? $userCountry : ($encode['to_billing_country'] ?? ''),
+                'user_zip'        => !empty($userZip) ? $userZip : ($encode['to_billing_zipcode'] ?? ''),
+                'user_email'      => $user_details->email ?? ($encode['to_billing_email'] ?? ''),
+                'user_phone'      => ($user_details->country_code ?? '') . ($user_details->mobile_number ?? ($encode['to_billing_phone'] ?? '')),
+                'user_tax_number' => $user_details->vat_number ?? $user_details->tax_number ?? ($encode['to_vat_number'] ?? ''),
+                'plan_name'       => $plan_data->plan_name ?? $plan_data->name ?? ($transaction_details->desciption ?? ($transaction_details->description ?? 'Subscription Plan')),
+                'quantity'        => 1,
+                'currency'        => $transaction_details->transaction_currency ?? ($config[1]->config_value ?? 'USD'),
+                'amount'          => (float) ($transaction_details->transaction_amount ?? ($encode['invoice_amount'] ?? 0)),
+                'payment_method'  => 'PayTR',
+                'payment_status'  => 'paid',
+                'invoice_date'    => now()->toDateString(),
+                'purchased_at'    => now()->toDateTimeString(),
+            ]);
         }
     }
 }

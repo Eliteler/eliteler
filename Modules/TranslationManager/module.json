@@ -1,0 +1,16 @@
+{
+    "name": "TranslationManager",
+    "alias": "translationmanager",
+    "description": "File-based translation manager for GoBiz",
+    "keywords": [
+        "laravel",
+        "translation",
+        "manager",
+        "gobiz"
+    ],
+    "active": 1,
+    "order": 1,
+    "providers": [
+        "Modules\\TranslationManager\\app\\Providers\\TranslationManagerServiceProvider"
+    ]
+}

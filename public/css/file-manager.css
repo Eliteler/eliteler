@@ -1,0 +1,377 @@
+/* GoBiz vCard SaaS
+|--------------------------------------------------------------------------
+| Developed by NativeCode © 2021 - https://nativecode.in
+| All rights reserved
+| Unauthorized distribution is prohibited
+|--------------------------------------------------------------------------
+*/
+
+/* Modern Cloud Explorer Container */
+.fm-workspace-card {
+    background: var(--tblr-bg-surface);
+    border: 1px solid var(--tblr-border-color-translucent);
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 680px;
+}
+
+/* Top Mini Storage Status */
+.storage-pill {
+    background-color: var(--tblr-bg-surface-secondary);
+    border: 1px solid var(--tblr-border-color-translucent);
+    border-radius: 30px;
+    padding: 0.35rem 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+}
+
+/* Toolbar Header */
+.fm-toolbar {
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid var(--tblr-border-color-translucent);
+    background: var(--tblr-bg-surface);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: nowrap;
+}
+
+.fm-search-box {
+    min-width: 250px;
+    border: 1.5px solid var(--tblr-border-color);
+    border-radius: 8px;
+    padding: 0.45rem 0.75rem 0.45rem 2.25rem;
+    font-size: 0.875rem;
+    background: var(--tblr-bg-forms);
+    color: var(--tblr-body-color);
+    transition: all 0.2s ease;
+}
+
+.fm-search-box:focus {
+    border-color: var(--tblr-primary) !important;
+    box-shadow: 0 0 0 0.25rem rgba(var(--tblr-primary-rgb), 0.12) !important;
+    outline: 0;
+}
+
+/* Layout Splitter */
+.fm-main-body {
+    display: flex;
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+}
+
+.fm-files-zone {
+    flex: 1;
+    padding: 1.25rem;
+    overflow-y: auto;
+    max-height: 640px;
+}
+
+/* Right Inspector Panel (Drawer) */
+.fm-inspector-panel {
+    width: 340px;
+    background: var(--tblr-bg-surface);
+    border-left: 1px solid var(--tblr-border-color-translucent);
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    max-height: 640px;
+}
+
+@media (max-width: 991.98px) {
+    .fm-inspector-panel {
+        display: none;
+    }
+}
+
+/* GRID ITEM CARDS */
+.file-item-card {
+    background-color: var(--tblr-bg-surface);
+    border: 1px solid var(--tblr-border-color-translucent);
+    border-radius: 12px;
+    padding: 0.65rem;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    user-select: none;
+}
+
+.file-item-card:hover {
+    border-color: var(--tblr-primary);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+    transform: translateY(-2px);
+}
+
+.file-item-card.selected {
+    border-color: var(--tblr-primary) !important;
+    background-color: var(--tblr-primary-lt) !important;
+}
+
+/* Thumbnail Canvas */
+.file-thumbnail-frame {
+    width: 100%;
+    height: 140px;
+    border-radius: 8px;
+    background-size: cover;
+    background-position: center;
+    background-color: var(--tblr-bg-surface-secondary);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Image Shimmer Glow Effect */
+.file-thumbnail-frame::before,
+.fm-list-preview::before,
+.inspector-hero-img::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+        90deg,
+        rgba(var(--tblr-body-color-rgb), 0) 0,
+        rgba(var(--tblr-body-color-rgb), 0.05) 20%,
+        rgba(var(--tblr-body-color-rgb), 0.1) 60%,
+        rgba(var(--tblr-body-color-rgb), 0)
+    );
+    /* animation: fmPlaceholderShimmer 2s infinite ease-in-out; */
+    z-index: 1;
+}
+
+@keyframes fmPlaceholderShimmer {
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* File extension tag */
+.file-ext-tag {
+    position: absolute;
+    bottom: 6px;
+    right: 6px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(15, 23, 42, 0.75);
+    color: #ffffff;
+    backdrop-filter: blur(4px);
+    z-index: 2;
+}
+
+.file-select-checkbox {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 4;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+/* LIST VIEW TABLE */
+.fm-table-view tbody tr {
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.fm-table-view tbody tr:hover {
+    background-color: var(--tblr-bg-surface-secondary);
+}
+
+.fm-table-view tbody tr.selected {
+    background-color: var(--tblr-primary-lt) !important;
+}
+
+.fm-list-preview {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background-size: cover;
+    background-position: center;
+    flex-shrink: 0;
+    border: 1px solid var(--tblr-border-color-translucent);
+    background-color: var(--tblr-bg-surface-secondary);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Inspector Details Box */
+.inspector-hero-img {
+    width: 100%;
+    height: 200px;
+    border-radius: 10px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-color: #0b0f19;
+    border: 1px solid var(--tblr-border-color-translucent);
+    margin-bottom: 1.25rem;
+    position: relative;
+    overflow: hidden;
+}
+
+thead,
+tbody,
+tfoot,
+th,
+td,
+tr {
+    border-bottom: none !important;
+}
+
+[data-bs-theme="dark"] tbody,
+[data-bs-theme="dark"] td,
+[data-bs-theme="dark"] tfoot,
+[data-bs-theme="dark"] th,
+[data-bs-theme="dark"] thead,
+[data-bs-theme="dark"] tr {
+    border-bottom: none !important;
+}
+
+/* Integrated Select All & Bulk Delete Bar */
+.fm-selection-cluster {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: var(--tblr-bg-surface-secondary);
+    border: 1px solid var(--tblr-border-color-translucent);
+    border-radius: 30px;
+    padding: 0.35rem 0.85rem 0.35rem 0.75rem;
+    flex-shrink: 0;
+}
+
+.fm-selection-cluster .form-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 !important;
+    padding-left: 0 !important;
+}
+
+.fm-selection-cluster .form-check-input {
+    float: none !important;
+    margin: 0 !important;
+    width: 17px;
+    height: 17px;
+    cursor: pointer;
+}
+
+/* Compact Delete Badge Button */
+.fm-compact-delete-btn {
+    padding: 0.25rem 0.65rem !important;
+    font-size: 0.75rem !important;
+    border-radius: 20px !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease;
+}
+
+.fm-compact-delete-btn .badge-count {
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 10px;
+    padding: 1px 6px;
+    margin-left: 3px;
+    font-size: 0.75rem;
+}
+
+/* Right Controls (Search + View Switcher) */
+.fm-toolbar-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin-left: auto;
+}
+
+.fm-search-wrapper {
+    position: relative;
+}
+
+/* Desktop: Default Single-Line Inline Row */
+@media (min-width: 768px) {
+    .fm-toolbar {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        flex-wrap: nowrap !important;
+    }
+
+    .fm-toolbar-controls {
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.5rem !important;
+        margin-left: auto !important;
+    }
+
+    .fm-search-box {
+        min-width: 260px !important;
+    }
+}
+
+/* Mobile Only: Break into two organized rows */
+@media (max-width: 767.98px) {
+    .fm-toolbar {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        padding: 0.75rem !important;
+        gap: 0.65rem !important;
+    }
+
+    .fm-selection-cluster {
+        width: 100% !important;
+        justify-content: space-between !important;
+    }
+
+    .fm-toolbar-controls {
+        width: 100% !important;
+        margin-left: 0 !important;
+    }
+
+    .fm-search-wrapper {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+    }
+
+    .fm-search-box {
+        width: 100% !important;
+        min-width: 100% !important;
+    }
+
+    .fm-view-switcher {
+        flex-shrink: 0 !important;
+    }
+
+    .fm-pagination-bar {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 0.75rem 1rem !important;
+        gap: 0.5rem !important;
+    }
+
+    .fm-pagination-bar #prevPageBtn,
+    .fm-pagination-bar #nextPageBtn {
+        width: auto !important;
+        min-width: 100px !important;
+        flex: 0 0 auto !important;
+        padding: 0.45rem 0.85rem !important;
+        font-size: 0.825rem !important;
+    }
+
+    .fm-pagination-bar .pagination-info-text {
+        font-size: 0.8rem !important;
+        white-space: nowrap !important;
+        text-align: center !important;
+        flex: 1 1 auto !important;
+    }
+}

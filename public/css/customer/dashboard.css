@@ -1,0 +1,161 @@
+/* ==========================================================================
+   CUSTOMER DASHBOARD - VARIABLE-DRIVEN STYLESHEET (USING var())
+   ========================================================================== */
+
+/* 1. Analytics Card Height */
+.visitors-card {
+    height: 900px !important;
+}
+
+/* 2. Adaptive SVG & Vector Chart Text Fills */
+[data-bs-theme="dark"] text {
+    fill: var(--tblr-heading-color, #fafafa) !important;
+}
+
+[data-bs-theme="light"] text,
+body:not([data-bs-theme="dark"]) text {
+    fill: var(--tblr-heading-color, #0f172a) !important;
+}
+
+/* ==========================================================================
+   FullCalendar Component Styling (Using Tabler CSS Variables)
+   ========================================================================== */
+
+/* Main Calendar Container Card */
+#appointments {
+    background-color: var(--tblr-bg-surface) !important;
+    border-radius: 12px !important;
+    padding: 1.25rem !important;
+    border: 1px solid var(--tblr-border-color) !important;
+    box-shadow: var(
+        --tblr-shadow-card,
+        0 4px 12px rgba(0, 0, 0, 0.03)
+    ) !important;
+}
+
+/* Header & Title */
+.fc .fc-toolbar-title {
+    font-size: 1.15rem !important;
+    font-weight: 700 !important;
+    color: var(--tblr-heading-color) !important;
+}
+
+/* Header Navigation Buttons */
+.fc .fc-button-primary {
+    background-color: var(--tblr-bg-surface-secondary) !important;
+    border: 1px solid var(--tblr-border-color) !important;
+    color: var(--tblr-secondary-color) !important;
+    font-weight: 600 !important;
+    font-size: 0.8125rem !important;
+    border-radius: 6px !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+    transition: all 0.15s ease-in-out !important;
+}
+
+.fc .fc-button-primary:hover {
+    background-color: var(--tblr-tertiary-bg) !important;
+    color: var(--tblr-heading-color) !important;
+    border-color: var(--tblr-border-active-color) !important;
+}
+
+.fc .fc-button-primary:focus,
+.fc .fc-button-primary:active,
+.fc .fc-button-primary.fc-button-active {
+    box-shadow: none !important;
+    background-color: rgba(var(--tblr-primary-rgb), 0.12) !important;
+    border-color: var(--tblr-primary) !important;
+    color: var(--tblr-primary) !important;
+}
+
+/* Table Column Headers (Mon, Tue, Wed...) */
+.fc .fc-col-header-cell {
+    background-color: var(--tblr-bg-surface-secondary) !important;
+    padding: 0.6rem 0 !important;
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    color: var(--tblr-secondary-color) !important;
+    border-color: var(--tblr-border-color) !important;
+}
+
+/* Calendar Days Grid */
+.fc .fc-daygrid-day {
+    transition: background-color 0.15s ease !important;
+}
+
+.fc .fc-daygrid-day:hover {
+    background-color: var(--tblr-bg-surface-secondary) !important;
+    cursor: pointer !important;
+}
+
+/* Day Numbers */
+.fc .fc-daygrid-day-number {
+    font-size: 0.8125rem !important;
+    font-weight: 600 !important;
+    color: var(--tblr-body-color) !important;
+    padding: 6px 8px !important;
+    text-decoration: none !important;
+}
+
+/* Today Highlight Container */
+.fc .fc-day-today {
+    background-color: rgba(var(--tblr-primary-rgb), 0.06) !important;
+}
+
+/* Today Date Number Badge */
+.fc .fc-day-today .fc-daygrid-day-number {
+    background-color: var(--tblr-primary) !important;
+    color: var(--tblr-primary-fg, #ffffff) !important;
+    border-radius: 50% !important;
+    width: 26px !important;
+    height: 26px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 4px !important;
+    font-weight: 700 !important;
+}
+
+/* Modern Event Pill Badges (Uses Dynamic Primary Color) */
+.fc-daygrid-event {
+    border-radius: 6px !important;
+    padding: 3px 6px !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    border: none !important;
+    background-color: var(--tblr-primary) !important;
+    color: var(--tblr-primary-fg, #ffffff) !important;
+    box-shadow: 0 2px 6px rgba(var(--tblr-primary-rgb), 0.25) !important;
+    transition: transform 0.15s ease !important;
+    text-decoration: none !important;
+}
+
+.fc-daygrid-event:hover {
+    transform: translateY(-1px) scale(1.02) !important;
+    cursor: pointer !important;
+    text-decoration: none !important;
+}
+
+/* Standard Calendar Grid Borders */
+.fc-theme-standard td,
+.fc-theme-standard th,
+.fc-theme-standard .fc-scrollgrid {
+    border-color: var(--tblr-border-color) !important;
+}
+
+/* ==========================================================================
+   Overview Stats Responsive Layout
+   ========================================================================== */
+.overview-stats {
+    min-width: 100%;
+    max-width: 100%;
+}
+
+@media (max-width: 767.98px) {
+    .overview-stats {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+}

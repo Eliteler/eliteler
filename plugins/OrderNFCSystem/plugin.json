@@ -1,8 +1,15 @@
 {
     "plugin_id": "OrderNFCSystem",
-    "name": "NFC Order System",
-    "description": "Eliteler NFC order system lets you enable or disable the order system with full control.",
-    "version": "1.0.0",
+    "name": "NFC Card Ordering System",
+    "description": "Let customers order NFC business cards from your website.",
+    "version": "1.2.0",
     "img": "nfc_card.png",
-    "main_route": "admin.plugin.status.nfc.cards.order"
-}    
+    "main_route": "admin.plugin.status.nfc.cards.order",
+    "requires_admin": "1",
+    "platform": "gobiz-saas",
+    "min_version": "28.0.0",
+    "admin_pages": {
+        "settings": "dist/settings.js"
+    },
+    "documentation_url": "https://gobizsaas.com/docs/gobiz/user-manual/nfc-sales.html"
+}

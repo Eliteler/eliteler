@@ -12,16 +12,17 @@
 
 namespace App\Http\Controllers\User\Vcard\Create;
 
-use App\Setting;
-use App\Newsletter;
 use App\BusinessCard;
-use App\InformationPop;
-use Illuminate\Http\Request;
-use Spatie\Sitemap\Tags\News;
-use Illuminate\Support\Facades\DB;
+use App\Helpers\StorageHelper;
 use App\Http\Controllers\Controller;
+use App\InformationPop;
+use App\Newsletter;
+use App\Setting;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Spatie\Sitemap\Tags\News;
 
 class PopUpController extends Controller
 {
@@ -85,17 +86,10 @@ class PopUpController extends Controller
                 if ($request->hasFile('info_pop_image') && $request->file('info_pop_image')->isValid()) {
                     $allowedExtensions = ['jpeg', 'png', 'jpg', 'gif', 'svg', 'webp'];
                     $file = $request->file('info_pop_image');
-                    $extension = $file->extension();
 
-                    if (in_array($extension, $allowedExtensions)) {
-                        // Generate unique file name
-                        $filename = 'IMG-' . uniqid() . '-' . time() . '.' . $extension;
-
-                        // Store the file in storage/app/public/information_pop_images
-                        Storage::disk('public')->putFileAs('information_pop_images', $file, $filename);
-
-                        // Public URL (e.g., /storage/information_pop_images/IMG-...)
-                        $info_pop_image = Storage::url("information_pop_images/{$filename}");
+                    if (in_array(strtolower($file->getClientOriginalExtension()), $allowedExtensions)) {
+                        // Upload popup image using StorageHelper and get relative path
+                        $info_pop_image = StorageHelper::uploadImage($file, 'information_pop_images');
                     }
                 }
 

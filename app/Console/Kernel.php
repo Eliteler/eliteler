@@ -25,11 +25,9 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // Get cron_hour from config
-        $cron_hour = DB::table('config')->get()[61]->config_value;
-
-        // Set cronjob time
-        $schedule->command('expiry:cron')->daily();
+        // Plan expiry reminders run once a day at the hour set in Cron Jobs (config "cron_hour")
+        $cronHour = (int) DB::table('config')->where('config_key', 'cron_hour')->value('config_value');
+        $schedule->command('expiry:cron')->dailyAt(sprintf('%02d:00', min(max($cronHour, 0), 23)));
 
         // Check health
         $schedule->command(\Spatie\Health\Commands\RunHealthChecksCommand::class)->everyMinute();

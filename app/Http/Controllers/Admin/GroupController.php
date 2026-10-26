@@ -12,204 +12,106 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\User;
 use App\Group;
-use App\Setting;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
-use Yajra\DataTables\Facades\DataTables;
+use App\User;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
 
+/**
+ * Contact groups for email campaigns. groups.emails is a JSON list of
+ * customer email addresses. status -1 = deleted.
+ */
 class GroupController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     * @return void
-     */
     public function __construct()
     {
         $this->middleware('auth');
     }
 
-    /**
-     * Display a listing of the resource.
-     * @return \Illuminate\Http\Response
-     */
     public function index(Request $request)
     {
-        if ($request->ajax()) {
-            // Use Query Builder for DataTables to work efficiently
-            $data = Group::orderBy('created_at', 'desc')->where('status', '!=', -1)->select('group_id', 'group_name', 'group_desc', 'emails', 'status');
+        $groups = Group::where('status', '!=', -1)->orderByDesc('created_at')->get()->map(fn (Group $g) => [
+            'id'          => $g->group_id,
+            'name'        => $g->group_name,
+            'description' => $g->group_desc,
+            'emails'      => array_values(json_decode($g->emails ?? '[]', true) ?: []),
+            'created'     => $g->created_at?->toIso8601String(),
+        ]);
 
-            return DataTables::of($data)
-                // Add index column
-                ->addIndexColumn()
-                // Add custom "group_name" column
-                ->addColumn('group_name', function ($row) {
-                    return '<a href="' . route('admin.marketing.groups.view', $row->group_id) . '"><span class="fw-bold">' . $row->group_name . '</span></a>';
-                })
-                ->addColumn('email_count', function ($row) {
-                    // Count the number of emails in the group
-                    $emailCounts = json_decode($row->emails, true);
-                    $emailCount = count($emailCounts);
-                    return '<span class="badge bg-blue text-white fw-bold">' . $emailCount . '</span>';
-                })
-                ->addColumn('status', function ($row) {
-                    if ($row->status == 0) {
-                        return '<span class="badge bg-red text-white text-white">' . trans('Disabled') . '</span>';
-                    } else {
-                        return '<span class="badge bg-green text-white text-white">' . trans('Active') . '</span>';
-                    } 
-                })
-                ->addColumn('action', function ($row) {
-                    $actions = '
-                        <a class="btn-action" href="#" role="button" data-bs-boundary="viewport" data-bs-toggle="dropdown" aria-expanded="false">
-                            <!-- Download SVG icon from http://tabler-icons.io/i/dots-vertical -->
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24"
-                                height="24" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round"
-                                class="icon icon-tabler icons-tabler-outline icon-tabler-dots fw-bold">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                <path d="M4 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                <path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                <path d="M18 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                            </svg>
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-end">
-                            <a href="' . route('admin.marketing.groups.view', $row->group_id) . '" class="dropdown-item">' . __('View') . '</a>
-                            <a href="' . route('admin.marketing.groups.edit', $row->group_id) . '" class="dropdown-item">' . __('Edit') . '</a>
-                            <a href="#" onclick="onDelete(`' . $row->group_id . '`); return false;" class="dropdown-item">' . __('Delete') . '</a>
-                        </div>
-                    ';
-                
-                    return $actions;
-                })                
-                ->rawColumns(['group_name', 'group_desc', 'email_count', 'status', 'action'])
-                ->make(true);
+        return Inertia::render('marketing/groups', [
+            'groups'    => $groups,
+            'customers' => User::where('role_id', 2)->where('status', '!=', -1)->orderBy('name')->get(['name', 'email', 'plan_id'])
+                ->map(fn ($u) => ['name' => $u->name, 'email' => $u->email, 'hasPlan' => (bool) $u->plan_id]),
+            'open'      => $request->query('edit') ?: ($request->boolean('new') ? 'new' : null),
+        ]);
         }
 
-        $settings = Setting::where('status', 1)->first();
-        $config = DB::table('config')->get();
-
-        return view('admin.pages.marketing.group.index', compact('settings', 'config'));
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     * @return \Illuminate\Http\Response
-     */
+    // Old pages: open the dialog on the groups page
     public function createGroup()
     {
-        // Queries
-        $marketingCustomers = User::where('role_id', 2)->get();
-        $settings = Setting::where('status', 1)->first();
-        $config = DB::table('config')->get();
-
-        return view('admin.pages.marketing.group.create', compact('marketingCustomers', 'settings', 'config'));
+        return redirect()->route('admin.marketing.groups', ['new' => 1]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function saveGroup(Request $request)
-    {
-        $this->validate($request, [
-            'group_name' => 'required|string|max:255',
-            'group_desc' => 'required|string|max:255',
-            'emails' => 'required|array'
-        ]);
-
-        // Don't save "all" option
-        $request->emails = array_filter($request->emails, function ($email) {
-            return $email !== "all";
-        });
-
-        // Save group
-        $group = new Group;
-        $group->group_id = uniqid();
-        $group->group_name = ucfirst($request->group_name);
-        $group->group_desc = ucfirst($request->group_desc);
-        $group->emails = json_encode($request->emails);
-        $group->save();
-
-        return redirect()->route('admin.marketing.groups')->with('success', trans('Created!'));
-    }
-
-    /**
-     * Display the specified resource.
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function viewGroup($id)
     {
-        // Queries
-        $group = Group::where('group_id', $id)->first();
-        $settings = Setting::where('status', 1)->first();
-        $config = DB::table('config')->get();
-
-        return view('admin.pages.marketing.group.view', compact('group', 'settings', 'config'));
+        return redirect()->route('admin.marketing.groups', ['edit' => $id]);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function editGroup($id)
     {
-        // Queries
-        $marketingCustomers = User::where('role_id', 2)->get();
-        $group = Group::where('group_id', $id)->first();
-        $settings = Setting::where('status', 1)->first();
-        $config = DB::table('config')->get();
-
-        return view('admin.pages.marketing.group.edit', compact('marketingCustomers', 'group', 'settings', 'config'));
+        return redirect()->route('admin.marketing.groups', ['edit' => $id]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+    public function saveGroup(Request $request)
+    {
+        $data = $this->validated($request);
+
+        $group           = new Group();
+        $group->group_id = uniqid();
+        $this->fill($group, $data)->save();
+
+        return back()->with('success', __('Group “:name” created.', ['name' => $group->group_name]));
+    }
+
     public function updateGroup(Request $request, $id)
     {
-        $this->validate($request, [
-            'group_name' => 'required|string|max:255',
-            'group_desc' => 'required|string|max:255',
-            'emails' => 'required|array'
-        ]);
+        $group = Group::where('group_id', $id)->firstOrFail();
+        $this->fill($group, $this->validated($request))->save();
 
-        // Don't save "all" option
-        $request->emails = array_filter($request->emails, function ($email) {
-            return $email !== "all";
-        });
-
-        // Update
-        $group = Group::where('group_id', $id)->first();
-        $group->group_name = ucfirst($request->group_name);
-        $group->group_desc = ucfirst($request->group_desc);
-        $group->emails = json_encode($request->emails);
-        $group->save();
-
-        return redirect()->route('admin.marketing.groups')->with('success', trans('Updated!'));
+        return back()->with('success', __('Group updated.'));
     }
 
-    /**
-     * Remove the specified resource from storage.
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function deleteGroup(Request $request)
     {
-        // Update status
-        $group = Group::where('group_id', $request->query('id'))->first();
-        $group->status = -1;
-        $group->save();
+        Group::where('group_id', (string) $request->input('id'))->update(['status' => -1]);
 
-        return redirect()->route('admin.marketing.groups')->with('success', trans('Deleted!'));
+        return back()->with('success', __('Group deleted.'));
+    }
+
+    private function validated(Request $request): array
+    {
+        // Older forms send an "all" option along with the addresses
+        $request->merge(['emails' => array_values(array_filter((array) $request->input('emails', []), fn ($e) => $e !== 'all'))]);
+
+        return $request->validate([
+            'group_name' => 'required|string|max:191',
+            'group_desc' => 'required|string|max:255',
+            'emails'     => 'required|array|min:1',
+            'emails.*'   => 'email',
+        ], ['emails.required' => __('Add at least one contact.')], [
+            'group_name' => __('name'),
+            'group_desc' => __('description'),
+        ]);
+    }
+
+    private function fill(Group $group, array $data): Group
+    {
+        $group->group_name = ucfirst($data['group_name']);
+        $group->group_desc = ucfirst($data['group_desc']);
+        // array_values: always store a JSON list, never an object
+        $group->emails     = json_encode(array_values(array_unique(array_filter($data['emails'], fn ($e) => $e !== 'all'))));
+
+        return $group;
     }
 }

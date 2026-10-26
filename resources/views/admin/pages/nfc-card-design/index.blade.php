@@ -4,38 +4,84 @@
 @section('css')
     {{-- Lightgallery --}}
     <script src="{{ asset('js/fslightbox.js') }}"></script>
+    <style>
+        .ts-control>input {
+            display: contents !important;
+        }
+
+        .nfc-card-design-img-wrapper img,
+        .nfc-card-design-img-wrapper svg,
+        .nfc-card-design-img-wrapper a {
+            max-width: 64px;
+            height: auto;
+            border-radius: 4px;
+            object-fit: cover;
+            display: inline-block;
+        }
+    </style>
 @endsection
 
 @section('content')
     <div class="page-wrapper">
-        <!-- Page title -->
+        <!-- Page title header -->
         <div class="page-header d-print-none">
             <div class="container-fluid">
                 <div class="row g-2 align-items-center">
-                    <div class="col">
-                        <div class="page-pretitle">
-                            {{ __('Overview') }}
-                        </div>
-                        <h2 class="page-title">
-                            {{ __('NFCs Card Designs') }}
-                        </h2>
+                    <!-- Breadcrumbs (Replaces Overview pretitle) -->
+                    <div class="mb-1 ms-0">
+                        <ol class="breadcrumb" aria-label="breadcrumbs">
+                            <li class="breadcrumb-item">
+                                <a href="{{ route('admin.dashboard') }}" class="text-secondary text-decoration-none">
+                                    {{ __('Dashboard') }}
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a href="{{ route('admin.designs') }}" class="text-secondary text-decoration-none">
+                                    {{ __('NFC Sales') }}
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">
+                                <a href="#">{{ __('NFC Cards') }}</a>
+                            </li>
+                        </ol>
                     </div>
-                    <div class="col-auto ms-auto">
-                        {{-- Tutorials --}}
-                        <a href="https://www.youtube.com/watch?v=GlGgUGe8o9o" target="_blank" class="btn btn-outline-primary btn-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round"
-                                class="icon icon-tabler icons-tabler-outline icon-tabler-question-mark">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                <path d="M8 8a3.5 3 0 0 1 3.5 -3h1a3.5 3 0 0 1 3.5 3a3 3 0 0 1 -2 3a3 4 0 0 0 -2 4" />
-                                <path d="M12 19l0 .01" />
-                            </svg>
-                        </a>
-                        {{-- Create a new design --}}
-                        <a href="{{ route('admin.create.design') }}" class="btn btn-primary">
-                            {{ __('Create New') }}
-                        </a>
+                    <div class="col">
+                        <h2 class="page-title">
+                            {{ __('NFC Cards') }}
+                        </h2>
+                        <!-- Added helper subtitle under page heading -->
+                        <div class="text-muted mt-1">
+                            {{ __('Manage NFC cards available for customers to order.') }}
+                        </div>
+                    </div>
+                    <div class="col-auto ms-auto d-print-none">
+                        <div class="btn-list">
+                            {{-- Tutorials --}}
+                            <a href="https://www.youtube.com/watch?v=GlGgUGe8o9o" target="_blank"
+                                class="btn btn-icon-only btn-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    class="icon icon-tabler icons-tabler-outline icon-tabler-info-circle">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" />
+                                    <path d="M12 9h.01" />
+                                    <path d="M11 12h1v4h1" />
+                                </svg>
+                            </a>
+                            {{-- Create a new design with mobile wrapper --}}
+                            <a href="{{ route('admin.create.design') }}"
+                                class="btn btn-primary btn-icon-only d-inline-flex align-items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-plus"
+                                    width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                    fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M12 5l0 14" />
+                                    <path d="M5 12l14 0" />
+                                </svg>
+                                <span class="d-none d-sm-inline">{{ __('Create New') }}</span>
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -55,7 +101,7 @@
                     </div>
                 @endif
 
-                {{-- Failed --}}
+                {{-- Failed alert --}}
                 @if (Session::has('failed'))
                     <div class="alert alert-important alert-danger alert-dismissible mb-2" role="alert">
                         <div class="d-flex">
@@ -69,23 +115,54 @@
 
                 <div class="row row-deck row-cards">
                     <div class="col-sm-12 col-lg-12">
-                        <div class="card">
-                            <div class="table-responsive px-2 py-2">
-                                <table class="table table-vcenter card-table" id="nfc-card-design-table">
+                        <div class="card border-0 shadow-sm">
+                            <div class="table-responsive px-3 pt-2 py-2">
+                                <!-- Table renders normally on desktop and transforms automatically via CSS on mobile -->
+                                <table class="table card-table table-vcenter text-nowrap responsive-card-table"
+                                    id="nfc-card-design-table">
                                     <thead>
                                         <tr>
                                             <th>{{ __('#') }}</th>
                                             <th>{{ __('Design') }}</th>
                                             <th>{{ __('Name') }}</th>
-                                            <th style="width: 30%;">{{ __('Description') }}</th>
+                                            <th>{{ __('Description') }}</th>
                                             <th>{{ __('Price') }}</th>
-                                            <th>{{ __('Inventory') }}</th>
+                                            <th>{{ __('Available Stock') }}</th>
                                             <th>{{ __('Status') }}</th>
                                             <th>{{ __('Action') }}</th>
                                         </tr>
                                     </thead>
                                 </table>
                             </div>
+
+                            {{-- Custom App-like Mobile Pagination footer --}}
+                            <div id="custom-mobile-pagination"
+                                class="d-flex d-md-none justify-content-between align-items-center px-3 py-3 border-top bg-white">
+                                <button id="mobile-prev-btn" class="btn btn-primary btn-sm" type="button">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                        class="icon icon-tabler icon-tabler-chevron-left me-1" width="24" height="24"
+                                        viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                        <path d="M15 6l-6 6l6 6"></path>
+                                    </svg>
+                                    {{ __('Previous') }}
+                                </button>
+
+                                <span id="mobile-page-info" class="text-secondary small font-weight-medium"></span>
+
+                                <button id="mobile-next-btn" class="btn btn-primary btn-sm" type="button">
+                                    {{ __('Next') }}
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                        class="icon icon-tabler icon-tabler-chevron-right ms-1" width="24"
+                                        height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                        fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                        <path d="M9 6l6 6l-6 6"></path>
+                                    </svg>
+                                </button>
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -93,8 +170,8 @@
         </div>
 
         {{-- Status modal --}}
-        <div class="modal modal-blur fade" id="status-modal" tabindex="-1" role="dialog" aria-hidden="true">
-            <div class="modal-dialog modal-md modal-dialog-centered" role="document">
+        <div class="modal modal-bg fade" id="status-modal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
                 <div class="modal-content">
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     <div class="modal-status"></div>
@@ -133,20 +210,23 @@
         <!-- Footer -->
         @include('admin.includes.footer')
     </div>
+@endsection
 
-    {{-- Custom scripts --}}
 @section('scripts')
     {{-- Get designs --}}
     <script type="text/javascript">
+        "use strict";
+
         $(document).ready(function() {
-            $('#nfc-card-design-table').DataTable({
+            var table = $('#nfc-card-design-table').DataTable({
                 processing: false,
                 serverSide: true,
                 ajax: "{{ route('admin.designs') }}",
                 language: {
                     "sProcessing": `{{ __('Processing...') }}`,
                     "sLengthMenu": `{{ __('Show _MENU_ entries') }}`,
-                    "sSearch": `{{ __('Search:') }}`,
+                    "sSearch": ``,
+                    "sSearchPlaceholder": `{{ __('Search') }}`,
                     "oPaginate": {
                         "sNext": `{{ __('Next') }}`,
                         "sPrevious": `{{ __('Previous') }}`
@@ -161,37 +241,44 @@
                         "sSortDescending": `{{ __(': activate to sort column in descending order') }}`
                     },
                     loadingRecords: `{{ __('Please wait - loading...') }}`,
-                    emptyTable: `{{ __('No data available in the table') }}` // Message for an empty table
+                    emptyTable: `{{ __('No data available in the table') }}`
                 },
                 columns: [{
                         data: 'DT_RowIndex',
                         name: 'DT_RowIndex',
                         orderable: false,
-                        searchable: false
+                        searchable: false,
+                        className: 'rc-hide'
                     },
                     {
                         data: 'image',
-                        name: 'image'
+                        name: 'image',
+                        className: 'rc-hide'
                     },
                     {
                         data: 'name',
-                        name: 'name'
+                        name: 'name',
+                        className: 'rc-heading'
                     },
                     {
                         data: 'description',
-                        name: 'description'
+                        name: 'description',
+                        className: 'rc-hide'
                     },
                     {
                         data: 'price',
-                        name: 'price'
+                        name: 'price',
+                        className: 'rc-info-start'
                     },
                     {
                         data: 'available_stocks',
-                        name: 'available_stocks'
+                        name: 'available_stocks',
+                        className: 'rc-info-next'
                     },
                     {
                         data: 'status',
-                        name: 'status'
+                        name: 'status',
+                        className: 'rc-badge-top-right'
                     },
                     {
                         data: 'action',
@@ -201,14 +288,13 @@
                     }
                 ],
                 preDrawCallback: function(settings) {
-                    // Add placeholder-glow class to the table before rendering
+                    // Add placeholder-glow class to table wrapper before rendering
                     $('#nfc-card-design-table_wrapper').addClass('placeholder-glow');
 
-                    // Check if there are rows in the tbody after draw
+                    // Desktop Placeholder Rows (Skeleton Loader)
                     if ($('#nfc-card-design-table tbody tr').length === 0) {
-                        // If there are no rows, add 5 placeholder rows with 7 columns each
                         var placeholderRows = '';
-                        for (var i = 0; i < 5; i++) {
+                        for (var i = 0; i < 10; i++) {
                             placeholderRows += '<tr>' +
                                 '<td class="text-center"><div class="placeholder placeholder-xs col-12"></div></td>'
                                 .repeat(8) + '</tr>';
@@ -224,17 +310,91 @@
                     $('[data-bs-toggle="tooltip"]').tooltip();
 
                     // Remove the placeholder-glow class once the table is fully rendered
-                    $('nfc-card-design-table_wrapper').removeClass('placeholder-glow');
+                    $('#nfc-card-design-table_wrapper').removeClass('placeholder-glow');
 
-                    // clear any existing placeholder rows
+                    // Clear any existing placeholder rows
                     $('#nfc-card-design-table tbody tr').each(function() {
-                        var actionCell = $(this).find('td').eq(
-                            7); // Targeting the 9th column (index 7)
+                        var actionCell = $(this).find('td').eq(7);
                         if (actionCell.find('span.placeholder').length > 0) {
-                            actionCell.empty(); // Clear the placeholder once data is available
+                            actionCell.empty();
                         }
                     });
+
+                    // Force empty table message cell to span all 8 columns correctly on desktop viewports
+                    $('#nfc-card-design-table tbody tr td.dataTables_empty').attr('colspan', 8);
+
+                    // Generate 'data-label' attributes based on the current <thead> elements
+                    var headers = [];
+                    $('#nfc-card-design-table thead th').each(function() {
+                        headers.push($(this).text().trim());
+                    });
+
+                    $('#nfc-card-design-table tbody tr').each(function() {
+                        $(this).find('td').each(function(index) {
+                            $(this).attr('data-label', headers[index]);
+                        });
+                    });
+
+                    // Update Custom Mobile Pagination Footer State dynamically
+                    const api = this.api();
+                    const pageInfo = api.page.info();
+                    const rowsCount = api.rows({
+                        page: 'current'
+                    }).data().length;
+
+                    // Hide/show dynamic mobile footer based on pages total
+                    if (pageInfo.pages <= 1 || rowsCount === 0) {
+                        $('#custom-mobile-pagination').addClass('d-none');
+                        $('#custom-mobile-pagination').removeClass('d-flex');
+                    } else {
+                        $('#custom-mobile-pagination').removeClass('d-none');
+                        $('#custom-mobile-pagination').addClass('d-flex');
+                    }
+
+                    const pageInfoText = `{{ __('Page :current of :total') }}`
+                        .replace(':current', pageInfo.page + 1)
+                        .replace(':total', pageInfo.pages || 1);
+                    $('#mobile-page-info').text(pageInfoText);
+
+                    // Disable or enable prev boundaries
+                    if (pageInfo.page === 0) {
+                        $('#mobile-prev-btn').addClass('disabled').prop('disabled', true);
+                    } else {
+                        $('#mobile-prev-btn').removeClass('disabled').prop('disabled', false);
+                    }
+
+                    // Disable or enable next boundaries
+                    if (pageInfo.page >= pageInfo.pages - 1) {
+                        $('#mobile-next-btn').addClass('disabled').prop('disabled', true);
+                    } else {
+                        $('#mobile-next-btn').removeClass('disabled').prop('disabled', false);
+                    }
                 }
+            });
+
+            // Trigger Skeleton Glow Loader state dynamically when table AJAX transactions are processing (e.g. searching)
+            table.on('processing.dt', function(e, settings, processing) {
+                if (processing) {
+                    $('#nfc-card-design-table_wrapper').addClass('placeholder-glow');
+                    var placeholderRows = '';
+                    for (var i = 0; i < 10; i++) {
+                        placeholderRows += '<tr>' +
+                            '<td class="text-center"><div class="placeholder placeholder-xs col-12"></div></td>'
+                            .repeat(8) + '</tr>';
+                    }
+                    $('#nfc-card-design-table tbody').html(placeholderRows);
+                }
+            });
+
+            // Bind click events on Mobile pagination triggers
+            $('#mobile-prev-btn').on('click', function(e) {
+                e.preventDefault();
+                table.page('previous').draw('page');
+            });
+
+            $('#mobile-next-btn').on('click', function(e) {
+                e.preventDefault();
+                table.page('next').draw('page');
             });
         });
     </script>
@@ -260,11 +420,10 @@
         }
 
         // Read more
-        $(document).on('click', '.read-more', function () {
+        $(document).on('click', '.read-more', function() {
             const td = $(this).closest('td');
             td.find('.short-text, .full-text').toggleClass('d-none');
             $(this).text($(this).text() === 'Read more' ? 'Read less' : 'Read more');
         });
     </script>
-@endsection
 @endsection

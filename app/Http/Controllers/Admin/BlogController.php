@@ -1,445 +1,241 @@
 <?php
 
-/*
- |--------------------------------------------------------------------------
- | Eliteler vCard SaaS
- |--------------------------------------------------------------------------
- | Developed by NativeCode © 2021 - https://nativecode.in
- | All rights reserved
- | Unauthorized distribution is prohibited
- |--------------------------------------------------------------------------
-*/
+// --------------------------------------------------------------------------
+// Eliteler vCard SaaS
+// --------------------------------------------------------------------------
+// Developed by NativeCode © 2021 - https://nativecode.in
+// All rights reserved
+// Unauthorized distribution is prohibited
+// --------------------------------------------------------------------------
 
 namespace App\Http\Controllers\Admin;
 
 use App\Blog;
-use App\Setting;
 use App\BlogCategory;
-use Illuminate\Support\Str;
-use Illuminate\Http\Request;
-use Yajra\DataTables\DataTables;
-use Illuminate\Support\Facades\DB;
+use App\Helpers\StorageHelper;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Inertia\Inertia;
 
+// Blog posts. blogs.status: 1 published, 0 draft, 2 deleted.
+// blogs.category holds blog_categories.blog_category_id; tags are comma separated.
+// Images pasted into the body arrive as base64 and are saved as files.
 class BlogController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
     public function __construct()
     {
         $this->middleware('auth');
     }
 
-    // Check slug exists
-    public function createSlug($title, $count = 0)
-    {
-        // Generate the initial slug from the title
-        $slug = Str::slug($title);
-
-        // If a count is provided, append it to the slug
-        if ($count > 0) {
-            $slug .= '-' . $count;
-        }
-
-        // Check if the slug already exists in the database
-        $existingSlug = Blog::where('slug', $slug)->first();
-
-        // If the slug exists, recursively call this method with an incremented count
-        if ($existingSlug) {
-            return $this->createSlug($title, $count + 1);
-        }
-
-        // If the slug does not exist, return it
-        return $slug;
-    }
-
-    /**
-     * Show the application dashboard.
-     *
-     * @return \Illuminate\Contracts\Support\Renderable
-     */
-
-    // Blogs
     public function index(Request $request)
     {
-        if ($request->ajax()) {
-            $blogs = Blog::where('status', '!=', 2)->orderBy('created_at', 'desc')->get();
+        $search = trim((string) $request->query('search', ''));
 
-            return DataTables::of($blogs)
-                ->addIndexColumn()
-                ->addColumn('created_at', function ($row) {
-                    return formatDateForUser($row->created_at);
-                })
-                ->addColumn('blogCategory', function ($row) {
-                    return __($row->blogCategory->blog_category_title ?? trans('No category'));
-                })
-                ->addColumn('tags', function ($row) {
-                    $tags = explode(',', $row->tags);
-                    $tags = collect($tags)->take(2)->map(function ($tag) {
-                        return '<span class="badge bg-primary text-capitalize text-white mb-1">' . __($tag) . '</span><br>';
-                    })->implode('');
-                    return $tags;
-                })
-                ->addColumn('heading', function ($row) {
-                    return '<a href="' . route('view.blog', $row->slug) . '" target="_blank">' . __($row->heading) . '</a>';
-                })
-                ->addColumn('short_description', function ($row) {
-                    return __(mb_strimwidth($row->short_description, 0, 99, '...'));
-                })
-                ->addColumn('status', function ($row) {
-                    return $row->status == 0
-                        ? '<span class="badge bg-red text-white text-white">' . __('Unpublished') . '</span>'
-                        : '<span class="badge bg-green text-white text-white">' . __('Published') . '</span>';
-                })
-                ->addColumn('action', function ($row) {
-                    $actions = '<a class="dropdown-item" href="' . route('admin.edit.blog', $row->blog_id) . '">' . __('Edit') . '</a>';
+        // Filter query to only retrieve published blogs (status = 1)
+        $base = Blog::where('status', 1);
                 
-                    if ($row->status == 0) {
-                        $actions .= '<a class="dropdown-item" href="#" onclick="getBlog(\'' . $row->blog_id . '\', \'publish\'); return false;">' . __('Publish') . '</a>';
-                    } else {
-                        $actions .= '<a class="dropdown-item" href="#" onclick="getBlog(\'' . $row->blog_id . '\', \'unpublish\'); return false;">' . __('Unpublish') . '</a>';
-                    }
-                
-                    $actions .= '<a class="dropdown-item" href="#" onclick="getBlog(\'' . $row->blog_id . '\', \'delete\'); return false;">' . __('Delete') . '</a>';
-                
-                    return '
-                        <a class="btn-action" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <!-- Download SVG icon from http://tabler-icons.io/i/dots-vertical -->
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24"
-                                height="24" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round"
-                                class="icon icon-tabler icons-tabler-outline icon-tabler-dots fw-bold">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                <path d="M4 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                <path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                <path d="M18 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                            </svg>
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-end">
-                            ' . $actions . '
-                        </div>
-                    ';
-                })                
-                ->rawColumns(['heading', 'tags', 'status', 'action'])
-                ->make(true);
-        }
-
-        $settings = Setting::first();
-        $config = DB::table('config')->get();
-
-        return view('admin.pages.blogs.index', compact('settings', 'config'));
-    }
-
-    // Add Blog
-    public function createBlog()
-    {
-        // Queries
-        $blogsCategories = BlogCategory::where('status', '!=', 2)->get();
-
-        // Queries
-        $settings = Setting::first();
-        $config = DB::table('config')->get();
-
-        // View
-        return view('admin.pages.blogs.create', compact('blogsCategories', 'settings', 'config'));
-    }
-
-    // Publish Blog
-    public function publishBlog(Request $request)
-    {
-        // Validation
-        $validator = Validator::make($request->all(), [
-            'blog_cover' => ['required', 'mimes:jpg,jpeg,png,webp'],
-            'blog_name' => 'required|min:3',
-            'blog_slug' => 'required|min:3',
-            'short_description' => 'required|min:3',
-            'long_description' => 'required|min:3',
-            'category_id' => 'required',
-            'tags' => 'required',
-            'seo_title' => 'required',
-            'seo_description' => 'required',
-            'seo_keywords' => 'required'
-        ]);
-
-        if ($validator->fails()) {
-            return back()->with('failed', $validator->messages()->all()[0])->withInput();
-        }
-
-        
-        // Uploaded file
-        $blogCoverFile = $request->file('blog_cover');
-
-        // Get original name and extension
-        $originalName = $blogCoverFile->getClientOriginalName();
-        $originalFilename = pathinfo($originalName, PATHINFO_FILENAME);
-        $extension = strtolower($blogCoverFile->getClientOriginalExtension());
-
-        // Allowed extensions
-        $allowedExtensions = ['jpeg', 'png', 'jpg', 'webp'];
-
-        if (in_array($extension, $allowedExtensions)) {
-            // Build filename and path
-            $uniqueFilename = $originalFilename . '_' . uniqid() . '.' . $extension;
-            $relativeStoragePath = 'images/blogs/cover-images/';
-            $fullStoragePath = $relativeStoragePath . $uniqueFilename;
-
-            // Store in storage/app/public/images/blogs/cover-images/
-            Storage::disk('public')->put($fullStoragePath, file_get_contents($blogCoverFile));
-
-            // Public access path (optional)
-            $CoverImage = 'storage/' . $fullStoragePath;
-        }
-
-        // Generate a unique slug for the blog post
-        $existingSlug = Blog::where('slug', $request->blog_slug)->first();
-
-        if ($existingSlug) {
-            $blogSlug = $this->createSlug($request->blog_name);
-        } else {
-            $blogSlug = $request->blog_slug;
-        }
-
-        // Step 1: Process base64 <img> tags
-        $updatedBlogBody = preg_replace_callback(
-            '/<img[^>]+src=["\']data:image\/([^;\']+);base64,([^"\']+)["\'][^>]*>/i',
-            function ($matches) {
-                $extension = $matches[1]; // e.g., png, jpeg
-                $decodedData = base64_decode($matches[2]);
-
-                if ($decodedData !== false) {
-                    $filename = Str::random(10) . '.' . $extension;
-                    $relativePath = 'uploads/blogs/' . $filename;
-
-                    Storage::disk('public')->put($relativePath, $decodedData);
-
-                    return '<img src="' . asset('storage/' . $relativePath) . '" />';
-                }
-
-                return $matches[0]; // Return original tag if decoding fails
-            },
-            $request->long_description
-        );
-
-        // Step 2: Ensure <a> tags have target="_blank" and rel="noopener noreferrer"
-        $updatedBlogBody = preg_replace_callback(
-            '/<a\b([^>]*)href=["\'](.*?)["\']([^>]*)>/i',
-            function ($matches) {
-                $beforeHref = $matches[1];
-                $href = $matches[2];
-                $afterHref = $matches[3];
-
-                $tag = "<a{$beforeHref}href=\"{$href}\"{$afterHref}>";
-
-                // If target already exists, don't add again
-                if (!preg_match('/\btarget=["\']?[_a-zA-Z]+["\']?/i', $tag)) {
-                    $tag = rtrim($tag, '>') . ' target="_blank">';
-                }
-
-                // If rel already exists, don't add again
-                if (!preg_match('/\brel=["\']?[^"\']*["\']?/i', $tag)) {
-                    $tag = rtrim($tag, '>') . ' rel="noopener noreferrer">';
-                }
-
-                return $tag;
-            },
-            $updatedBlogBody
-        );
-
-        // Save Blog
-        $blog = new Blog();
-        $blog->published_by = Auth::user()->id;
-        $blog->blog_id = uniqid();
-        $blog->cover_image = $CoverImage;
-        $blog->heading = ucfirst($request->blog_name);
-        $blog->slug = $blogSlug;
-        $blog->short_description = ucfirst($request->short_description);
-        $blog->long_description = $updatedBlogBody;
-        $blog->category = $request->category_id;
-        $blog->tags = ucfirst($request->tags);
-        $blog->title = ucfirst($request->seo_title);
-        $blog->description = ucfirst($request->seo_description);
-        $blog->keywords = $request->seo_keywords;
-        $blog->save();
-
-        // Redirect
-        return redirect()->route('admin.create.blog')->with('success', trans('Published!'));
-    }
-
-    // Edit Blog
-    public function editBlog($id)
-    {
-        // Queries
-        $blogsCategories = BlogCategory::where('status', '!=', 2)->get();
-
-        // Get page details
-        $blogDetails = Blog::where('blog_id', $id)->where('status', '!=', 2)->first();
-
-        if ($blogDetails) {
-            // Queries
-            $settings = Setting::first();
-            $config = DB::table('config')->get();
-
-            // View
-            return view('admin.pages.blogs.edit', compact('blogsCategories', 'blogDetails', 'settings', 'config'));
-        } else {
-            return redirect()->route('admin.blogs')->with('failed', trans('Not Found!'));
-        }
-    }
-
-    // Update Blog
-    public function updateBlog(Request $request)
-    {
-        // Validation
-        $validator = Validator::make($request->all(), [
-            'blog_name' => 'required|min:3',
-            'blog_slug' => 'required|min:3',
-            'short_description' => 'required|min:3',
-            'long_description' => 'required|min:3',
-            'category_id' => 'required',
-            'tags' => 'required',
-        ]);
-
-        if ($validator->fails()) {
-            return back()->with('failed', $validator->messages()->all()[0])->withInput();
-        }
-
-        // Blog id
-        $blogId = $request->segment(3);
-
-        // Check cover image
-        if ($request->hasFile('blog_cover')) {
-            // Validation
-            $validator = Validator::make($request->all(), [
-                'blog_cover' => ['required', 'mimes:jpg,jpeg,png,webp'],
+        $posts = (clone $base)
+            ->when($search !== '', fn($q) => $q->where(fn($q) => $q->where('heading', 'like', "%{$search}%")->orWhere('tags', 'like', "%{$search}%")))
+            ->with('blogCategory')
+            ->latest()
+            ->paginate(20)
+            ->withQueryString()
+            ->through(fn(Blog $blog) => [
+                'id'        => $blog->blog_id,
+                'title'     => $blog->heading,
+                'summary'   => Str::limit((string) $blog->short_description, 120),
+                'cover'     => $blog->cover_image ? asset($blog->cover_image) : null,
+                'category'  => $blog->blogCategory?->blog_category_title,
+                'tags'      => $this->tags($blog->tags),
+                'published' => (int) $blog->status === 1,
+                'url'       => route('view.blog', $blog->slug),
+                'createdAt' => $blog->created_at?->toIso8601String(),
             ]);
 
-            if ($validator->fails()) {
-                return back()->with('failed', $validator->messages()->all()[0])->withInput();
-            }
-
-            // Cover image file
-            $blogCoverFile = $request->file('blog_cover');
-
-            // Get original name and extension
-            $originalName = $blogCoverFile->getClientOriginalName();
-            $filenameWithoutExt = pathinfo($originalName, PATHINFO_FILENAME);
-            $extension = strtolower($blogCoverFile->getClientOriginalExtension());
-
-            // Allowed image types
-            $allowedExtensions = ['jpeg', 'png', 'jpg', 'webp'];
-
-            if (in_array($extension, $allowedExtensions)) {
-                // Final file name and relative path
-                $uniqueFilename = $filenameWithoutExt . '_' . uniqid() . '.' . $extension;
-                $relativePath = 'images/blogs/cover-images/';
-                $storagePath = $relativePath . $uniqueFilename;
-
-                // Store the file in storage/app/public/images/blogs/cover-images/
-                Storage::disk('public')->put($storagePath, file_get_contents($blogCoverFile));
-
-                // Public path (accessible via browser)
-                $CoverImage = 'storage/' . $storagePath;
-            }
-
-            // Update blog cover image
-            Blog::where('blog_id', $blogId)->update(['cover_image' => $CoverImage]);
-        }
-
-        // Generate a unique slug for the blog post
-        $existingSlug = Blog::where('slug', $request->blog_slug)->first();
-
-        if ($existingSlug) {
-            $blogSlug = $request->blog_slug;
-        } else {
-            $blogSlug = $this->createSlug($request->blog_name);
-        }
-
-        // Step 1: Process base64 <img> tags
-        $updatedBlogBody = preg_replace_callback(
-            '/<img[^>]+src=["\']data:image\/([^;\']+);base64,([^"\']+)["\'][^>]*>/i',
-            function ($matches) {
-                $extension = $matches[1]; // e.g., png, jpeg
-                $decodedData = base64_decode($matches[2]);
-
-                if ($decodedData !== false) {
-                    $filename = Str::random(10) . '.' . $extension;
-                    $relativePath = 'uploads/blogs/' . $filename;
-
-                    Storage::disk('public')->put($relativePath, $decodedData);
-
-                    return '<img src="' . asset('storage/' . $relativePath) . '" />';
-                }
-
-                return $matches[0]; // Return original tag if decoding fails
-            },
-            $request->long_description
-        );
-
-        // Step 2: Ensure <a> tags have target="_blank" and rel="noopener noreferrer"
-        $updatedBlogBody = preg_replace_callback(
-            '/<a\b([^>]*)href=["\'](.*?)["\']([^>]*)>/i',
-            function ($matches) {
-                $beforeHref = $matches[1];
-                $href = $matches[2];
-                $afterHref = $matches[3];
-
-                $tag = "<a{$beforeHref}href=\"{$href}\"{$afterHref}>";
-
-                // If target already exists, don't add again
-                if (!preg_match('/\btarget=["\']?[_a-zA-Z]+["\']?/i', $tag)) {
-                    $tag = rtrim($tag, '>') . ' target="_blank">';
-                }
-
-                // If rel already exists, don't add again
-                if (!preg_match('/\brel=["\']?[^"\']*["\']?/i', $tag)) {
-                    $tag = rtrim($tag, '>') . ' rel="noopener noreferrer">';
-                }
-
-                return $tag;
-            },
-            $updatedBlogBody
-        );
-
-        // Update blog details
-        Blog::where('blog_id', $blogId)->update([
-            'heading' => ucfirst($request->blog_name), 'slug' => $blogSlug, 'short_description' => $request->short_description,
-            'long_description' => $updatedBlogBody, 'category' => $request->category_id, 'tags' => ucfirst($request->tags), 'title' => ucfirst($request->seo_title),
-            'description' => ucfirst($request->seo_description), 'keywords' => $request->seo_keywords
+        return Inertia::render('website/blogs/index', [
+            'posts'  => $posts,
+            'search' => $search,
+            'counts' => [
+                'all'       => (clone $base)->count(),
+                'published' => (clone $base)->count(),
+                'drafts'    => 0,
+            ],
         ]);
-
-        // Redirect
-        return redirect()->route('admin.edit.blog', $blogId)->with('success', trans('Updated!'));
+                    }
+                
+    public function createBlog()
+    {
+        return $this->form(null);
     }
 
-    // Actions
-    public function actionBlog(Request $request)
+    public function editBlog($id)
     {
-        // Check status
-        switch ($request->query('mode')) {
-            case 'unpublish':
-                $status = 0;
-                break;
+        // Find blog where status is 1
+        $blog = Blog::where('blog_id', $id)->where('status', 1)->first();
 
-            case 'delete':
-                $status = 2;
-                break;
+        return $blog ? $this->form($blog) : redirect()->route('admin.blogs')->with('failed', __('Post not found.'));
+    }
 
-            default:
-                $status = 1;
-                break;
+    public function publishBlog(Request $request)
+    {
+        $data = $this->validated($request, null);
+
+        $blog               = new Blog();
+        $blog->blog_id      = uniqid();
+        $blog->published_by = Auth::id();
+        $this->fill($blog, $data, $request)->save();
+
+        return redirect()->route('admin.blogs')->with('success', $blog->status ? __('Post published.') : __('Draft saved.'));
         }
 
-        // Update status
-        Blog::where('blog_id', $request->query('id'))->update(['status' => $status]);
+    public function updateBlog(Request $request, $id)
+    {
+        $blog = Blog::where('blog_id', $id)->where('status', '!=', 2)->firstOrFail();
+        $data = $this->validated($request, $blog);
 
-        // Redirect
-        return redirect()->route('admin.blogs')->with('success', trans('Updated!'));
+        $this->fill($blog, $data, $request)->save();
+
+        return back()->with('success', __('Post saved.'));
+            }
+
+    public function actionBlog(Request $request)
+    {
+        $data = $request->validate(['id' => 'required|string', 'mode' => 'required|in:publish,unpublish,delete']);
+        $blog = Blog::where('blog_id', $data['id'])->where('status', '!=', 2)->firstOrFail();
+
+        $blog->forceFill(['status' => ['publish' => 1, 'unpublish' => 0, 'delete' => 2][$data['mode']]])->save();
+
+        return back()->with('success', [
+            'publish'   => __('Post published.'),
+            'unpublish' => __('Post moved to drafts.'),
+            'delete'    => __('Post deleted.'),
+        ][$data['mode']]);
+        }
+
+    private function form(?Blog $blog)
+    {
+        return Inertia::render('website/blogs/form', [
+            'post'        => $blog ? [
+                'id'                => $blog->blog_id,
+                'blog_name'         => $blog->heading,
+                'blog_slug'         => urldecode($blog->slug),
+                'category_id'       => $blog->category,
+                'tags'              => $this->tags($blog->tags),
+                'short_description' => (string) $blog->short_description,
+                'long_description'  => (string) $blog->long_description,
+                'seo_title'         => (string) $blog->title,
+                'seo_description'   => (string) $blog->description,
+                'seo_keywords'      => (string) $blog->keywords,
+                'published'         => (int) $blog->status === 1,
+                'cover'             => $blog->cover_image ? asset($blog->cover_image) : null,
+                'url'               => route('view.blog', $blog->slug),
+            ] : null,
+            // Only fetch active categories where status is 1
+            'categories'  => BlogCategory::where('status', 1)
+                ->orderBy('blog_category_title')
+                ->get(['blog_category_id', 'blog_category_title'])
+                ->map(fn($c) => [
+                    'value' => $c->blog_category_id,
+                    'label' => __($c->blog_category_title),
+                ]),
+            'blogUrl'     => url('blog'),
+            'maxUploadKb' => (int) env('SIZE_LIMIT', 2048),
+        ]);
+    }
+
+    private function validated(Request $request, ?Blog $blog): array
+    {
+        // Titles in non-Latin scripts can slug to empty string, fallback to random string
+        $slug = Str::slug((string) ($request->input('blog_slug') ?: $request->input('blog_name')));
+        $request->merge(['blog_slug' => $slug !== '' ? $slug : ($blog?->slug ?: 'post-' . Str::lower(Str::random(8)))]);
+
+        return $request->validate([
+            'blog_name'         => 'required|string|min:3|max:191',
+            'blog_slug'         => ['required', 'string', 'max:191', Rule::unique('blogs', 'slug')->where(fn($q) => $q->where('status', '!=', 2))->ignore($blog?->id)],
+            // Ensure selected category has status = 1
+            'category_id'       => ['required', Rule::exists('blog_categories', 'blog_category_id')->where(fn($q) => $q->where('status', 1))],
+            'tags'              => 'nullable|array|max:20',
+            'tags.*'            => 'string|max:50',
+            'short_description' => 'required|string|min:3|max:500',
+            'long_description'  => 'required|string|min:3',
+            'blog_cover'        => [$blog ? 'nullable' : 'required', 'file', 'mimes:jpg,jpeg,png,webp', 'max:' . env('SIZE_LIMIT', 2048)],
+            'seo_title'         => 'nullable|string|max:191',
+            'seo_description'   => 'nullable|string|max:500',
+            'seo_keywords'      => 'nullable|string|max:500',
+            'published'         => 'required|boolean',
+        ], [
+            'blog_slug.unique' => __('Another post already uses this URL.'),
+        ], [
+            'blog_name'         => __('title'),
+            'blog_slug'         => __('URL'),
+            'category_id'       => __('category'),
+            'short_description' => __('summary'),
+            'long_description'  => __('content'),
+            'blog_cover'        => __('cover image'),
+        ]);
+    }
+
+    private function fill(Blog $blog, array $data, Request $request): Blog
+    {
+        if ($request->hasFile('blog_cover')) {
+            if ($blog->cover_image) {
+                StorageHelper::deleteFile($blog->cover_image);
+            }
+            $blog->cover_image = StorageHelper::uploadImage($request->file('blog_cover'), 'images/blogs/cover-images');
+        }
+
+        $tags = collect($data['tags'] ?? [])->map(fn($tag) => trim($tag))->filter()->unique()->values();
+
+        $blog->heading           = $data['blog_name'];
+        $blog->slug              = $data['blog_slug'];
+        $blog->category          = $data['category_id'];
+        $blog->tags              = $tags->implode(',');
+        $blog->short_description = $data['short_description'];
+        $blog->long_description  = $this->prepareBody($data['long_description']);
+        // Templates print these in the page head, so fall back to the post itself
+        $blog->title             = ($data['seo_title'] ?? '') ?: $data['blog_name'];
+        $blog->description       = ($data['seo_description'] ?? '') ?: Str::limit(strip_tags($data['short_description']), 160, '');
+        $blog->keywords          = ($data['seo_keywords'] ?? '') ?: $tags->implode(', ');
+        $blog->status            = $request->boolean('published') ? 1 : 0;
+
+        return $blog;
+    }
+
+    // Save pasted base64 images as files and open body links in a new tab
+    private function prepareBody(string $html): string
+    {
+        $html = preg_replace_callback(
+            '/<img([^>]*?)src=["\']data:image\/([a-z0-9.+-]+);base64,([^"\']+)["\']([^>]*)>/i',
+            function ($match) {
+                $extension = strtolower($match[2]) === 'svg+xml' ? null : preg_replace('/[^a-z0-9]/', '', strtolower($match[2]));
+                $binary    = base64_decode($match[3], true);
+                if (! $extension || $binary === false) {
+                    return '';
+                }
+
+                return '<img' . $match[1] . 'src="' . asset(StorageHelper::uploadImage($binary, 'uploads/blogs', Str::random(10) . '.' . $extension)) . '"' . $match[4] . '>';
+            },
+            $html
+        );
+
+        return preg_replace_callback('/<a\b([^>]*)>/i', function ($match) {
+            $attributes = $match[1];
+            if (! preg_match('/\btarget\s*=/i', $attributes)) {
+                $attributes .= ' target="_blank"';
+            }
+            if (! preg_match('/\brel\s*=/i', $attributes)) {
+                $attributes .= ' rel="noopener noreferrer"';
+            }
+
+            return '<a' . $attributes . '>';
+        }, $html);
+    }
+
+    private function tags(?string $tags): array
+    {
+        return collect(explode(',', (string) $tags))->map(fn($tag) => trim($tag))->filter()->values()->all();
     }
 }

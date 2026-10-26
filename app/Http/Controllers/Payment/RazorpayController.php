@@ -12,21 +12,22 @@
 
 namespace App\Http\Controllers\Payment;
 
-use App\Plan;
-use App\User;
-use App\Coupon;
-use App\Setting;
-use App\Referral;
-use App\Transaction;
-use App\BusinessCard;
-use Razorpay\Api\Api;
 use App\AppliedCoupon;
+use App\BusinessCard;
+use App\Coupon;
+use App\Http\Controllers\Controller;
+use App\Plan;
+use App\Referral;
+use App\Setting;
+use App\Transaction;
+use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
-use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail; 
+use Plugins\Zapier\Helpers\ZapierHelper;
+use Razorpay\Api\Api;
 
 class RazorpayController extends Controller
 {
@@ -98,10 +99,10 @@ class RazorpayController extends Controller
                     $amountToBePaid = ($plan_details->plan_price + $appliedTaxInTotal);
                 }
 
-                $amountToBePaidPaise = $amountToBePaid * 100;
+                $amountToBePaidPaise = round($amountToBePaid * 100); // Amount in paise
 
                 try {
-                    $order = $api->order->create(array('receipt' => $gobiz_transaction_id, 'amount' => (int) $amountToBePaidPaise, 'currency' => $config[1]->config_value)); // Creates order
+                    $order = $api->order->create(array('receipt' => $gobiz_transaction_id, 'amount' => (float) $amountToBePaidPaise, 'currency' => $config[1]->config_value)); // Creates order
                 } catch (\Exception $e) {
                     $order = [];
                     return redirect()->route('user.plans')->with('failed', trans('Payment method not supported!'));
@@ -124,7 +125,7 @@ class RazorpayController extends Controller
                 $invoice_details['to_billing_state'] = $userData->billing_state;
                 $invoice_details['to_billing_zipcode'] = $userData->billing_zipcode;
                 $invoice_details['to_billing_country'] = $userData->billing_country;
-                $invoice_details['to_billing_phone'] = $userData->billing_phone;
+                $invoice_details['to_billing_phone'] = $userData->billing_country_code . $userData->billing_phone;
                 $invoice_details['to_billing_email'] = $userData->billing_email;
                 $invoice_details['to_vat_number'] = $userData->vat_number;
                 $invoice_details['subtotal'] = $plan_details->plan_price;
@@ -134,7 +135,7 @@ class RazorpayController extends Controller
                 $invoice_details['tax_amount'] = $appliedTaxInTotal;
                 $invoice_details['applied_coupon'] = $appliedCoupon;
                 $invoice_details['discounted_price'] = $discountPrice;
-                $invoice_details['invoice_amount'] = $amountToBePaid;
+                $invoice_details['invoice_amount'] = round($amountToBePaid, 2);
 
                 // If order is created from RazorPay
                 if (isset($order)) {
@@ -146,7 +147,7 @@ class RazorpayController extends Controller
                     $transaction->plan_id = $plan_details->plan_id;
                     $transaction->desciption = $plan_details->plan_name . " Plan";
                     $transaction->payment_gateway_name = "Razorpay";
-                    $transaction->transaction_amount = $amountToBePaid;
+                    $transaction->transaction_amount = round($amountToBePaid, 2);
                     $transaction->transaction_currency = $config[1]->config_value;
                     $transaction->invoice_details = json_encode($invoice_details);
                     $transaction->payment_status = "PENDING";
@@ -377,6 +378,7 @@ class RazorpayController extends Controller
                     ]);
 
                     $encode = json_decode($transaction_details['invoice_details'], true);
+
                     $details = [
                         'from_billing_name' => $encode['from_billing_name'],
                         'from_billing_email' => $encode['from_billing_email'],
@@ -403,6 +405,41 @@ class RazorpayController extends Controller
                     try {
                         Mail::to($encode['to_billing_email'])->send(new \App\Mail\SendEmailInvoice($details));
                     } catch (\Exception $e) {
+                    }
+
+                    // Decode invoice details safely
+                    $encode = json_decode($transaction_details['invoice_details'] ?? '{}', true);
+
+                    // Safely format user billing address
+                    $userAddress = $user_details->billing_address ?? '';
+                    $userCity = $user_details->billing_city ?? '';
+                    $userState = $user_details->billing_state ?? '';
+                    $userCountry = $user_details->billing_country ?? '';
+                    $userZip = $user_details->billing_zipcode ?? '';
+
+                    // Dispatch plan purchase event to Zapier
+                    if (function_exists('zapier_dispatch')) {
+                        zapier_dispatch('plan_purchase', [
+                            'transaction_id'  => $paymentId ?? ($transaction_details->transaction_id ?? $orderId),
+                            'invoice_id'      => ($config[15]->config_value ?? 'INV-') . $invoice_number,
+                            'user_name'       => $user_details->name ?? ($encode['to_billing_name'] ?? 'Customer'),
+                            'user_address'    => !empty($userAddress) ? $userAddress : ($encode['to_billing_address'] ?? ''),
+                            'user_city'       => !empty($userCity) ? $userCity : ($encode['to_billing_city'] ?? ''),
+                            'user_state'      => !empty($userState) ? $userState : ($encode['to_billing_state'] ?? ''),
+                            'user_country'    => !empty($userCountry) ? $userCountry : ($encode['to_billing_country'] ?? ''),
+                            'user_zip'        => !empty($userZip) ? $userZip : ($encode['to_billing_zipcode'] ?? ''),
+                            'user_email'      => $user_details->email ?? ($encode['to_billing_email'] ?? ''),
+                            'user_phone'      => ($user_details->country_code ?? '') . ($user_details->mobile_number ?? ($encode['to_billing_phone'] ?? '')),
+                            'user_tax_number' => $user_details->vat_number ?? $user_details->tax_number ?? ($encode['to_vat_number'] ?? ''),
+                            'plan_name'       => $plan_data->plan_name ?? $plan_data->name ?? ($transaction_details->desciption ?? ($transaction_details->description ?? 'Subscription Plan')),
+                            'quantity'        => 1,
+                            'currency'        => $transaction_details->transaction_currency ?? ($config[1]->config_value ?? 'INR'),
+                            'amount'          => (float) ($transaction_details->transaction_amount ?? ($encode['invoice_amount'] ?? 0)),
+                            'payment_method'  => 'Razorpay',
+                            'payment_status'  => 'paid',
+                            'invoice_date'    => now()->toDateString(),
+                            'purchased_at'    => now()->toDateTimeString(),
+                        ]);
                     }
 
                     return redirect()->route('user.plans')->with('success', trans($message));

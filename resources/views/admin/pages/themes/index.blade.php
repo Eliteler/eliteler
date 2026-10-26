@@ -39,68 +39,145 @@
             cursor: pointer;
             user-select: none;
         }
+
+        .theme-row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: -0.75rem;
+        }
+
+        .theme-item {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        @media (min-width: 768px) {
+            .theme-item {
+                width: 50%;
+                /* 2 per row */
+            }
+        }
+
+        @media (min-width: 998px) {
+            .theme-item {
+                width: 20%;
+                /* 5 per row */
+            }
+        }
     </style>
 @endsection
 
 @section('content')
     <div class="page-wrapper">
-        <!-- Page title -->
+        <!-- Page title header -->
         <div class="page-header d-print-none">
             <div class="container-fluid">
-                <div class="row align-items-center g-2">
-                    <!-- Title -->
+                <div class="row align-items-center">
+                    <!-- Breadcrumbs -->
+                    <div class="mb-1 ms-0">
+                        <ol class="breadcrumb" aria-label="breadcrumbs">
+                            <li class="breadcrumb-item">
+                                <a href="{{ route('admin.dashboard') }}" class="text-secondary text-decoration-none">
+                                    {{ __('Dashboard') }}
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a href="{{ route('admin.themes', ['status' => 'all']) }}"
+                                    class="text-secondary text-decoration-none">
+                                    {{ __('Themes') }}
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">
+                                <a href="#">{{ __('Manage Themes') }}</a>
+                            </li>
+                        </ol>
+                    </div>
                     <div class="col">
-                        <div class="page-pretitle">{{ __('Overview') }}</div>
-                        <h2 class="page-title">{{ __('Themes') }}</h2>
+                        <h2 class="page-title">
+                            {{ __('Themes') }}
+                        </h2>
+                        <!-- Added helper subtitle under page heading -->
+                        <div class="text-muted mt-1">
+                            {{ __('Explore and manage visual design themes for digital business cards and stores.') }}
+                        </div>
                     </div>
 
                     <!-- Actions -->
-                    <div class="col-12 col-md-auto ms-md-auto">
-                        <div class="d-flex flex-column flex-md-row align-items-stretch align-items-md-center gap-2">
+                    <div class="col-12 col-md-auto ms-md-auto mt-2 mt-md-0">
+                        <div class="d-flex flex-row align-items-center justify-content-end gap-2">
 
                             @php
                                 $status = request()->segment(3) ?? 'all';
+                                $type = request()->query('type') ?? 'all';
                             @endphp
 
-                            <!-- Filter dropdown -->
+                            <!-- Type Filter (Digital Business Cards / Stores) -->
+                            <div class="dropdown">
+                                <button class="btn dropdown-toggle" data-bs-toggle="dropdown">
+                                    <span class="status-margin">
+                                        {{ $type == 'all' ? __('All') : ($type == 'vcard' ? __('Digital Business Card') : __('Store')) }}
+                                    </span>
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-end">
+                                    <a class="dropdown-item {{ $type == 'all' ? 'active' : '' }}"
+                                        href="{{ request()->fullUrlWithQuery(['type' => 'all']) }}">
+                                        {{ __('All') }}
+                                    </a>
+                                    <a class="dropdown-item {{ $type == 'vcard' ? 'active' : '' }}"
+                                        href="{{ request()->fullUrlWithQuery(['type' => 'vcard']) }}">
+                                        {{ __('Digital Business Card') }}
+                                    </a>
+                                    <a class="dropdown-item {{ $type == 'store' ? 'active' : '' }}"
+                                        href="{{ request()->fullUrlWithQuery(['type' => 'store']) }}">
+                                        {{ __('Store') }}
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Status Filter dropdown -->
                             <div class="dropdown">
                                 <button class="btn dropdown-toggle" data-bs-toggle="dropdown">
                                     <span class="text-capitalize status-margin">
-                                        {{ $status == 'all' ? __('All') : __($status) }}
+                                        {{ $status == 'all' ? __('All') : ($status == 'active' ? __('Active') : __('Inactive')) }}
                                     </span>
                                 </button>
 
                                 <div class="dropdown-menu dropdown-menu-end">
                                     <a class="dropdown-item {{ $status == 'all' ? 'active' : '' }}"
-                                        href="{{ route('admin.themes', ['status' => 'all']) }}">
+                                        href="{{ route('admin.themes', ['status' => 'all', 'type' => $type]) }}">
                                         {{ __('All') }}
                                     </a>
                                     <a class="dropdown-item {{ $status == 'active' ? 'active' : '' }}"
-                                        href="{{ route('admin.themes', ['status' => 'active']) }}">
+                                        href="{{ route('admin.themes', ['status' => 'active', 'type' => $type]) }}">
                                         {{ __('Active') }}
                                     </a>
                                     <a class="dropdown-item {{ $status == 'disabled' ? 'active' : '' }}"
-                                        href="{{ route('admin.themes', ['status' => 'disabled']) }}">
-                                        {{ __('Deactive') }}
+                                        href="{{ route('admin.themes', ['status' => 'disabled', 'type' => $type]) }}">
+                                        {{ __('Inactive') }}
                                     </a>
                                 </div>
                             </div>
 
                             <!-- Search -->
-                            <form action="{{ route('admin.search.theme', ['status' => $status]) }}" method="GET">
-                                <div class="position-relative w-100">
-                                    <input type="text" name="query" class="form-control"
-                                        value="{{ request()->query('query') }}" placeholder="{{ __('Search themes') }}">
-
-                                    <button type="submit"
-                                        class="btn btn-primary btn-icon position-absolute top-50 end-0 translate-middle-y"
-                                        style="width:40px;height:38px">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="18" height="18"
-                                            viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
-                                            <circle cx="10" cy="10" r="7" />
-                                            <line x1="21" y1="21" x2="15" y2="15" />
-                                        </svg>
-                                    </button>
+                            <form action="{{ route('admin.search.theme', ['status' => $status]) }}" method="GET"
+                                class="m-0">
+                                <input type="hidden" name="type" value="{{ $type }}">
+                                <div class="row g-2">
+                                    <div class="col">
+                                        <input type="text" name="query" class="form-control"
+                                            value="{{ request()->query('query') }}" placeholder="{{ __('Search') }}" />
+                                    </div>
+                                    <div class="col-auto">
+                                        <button type="submit" class="btn btn-icon" aria-label="Button">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24"
+                                                height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                                fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                                <circle cx="10" cy="10" r="7" />
+                                                <line x1="21" y1="21" x2="15" y2="15" />
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </div>
                             </form>
 
@@ -112,7 +189,7 @@
 
         <div class="page-body">
             <div class="container-fluid">
-                {{-- Failed --}}
+                {{-- Failed alert --}}
                 @if (Session::has('failed'))
                     <div class="alert alert-important alert-danger alert-dismissible mb-2" role="alert">
                         <div class="d-flex">
@@ -124,7 +201,7 @@
                     </div>
                 @endif
 
-                {{-- Success --}}
+                {{-- Success alert --}}
                 @if (Session::has('success'))
                     <div class="alert alert-important alert-success alert-dismissible mb-2" role="alert">
                         <div class="d-flex">
@@ -137,13 +214,12 @@
                 @endif
 
                 <div class="row row-deck row-cards">
-
-
-                    {{-- Themes --}}
+                    {{-- Themes / Templates --}}
                     @if (count($themes) > 0)
                         @foreach ($themes as $theme)
-                            <div class="col-6 col-sm-4 col-md-2">
-                                <div class="card card-sm">
+                            <div class="theme-item">
+                                <!-- Upgraded Theme Card to borderless and shadowed wrapper -->
+                                <div class="card card-sm border-0 shadow-sm">
                                     <a href="{{ asset('img/vCards/' . $theme['theme_thumbnail']) }}"
                                         data-fslightbox="gallery" class="d-block">
                                         <img src="{{ asset('img/vCards/' . $theme['theme_thumbnail']) }}"
@@ -161,40 +237,51 @@
                                             @endphp
                                             <div class="col">
                                                 <div>
-                                                    <strong class="one-line-ellipsis">{{ __($themeName) }}</strong>
+                                                    <strong
+                                                        class="one-line-ellipsis text-dark">{{ __($themeName) }}</strong>
                                                 </div>
 
                                                 <div class="text-muted mt-2 d-flex align-items-center gap-2">
-                                                    <span class="text-muted fw-bold">
-                                                        {{ __($theme['theme_description'] == 'WhatsApp Store' ? 'Store' : $theme['theme_description']) }}
+                                                    <span class="text-muted fw-bold small">
+                                                        @php
+                                                            switch ($theme['theme_description']) {
+                                                                case 'WhatsApp Store':
+                                                                    $theme['theme_description'] = 'Store';
+                                                                    break;
+                                                                case 'vCard':
+                                                                    $theme['theme_description'] =
+                                                                        'Digital Business Card';
+                                                                    break;
+                                                            }
+                                                        @endphp
+                                                        {{ __($theme['theme_description']) }}
                                                     </span>
+
 
                                                     <span class="form-help ms-1" data-bs-toggle="popover"
                                                         data-bs-placement="top" data-bs-trigger="hover focus"
                                                         data-bs-content="{{ __($theme['business_cards_count'] . ' customer(s) are using this theme') }}">
-                                                        ?
+                                                        <small style="font-family: monospace;">i</small>
                                                     </span>
                                                 </div>
                                             </div>
 
                                             <div class="col-auto">
                                                 <div class="dropdown">
-                                                    <a href="#" class="btn-action" data-bs-toggle="dropdown"
-                                                        aria-expanded="false">
-                                                        <!-- Download SVG icon from http://tabler-icons.io/i/dots-vertical -->
+                                                    <a href="#" class="btn-action text-secondary"
+                                                        data-bs-toggle="dropdown" data-bs-boundary="viewport">
                                                         <svg xmlns="http://www.w3.org/2000/svg" width="24"
                                                             height="24" viewBox="0 0 24 24" fill="none"
                                                             stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                                             stroke-linejoin="round" class="icon">
-                                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                                            <path stroke="none" d="M0 0h24v24H0z" fill="none">
+                                                            </path>
                                                             <path d="M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"></path>
                                                             <path d="M12 19m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"></path>
                                                             <path d="M12 5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"></path>
                                                         </svg>
                                                     </a>
-                                                    <div class="dropdown-menu dropdown-menu-end"
-                                                        style="position: absolute; inset: 0px 0px auto auto; margin: 0px; transform: translate(0px, 34px);"
-                                                        data-popper-placement="bottom-end">
+                                                    <div class="dropdown-menu dropdown-menu-end">
                                                         <a href="{{ route('admin.edit.theme', $theme['theme_id']) }}"
                                                             class="dropdown-item">
                                                             {{ __('Edit') }}
@@ -222,9 +309,9 @@
                         @endforeach
                     @else
                         <div class="container-fluid my-auto">
-                            <div class="empty">
+                            <!-- Upgraded Empty Alert Box Wrapper to borderless and shadowed card style -->
+                            <div class="empty card border-0 shadow-sm p-4">
                                 <div class="empty-img">
-
                                     <svg xmlns="http://www.w3.org/2000/svg" height="256" viewBox="0 0 800 600"
                                         xmlns:xlink="http://www.w3.org/1999/xlink" role="img"
                                         artist="Katerina Limpitsouni" source="https://undraw.co/">
@@ -317,9 +404,9 @@
                                                     <path id="Path_395-2-171" data-name="Path 395"
                                                         d="M6.909,15.481a2.111,2.111,0,0,1-1.27-.422l-.023-.017L.832,11.382A2.126,2.126,0,0,1,3.419,8.008l3.1,2.376L13.839.832A2.125,2.125,0,0,1,16.819.439h0L16.774.5l.047-.063a2.127,2.127,0,0,1,.393,2.98L8.6,14.649a2.126,2.126,0,0,1-1.691.829Z"
                                                         transform="translate(69.085 98.528)" fill="#fff" />
-                                                    <path id="Path_3135-172" data-name="Path 3135"
-                                                        d="M40.707,20.359A20.354,20.354,0,0,1,20.356,40.721a4.372,4.372,0,0,1-.524-.021A20.353,20.353,0,1,1,40.707,20.359Z"
-                                                        transform="translate(59.75 172.987)" fill="#0061d8" />
+                                                    <path id="Path_3135-172" data-name="Path 3122"
+                                                        d="M629.927,168.5l-40.522,10.435a11.518,11.518,0,0,1-14.026-8.282l-7.707-29.929a.72.72,0,0,1,.989-.837l61.379,27.258a.72.72,0,0,1-.113,1.355Z"
+                                                        transform="translate(-298.695 -139)" fill="#0061d8" />
                                                     <circle id="Ellipse_44-3" data-name="Ellipse 44" cx="20.355"
                                                         cy="20.355" r="20.355" transform="translate(57.655 260.097)"
                                                         fill="#0061d8" />
@@ -348,24 +435,25 @@
                         </div>
                     @endif
                 </div>
+            </div>
 
-                <div class="my-3">
-                    @if (request()->has('query'))
-                        {{ $themes->appends(['themes' => strtolower(request()->query('themes')), 'query' => strtolower(request()->query('query'))])->links() }}
-                    @else
-                        {{ $themes->links() }}
-                    @endif
-                </div>
+            <div class="my-3">
+                @if (request()->has('query'))
+                    {{ $themes->appends(['themes' => strtolower(request()->query('themes')), 'query' => strtolower(request()->query('query'))])->links() }}
+                @else
+                    {{ $themes->links() }}
+                @endif
             </div>
         </div>
-
-        {{-- Footer --}}
-        @include('admin.includes.footer')
     </div>
 
-    {{-- Update status --}}
-    <div class="modal modal-blur fade" id="status-modal" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-md modal-dialog-centered" role="document">
+    {{-- Footer --}}
+    @include('admin.includes.footer')
+    </div>
+
+    {{-- Update status modal --}}
+    <div class="modal modal-bg fade" id="status-modal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-status"></div>
                 <div class="modal-body text-center py-4">
@@ -399,8 +487,9 @@
             </div>
         </div>
     </div>
+@endsection
 
-    {{-- Custom JS --}}
+{{-- Custom JS --}}
 @section('scripts')
     <script src="{{ asset('js/fslightbox.js') }}"></script>
     <script>
@@ -423,5 +512,4 @@
                 themeStatus);
         }
     </script>
-@endsection
 @endsection

@@ -1,63 +1,173 @@
 <?php
 
 return [
-
-    /*
-     *
-     * Shared translations.
-     *
-     */
-    'title' => 'تنصيب Laravel',
-    'next' => 'متابعة',
-
-    /*
-     *
-     * Home page translations.
-     *
-     */
-    'welcome' => [
-        'title'   => 'تنصيب Laravel',
-        'message' => 'أهلا بك في صفحة تنصيب Laravel',
-    ],
-
-    /*
-     *
-     * Requirements page translations.
-     *
-     */
-    'requirements' => [
-        'title' => 'المتطلبات',
-    ],
-
-    /*
-     *
-     * Permissions page translations.
-     *
-     */
-    'permissions' => [
-        'title' => 'تراخيص المجلدات',
-    ],
-
-    /*
-     *
-     * Environment page translations.
-     *
-     */
+    'back' => 'Previous',
     'environment' => [
         'title' => 'الإعدادات',
         'save' => 'حفظ ملف .env',
         'success' => 'تم حفظ الإعدادات بنجاح',
         'errors' => 'حدث خطأ أثناء إنشاء ملف .env. رجاءا قم بإنشاءه يدويا',
+        'menu' => [
+            'templateTitle' => 'Etap 3 | ',
+            'title' => 'Enstalasyon',
+            'desc' => 'Tanpri chwazi ki jan ou vle konfigirasyon fichye apps <code>.env</code>.',
+            'wizard-button' => 'Fòm Sòsye Enstalasyon',
+            'classic-button' => 'Editè tèks klasik',
+        ],
+        'wizard' => [
+            'templateTitle' => 'Etap 3 | ',
+            'title' => 'Sòsye <code>.env</code> gide',
+            'tabs' => [
+                'environment' => 'Anviwònman',
+                'database' => 'Baz done',
+                'application' => 'Aplikasyon',
+            ],
+            'form' => [
+                'name_required' => 'Yon non anviwònman obligatwa.',
+                'app_name_label' => 'Non aplikasyon an',
+                'app_name_placeholder' => 'Non aplikasyon an',
+                'app_environment_label' => 'Anviwònman App',
+                'app_environment_label_local' => 'Lokal',
+                'app_environment_label_developement' => 'Devlopman',
+                'app_environment_label_qa' => 'Qa',
+                'app_environment_label_production' => 'Pwodiksyon',
+                'app_environment_label_other' => 'Lòt',
+                'app_environment_placeholder_other' => 'Antre nan anviwònman ou...',
+                'app_debug_label' => 'App Debug',
+                'app_debug_label_true' => 'Se vre',
+                'app_debug_label_false' => 'Fo',
+                'app_log_level_label' => 'Nivo Log App',
+                'app_log_level_label_debug' => 'debogaj',
+                'app_log_level_label_info' => 'info',
+                'app_log_level_label_notice' => 'avi',
+                'app_log_level_label_warning' => 'avètisman',
+                'app_log_level_label_error' => 'erè',
+                'app_log_level_label_critical' => 'kritik',
+                'app_log_level_label_alert' => 'alèt',
+                'app_log_level_label_emergency' => 'ijans',
+                'app_url_label' => 'App URL',
+                'app_url_placeholder' => 'App URL',
+                'db_connection_failed' => 'Pa t \'kapab konekte ak baz done a.',
+                'db_connection_label' => 'Koneksyon baz done',
+                'db_connection_label_mysql' => 'mysql',
+                'db_connection_label_sqlite' => 'sqlite',
+                'db_connection_label_pgsql' => 'pgsql',
+                'db_connection_label_sqlsrv' => 'sqlsrv',
+                'db_host_label' => 'Lame baz done',
+                'db_host_placeholder' => 'Lame baz done',
+                'db_port_label' => 'Pò baz done',
+                'db_port_placeholder' => 'Pò baz done',
+                'db_name_label' => 'Non baz done',
+                'db_name_placeholder' => 'Non baz done',
+                'db_username_label' => 'Non itilizatè baz done',
+                'db_username_placeholder' => 'Non itilizatè baz done',
+                'db_password_label' => 'Modpas baz done',
+                'db_password_placeholder' => 'Modpas baz done',
+                'app_tabs' => [
+                    'more_info' => 'Plis Enfòmasyon',
+                    'broadcasting_title' => 'Broadcasting, Caching, Sesyon, & Queue',
+                    'broadcasting_label' => 'Chofè emisyon',
+                    'broadcasting_placeholder' => 'Chofè emisyon',
+                    'cache_label' => 'Chofè Cache',
+                    'cache_placeholder' => 'Chofè Cache',
+                    'session_label' => 'Chofè sesyon',
+                    'session_placeholder' => 'Chofè sesyon',
+                    'queue_label' => 'Chofè keu',
+                    'queue_placeholder' => 'Chofè keu',
+                    'redis_label' => 'Redis chofè',
+                    'redis_host' => 'Redis Host',
+                    'redis_password' => 'Redis Modpas',
+                    'redis_port' => 'Redis Port',
+                    'mail_label' => 'Mail',
+                    'mail_driver_label' => 'Chofè lapòs',
+                    'mail_driver_placeholder' => 'Chofè lapòs',
+                    'mail_host_label' => 'Lame lapòs',
+                    'mail_host_placeholder' => 'Lame lapòs',
+                    'mail_port_label' => 'Pò lapòs',
+                    'mail_port_placeholder' => 'Pò lapòs',
+                    'mail_username_label' => 'Non itilizatè Mail',
+                    'mail_username_placeholder' => 'Non itilizatè Mail',
+                    'mail_password_label' => 'Mail Modpas',
+                    'mail_password_placeholder' => 'Mail Modpas',
+                    'mail_encryption_label' => 'Ankripte lapòs',
+                    'mail_encryption_placeholder' => 'Ankripte lapòs',
+                    'pusher_label' => 'Pouse',
+                    'pusher_app_id_label' => 'Id aplikasyon pouse',
+                    'pusher_app_id_palceholder' => 'Id aplikasyon pouse',
+                    'pusher_app_key_label' => 'Kle App pouse',
+                    'pusher_app_key_palceholder' => 'Kle App pouse',
+                    'pusher_app_secret_label' => 'Pouse App sekrè',
+                    'pusher_app_secret_palceholder' => 'Pouse App sekrè',
+                ],
+                'buttons' => [
+                    'setup_database' => 'Enstalasyon baz done',
+                    'setup_application' => 'Enstalasyon aplikasyon an',
+                    'install' => 'Enstale',
+                ],
+            ],
+        ],
+        'classic' => [
+            'templateTitle' => 'Etap 3 | ',
+            'title' => 'Editè anviwònman klasik',
+            'save' => 'Sove .env',
+            'back' => 'Sèvi ak Form Wizard',
+            'install' => 'Sove ak Enstale',
+        ],
     ],
-
-    /*
-     *
-     * Final page translations.
-     *
-     */
     'final' => [
         'title' => 'النهاية',
         'finished' => 'تم تنصيب البرنامج بنجاح...',
         'exit' => 'إضغط هنا للخروج',
+        'templateTitle' => 'Enstalasyon fini',
+        'migration' => 'Migrasyon & Seed Konsole Sòti:',
+        'console' => 'Sòti konsole aplikasyon an:',
+        'log' => 'Enstalasyon Log Entry:',
+        'env' => 'Final .env File:',
+    ],
+    'finish' => 'Enstale',
+    'forms' => [
+        'errorTitle' => 'Erè sa yo te fèt:',
+    ],
+    'install' => 'Enstale',
+    'installed' => [
+        'success_log_message' => 'Enstalatè NativeCode avèk siksè ENSTALE sou',
+    ],
+    'next' => 'متابعة',
+    'permissions' => [
+        'title' => 'تراخيص المجلدات',
+        'templateTitle' => 'Etap 2 | ',
+        'next' => 'Konfigirasyon Anviwònman',
+    ],
+    'requirements' => [
+        'title' => 'المتطلبات',
+        'templateTitle' => 'Etap 1 | ',
+        'next' => 'Tcheke otorizasyon',
+    ],
+    'title' => 'تنصيب Laravel',
+    'updater' => [
+        'title' => 'Laravel Updater',
+        'welcome' => [
+            'title' => 'Byenveni nan Updater la',
+            'message' => 'Byenveni nan sòsye aktyalizasyon a.',
+        ],
+        'overview' => [
+            'title' => 'Apèsi sou lekòl la',
+            'message' => 'Gen 1 aktyalizasyon.|Genyen :nombre mizajou.',
+            'install_updates' => 'Enstale Mizajou',
+        ],
+        'final' => [
+            'title' => 'Fini',
+            'finished' => 'Baz done aplikasyon an te mete ajou avèk siksè.',
+            'exit' => 'Klike la a pou sòti',
+        ],
+        'log' => [
+            'success_message' => 'NativeCode Enstalatè avèk siksè mete ajou sou',
+        ],
+    ],
+    'welcome' => [
+        'title' => 'تنصيب Laravel',
+        'message' => 'أهلا بك في صفحة تنصيب Laravel',
+        'templateTitle' => 'Byenvini',
+        'next' => 'Tcheke Kondisyon yo',
     ],
 ];

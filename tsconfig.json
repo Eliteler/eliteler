@@ -4,7 +4,7 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
-    "lib": ["DOM", "ESNext"],
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "types": ["vite/client"],
 
     "allowJs": true,
@@ -18,12 +18,15 @@
     "skipLibCheck": true,
 
     "baseUrl": ".",
+
     "paths": {
       "@/*": ["./plugins/ModernDashboard/Views/js/*"],
-      "ziggy-js": ["./vendor/tightenco/ziggy/dist/vue.m"]
+      "@admin/*": ["./resources/js/admin/*"],
+      "@lang/*": ["./resources/lang/*"]
     }
   },
   "include": [
-    "plugins/ModernDashboard/Views/js"
+    "plugins/ModernDashboard/Views/js",
+    "resources/js/admin",
   ]
 }

@@ -1,58 +1,173 @@
 <?php
 
 return [
-    /*
-     *
-     * Shared translations.
-     *
-     */
-    'title' => 'NativeCode Installer',
-    'next' => 'Passo successivo',
-    'finish' => 'Installa',
-    /*
-     *
-     * Home page translations.
-     *
-     */
-    'welcome' => [
-        'title'   => 'Benvenuto al programma di installazione',
-        'message' => 'Benvenuto alla configurazione guidata.',
-    ],
-    /*
-     *
-     * Requirements page translations.
-     *
-     */
-    'requirements' => [
-        'title' => 'Requisiti',
-    ],
-    /*
-     *
-     * Permissions page translations.
-     *
-     */
-    'permissions' => [
-        'title' => 'Permessi',
-    ],
-    /*
-     *
-     * Environment page translations.
-     *
-     */
+    'back' => 'Precedente',
     'environment' => [
         'title' => 'Configurazione ambiente',
         'save' => 'Salva .env',
         'success' => 'La configurazione del file .env &egrave; stata salvata correttamente.',
         'errors' => 'Impossibile salvare il file .env, per favore crealo manualmente.',
+        'menu' => [
+            'templateTitle' => 'Passaggio 3 | ',
+            'title' => 'Installazione',
+            'desc' => 'Seleziona come desideri configurare il file <code>.env</code> delle app.',
+            'wizard-button' => 'Configurazione guidata modulo',
+            'classic-button' => 'Editor di testo classico',
+        ],
+        'wizard' => [
+            'templateTitle' => 'Passaggio 3 | ',
+            'title' => 'Procedura guidata <code>.env</code> guidata',
+            'tabs' => [
+                'environment' => 'Ambiente',
+                'database' => 'Banca dati',
+                'application' => 'Applicazione',
+            ],
+            'form' => [
+                'name_required' => 'È richiesto un nome di ambiente.',
+                'app_name_label' => 'Nome dell\'app',
+                'app_name_placeholder' => 'Nome dell\'app',
+                'app_environment_label' => 'Ambiente dell\'app',
+                'app_environment_label_local' => 'Locale',
+                'app_environment_label_developement' => 'Sviluppo',
+                'app_environment_label_qa' => 'Qa',
+                'app_environment_label_production' => 'Produzione',
+                'app_environment_label_other' => 'Altro',
+                'app_environment_placeholder_other' => 'Entra nel tuo ambiente...',
+                'app_debug_label' => 'Debug dell\'app',
+                'app_debug_label_true' => 'VERO',
+                'app_debug_label_false' => 'Falso',
+                'app_log_level_label' => 'Livello di registro dell\'app',
+                'app_log_level_label_debug' => 'eseguire il debug',
+                'app_log_level_label_info' => 'informazioni',
+                'app_log_level_label_notice' => 'avviso',
+                'app_log_level_label_warning' => 'avvertimento',
+                'app_log_level_label_error' => 'errore',
+                'app_log_level_label_critical' => 'critico',
+                'app_log_level_label_alert' => 'avviso',
+                'app_log_level_label_emergency' => 'emergenza',
+                'app_url_label' => 'URL dell\'app',
+                'app_url_placeholder' => 'URL dell\'app',
+                'db_connection_failed' => 'Impossibile connettersi al database.',
+                'db_connection_label' => 'Connessione al database',
+                'db_connection_label_mysql' => 'mysql',
+                'db_connection_label_sqlite' => 'sqlite',
+                'db_connection_label_pgsql' => 'pgsql',
+                'db_connection_label_sqlsrv' => 'sqlsrv',
+                'db_host_label' => 'Host della banca dati',
+                'db_host_placeholder' => 'Host della banca dati',
+                'db_port_label' => 'Porta del database',
+                'db_port_placeholder' => 'Porta del database',
+                'db_name_label' => 'Nome della banca dati',
+                'db_name_placeholder' => 'Nome della banca dati',
+                'db_username_label' => 'Nome utente del database',
+                'db_username_placeholder' => 'Nome utente del database',
+                'db_password_label' => 'Password della banca dati',
+                'db_password_placeholder' => 'Password della banca dati',
+                'app_tabs' => [
+                    'more_info' => 'Ulteriori informazioni',
+                    'broadcasting_title' => 'Trasmissione, memorizzazione nella cache, sessione e coda',
+                    'broadcasting_label' => 'Driver di trasmissione',
+                    'broadcasting_placeholder' => 'Driver di trasmissione',
+                    'cache_label' => 'Driver della cache',
+                    'cache_placeholder' => 'Driver della cache',
+                    'session_label' => 'Driver di sessione',
+                    'session_placeholder' => 'Driver di sessione',
+                    'queue_label' => 'Driver della coda',
+                    'queue_placeholder' => 'Driver della coda',
+                    'redis_label' => 'Driver Redis',
+                    'redis_host' => 'Host Redis',
+                    'redis_password' => 'Password Redis',
+                    'redis_port' => 'Porto Redis',
+                    'mail_label' => 'Posta',
+                    'mail_driver_label' => 'Autista di posta',
+                    'mail_driver_placeholder' => 'Autista di posta',
+                    'mail_host_label' => 'Ospite di posta',
+                    'mail_host_placeholder' => 'Ospite di posta',
+                    'mail_port_label' => 'Porto di posta',
+                    'mail_port_placeholder' => 'Porto di posta',
+                    'mail_username_label' => 'Nome utente posta',
+                    'mail_username_placeholder' => 'Nome utente posta',
+                    'mail_password_label' => 'Password di posta',
+                    'mail_password_placeholder' => 'Password di posta',
+                    'mail_encryption_label' => 'Crittografia della posta',
+                    'mail_encryption_placeholder' => 'Crittografia della posta',
+                    'pusher_label' => 'Spintore',
+                    'pusher_app_id_label' => 'ID dell\'app Pusher',
+                    'pusher_app_id_palceholder' => 'ID dell\'app Pusher',
+                    'pusher_app_key_label' => 'Chiave dell\'app Pusher',
+                    'pusher_app_key_palceholder' => 'Chiave dell\'app Pusher',
+                    'pusher_app_secret_label' => 'Segreto dell\'app Pusher',
+                    'pusher_app_secret_palceholder' => 'Segreto dell\'app Pusher',
+                ],
+                'buttons' => [
+                    'setup_database' => 'Database delle impostazioni',
+                    'setup_application' => 'Applicazione di configurazione',
+                    'install' => 'Installare',
+                ],
+            ],
+        ],
+        'classic' => [
+            'templateTitle' => 'Passaggio 3 | ',
+            'title' => 'Editor dell\'ambiente classico',
+            'save' => 'Salva .env',
+            'back' => 'Utilizzare la creazione guidata modulo',
+            'install' => 'Salva e installa',
+        ],
     ],
-    /*
-     *
-     * Final page translations.
-     *
-     */
     'final' => [
         'title' => 'Finito',
         'finished' => 'L\'applicazione è stata configurata correttamente.',
         'exit' => 'Clicca qui per uscire',
+        'templateTitle' => 'Installazione completata',
+        'migration' => 'Output della console di migrazione e seed:',
+        'console' => 'Output della console dell\'applicazione:',
+        'log' => 'Voce del registro di installazione:',
+        'env' => 'File .env finale:',
+    ],
+    'finish' => 'Installa',
+    'forms' => [
+        'errorTitle' => 'Si sono verificati i seguenti errori:',
+    ],
+    'install' => 'Installare',
+    'installed' => [
+        'success_log_message' => 'Il programma di installazione di NativeCode è stato INSTALLATO con successo',
+    ],
+    'next' => 'Passo successivo',
+    'permissions' => [
+        'title' => 'Permessi',
+        'templateTitle' => 'Passaggio 2 | ',
+        'next' => 'Configura ambiente',
+    ],
+    'requirements' => [
+        'title' => 'Requisiti',
+        'templateTitle' => 'Passaggio 1 | ',
+        'next' => 'Controlla le autorizzazioni',
+    ],
+    'title' => 'NativeCode Installer',
+    'updater' => [
+        'title' => 'Aggiornamento di Laravel',
+        'welcome' => [
+            'title' => 'Benvenuti nell\'aggiornamento',
+            'message' => 'Benvenuti nella procedura guidata di aggiornamento.',
+        ],
+        'overview' => [
+            'title' => 'Panoramica',
+            'message' => 'C\'è 1 aggiornamento.|Ci sono :numero aggiornamenti.',
+            'install_updates' => 'Installa aggiornamenti',
+        ],
+        'final' => [
+            'title' => 'Finito',
+            'finished' => 'Il database dell\'applicazione è stato aggiornato con successo.',
+            'exit' => 'Fare clic qui per uscire',
+        ],
+        'log' => [
+            'success_message' => 'Il programma di installazione di NativeCode è stato AGGIORNATO correttamente',
+        ],
+    ],
+    'welcome' => [
+        'title' => 'Benvenuto al programma di installazione',
+        'message' => 'Benvenuto alla configurazione guidata.',
+        'templateTitle' => 'Benvenuto',
+        'next' => 'Controlla i requisiti',
     ],
 ];

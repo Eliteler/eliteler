@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Plugins\Zapier\Helpers\ZapierHelper;
 
 class PaytrController extends Controller
 {
@@ -87,7 +88,7 @@ class PaytrController extends Controller
             $amountToBePaid    = (float)($plan_details->plan_price + $appliedTaxInTotal);
         }
 
-        $amountToBePaidPaise = $amountToBePaid * 100;
+        $amountToBePaidPaise = round($amountToBePaid * 100);
         $transactionId       = uniqid();
 
         $invoice_details = [
@@ -106,7 +107,7 @@ class PaytrController extends Controller
             'to_billing_state'     => $userData->billing_state,
             'to_billing_zipcode'   => $userData->billing_zipcode,
             'to_billing_country'   => $userData->billing_country,
-            'to_billing_phone'     => $userData->billing_phone,
+            'to_billing_phone'     => $userData->billing_country_code . $userData->billing_phone,
             'to_billing_email'     => $userData->billing_email,
             'to_vat_number'        => $userData->vat_number,
             'subtotal'             => $plan_details->plan_price,
@@ -148,7 +149,7 @@ class PaytrController extends Controller
             'user_ip'               => $request->ip(),
             'merchant_oid'          => $transactionId,
             'email'                 => $userData->billing_email,
-            'payment_amount'        => $amountToBePaidPaise,
+            'payment_amount'        => round($amountToBePaidPaise),
             'user_basket'           => base64_encode(json_encode([
                 ['AI Credits Purchase', $plan_details->plan_price, 1],
             ])),
@@ -213,14 +214,24 @@ class PaytrController extends Controller
 
     /**
      * Payment Success Redirect (merchant_ok_url)
-     * 
-     * NOTE: PayTR only redirects the user here — it does NOT send
-     * hash/merchant_oid in GET params. The actual payment confirmation
-     * is handled by the webhook (merchant_callback_url).
-     * This page should simply show status based on DB state.
      */
     public function paytrPaymentStatus(Request $request)
     {
+        // Check if the request is a PayTR background server notification (Webhook)
+        if ($request->has('hash') && $request->has('status') && $request->has('total_amount')) {
+            return $this->paytrPaymentWebhook($request);
+        }
+
+        $transactionId = $request->input('merchant_oid');
+
+        // Restore user session if dropped by browser SameSite policy on PayTR cross-domain POST
+        if (!Auth::check() && $transactionId) {
+            $paymentDetails = AiCreditsTransaction::where('payment_transaction_id', $transactionId)->first();
+            if ($paymentDetails) {
+                Auth::loginUsingId($paymentDetails->user_id);
+            }
+        }
+
         if (!Auth::check()) {
             return redirect()
                 ->route('user.ai.credits.plans')
@@ -229,10 +240,7 @@ class PaytrController extends Controller
 
         $user = Auth::user();
 
-        // PayTR may pass merchant_oid as a GET param on the ok_url
-        // If not, fall back to the latest transaction for this user
-        $transactionId = $request->input('merchant_oid');
-
+        // Retrieve transaction based on merchant_oid if available, or fetch the latest
         if ($transactionId) {
             $paymentDetails = AiCreditsTransaction::where('user_id', $user->id)
                 ->where('payment_transaction_id', $transactionId)
@@ -250,17 +258,17 @@ class PaytrController extends Controller
                 ->with('failed', trans('Payment failed'));
         }
 
-        // The webhook updates the DB to 'paid' — trust the DB status
-        if ($paymentDetails->payment_status === 'paid') {
+        // Check if payment was explicitly marked as failed
+        if ($paymentDetails->payment_status === 'failed') {
             return redirect()
                 ->route('user.ai.credits.plans')
-                ->with('success', trans('Payment successful!'));
+                ->with('failed', trans('Payment failed'));
         }
 
-        // Webhook may not have fired yet — show a pending message
+        // Return success for both 'paid' and 'pending' since merchant_ok_url confirms successful authorization
         return redirect()
             ->route('user.ai.credits.plans')
-            ->with('success', trans('Your payment is being processed. Your credits will appear shortly.'));
+            ->with('success', trans('Payment successful! Your credits will appear shortly.'));
     }
 
     /**
@@ -282,7 +290,6 @@ class PaytrController extends Controller
 
     /**
      * PayTR Webhook (merchant_callback_url)
-     * Server-to-server POST — no Auth session available here
      */
     public function paytrPaymentWebhook(Request $request)
     {
@@ -319,16 +326,16 @@ class PaytrController extends Controller
             return response('Transaction not found', 404);
         }
 
+        // Prevent double-processing if already completed
+        if ($transaction_details->payment_status === 'paid') {
+            return response('OK', 200);
+        }
+
         // Failed payment
         if ($status !== 'success') {
             AiCreditsTransaction::where('payment_transaction_id', $transactionId)
                 ->update(['payment_status' => 'failed']);
 
-            return response('OK', 200);
-        }
-
-        // Prevent double-processing
-        if ($transaction_details->payment_status === 'paid') {
             return response('OK', 200);
         }
 
@@ -349,7 +356,7 @@ class PaytrController extends Controller
                 'payment_status' => 'paid',
             ]);
 
-        // ✅ FIX: Use transaction's user_id — Auth::user() is NULL in webhooks
+        // Use transaction's user_id since Auth::user() is null in webhooks
         $aiCredit = AiCredit::where('user_id', $transaction_details->user_id)->first();
 
         if ($aiCredit) {
@@ -394,6 +401,44 @@ class PaytrController extends Controller
                 ->send(new \App\Mail\SendEmailInvoice($details));
         } catch (\Exception $e) {
             Log::error('Invoice email sending failed: ' . $e->getMessage());
+        }
+
+        // Fetch customer details safely
+        $user_details = \App\User::find($transaction_details->user_id);
+
+        // Decode invoice details safely
+        $encode = json_decode($transaction_details->invoice_details ?? '{}', true);
+
+        // Safely format user billing address
+        $userAddress = $user_details->billing_address ?? '';
+        $userCity = $user_details->billing_city ?? '';
+        $userState = $user_details->billing_state ?? '';
+        $userCountry = $user_details->billing_country ?? '';
+        $userZip = $user_details->billing_zipcode ?? '';
+
+        // Dispatch AI credits purchase event to Zapier
+        if (function_exists('zapier_dispatch')) {
+            zapier_dispatch('ai_credits', [
+                'transaction_id'  => $transaction_details->ai_credits_transaction_id ?? $transactionId,
+                'invoice_id'      => ($config[15]->config_value ?? 'INV-') . $invoice_number,
+                'user_name'       => $user_details->name ?? ($encode['to_billing_name'] ?? 'Customer'),
+                'user_address'    => !empty($userAddress) ? $userAddress : ($encode['to_billing_address'] ?? ''),
+                'user_city'       => !empty($userCity) ? $userCity : ($encode['to_billing_city'] ?? ''),
+                'user_state'      => !empty($userState) ? $userState : ($encode['to_billing_state'] ?? ''),
+                'user_country'    => !empty($userCountry) ? $userCountry : ($encode['to_billing_country'] ?? ''),
+                'user_zip'        => !empty($userZip) ? $userZip : ($encode['to_billing_zipcode'] ?? ''),
+                'user_email'      => $user_details->email ?? ($encode['to_billing_email'] ?? ''),
+                'user_phone'      => ($user_details->country_code ?? '') . ($user_details->mobile_number ?? ($encode['to_billing_phone'] ?? '')),
+                'user_tax_number' => $user_details->vat_number ?? $user_details->tax_number ?? ($encode['to_vat_number'] ?? ''),
+                'plan_name'       => $transaction_details->purchase_details ?? ($planDetails->plan_name ?? 'AI Credits Plan'),
+                'quantity'        => 1,
+                'currency'        => $transaction_details->currency ?? ($config[1]->config_value ?? 'TRY'),
+                'amount'          => (float) ($transaction_details->amount ?? ($encode['invoice_amount'] ?? 0)),
+                'payment_method'  => 'PayTR',
+                'payment_status'  => 'paid',
+                'invoice_date'    => now()->toDateString(),
+                'purchased_at'    => now()->toDateTimeString(),
+            ]);
         }
 
         return response('OK', 200);

@@ -12,19 +12,20 @@
 
 namespace App\Http\Controllers\User;
 
-use App\User;
-use App\Setting;
-use App\Currency;
-use Carbon\Carbon;
 use App\BusinessCard;
-use App\EmailTemplate;
+use App\Currency;
 use App\CustomDomainRequest;
+use App\EmailTemplate;
+use App\Http\Controllers\Controller;
+use App\Setting;
+use App\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+use Plugins\Zapier\Helpers\ZapierHelper;
 
 class ConnectDomainController extends Controller
 {
@@ -108,15 +109,17 @@ class ConnectDomainController extends Controller
         if ($card) {
             // Get previous domain in CustomDomainRequest
             $previousDomainDetails = CustomDomainRequest::where('card_id', $card_id)->first();
-            // Check $previous_domain is not null
-            $previous_domain = "-";
-            if ($previousDomainDetails) {
+            $previous_domain = "";
+            if ($previousDomainDetails && $previousDomainDetails->current_domain != '-') {
                 $previous_domain = $previousDomainDetails->current_domain;
             }
 
+            // Request ID
+            $requestId = "REQ_" . rand(1000, 9999);
+
             // Save domain request as CNAME is verified
             $domain_request = new CustomDomainRequest();
-            $domain_request->custom_domain_request_id = uniqid();
+            $domain_request->custom_domain_request_id = $requestId;
             $domain_request->user_id = Auth::user()->user_id;
             $domain_request->card_id = $card_id;
             $domain_request->previous_domain = $previous_domain;
@@ -124,13 +127,25 @@ class ConnectDomainController extends Controller
             $domain_request->transfer_status = 0;
             $domain_request->save();
 
-            // Send email notification
+            // 1. Dispatch custom domain request event to Zapier (Guaranteed execution outside email check)
+            if (function_exists('zapier_dispatch')) {
+                zapier_dispatch('custom_domain', [
+                    'request_id'      => $requestId,
+                    'user_name'       => Auth::user()->name ?? 'Customer',
+                    'user_email'      => Auth::user()->email ?? '',
+                    'card_name'       => $card->title ?? 'Business Card',
+                    'previous_domain' => $previous_domain,
+                    'current_domain'  => $domain,
+                    'status'          => 'Pending Approval',
+                    'requested_at'    => now()->toDateTimeString(),
+                ]);
+            }
+
+            // 2. Send email notification to Admin
             $emailTemplateDetails = EmailTemplate::where('email_template_id', '584922675214')->first();
 
+            if ($emailTemplateDetails && $emailTemplateDetails->is_enabled == 1) {
             try {
-                // Custom domain request sent to admin
-                if ($emailTemplateDetails->is_enabled == 1) {
-                    // Email details 
                     $customDomainRequestDetails = [
                         'status' => "",
                         'emailSubject' => $emailTemplateDetails->email_template_subject,
@@ -139,18 +154,11 @@ class ConnectDomainController extends Controller
                         'appname' => config('app.name'),
                     ];
 
-                    // Send email to the customer
-                    try {
                         Mail::to(env('MAIL_FROM_ADDRESS'))->send(new \App\Mail\AppointmentMail($customDomainRequestDetails));
                     } catch (\Exception $e) {
-                        // Redirect to custom-domain-requests
-                        return redirect()->back()->with('failed', trans('Domain processed successfully. but, The email was not sent. Because there was a problem sending the email to the customer.'));
+                    // Email failed silently, but domain request was saved and Zapier was triggered
                     }
                 }
-            } catch (\Exception $e) {
-                // Redirect to custom-domain-requests
-                return redirect()->back()->with('failed', trans('Domain processed successfully. but, The email was not sent. Because there was a problem sending the email to the customer.'));
-            }
 
             return redirect()->back()->with('success', trans('CNAME record is correctly pointing to ') . str_replace(['http://', 'https://'], '', config('app.url')) . (', and your domain request is successfully submitted.'));
         } else {

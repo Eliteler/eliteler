@@ -13,21 +13,27 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Setting;
-use Carbon\Carbon;
 use App\BusinessCard;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
-use Yajra\DataTables\Facades\DataTables;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
+/**
+ * Business cards and stores created by customers.
+ *
+ * business_cards.card_status: activated / inactive / deleted (deleted are hidden)
+ * business_cards.status: '1', or '0' when the owner's account is suspended/inactive
+ * visitors.card_id holds the card_url (see ProfileController).
+ */
 class CreatedCardsController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
+    private const TABS = ['all', 'active', 'inactive', 'disabled'];
+
+    private const SORTS = ['newest', 'oldest', 'visits', 'title'];
+
     public function __construct()
     {
         $this->middleware('auth');
@@ -35,111 +41,112 @@ class CreatedCardsController extends Controller
 
     public function createdCards(Request $request)
     {
-        // Queries
-        $config = DB::table('config')->get();
-        $settings = Setting::where('status', 1)->first();
-
-        // All Customer's vCards with created customer details
-        $cards = BusinessCard::where('business_cards.user_id', '!=', '1')->join('users', 'users.user_id', '=', 'business_cards.user_id')
-            ->select('business_cards.*', 'users.name as customer_name', 'users.email as customer_email', 'users.mobile_number as customer_phone', 'users.plan_validity as card_expiry')
-            ->where('business_cards.card_type', 'vcard')
-            ->orderBy('business_cards.id', 'desc')
-            ->get();
-
-        if ($request->ajax()) {
-            return DataTables::of($cards)
-                ->addIndexColumn('id')
-                ->addColumn('customer_name', function ($row) {
-                    return '<a href="' . route('admin.view.customer', $row->user_id) . '">' . $row->customer_name . '</a>';
-                })
-                ->addColumn('customer_email', function ($row) {
-                    return '<a href="mailto:' . $row->customer_email . '">' . $row->customer_email . '</a>';
-                })
-                ->addColumn('customer_phone', function ($row) {
-                    return '<a href="tel:' . $row->customer_phone . '">' . $row->customer_phone . '</a>';
-                })
-                ->addColumn('card_name', function ($row) {
-                    return '<a href="' . route('profile', $row->card_url) . '" target="_blank">' . $row->title . '</a>';
-                })
-                ->addColumn('card_type', function ($row) {
-                    return '<span class="badge bg-green text-white">' . __('vCard') . '</span>';
-                })
-                ->addColumn('card_expiry', function ($row) {
-                    // Check card expiry date current date
-                    $current_date = Carbon::now();
-                    $remaining_days = $current_date->diffInDays($row->card_expiry, false);
-
-                    if ($remaining_days > 0) {
-                        $remaining_days = $remaining_days . ' ' . __('days');
-                        return '<span class="fw-bold">' . (int) $remaining_days . ' ' . __('days remaining') . '</span>';
-                    } else {
-                        return '<span class="badge bg-red text-white">' . __('Expired') . '</span>';
-                    }
-                })
-                ->addColumn('card_status', function ($row) {
-                    return $row->card_status != 'activated'
-                        ? '<span class="badge bg-red text-white">' . __('Deactivate') . '</span>'
-                        : '<span class="badge bg-green text-white">' . __('Active') . '</span>';
-                })
-                ->rawColumns(['customer_name', 'customer_email', 'customer_phone', 'card_name', 'card_type', 'card_expiry', 'card_status'])
-                ->make(true);
-        }
-
-        return view('admin.pages.customers.created-cards', compact('settings', 'config'));
+        return $this->index($request, 'vcard');
     }
 
     public function createdStores(Request $request)
     {
-        // Queries
-        $config = DB::table('config')->get();
-        $settings = Setting::where('status', 1)->first();
-
-        // All Customer's vCards with created customer details
-        $cards = BusinessCard::where('business_cards.user_id', '!=', '1')->join('users', 'users.user_id', '=', 'business_cards.user_id')
-            ->select('business_cards.*', 'users.name as customer_name', 'users.email as customer_email', 'users.mobile_number as customer_phone', 'users.plan_validity as card_expiry')
-            ->where('business_cards.card_type', 'store')
-            ->orderBy('business_cards.id', 'desc')
-            ->get();
-
-        if ($request->ajax()) {
-            return DataTables::of($cards)
-                ->addIndexColumn('id')
-                ->addColumn('customer_name', function ($row) {
-                    return '<a href="' . route('admin.view.customer', $row->user_id) . '">' . $row->customer_name . '</a>';
-                })
-                ->addColumn('customer_email', function ($row) {
-                    return '<a href="mailto:' . $row->customer_email . '">' . $row->customer_email . '</a>';
-                })
-                ->addColumn('customer_phone', function ($row) {
-                    return '<a href="tel:' . $row->customer_phone . '">' . $row->customer_phone . '</a>';
-                })
-                ->addColumn('card_name', function ($row) {
-                    return '<a href="' . route('profile', $row->card_url) . '" target="_blank">' . $row->title . '</a>';
-                })
-                ->addColumn('card_type', function ($row) {
-                    return '<span class="badge bg-green text-white">' . __('Store') . '</span>';
-                })
-                ->addColumn('card_expiry', function ($row) {
-                    // Check card expiry date current date
-                    $current_date = Carbon::now();
-                    $remaining_days = $current_date->diffInDays($row->card_expiry, false);
-
-                    if ($remaining_days > 0) {
-                        $remaining_days = $remaining_days . ' ' . __('days');
-                        return '<span class="fw-bold">' . (int) $remaining_days . ' ' . __('days remaining') . '</span>';
-                    } else {
-                        return '<span class="badge bg-red text-white">' . __('Expired') . '</span>';
-                    }
-                })
-                ->addColumn('card_status', function ($row) {
-                    return $row->card_status != 'activated'
-                        ? '<span class="badge bg-red text-white">' . __('Deactive') . '</span>'
-                        : '<span class="badge bg-green text-white">' . __('Active') . '</span>';
-                })
-                ->rawColumns(['customer_name', 'customer_email', 'customer_phone', 'card_name', 'card_type', 'card_expiry', 'card_status'])
-                ->make(true);
+        return $this->index($request, 'store');
         }
 
-        return view('admin.pages.customers.created-stores', compact('settings', 'config'));
+    private function index(Request $request, string $type)
+    {
+        $filters = [
+            'tab'    => in_array($request->query('tab'), self::TABS, true) ? $request->query('tab') : 'all',
+            'search' => trim((string) $request->query('search', '')),
+            'plan'   => in_array($request->query('plan'), ['active', 'expired'], true) ? $request->query('plan') : 'all',
+            'theme'  => (string) $request->query('theme', 'all'),
+            'sort'   => in_array($request->query('sort'), self::SORTS, true) ? $request->query('sort') : 'newest',
+        ];
+
+        $base = fn () => BusinessCard::query()
+            ->join('users', 'users.user_id', '=', 'business_cards.user_id')
+            ->where('users.role_id', 2)
+            ->where('business_cards.card_type', $type)
+            ->where('business_cards.card_status', '!=', 'deleted');
+
+        $query = $this->filter($base(), $filters)
+            ->leftJoin('themes', 'themes.theme_id', '=', 'business_cards.theme_id')
+            ->select([
+                'business_cards.card_id', 'business_cards.title', 'business_cards.card_url', 'business_cards.custom_domain',
+                'business_cards.card_status', 'business_cards.status', 'business_cards.created_at', 'business_cards.theme_id',
+                'users.user_id as owner_id', 'users.name as owner_name', 'users.email as owner_email',
+                'users.plan_validity as owner_plan_validity', 'themes.theme_name',
+            ])
+            ->selectSub(
+                DB::table('visitors')->selectRaw('COUNT(*)')->whereColumn('visitors.card_id', 'business_cards.card_url'),
+                'visits'
+            );
+
+        match ($filters['sort']) {
+            'oldest' => $query->orderBy('business_cards.id'),
+            'visits' => $query->orderByDesc('visits'),
+            'title'  => $query->orderBy('business_cards.title'),
+            default  => $query->orderByDesc('business_cards.id'),
+        };
+
+        $cards = $query->paginate(20)->withQueryString()->through(function ($card) use ($type) {
+            $expires = $card->owner_plan_validity ? Carbon::parse($card->owner_plan_validity) : null;
+
+            return [
+                'id'           => $card->card_id,
+                'type'         => $type,
+                'title'        => $card->title,
+                'url'          => url($card->card_url),
+                'customDomain' => $card->custom_domain ?: null,
+                'theme'        => $card->theme_name,
+                'state'        => (string) $card->status !== '1' ? 'disabled' : ($card->card_status === 'activated' ? 'active' : 'inactive'),
+                'visits'       => (int) $card->visits,
+                'created'      => $card->created_at?->toIso8601String(),
+                'owner'        => [
+                    'id'          => $card->owner_id,
+                    'name'        => $card->owner_name,
+                    'email'       => $card->owner_email,
+                    'planExpires' => $expires?->toIso8601String(),
+                    'planExpired' => $expires ? $expires->isPast() : true,
+                ],
+            ];
+        });
+
+        $counts = $this->filter($base(), [...$filters, 'tab' => 'all'])
+            ->selectRaw('COUNT(*) as `all`')
+            ->selectRaw("SUM(business_cards.status = '1' AND business_cards.card_status = 'activated') as active")
+            ->selectRaw("SUM(business_cards.status = '1' AND business_cards.card_status = 'inactive') as inactive")
+            ->selectRaw("SUM(business_cards.status != '1') as disabled")
+            ->first();
+
+        $themes = DB::table('themes')
+            ->whereIn('theme_id', $base()->select('business_cards.theme_id')->distinct())
+            ->orderBy('theme_name')
+            ->get(['theme_id', 'theme_name'])
+            ->map(fn ($theme) => ['id' => $theme->theme_id, 'name' => $theme->theme_name]);
+
+        return Inertia::render('cards/index', [
+            'type'    => $type,
+            'cards'   => $cards,
+            'filters' => $filters,
+            'counts'  => collect(self::TABS)->mapWithKeys(fn ($tab) => [$tab => (int) $counts->{$tab}]),
+            'themes'  => $themes,
+        ]);
+    }
+
+    private function filter(Builder $query, array $filters): Builder
+    {
+        $search = $filters['search'];
+
+        return $query
+            ->when($filters['tab'] === 'active', fn ($q) => $q->where('business_cards.status', '1')->where('business_cards.card_status', 'activated'))
+            ->when($filters['tab'] === 'inactive', fn ($q) => $q->where('business_cards.status', '1')->where('business_cards.card_status', 'inactive'))
+            ->when($filters['tab'] === 'disabled', fn ($q) => $q->where('business_cards.status', '!=', '1'))
+            ->when($search !== '', fn ($q) => $q->where(function ($q) use ($search) {
+                $q->where('business_cards.title', 'like', "%{$search}%")
+                    ->orWhere('business_cards.card_url', 'like', "%{$search}%")
+                    ->orWhere('business_cards.custom_domain', 'like', "%{$search}%")
+                    ->orWhere('users.name', 'like', "%{$search}%")
+                    ->orWhere('users.email', 'like', "%{$search}%");
+            }))
+            ->when($filters['plan'] === 'active', fn ($q) => $q->where('users.plan_validity', '>=', Carbon::now()))
+            ->when($filters['plan'] === 'expired', fn ($q) => $q->where(fn ($q) => $q->whereNull('users.plan_validity')->orWhere('users.plan_validity', '<', Carbon::now())))
+            ->when($filters['theme'] !== 'all', fn ($q) => $q->where('business_cards.theme_id', $filters['theme']));
     }
 }

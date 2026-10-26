@@ -7,13 +7,11 @@
 
 @section('content')
     <div class="page-wrapper">
-
         <!-- Header -->
         <div class="page-header d-print-none border-bottom pb-3">
             <div class="container d-flex align-items-center justify-content-between gap-2">
-
                 <div class="d-flex align-items-center gap-2">
-                    <a href="{{ url()->previous() }}" class="border rounded-3 p-2 text-white">
+                    <a href="{{ url()->previous() }}" class="border rounded-3 p-2">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                             class="icon">
@@ -23,7 +21,6 @@
                             <path d="M5 12l6 -6" />
                         </svg>
                     </a>
-
                     <h2 class="page-title">
                         {{ __('Checkout') }}
                     </h2>
@@ -31,19 +28,16 @@
 
                 <div class="navbar-brand navbar-brand-autodark">
                     <a href="{{ route('user.dashboard') }}">
-
                         @if (file_exists(public_path('img/logo-light.png')))
                             <img src="{{ optional(Auth::user())->choosed_theme == 'light' ? asset($settings->site_logo) : asset('img/logo-light.png') }}"
-                                width="200" height="50" alt="{{ $settings->site_name }}"
+                                width="200" height="50" alt="{{ config('app.name') }}"
                                 class="navbar-brand-image custom-logo">
                         @else
                             <img src="{{ $settings->site_logo }}" width="200" height="50"
-                                alt="{{ $settings->site_name }}" class="navbar-brand-image custom-logo">
+                                alt="{{ config('app.name') }}" class="navbar-brand-image custom-logo">
                         @endif
-
                     </a>
                 </div>
-
             </div>
         </div>
 
@@ -55,7 +49,6 @@
                 @if (Session::has('failed'))
                     <div class="alert alert-danger alert-dismissible mb-3">
                         {{ Session::get('failed') }}
-
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 @endif
@@ -64,29 +57,21 @@
                 @if (Session::has('success'))
                     <div class="alert alert-success alert-dismissible mb-3">
                         {{ Session::get('success') }}
-
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 @endif
 
                 {{-- Paddle Error --}}
                 <div id="paddle-error-alert" class="alert alert-danger alert-dismissible d-none mb-3">
-
                     <strong>{{ __('Payment Error') }}</strong>
-
                     <div id="paddle-error-message"></div>
-
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
 
                 <div class="row justify-content-center">
-
                     <div class="col-lg-6">
-
                         <div class="card">
-
                             <div class="card-body">
-
                                 <h3 class="card-title mb-3">
                                     {{ __('Choosed Plan') }}
                                     :
@@ -105,31 +90,22 @@
                                     </div>
                                 @else
                                     <button type="button" class="btn btn-primary w-100" id="customCheckout">
-
                                         <span id="btn-text">
                                             {{ __('Buy Now!') }}
                                         </span>
-
                                         <span id="btn-spinner" class="spinner-border spinner-border-sm ms-2 d-none">
                                         </span>
-
                                     </button>
                                 @endif
-
                             </div>
-
                         </div>
-
                     </div>
-
                 </div>
-
-                {{-- Footer --}}
-                @include('user.includes.footer')
-
             </div>
         </div>
 
+        {{-- Footer --}}
+        @include('user.includes.footer')
     </div>
 @endsection
 

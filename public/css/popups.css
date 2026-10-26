@@ -1,0 +1,81 @@
+/* GoBiz vCard SaaS
+|--------------------------------------------------------------------------
+| Developed by NativeCode © 2021 - https://nativecode.in
+| All rights reserved
+| Unauthorized distribution is prohibited
+|--------------------------------------------------------------------------
+*/
+
+.page-wrapper,
+.card,
+.form-label,
+.form-control,
+.ts-control,
+.modal-title,
+.modal-body {
+    font-family:
+        "Figtree",
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif !important;
+    letter-spacing: -0.01em;
+}
+
+.form-label {
+    font-weight: 600 !important;
+    font-size: 0.875rem !important;
+    color: var(--tblr-body-color, #1e293b) !important;
+    margin-bottom: 0.4rem !important;
+}
+
+.form-label.required:after {
+    content: " *" !important;
+    color: #d63939 !important;
+}
+
+.form-control,
+.ts-control {
+    border: 1px solid var(--tblr-border-color, #d1d5db) !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    line-height: 1.5 !important;
+    padding: 0.55rem 0.85rem !important;
+    min-height: 40px !important;
+    box-shadow: none !important;
+    transition:
+        border-color 0.15s ease-in-out,
+        box-shadow 0.15s ease-in-out !important;
+    border-radius: 8px !important;
+}
+
+.form-control:focus {
+    border-color: var(--tblr-primary, #206bc4) !important;
+    box-shadow: 0 0 0 0.25rem rgba(32, 107, 196, 0.15) !important;
+}
+
+.settings-switch-card {
+    border: 1px solid var(--tblr-border-color, #e2e8f0);
+    border-radius: 12px;
+    padding: 1.25rem;
+    transition: all 0.2s ease-in-out;
+}
+
+.settings-switch-card:hover {
+    border-color: var(--tblr-border-color, #cbd5e1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.form-check-input {
+    cursor: pointer;
+    width: 2.75rem !important;
+    height: 1.5rem !important;
+}
+
+.form-check-input:checked {
+    background-color: #206bc4 !important;
+    border-color: #206bc4 !important;
+}

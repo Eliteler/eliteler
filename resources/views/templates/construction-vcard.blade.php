@@ -71,21 +71,63 @@
     {{-- Check business details --}}
     @if ($business_card_details != null)
         @php
-            $custom_css = $business_card_details->custom_css;
-            $custom_js = $business_card_details->custom_js;
-            if (strpos($custom_css, '<style>') === false && strpos($custom_css, '</style>') === false) {
-                $custom_css = '<style>' . $custom_css . '</style>';
+            $custom_css = trim($business_card_details->custom_css ?? '');
+            $custom_js = trim($business_card_details->custom_js ?? '');
+
+            /*
+            |--------------------------------------------------------------------------
+            | Custom CSS
+            |--------------------------------------------------------------------------
+            */
+
+            if (!empty($custom_css) && stripos($custom_css, '<style') === false) {
+                $custom_css = "<style>{$custom_css}</style>";
             }
-            if (strpos($custom_js, '<script>
-                ') === false && strpos($custom_js, '
-            </script>') === false) {
-                $custom_js = '<script>
-                    " . $custom_js . "
-                </script>';
+
+            /*
+            |--------------------------------------------------------------------------
+            | Split HTML tags and plain JS
+            |--------------------------------------------------------------------------
+            */
+
+            $include_custom_js = '';
+
+            if (!empty($custom_js)) {
+                // Extract HTML tags like meta, script, iframe, noscript, etc.
+                preg_match_all(
+                '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/@endphp/is',
+        $custom_js,
+        $matches,
+    );
+
+    $html_tags = implode("\n", $matches[0]);
+
+    // Remove extracted HTML tags from original content
+    $plain_js = trim(
+        preg_replace(
+            '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/?>/is',
+            '',
+            $custom_js,
+        ),
+    );
+
+    // Add HTML tags directly
+    $include_custom_js .= $html_tags;
+
+    // Wrap remaining plain JS inside script tag
+    if (!empty($plain_js)) {
+        $include_custom_js .= "\n<script>
+            {
+                $plain_js
             }
-        @endphp
+        </script>";
+    }
+}
+?>
+
         {!! $custom_css !!}
-        {!! $custom_js !!}
+        {!! $include_custom_js !!}
+
         @if (!empty($business_card_details->theme_css))
             <style>
                 {!! $business_card_details->theme_css !!}
@@ -163,6 +205,7 @@
                             @if ($business_card_details->cover_type == 'youtube-ap' || $business_card_details->cover_type == 'youtube')
                                 <iframe id="cover-yt"
                                     class="cover-media-item {{ in_array($business_card_details->cover_type, ['youtube-ap', 'youtube']) ? 'active' : '' }}"
+                                    referrerpolicy="strict-origin-when-cross-origin"
                                     src="https://www.youtube.com/embed/{{ $business_card_details->cover }}?autoplay={{ $business_card_details->cover_type == 'youtube-ap' ? '1' : '0' }}&mute=1&loop=1&controls=0&playlist={{ $business_card_details->cover }}"
                                     allow="autoplay; encrypted-media"></iframe>
                             @endif
@@ -170,6 +213,7 @@
                             @if ($business_card_details->cover_type == 'vimeo-ap' || $business_card_details->cover_type == 'vimeo')
                                 <iframe id="cover-vimeo"
                                     class="cover-media-item {{ in_array($business_card_details->cover_type, ['vimeo-ap', 'vimeo']) ? 'active' : '' }}"
+                                    referrerpolicy="strict-origin-when-cross-origin"
                                     src="https://player.vimeo.com/video/{{ $business_card_details->cover }}?background={{ $business_card_details->cover_type == 'vimeo-ap' ? '1' : '0' }}&autoplay={{ $business_card_details->cover_type == 'vimeo-ap' ? '1' : '0' }}&loop=1&byline=0&title=0"
                                     allow="autoplay; fullscreen"></iframe>
                             @endif
@@ -260,7 +304,8 @@
                                             if ($feature->type === 'address') {
                                                 $href = 'https://www.google.com/maps?q=' . urlencode($feature->content);
                                             } elseif ($feature->type === 'url') {
-                                                $href = strpos($feature->content, 'http') === 0
+                                                $href =
+                                                    strpos($feature->content, 'http') === 0
                                                     ? $feature->content
                                                     : 'https://' . $feature->content;
                                             }
@@ -406,8 +451,8 @@
                                                     @if (!empty($p->badge))
                                                         <span class="badge-label">{{ $p->badge }}</span>
                                                     @endif
-                                                    <img src="{{ url($p->product_image) }}" alt="{{ $p->product_name }}"
-                                                        class="struct-card-img">
+                                                    <img src="{{ url($p->product_image) }}"
+                                                        alt="{{ $p->product_name }}" class="struct-card-img">
                                                     <div class="struct-card-body">
                                                         <h4>{{ $p->product_name }}</h4>
                                                         <p>{{ Str::limit($p->product_description, 60) }}</p>
@@ -468,6 +513,15 @@
                             </div>
                         @endif
 
+                        <!-- INSTAGRAM (Single Column) -->
+                        @include('templates.includes.instagram-embed', [
+                            'columns'      => 1,
+                            'sectionClass' => 'vault-panel gsap-reveal',
+                            'customHeader' => '<div class="panel-head"><div class="panel-icon"><i class="fab fa-instagram"></i></div><span class="panel-title">' . __('Instagram') . '</span></div>',
+                            'cardClass'    => 'gallery-item overflow-hidden',
+                            'labelClass'   => 'gallery-caption'
+                        ])
+
                         <!-- PROJECT VIDEOS -->
                         @if ($feature_details->where('type', 'youtube')->count() > 0 || $feature_details->where('type', 'vimeo')->count() > 0)
                             <div class="vault-panel gsap-reveal">
@@ -487,12 +541,14 @@
                                                                 src="https://www.youtube.com/embed/{{ $feature->content }}"
                                                                 title="{{ $feature->label }}" frameborder="0"
                                                                 allowfullscreen
+                                                                referrerpolicy="strict-origin-when-cross-origin"
                                                                 style="width:100%; height:160px; display:block; background:#000;"></iframe>
                                                         @elseif ($feature->type == 'vimeo')
                                                             <iframe
                                                                 src="https://player.vimeo.com/video/{{ $feature->content }}"
                                                                 title="{{ $feature->label }}" frameborder="0"
                                                                 allowfullscreen
+                                                                referrerpolicy="strict-origin-when-cross-origin"
                                                                 style="width:100%; height:160px; display:block; background:#000;"></iframe>
                                                         @endif
                                                         <div style="padding:10px 12px; background:var(--ink-3);">
@@ -523,6 +579,7 @@
                                             <div
                                                 style="border-radius:6px; overflow:hidden; border:1px solid rgba(201,168,76,0.1);">
                                                 <iframe src="{{ $feature->content }}" title="{{ $feature->label }}"
+                                                    referrerpolicy="strict-origin-when-cross-origin"
                                                     frameborder="0" width="100%" height="200" allowfullscreen
                                                     style="display:block; background:#fff;"></iframe>
                                                 @if (!empty($feature->label))
@@ -552,7 +609,8 @@
                                 </div>
                                 <div id="errorMessage1" class="alert-box alert-error hidden"></div>
                                 <div id="successMessage1" class="alert-box alert-success hidden"></div>
-                                <form id="serviceBookingForm" onsubmit="event.preventDefault(); submitServiceBooking();">
+                                <form id="serviceBookingForm"
+                                    onsubmit="event.preventDefault(); submitServiceBooking();">
                                     <div class="grid-2">
                                         <div><label class="f-label">{{ __('Name') }}</label><input type="text"
                                                 name="customer_name" id="customer_name" class="f-input" /></div>
@@ -562,9 +620,9 @@
                                     <div class="grid-2">
                                         <div><label class="f-label">{{ __('Mobile') }}</label><input type="tel"
                                                 name="customer_phone" id="customer_phone" class="f-input" /></div>
-                                        <div><label class="f-label">{{ __('Crew Size') }}</label><input type="number"
-                                                name="no_of_persons" id="no_of_persons" value="1"
-                                                class="f-input" />
+                                        <div><label class="f-label">{{ __('Crew Size') }}</label><input
+                                                type="number" name="no_of_persons" id="no_of_persons"
+                                                value="1" class="f-input" />
                                         </div>
                                     </div>
                                     <label class="f-label">{{ __('Site Address') }}</label>
@@ -609,7 +667,8 @@
                                                             <img src="{{ url($t->reviewer_image) }}"
                                                                 alt="{{ $t->reviewer_name }}" class="testi-avatar">
                                                         @else
-                                                            <div class="testi-avatar-fallback"><i class="fas fa-user"></i>
+                                                            <div class="testi-avatar-fallback"><i
+                                                                    class="fas fa-user"></i>
                                                             </div>
                                                         @endif
                                                         <div>
@@ -665,6 +724,7 @@
                                     @if ($feature->type == 'map')
                                         <div class="map-container" style="margin-bottom:12px;">
                                             <iframe src="https://www.google.com/maps/embed?{!! $feature->content !!}"
+                                                referrerpolicy="strict-origin-when-cross-origin"
                                                 width="100%" height="200" style="border:0;" allowfullscreen=""
                                                 loading="lazy"></iframe>
                                         </div>
@@ -765,7 +825,9 @@
                                 'youtube',
                                 'snapchat',
                             ];
-                            $socialFeatures = collect($feature_details)->filter(fn($f) => in_array($f->type, $socialTypes));
+                            $socialFeatures = collect($feature_details)->filter(
+                                fn($f) => in_array($f->type, $socialTypes),
+                            );
                         @endphp
                         @if ($socialFeatures->isNotEmpty())
                             <div class="vault-panel gsap-reveal">
@@ -812,14 +874,14 @@
                                     <input type="hidden" name="card_id"
                                         value="{{ $business_card_details->card_id }}" />
                                     <label class="f-label">{{ __('Name') }}</label>
-                                    <input type="text" name="name" class="f-input" value="{{ old('name') }}"
-                                        required>
+                                    <input type="text" name="name" class="f-input"
+                                        value="{{ old('name') }}" required>
                                     <label class="f-label">{{ __('Email') }}</label>
-                                    <input type="email" name="email" class="f-input" value="{{ old('email') }}"
-                                        required>
+                                    <input type="email" name="email" class="f-input"
+                                        value="{{ old('email') }}" required>
                                     <label class="f-label">{{ __('Phone') }}</label>
-                                    <input type="tel" name="phone" class="f-input" value="{{ old('phone') }}"
-                                        required>
+                                    <input type="tel" name="phone" class="f-input"
+                                        value="{{ old('phone') }}" required>
                                     <label class="f-label">{{ __('Project Details') }}</label>
                                     <textarea name="message" class="f-input" required>{{ old('message') }}</textarea>
                                     <button type="submit" class="btn-gold">{{ __('Send Message') }}</button>
@@ -1176,7 +1238,38 @@
     <script src="{{ url('js/swiper-bundle.min.js') }}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/{{ app()->getLocale() }}.js"></script>
+
+    @php
+        $flatpickrLocales = [
+            'pt_BR' => 'pt',
+            'zh' => 'zh',
+            'ar' => 'ar',
+            'bg' => 'bg',
+            'hr' => 'hr',
+            'nl' => 'nl',
+            'fr' => 'fr',
+            'de' => 'de',
+            'he' => 'he',
+            'hu' => 'hu',
+            'id' => 'id',
+            'it' => 'it',
+            'ja' => 'ja',
+            'lt' => 'lt',
+            'ms' => 'ms',
+            'pl' => 'pl',
+            'ro' => 'ro',
+            'ru' => 'ru',
+            'es' => 'es',
+            'sv' => 'sv',
+            'th' => 'th',
+            'tr' => 'tr',
+            'vi' => 'vn',
+        ];
+
+        $locale = $flatpickrLocales[app()->getLocale()] ?? 'en';
+    @endphp
+    
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/{{ $locale }}.js"></script>
     @yield('custom-js')
 
     <script>
@@ -1584,7 +1677,7 @@
             flatpickr('#appointment-date', {
                 dateFormat: 'Y-m-d',
                 minDate: 'today',
-                locale: '{{ app()->getLocale() }}',
+                locale: '{{ $locale }}',
                 disable: [function(date) {
                     const d = date.toLocaleString('en-us', {
                         weekday: 'long'
@@ -1601,7 +1694,7 @@
             flatpickr('#service_start_date', {
                 dateFormat: 'Y-m-d',
                 minDate: 'today',
-                locale: '{{ app()->getLocale() }}',
+                locale: '{{ $locale }}',
                 disable: [function(date) {
                     return !allowedDays.includes(date.getDay());
                 }]
@@ -1609,7 +1702,7 @@
             flatpickr('#service_end_date', {
                 dateFormat: 'Y-m-d',
                 minDate: 'today',
-                locale: '{{ app()->getLocale() }}',
+                locale: '{{ $locale }}',
                 disable: [function(date) {
                     return !allowedDays.includes(date.getDay());
                 }]

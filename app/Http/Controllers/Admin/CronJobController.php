@@ -12,169 +12,128 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Setting;
-use Carbon\Carbon;
 use App\EmailTemplate;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Mail;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Inertia\Inertia;
 
+/**
+ * Cron jobs: the daily run hour (config "cron_hour") and the plan expiry
+ * reminder days (config "cronjob_dates_in_array", e.g. [7,3,1,-1]).
+ * Positive days are before the plan expires, negative days after.
+ */
 class CronJobController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
+    private const EXPIRED_TEMPLATE  = '584922675206';
+    private const EXPIRING_TEMPLATE = '584922675207';
+
     public function __construct()
     {
         $this->middleware('auth');
     }
 
-    /**
-     * Show the application dashboard.
-     *
-     * @return \Illuminate\Contracts\Support\Renderable
-     */
-
-    // Cron Jobs
     public function index()
     {
-        // Queries
-        $settings = Setting::first();
-        $config = DB::table('config')->get();
+        $config = DB::table('config')->whereIn('config_key', ['cron_hour', 'cronjob_dates_in_array'])->pluck('config_value', 'config_key');
 
-        // Separate dates in array
-        $config[60]->config_value = str_replace('[', '', $config[60]->config_value);
-        $config[60]->config_value = str_replace(']', '', $config[60]->config_value);
-
-        return view('admin.pages.cron-jobs.index', compact('settings', 'config'));
+        return Inertia::render('settings/cron-jobs', [
+            'cronHour'     => (int) ($config['cron_hour'] ?? 0),
+            'reminderDays' => self::parseDays($config['cronjob_dates_in_array'] ?? ''),
+            'artisan'      => str_replace('\\', '/', base_path('artisan')),
+        ]);
     }
 
-    // Update cron jobs
     public function update(Request $request)
     {
-        // Validate form
-        $validator = Validator::make($request->all(), [
-            'dates_in_array' => 'required',
+        $data = $request->validate([
+            'reminder_days'   => 'required|array|min:1|max:20',
+            'reminder_days.*' => 'integer|between:-30,366|distinct',
+            'cron_hour'       => 'required|integer|between:0,23',
+        ], [
+            'reminder_days.*.between' => __('Reminders can be up to 366 days before expiry or 30 days after.'),
+            'reminder_days.*.distinct' => __('Each reminder day can only be added once.'),
+        ], [
+            'reminder_days' => __('reminder days'),
+            'cron_hour'     => __('run time'),
         ]);
 
-        // Check validation
-        if ($validator->fails()) {
-            return redirect()->route('admin.cron.jobs')->with('failed', trans('Please fill all the fields.'));
+        $days = collect($data['reminder_days'])->map(fn ($day) => (int) $day)->sortDesc()->values()->all();
+
+        DB::table('config')->where('config_key', 'cronjob_dates_in_array')->update(['config_value' => json_encode($days)]);
+        DB::table('config')->where('config_key', 'cron_hour')->update(['config_value' => (string) $data['cron_hour']]);
+
+        return back()->with('success', __('Cron settings saved.'));
         }
 
-        // dates_in_array in array (Like [10, 5, 3, 1])
-        $dates_in_array = explode(',', $request->dates_in_array);
-        $dates_in_array = array_map('intval', $dates_in_array);
-        $dates_in_array = array_unique($dates_in_array);
-
-        // Check $dates_in_array is min -30 to max 366
-        foreach ($dates_in_array as $date) {
-            if ($date < -30 || $date > 366) {
-                return redirect()->route('admin.cron.jobs')->with('failed', trans('Please enter a valid number of dates.'));
-            }
-        }
-
-        // Update config
-        DB::table('config')->where('config_key', 'cronjob_dates_in_array')->update([
-            'config_value' => $dates_in_array,
-        ]);
-
-        // Success message
-        return redirect()->route('admin.cron.jobs')->with('success', trans('Updated!'));
-    }
-
-    // Set cronjob time
+    // Kept for old forms; the page saves the hour together with the reminder days
     public function setCronjobTime(Request $request)
     {
-        // Validate form
-        $validator = Validator::make(request()->all(), [
-            'cron_hour' => 'required|integer|between:0,23',
-        ]);
+        $data = $request->validate(['cron_hour' => 'required|integer|between:0,23']);
+        DB::table('config')->where('config_key', 'cron_hour')->update(['config_value' => (string) $data['cron_hour']]);
 
-        // Check validation
-        if ($validator->fails()) {
-            return redirect()->route('admin.cron.jobs')->with('failed', trans('Please fill all the fields.'));
+        return back()->with('success', __('Cron settings saved.'));
         }
 
-        // Update config
-        DB::table('config')->where('config_key', 'cron_hour')->update([
-            'config_value' => $request->cron_hour,
-        ]);
-
-        // Success message
-        return redirect()->route('admin.cron.jobs')->with('success', trans('Updated!'));
-    }
-
-    // Test reminder
-    public function testReminder()
+    /** Send both reminder emails (expiring soon and expired) to the signed-in admin. */
+    public function testReminder(Request $request)
     {
-        // Details
-        $expiredEmailTemplateDetails = EmailTemplate::where('email_template_id', '584922675206')->first();
-        $expiryEmailTemplateDetails  = EmailTemplate::where('email_template_id', '584922675207')->first();
+        $user      = $request->user();
+        $templates = EmailTemplate::whereIn('email_template_id', [self::EXPIRING_TEMPLATE, self::EXPIRED_TEMPLATE])->get()->keyBy('email_template_id');
 
-        // Dummy plan validity
-        $activePlanValidity = Carbon::now()->addDays(3);
-        $expiredPlanValidity = Carbon::now()->subDays(3);
-
-        //Dummy plan code, plan name, plan price
-        $planCode = "123456789";
-        $planName = "Test Plan";
-        $planPrice = 100;
-
-        $expiredPlanDetails = [
-            'status'          => "",
-            'emailSubject'    => $expiredEmailTemplateDetails->email_template_subject,
-            'emailContent'    => $expiredEmailTemplateDetails->email_template_content,
-            'registeredName'  => "Test User - " . Auth::user()->name,
-            'registeredEmail' => Auth::user()->email,
-            'expiryDate'      => Carbon::parse($expiredPlanValidity)->format('Y-m-d'),
-            'planCode'        => $planCode,
-            'planName'        => $planName,
-            'planPrice'       => $planPrice,
-        ];
-
-        $expiryPlanDetails = [
-            'status'          => "",
-            'emailSubject'    => $expiryEmailTemplateDetails->email_template_subject,
-            'emailContent'    => $expiryEmailTemplateDetails->email_template_content,
-            'registeredName'  => "Test User - " . Auth::user()->name,
-            'registeredEmail' => Auth::user()->email,
-            'expiryDate'      => Carbon::parse($activePlanValidity)->format('Y-m-d'),
-            'planCode'        => $planCode,
-            'planName'        => $planName,
-            'planPrice'       => $planPrice
-        ];
-
-        // Send email
-        try {
-            Mail::to(Auth::user()->email)->send(new \App\Mail\AppointmentMail($expiryPlanDetails));
-            Mail::to(Auth::user()->email)->send(new \App\Mail\AppointmentMail($expiredPlanDetails));
-        } catch (\Exception $e) {
-            return redirect()->back()->with('failed', trans('Remainder emails have not been sent successfully.'));
-            // $this->error("Failed to send email to {$user->email}: {$e->getMessage()}");
+        if ($templates->count() < 2) {
+            return back()->with('failed', __('The plan reminder email templates are missing.'));
         }
 
-        return redirect()->back()->with('success', trans('Reminder emails have been sent successfully.'));
+        $details = fn (string $template, Carbon $expiry) => [
+            'status'          => '',
+            'emailSubject'    => $templates[$template]->email_template_subject,
+            'emailContent'    => $templates[$template]->email_template_content,
+            'registeredName'  => __('Test User') . ' - ' . $user->name,
+            'registeredEmail' => $user->email,
+            'expiryDate'      => $expiry->format('Y-m-d'),
+            'planCode'        => '123456789',
+            'planName'        => __('Test Plan'),
+            'planPrice'       => 100,
+        ];
+
+        try {
+            Mail::to($user->email)->send(new \App\Mail\AppointmentMail($details(self::EXPIRING_TEMPLATE, now()->addDays(3))));
+            Mail::to($user->email)->send(new \App\Mail\AppointmentMail($details(self::EXPIRED_TEMPLATE, now()->subDays(3))));
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->with('failed', __('Couldn’t send the test emails. Check your email settings.'));
+        }
+
+        return back()->with('success', __('Two test reminders were sent to :email.', ['email' => $user->email]));
     }
 
-    // Run cronjob
     public function runCronjob()
     {
         try {
-            // Run cronjob
-            Artisan::call('schedule:run');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('failed', trans('Cronjob has not been run successfully.'));
+            Artisan::call('expiry:cron');
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->with('failed', __('The reminder job failed. Check the log for details.'));
         }
 
-        // Redirect
-        return redirect()->route('admin.cron.jobs')->with('success', trans('Cronjob has been run successfully.'));
+        return back()->with('success', __('Reminder job finished.'));
+    }
+
+    /** "[10,5,3]" or "10, 5, 3" → [10, 5, 3] */
+    public static function parseDays(?string $value): array
+    {
+        $decoded = json_decode((string) $value, true);
+
+        if (! is_array($decoded)) {
+            $decoded = preg_split('/[\s,]+/', trim((string) $value, " []"), -1, PREG_SPLIT_NO_EMPTY);
+        }
+
+        return collect($decoded)->filter(fn ($day) => is_numeric($day))->map(fn ($day) => (int) $day)->unique()->values()->all();
     }
 }

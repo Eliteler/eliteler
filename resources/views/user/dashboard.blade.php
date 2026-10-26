@@ -2,35 +2,31 @@
 
 {{-- Custom CSS --}}
 @section('css')
-    <style>
-        .visitors-card {
-            height: 900px !important;
-        }
-        [data-bs-theme=dark] .text-dark {
-            color: #fff !important;
-        }
-    </style>
+    {{-- Customer Dashboard CSS --}}
+    <link href="{{ asset('css/customer/dashboard.css') }}" rel="stylesheet">
+    
+    {{-- FullCalendar CSS --}}
+    <link href="{{ asset('plugins/bootstrap-icons/bootstrap-icons.css') }}" rel="stylesheet">
 @endsection
 
-{{-- Get plan details --}}
+{{-- Dynamic subscription plan analysis --}}
 @php
     use App\User;
     use App\Plan;
     use App\Category;
     use Illuminate\Support\Facades\Auth;
 
-    // Get user plan details
+    // Fetch and parse active plan limits
     $plan = User::where('user_id', Auth::user()->user_id)->first();
     $active_plan = json_decode($plan->plan_details);
 
-    // Default
     $purchasedPlan = '';
 
-    // Check active plan
+    // check nfc session
+    $nfc_ref = session('nfc_ref');
+
     if ($active_plan != null) {
-        // Check plan type is exists
         if (isset($active_plan->plan_type) == false) {
-            // Get plan details
             $getPlan = Plan::where('plan_id', Auth::user()->plan_id)->first();
 
             $active_plan->plan_type = env('APP_TYPE');
@@ -48,12 +44,10 @@
             $active_plan->advanced_settings = $getPlan->advanced_settings;
             $active_plan->additional_tools = $getPlan->additional_tools;
 
-            // Update existing users plan details
             User::where('user_id', Auth::user()->user_id)->update([
                 'plan_details' => json_encode($active_plan),
             ]);
 
-            // Add category
             $category = new Category();
             $category->user_id = Auth::user()->user_id;
             $category->category_id = 'others';
@@ -66,204 +60,189 @@
             $purchasedPlan = $active_plan->plan_type;
         }
     }
+
+    $planAssignType = empty(Auth::user()->plan_id) ? 'new' : 'overwrite';
 @endphp
 
 @section('content')
     <div class="page-wrapper">
-        <!-- Page title -->
+        <!-- Page Title Header Wrapper -->
         <div class="page-header d-print-none">
             <div class="container-fluid">
-                <div class="row g-2 align-items-center">
+                <div class="row align-items-center">
                     <div class="col">
-                        <div class="page-pretitle">
-                            {{ __('Overview') }}
-                        </div>
-                        <h2 class="page-title">
-                            {{ __('Dashboard') }}
+                        <h2 class="page-title text-dark fw-bold mb-0">
+                            <!-- Dynamic greeting calculated in client-side Javascript -->
+                            <span id="clientGreetingText"></span>
                         </h2>
+                        <div class="text-muted mt-1">
+                            {{ __('Get a quick overview of your business performance.') }}
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        <!-- Page title -->
+
+        <!-- Page Body -->
         <div class="page-body">
             <div class="container-fluid">
-                {{-- Failed --}}
-                @if(Session::has("failed"))
-                <div class="alert alert-important alert-danger alert-dismissible mb-2" role="alert">
-                    <div class="d-flex">
-                        <div>
-                            {{Session::get('failed')}}
+                {{-- Failed Alert --}}
+                @if (Session::has('failed'))
+                    <div class="alert alert-important alert-danger alert-dismissible mb-2" role="alert">
+                        <div class="d-flex">
+                            <div>{{ Session::get('failed') }}</div>
                         </div>
+                        <a class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="close"></a>
                     </div>
-                    <a class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="close"></a>
-                </div>
                 @endif
 
-                {{-- Success --}}
-                @if(Session::has("success"))
-                <div class="alert alert-important alert-success alert-dismissible mb-2" role="alert">
-                    <div class="d-flex">
-                        <div>
-                            {{Session::get('success')}}
+                {{-- Success Alert --}}
+                @if (Session::has('success'))
+                    <div class="alert alert-important alert-success alert-dismissible mb-2" role="alert">
+                        <div class="d-flex">
+                            <div>{{ Session::get('success') }}</div>
                         </div>
+                        <a class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="close"></a>
                     </div>
-                    <a class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="close"></a>
-                </div>
                 @endif
 
-                <div class="row mb-3">
-                    <div class="col-sm-12 col-lg-12">
-                        <div class="row">
-                            {{-- Current plan --}}
-                            <div class="col-6  {{ $active_plan->plan_type == 'BOTH' ? 'col-lg-3' : 'col-lg-4' }} pb-2 pb-lg-0">
-                                <div class="card bg-custom1">
-                                    <div class="card-body">
-                                        <div class="d-flex align-items-center mb-3">
-                                            <div class="subheader text-custom">{{ __('Current Plan') }}</div>
+                <!-- Metric Summary Grid -->
+                <div class="row row-deck row-cards mb-4 g-3">
+                    {{-- Card 1: Current Plan --}}
+                    <div class="col-6 {{ $active_plan->plan_type == 'BOTH' ? 'col-md-3 col-lg-3' : 'col-md-4 col-lg-4' }}">
+                        <div class="card bg-custom1 border-0 shadow-sm">
+                            <div class="card-body p-3 d-flex flex-column justify-content-between">
+                                <div>
+                                    <div class="subheader text-uppercase small fw-bold mb-1">{{ __('Current Plan') }}</div>
+                                    <div class="h2 text-dark-custom fw-bold mb-0 my-1 fs-1 text-uppercase">
+                                        {{ __($active_plan->plan_name) }}
+                                    </div>
+                                </div>
+                                <div class="text-secondary small mt-2">
+                                    <a class="text-decoration-none text-muted" href="{{ route('user.plans') }}">
+                                        {{ __('Show details') }}
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Card 2: Business Cards --}}
+                    @if ($active_plan->plan_type == 'VCARD' || $active_plan->plan_type == 'BOTH')
+                        <div
+                            class="col-6 {{ $active_plan->plan_type == 'BOTH' ? 'col-md-3 col-lg-3' : 'col-md-4 col-lg-4' }}">
+                            <div class="card bg-custom2 border-0 shadow-sm">
+                                <div class="card-body p-3 d-flex flex-column justify-content-between">
+                                    <div>
+                                        <div class="subheader text-uppercase small fw-bold mb-1">{{ __('eCards') }}
                                         </div>
-                                        @if ($active_plan->plan_price == 0)
-                                            <div class="h4 h-lg-1 text-custom">{{ __($active_plan->plan_name) }}</div>
-                                            <p>{{ __('FREE PLAN') }}</p>
-                                        @else
-                                            <div class="text-uppercase h4 h-lg-1 text-custom"><b>{{ __($active_plan->plan_name) }}</b></div>
-                                        @endif
-                                        <a class="text-custom" href="{{ route('user.plans') }}">
+                                        <div class="h1 text-dark-custom fw-bold mb-0 my-1 fs-1">
+                                            {{ $business_card == 999 ? __('Unlimited') : $business_card }}
+                                        </div>
+                                    </div>
+                                    <div class="text-secondary small mt-2">
+                                        <a class="text-decoration-none text-muted" href="{{ route('user.cards') }}">
                                             {{ __('Show details') }}
                                         </a>
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    @endif
 
-                            {{-- VCARD --}}
-                            @if ($active_plan->plan_type == 'VCARD')
-                                {{-- Business cards --}}
-                                <div class="col-6 col-lg-4 pb-2 pb-lg-0">
-                                    <div class="card bg-custom2">
-                                        <div class="card-body">
-                                            <div class="d-flex align-items-center mb-3">
-                                                <div class="subheader text-custom">{{ __('eCards') }}</div>
-                                            </div>
-                                            <div class="h4 h-lg-1 text-custom">
-                                                {{ $business_card == 999 ? __('Unlimited') : $business_card }}</div>
-                                            <a class="text-custom" href="{{ route('user.cards') }}">
-                                                {{ __('Show details') }}
-                                            </a>
+                    {{-- Card 3: Stores --}}
+                    @if ($active_plan->plan_type == 'STORE' || $active_plan->plan_type == 'BOTH')
+                        <div
+                            class="col-6 {{ $active_plan->plan_type == 'BOTH' ? 'col-md-3 col-lg-3' : 'col-md-4 col-lg-4' }}">
+                            <div class="card bg-custom3 border-0 shadow-sm">
+                                <div class="card-body p-3 d-flex flex-column justify-content-between">
+                                    <div>
+                                        <div class="subheader text-uppercase small fw-bold mb-1">{{ __('Stores') }}</div>
+                                        <div class="h1 text-dark-custom fw-bold mb-0 my-1 fs-1">
+                                            {{ $storesCount == 999 ? __('Unlimited') : $storesCount }}
                                         </div>
                                     </div>
-                                </div>
-                            @endif
-
-                            {{-- STORE --}}
-                            @if ($active_plan->plan_type == 'STORE')
-                                {{-- Stores --}}
-                                <div class="col-6 col-lg-4 p-2 pb-lg-0">
-                                    <div class="card bg-custom3">
-                                        <div class="card-body">
-                                            <div class="d-flex align-items-center mb-3">
-                                                <div class="subheader text-custom">{{ __('Stores') }}</div>
-                                            </div>
-                                            <div class="h4 h-lg-1 text-custom">{{ $storesCount == 999 ? __('Unlimited') : $storesCount }}
-                                            </div>
-                                            <a class="text-custom" href="{{ route('user.stores') }}">
-                                                {{ __('Show details') }}
-                                            </a>
-                                        </div>
+                                    <div class="text-secondary small mt-2">
+                                        <a class="text-decoration-none text-muted" href="{{ route('user.stores') }}">
+                                            {{ __('Show details') }}
+                                        </a>
                                     </div>
                                 </div>
-                            @endif
+                            </div>
+                        </div>
+                    @endif
 
-                            {{-- BOTH --}}
-                            @if ($active_plan->plan_type == 'BOTH')
-                                {{-- Business cards --}}
-                                <div class="col-6 col-lg-3 pb-2 pb-lg-0">
-                                    <div class="card bg-custom2">
-                                        <div class="card-body">
-                                            <div class="d-flex align-items-center mb-3">
-                                                <div class="subheader text-custom">{{ __('eCards') }}</div>
-                                            </div>
-                                            <div class="h4 h-lg-1 text-custom">
-                                                {{ $business_card == 999 ? __('Unlimited') : $business_card }}</div>
-                                            <a class="text-custom" href="{{ route('user.cards') }}">
-                                                {{ __('Show details') }}
-                                            </a>
-                                        </div>
+                    {{-- Card 4: Remaining Days --}}
+                    <div class="col-6 {{ $active_plan->plan_type == 'BOTH' ? 'col-md-3 col-lg-3' : 'col-md-4 col-lg-4' }}">
+                        <div class="card bg-custom4 border-0 shadow-sm">
+                            <div class="card-body p-3 d-flex flex-column justify-content-between">
+                                <div>
+                                    <div class="subheader text-uppercase small fw-bold mb-1">{{ __('Remaining Days') }}
                                     </div>
-                                </div>
-
-                                {{-- Stores --}}
-                                <div class="col-6 {{ $active_plan->plan_type == 'BOTH' ? 'col-lg-3' : 'col-lg-4' }} pb-2 pb-lg-0">
-                                    <div class="card bg-custom3">
-                                        <div class="card-body">
-                                            <div class="d-flex align-items-center mb-3">
-                                                <div class="subheader text-custom">{{ __('Stores') }}</div>
-                                            </div>
-                                            <div class="h4 h-lg-1 text-custom">{{ $storesCount == 999 ? __('Unlimited') : $storesCount }}
-                                            </div>
-                                            <a class="text-custom" href="{{ route('user.stores') }}">
-                                                {{ __('Show details') }}
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endif
-
-                            {{-- Remaining datas --}}
-                            <div class="col-6 {{ $active_plan->plan_type == 'BOTH' ? 'col-lg-3' : 'col-lg-4' }}">
-                                <div class="card bg-custom4">
-                                    <div class="card-body">
-                                        <div class="d-flex align-items-center mb-3">
-                                            <div class="subheader text-custom">{{ __('Remaining Days') }}</div>
-                                        </div>
-
+                                    <div class="h1 text-dark-custom fw-bold mb-0 my-1 fs-1">
                                         @if ($active_plan->validity == 9999)
-                                            <p class="h4 h-lg-1 text-custom">{{ __('Lifetime') }}</p>
+                                            {{ __('Lifetime') }}
                                         @else
-                                            <p class="h4 h-lg-1 text-custom">
-                                                {{ $remaining_days > 0 ? floor($remaining_days) : __('Plan Expired!') }}</p>
+                                            {{ $remaining_days > 0 ? floor($remaining_days) : __('Plan Expired!') }}
                                         @endif
-
-                                        <a class="text-custom" href="{{ route('user.plans') }}">
-                                            {{ __('Show details') }}
-                                        </a>
                                     </div>
+                                </div>
+                                <div class="text-secondary small mt-2">
+                                    <a class="text-decoration-none text-muted" href="{{ route('user.plans') }}">
+                                        {{ __('Show details') }}
+                                    </a>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="row">
-                    <div class="col-md-8 col-lg-12 col-xl-8 mb-2">
-                        <div class="card">
-                            <div class="card-body">
-                                <div class="d-flex align-items-center mb-3">
-                                    <div class="subheader mb-2">{{ __('Overview') }}</div>
-                                </div>
-                                <div class="row">
-                                    <div class="col">
-                                        <div id="cards"></div>
+                {{-- Chart Statistics Row --}}
+                <div class="row row-cards mb-4 g-3">
+                    {{-- Total Analytics Overview --}}
+                    <div class="col-12 col-md-8">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-center justify-content-between mb-4">
+                                    <div>
+                                        <div class="subheader text-uppercase fw-bold text-secondary overview-title">
+                                            {{ __('Overall Performance') }}
+                                        </div>
                                     </div>
-                                    <div class="col-md-auto">
-                                        <div class="divide-y divide-y-fill">
-                                            <div></div>
-                                            {{-- vCards --}}
+                                </div>
+
+                                <div class="row align-items-center g-4">
+                                    {{-- Line/Area Spline Chart --}}
+                                    <div class="col-12 col-lg">
+                                        <div id="cards" class="overview-chart"></div>
+                                    </div>
+
+                                    {{-- Right Legend Metrics --}}
+                                    <div class="col-12 col-lg-auto">
+                                        <div class="overview-stats">
+                                            {{-- Business Cards Counter --}}
                                             @if ($active_plan->plan_type === 'VCARD' || $active_plan->plan_type === 'BOTH')
-                                                <div class="px-3">
-                                                    <div>
-                                                        <span class="status-dot bg-orange"></span> {{ __('eCards') }}
+                                                <div class="overview-stat overview-stat-warning">
+                                                    <div class="stat-title text-orange font-weight-medium">
+                                                        <span class="status-dot bg-orange me-2"></span>
+                                                        {{ __('eCards') }}
                                                     </div>
-                                                    <div class="h2">{{ $totalvCards }}</div>
+                                                    <div class="stat-value text-dark-custom h2 mb-0">
+                                                        {{ $totalvCards }}
+                                                    </div>
                                                 </div>
                                             @endif
 
-                                            {{-- Stores --}}
+                                            {{-- Stores Counter --}}
                                             @if ($active_plan->plan_type === 'STORE' || $active_plan->plan_type === 'BOTH')
-                                                <div class="px-3">
-                                                    <div>
-                                                        <span class="status-dot bg-green"></span> {{ __('Stores') }}
+                                                <div class="overview-stat overview-stat-success">
+                                                    <div class="stat-title text-success font-weight-medium">
+                                                        <span class="status-dot bg-green me-2"></span>
+                                                        {{ __('Stores') }}
                                                     </div>
-                                                    <div class="h2">{{ $totalStores }}</div>
+                                                    <div class="stat-value text-dark-custom h2 mb-0">
+                                                        {{ $totalStores }}
+                                                    </div>
                                                 </div>
                                             @endif
                                         </div>
@@ -273,86 +252,84 @@
                         </div>
                     </div>
 
-                    {{-- Platforms --}}
-                    <div class="col-md-4 col-lg-12 col-xl-4">
-                        <div class="card">
-                            <div class="card-body">
-                                {{-- Title --}}
-                                <div class="d-flex align-items-center mb-3">
-                                    <div class="subheader mb-2">{{ __('Platforms') }}</div>
-                                </div>
-                                <div id="platforms"></div>
+                    {{-- Platforms Donut Analytics --}}
+                    <div class="col-12 col-md-4">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body p-4">
+                                <div class="subheader text-uppercase fw-bold text-secondary mb-3">
+                                    {{ __('Platforms Overview') }}</div>
+                                <div id="platforms" class="d-flex justify-content-center"></div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="row mt-2">
-                    {{-- This Week Audience --}}
-                    <div class="col-md-8 col-lg-12 col-xl-8 mb-2">
-                        <div class="card">
-                            <div class="card-header">
-                                <div class="subheader">{{ __('This week\'s audience of eCards') }}</div>
+                <div class="row row-cards mb-4 g-3">
+                    {{-- This Week Audience spline area --}}
+                    <div class="col-12 col-md-8">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                                <div class="subheader text-uppercase fw-bold text-secondary">
+                                    {{ __('This week\'s audience of eCards') }}</div>
                             </div>
-                            <div class="card-body">
+                            <div class="card-body px-4 pb-4">
                                 <div id="thisWeekAudience"></div>
                             </div>
                         </div>
                     </div>
-                    {{-- Devices --}}
-                    <div class="col-md-4 col-lg-12 col-xl-4 mb-2">
-                        <div class="card">
-                            <div class="card-body">
-                                {{-- Title --}}
-                                <div class="d-flex align-items-center mb-3">
-                                    <div class="subheader mb-2">{{ __('Devices') }}</div>
+
+                    {{-- Devices Donut Chart --}}
+                    <div class="col-12 col-md-4">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body p-4">
+                                <div class="subheader text-uppercase fw-bold text-secondary mb-3">{{ __('Device Types') }}
                                 </div>
-                                <div id="devices"></div>
+                                <div id="devices" class="d-flex justify-content-center"></div>
                             </div>
                         </div>
                     </div>
                 </div>
-                    
-                <div class="row mt-2">
-                    {{-- Appintments in calendar --}}
-                    <div class="col-md-8 col-lg-12 col-xl-8 mb-2">
-                        <div class="card">
-                            <div class="card-body">
-                                {{-- Title --}}
-                                <div class="d-flex align-items-center mb-3">
-                                    <div class="subheader mb-2">{{ __('Appointments') }}</div>
-                                </div>
+
+                <div class="row row-cards g-3">
+                    {{-- Calendar Appointments --}}
+                    <div class="col-12 col-md-8">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body p-4">
+                                <div class="subheader text-uppercase fw-bold text-secondary mb-3">
+                                    {{ __('Appointments Calendar') }}</div>
                                 <div id="appointments"></div>
                             </div>
                         </div>
                     </div>
 
                     {{-- Top 20 Most Viewed Cards --}}
-                    <div class="col-md-4 col-lg-12 col-xl-4 mb-2">
-                        <div class="card visitors-card">
-                            <div class="card-header">
-                                <div class="subheader">{{ __('Top 20 Most Viewed eCards') }}</div>
+                    <div class="col-12 col-md-4">
+                        <div class="card border-0 shadow-sm visitors-card">
+                            <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                                <div class="subheader text-uppercase fw-bold text-secondary">
+                                    {{ __('Top 20 Most Viewed eCards') }}</div>
                             </div>
-                            <div class="card-table table-responsive">
-                                <table class="table table-vcenter">
+                            <div class="card-table table-responsive px-3 py-2">
+                                <table class="table table-vcenter card-table table-striped table-bordered m-0">
                                     <thead>
                                         <tr>
-                                            <th>{{ __('Card name') }}</th>
-                                            <th>{{ __('Visitors') }}</th>
+                                            <th>{{ __('Card Link') }}</th>
+                                            <th class="text-end">{{ __('Hits') }}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {{-- Top 10 Cards --}}
                                         @foreach ($highestCards as $highestCard)
                                             <tr>
                                                 <td>
-                                                    <a href="{{ asset($highestCard['card']) }}" target="_blank">
-                                                        <span
-                                                            style="width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block">/{{ $highestCard['card'] }}
+                                                    <a href="{{ asset($highestCard['card']) }}" target="_blank"
+                                                        class="text-decoration-none fw-bold text-truncate d-block"
+                                                        style="max-width: 180px;">
+                                                        /{{ $highestCard['card'] }}
                                                     </a>
-                                                    </span>
                                                 </td>
-                                                <td><strong>{{ $highestCard['count'] }}</strong></td>
+                                                <td class="text-end font-weight-medium text-dark-custom">
+                                                    {{ $highestCard['count'] }}
+                                                </td>
                                             </tr>
                                         @endforeach
                                     </tbody>
@@ -362,46 +339,90 @@
                     </div>
                 </div>
 
-                {{-- Appointment Modal --}}
-                <div id="appointment-modal" class="modal modal-blur" tabindex="-1" role="dialog" aria-hidden="true">
-                    <div class="modal-dialog modal-md modal-dialog-centered" role="document">
-                        <div class="modal-content">
+                {{-- Appointment Modal Container --}}
+                <div id="appointment-modal" class="modal fade" tabindex="-1" aria-hidden="true"
+                    style="background-color: rgba(0, 0, 0, 0.5);">
+                    <div class="modal-dialog modal-md modal-dialog-centered">
+                        <div class="modal-content border-0 shadow-lg">
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
+        @if (!empty($nfc_ref))
+            <x-activate-nfc-plan :nfc_ref="$nfc_ref" :plan_assign_type="$planAssignType" />
+        @endif
+
         {{-- Footer --}}
         @include('user.includes.footer')
     </div>
+@endsection
 
-    {{-- Custom JS --}}
+{{-- Custom JS --}}
 @section('scripts')
     <script src='{{ asset('js/fullcalendar.min.js') }}'></script>
     <script src="{{ asset('js/apexcharts.min.js') }}"></script>
+    <script src="{{ asset('js/confetti.browser.min.js') }}"></script>
+
     <script>
-        // Overview
-        // @formatter:off
+        "use strict";
+
+        // Localized client-side greeting triggers
+        document.addEventListener("DOMContentLoaded", function() {
+            const hour = new Date().getHours();
+            let greetingText = '';
+
+            if (hour >= 5 && hour < 12) {
+                greetingText = "{{ __('Good morning') }}";
+            } else if (hour >= 12 && hour < 17) {
+                greetingText = "{{ __('Good afternoon') }}";
+            } else if (hour >= 17 && hour < 22) {
+                greetingText = "{{ __('Good evening') }}";
+            } else {
+                greetingText = "{{ __('Good night') }}";
+            }
+
+            const targetText = document.getElementById('clientGreetingText');
+            if (targetText) {
+                targetText.innerHTML =
+                    `${greetingText}, <span class="text-primary">{{ Auth::user()->name }}!</span> 👋`;
+            }
+        });
+
+        // Overview spline area parameters
         document.addEventListener("DOMContentLoaded", function() {
             window.ApexCharts && (new ApexCharts(document.getElementById('cards'), {
                 chart: {
-                    type: "line",
+                    type: "area",
                     fontFamily: 'inherit',
-                    height: 212,
+                    height: 240,
                     parentHeightOffset: 0,
                     toolbar: {
                         show: false,
                     },
-                    animations: {
-                        enabled: true
-                    },
+                    dropShadow: {
+                        enabled: true,
+                        top: 6,
+                        left: 0,
+                        blur: 8,
+                        opacity: 0.12,
+                        color: ["#F76707", "#2FB344"]
+                    }
+                },
+                dataLabels: {
+                    enabled: false
                 },
                 fill: {
-                    opacity: 1,
+                    type: "gradient",
+                    gradient: {
+                        opacityFrom: 0.22,
+                        opacityTo: 0.01,
+                        stops: [0, 95]
+                    }
                 },
                 stroke: {
-                    width: 2,
+                    width: 3.5,
                     lineCap: "round",
                     curve: "smooth",
                 },
@@ -410,7 +431,10 @@
                         {
                             name: `{{ __('eCards') }}`,
                             data: [{{ $vcards }}]
-                        }@if ($active_plan->plan_type === 'STORE' || $active_plan->plan_type === 'BOTH'),@endif
+                        }
+                        @if ($active_plan->plan_type === 'STORE' || $active_plan->plan_type === 'BOTH')
+                            ,
+                        @endif
                     @endif
 
                     @if ($active_plan->plan_type === 'STORE' || $active_plan->plan_type === 'BOTH')
@@ -425,25 +449,41 @@
                 },
                 grid: {
                     padding: {
-                        top: -20,
-                        right: 0,
-                        left: -4,
-                        bottom: -4
+                        top: -10,
+                        right: 10,
+                        left: 10,
+                        bottom: 0
                     },
-                    strokeDashArray: 4,
+                    strokeDashArray: 5,
+                    borderColor: 'rgba(148, 163, 184, 0.06)'
                 },
                 xaxis: {
                     labels: {
-                        padding: 0,
+                        style: {
+                            fontSize: '11px',
+                            colors: '#6c757d',
+                            fontFamily: 'inherit',
+                            fontWeight: '500'
+                        }
                     },
                     tooltip: {
                         enabled: false
                     },
-                    type: 'year',
+                    axisBorder: {
+                        show: false
+                    },
+                    axisTicks: {
+                        show: false
+                    }
                 },
                 yaxis: {
                     labels: {
-                        padding: 4,
+                        style: {
+                            fontSize: '11px',
+                            colors: '#6c757d',
+                            fontFamily: 'inherit',
+                            fontWeight: '500'
+                        }
                     },
                 },
                 labels: [`{{ __('Jan') }}`, `{{ __('Feb') }}`, `{{ __('Mar') }}`,
@@ -457,10 +497,8 @@
                 },
             })).render();
         });
-        // @formatter:on
 
-        // Platforms
-        // @formatter:off
+        // Platforms Donut layout
         document.addEventListener("DOMContentLoaded", function() {
             window.ApexCharts && (new ApexCharts(document.getElementById('platforms'), {
                 chart: {
@@ -480,7 +518,8 @@
                 series: {!! json_encode($highestPlatforms['count']) !!},
                 labels: {!! json_encode(array_map(fn($word) => __($word), $highestPlatforms['platform'])) !!},
                 tooltip: {
-                    theme: 'dark'
+                    theme: 'dark',
+                    fillSeriesColor: false
                 },
                 grid: {
                     strokeDashArray: 4,
@@ -500,15 +539,10 @@
                         vertical: 8
                     },
                 },
-                tooltip: {
-                    fillSeriesColor: false
-                },
             })).render();
         });
-        // @formatter:on
 
-        // This Week Audience
-        // @formatter:off
+        // This Week Audience stacked spline metrics
         document.addEventListener("DOMContentLoaded", function() {
             window.ApexCharts && (new ApexCharts(document.getElementById('thisWeekAudience'), {
                 chart: {
@@ -522,17 +556,28 @@
                     animations: {
                         enabled: true
                     },
-                    stacked: true,
+                    dropShadow: {
+                        enabled: true,
+                        top: 6,
+                        left: 0,
+                        blur: 8,
+                        opacity: 0.10,
+                        color: ["#4263eb", "#f76707"]
+                    }
                 },
                 dataLabels: {
                     enabled: false,
                 },
                 fill: {
-                    opacity: .16,
-                    type: 'solid'
+                    type: "gradient",
+                    gradient: {
+                        opacityFrom: 0.20,
+                        opacityTo: 0.01,
+                        stops: [0, 95]
+                    }
                 },
                 stroke: {
-                    width: 2,
+                    width: 3.5,
                     lineCap: "round",
                     curve: "smooth",
                 },
@@ -541,7 +586,10 @@
                         {
                             name: `{{ __('eCards') }}`,
                             data: {!! json_encode($weekData['vcard']) !!}
-                        }@if ($active_plan->plan_type === 'STORE' || $active_plan->plan_type === 'BOTH'),@endif
+                        }
+                        @if ($active_plan->plan_type === 'STORE' || $active_plan->plan_type === 'BOTH')
+                            ,
+                        @endif
                     @endif
 
                     @if ($active_plan->plan_type === 'STORE' || $active_plan->plan_type === 'BOTH')
@@ -556,16 +604,22 @@
                 },
                 grid: {
                     padding: {
-                        top: -20,
-                        right: 0,
-                        left: -4,
-                        bottom: -4
+                        top: -10,
+                        right: 10,
+                        left: 10,
+                        bottom: 0
                     },
-                    strokeDashArray: 4,
+                    strokeDashArray: 5,
+                    borderColor: 'rgba(148, 163, 184, 0.06)'
                 },
                 xaxis: {
                     labels: {
-                        padding: 0,
+                        style: {
+                            fontSize: '11px',
+                            colors: '#6c757d',
+                            fontFamily: 'inherit',
+                            fontWeight: '500'
+                        }
                     },
                     tooltip: {
                         enabled: false
@@ -580,7 +634,12 @@
                 },
                 yaxis: {
                     labels: {
-                        padding: 4
+                        style: {
+                            fontSize: '11px',
+                            colors: '#6c757d',
+                            fontFamily: 'inherit',
+                            fontWeight: '500'
+                        }
                     },
                 },
                 colors: ["#4263eb", "#f76707"],
@@ -589,16 +648,14 @@
                 },
             })).render();
         });
-        // @formatter:on
 
-        // Devices
-        // @formatter:off
+        // Devices metrics Donut
         document.addEventListener("DOMContentLoaded", function() {
             window.ApexCharts && (new ApexCharts(document.getElementById('devices'), {
                 chart: {
                     type: "donut",
                     fontFamily: 'inherit',
-                    height: 410,
+                    height: 250,
                     sparkline: {
                         enabled: true
                     },
@@ -612,7 +669,8 @@
                 series: {!! json_encode($highestDevices['count']) !!},
                 labels: {!! json_encode(array_map(fn($word) => __($word), $highestDevices['device'])) !!},
                 tooltip: {
-                    theme: 'dark'
+                    theme: 'dark',
+                    fillSeriesColor: false
                 },
                 grid: {
                     strokeDashArray: 4,
@@ -632,96 +690,135 @@
                         vertical: 8
                     },
                 },
-                tooltip: {
-                    fillSeriesColor: false
-                },
             })).render();
         });
-        // @formatter:on
-    </script>
-    <script>
-        // Appointments in calendar
-        document.addEventListener('DOMContentLoaded', function () {
-            "use strict";
 
-            // Initialize the calendar
+        // FullCalendar Initialization
+        document.addEventListener('DOMContentLoaded', function() {
             var appointmentsCalendarEl = document.getElementById('appointments');
+            if (!appointmentsCalendarEl) return;
+
             var appointmentsCalendar = new FullCalendar.Calendar(appointmentsCalendarEl, {
                 initialView: 'dayGridMonth',
-                events: `{{ route('user.calendar.appointments') }}`,
+                events: "{{ route('user.calendar.appointments') }}",
                 locale: "{{ app()->getLocale() }}",
-                editable: false, // Disable drag-and-drop if needed
-                selectable: true, // Enable date selection
+                editable: false,
+                selectable: true,
                 headerToolbar: {
                     left: 'title',
                     center: '',
                     right: 'prev,next'
                 },
-                eventClick: function (info) {
-
-                    // Show the customer and appointment details in a modal
+                eventClick: function(info) {
                     var modal = document.getElementById('appointment-modal');
-                    modal.style.display = 'block';
-                    // Add animation
-                    modal.classList.add('fadeIn');
+                    if (!modal) return;
+
                     var modalContent = modal.querySelector('.modal-content');
+                    if (!modalContent) return;
+
+                    // Extract event properties safely
+                    var props = info.event.extendedProps || {};
+                    var title = info.event.title || (info.event._def ? info.event._def.title : '');
+                    var formattedDate = props.created_at ?
+                        new Date(props.created_at).toLocaleString('en-US', {
+                            month: 'short',
+                            day: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                        }).replace(',', '') :
+                        'N/A';
+
+                    var googleUrl = props.google_calendar_url || '#';
+
                     modalContent.innerHTML = `
-                        <div class="modal-header">
-                            <h5 class="modal-title text-capitalize">{{ __('eCard name')}}: ${info.event._def.title}</h5>
-                        </div>
-                        <div class="modal-body">
-                            <div class="row">
-                                <div class="col-md-12">
-                                    <div class="d-flex align-items-center mb-3">
-                                        <div class="subheader mb-2">{{ __('Customer Details') }}</div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-sm-6 col-md-6">
-                                            <div class="mb-2">{{ __('Date') }}: <span class="text-dark fw-bold">${info.event.extendedProps.created_at
-                                                    ? new Date(info.event.extendedProps.created_at).toLocaleString('en-US', {
-                                                        month: 'short',    // Short month name (e.g., "Jan")
-                                                        day: '2-digit',    // Day with leading zero (e.g., "18")
-                                                        year: 'numeric',   // Full year (e.g., "2025")
-                                                        hour: '2-digit',   // Hour in 12-hour format
-                                                        minute: '2-digit', // Minutes with leading zero
-                                                        hour12: true       // AM/PM format
-                                                    }).replace(',', '')
-                                                    : 'N/A'}</span></div>
-                                            <div class="mb-2">{{ __('Name') }} : <span class="text-dark fw-bold">${info.event.extendedProps.name || 'N/A'}</span></div>
-                                            <div class="mb-2">{{ __('Phone') }} : <span class="text-dark fw-bold"><a href="tel:${info.event.extendedProps.phone || 'N/A'}">${info.event.extendedProps.phone || 'N/A'}</a></span></div>
-                                        </div>
-                                        <div class="col-sm-6 col-md-6">
-                                            <div class="mb-2">{{ __('Notes') }} : <span class="text-dark fw-bold">${info.event.extendedProps.notes || 'N/A'}</span></div>
-                                            <div class="mb-2">{{ __('Booking Date') }} : <span class="text-dark fw-bold">${info.event.extendedProps.booking_date || 'N/A'}</span></div>
-                                            <div class="mb-2">{{ __('Booking Time') }} : <span class="text-dark fw-bold">${info.event.extendedProps.booking_time || 'N/A'}</span></div>
-                                        </div>
-                                        <div class="modal-footer text-center">
-                                            <div class="d-flex justify-content-center gap-2">
-                                                <button type="button" class="btn me-auto" onclick="closeModal()">{{ __('Close') }}</button>
-                                                <a href="${info.event.extendedProps.google_calendar_url}" target="_blank" class="btn btn-primary text-white">
-                                                    <svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-calendar-plus"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12.5 21h-6.5a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v5" /><path d="M16 3v4" /><path d="M8 3v4" /><path d="M4 11h16" /><path d="M16 19h6" /><path d="M19 16v6" /></svg>
-                                                    {{ __('Add Google Calendar') }}
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
+                    {{-- Modal Header --}}
+                    <div class="modal-header border-bottom">
+                        <h5 class="modal-title fw-bold text-dark mb-0">
+                            <span class="text-muted fw-normal">{{ __('eCard name') }}:</span> ${title}
+                        </h5>
+                        <button type="button" class="btn-close" onclick="closeModal()" aria-label="{{ __('Close') }}"></button>
+                    </div>
+
+                    {{-- Modal Body --}}
+                    <div class="modal-body py-3">
+                        <div class="subheader text-uppercase small fw-bold text-secondary mb-3">{{ __('Customer Details') }}</div>
+                        
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <div class="mb-3">
+                                    <span class="text-secondary small d-block mb-1">{{ __('Date') }}</span>
+                                    <span class="text-dark fw-semibold d-block">${formattedDate}</span>
+                                </div>
+                                <div class="mb-3">
+                                    <span class="text-secondary small d-block mb-1">{{ __('Name') }}</span>
+                                    <span class="text-dark fw-semibold d-block">${props.name || 'N/A'}</span>
+                                </div>
+                                <div class="mb-3">
+                                    <span class="text-secondary small d-block mb-1">{{ __('Phone') }}</span>
+                                    <span class="text-dark fw-semibold d-block">
+                                        <a href="tel:${props.phone || '#'}" class="text-decoration-none">${props.phone || 'N/A'}</a>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="mb-3">
+                                    <span class="text-secondary small d-block mb-1">{{ __('Notes') }}</span>
+                                    <span class="text-dark fw-semibold d-block">${props.notes || 'N/A'}</span>
+                                </div>
+                                <div class="mb-3">
+                                    <span class="text-secondary small d-block mb-1">{{ __('Booking Date') }}</span>
+                                    <span class="text-dark fw-semibold d-block">${props.booking_date || 'N/A'}</span>
+                                </div>
+                                <div class="mb-3">
+                                    <span class="text-secondary small d-block mb-1">{{ __('Booking Time') }}</span>
+                                    <span class="text-dark fw-semibold d-block">${props.booking_time || 'N/A'}</span>
                                 </div>
                             </div>
                         </div>
-                    `;
+                    </div>
+
+                    {{-- Modal Footer --}}
+                    <div class="modal-footer d-flex justify-content-end gap-2 border-top pt-3">
+                        <button type="button" class="btn btn-danger px-4" onclick="closeModal()">{{ __('Close') }}</button>
+                        <a href="${googleUrl}" target="_blank" class="btn btn-primary px-4 d-inline-flex align-items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-calendar-plus me-2" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                <path d="M12.5 21h-6.5a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v5" />
+                                <path d="M16 3v4" /><path d="M8 3v4" /><path d="M4 11h16" /><path d="M16 19h6" /><path d="M19 16v6" />
+                            </svg>
+                            {{ __('Add Google Calendar') }}
+                        </a>
+                    </div>
+                `;
+
+                    // Display Modal
+                    modal.removeAttribute('aria-hidden');
+                    modal.classList.add('show');
+                    modal.style.display = 'block';
                 }
             });
+
             appointmentsCalendar.render();
         });
 
-        // Close modal
+        // Close Modal Handler
         function closeModal() {
-            "use strict";
-
-            // Close the modal inside the click event
             var modal = document.getElementById('appointment-modal');
-            modal.style.display = 'none';
+            if (modal) {
+                modal.style.display = 'none';
+                modal.classList.remove('show');
+                modal.setAttribute('aria-hidden', 'true');
+            }
         }
+
+        // Close Modal on Dark Overlay Click
+        window.addEventListener('click', function(event) {
+            var modal = document.getElementById('appointment-modal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
     </script>
-@endsection
 @endsection

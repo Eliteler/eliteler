@@ -12,6 +12,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\Admin\AdminPermissions;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -32,6 +33,11 @@ class UserPagePermission
         // Check if user exists and has permissions
         if ($user && $user->permissions) {
             $allowedPermissions = json_decode($user->permissions, true);
+
+            // Money areas are closed to admins with revenue hidden
+            if (AdminPermissions::hidesRevenue($user)) {
+                $permissions = array_diff($permissions, AdminPermissions::REVENUE_AREAS);
+            }
 
             // Check if any of the provided permissions are allowed
             foreach ($permissions as $permission) {

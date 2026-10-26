@@ -1,0 +1,185 @@
+/* GoBiz vCard SaaS
+|--------------------------------------------------------------------------
+| Developed by NativeCode © 2021 - https://nativecode.in
+| All rights reserved
+| Unauthorized distribution is prohibited
+|--------------------------------------------------------------------------
+*/
+
+/* ---------- Feature list ---------- */
+.feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.feature-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px dashed var(--tblr-border-color);
+    font-size: 0.875rem;
+}
+
+.feature-list li:last-child {
+    border-bottom: none;
+}
+
+.feature-list .feature-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.feature-list .feature-left span.value {
+    font-weight: 600;
+}
+
+.feature-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.feature-icon.is-on {
+    background: rgba(var(--tblr-success-rgb), 0.15);
+    color: var(--tblr-success);
+}
+
+.feature-icon.is-off {
+    background: rgba(var(--tblr-danger-rgb), 0.12);
+    color: var(--tblr-danger);
+}
+
+.feature-icon svg {
+    width: 14px;
+    height: 14px;
+}
+
+.feature-section-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--tblr-primary);
+    margin: 1rem 0 0.5rem;
+}
+
+.feature-section-title:first-child {
+    margin-top: 0;
+}
+
+.badge-new {
+    font-size: 0.625rem;
+    padding: 0.15rem 0.4rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+/* ---------- Pricing card ---------- */
+.plan-card {
+    position: relative;
+    height: 100%;
+    transition:
+        transform 0.15s ease,
+        box-shadow 0.15s ease;
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+.plan-card.is-recommended {
+    border: 2px solid var(--tblr-primary);
+    box-shadow: 0 0.5rem 1.5rem rgba(var(--tblr-primary-rgb), 0.15);
+}
+
+.plan-card:hover {
+    transform: translateY(-4px);
+}
+
+.plan-recommended-badge {
+    position: absolute;
+    top: 0;
+    right: 1.25rem;
+    background: var(--tblr-primary);
+    color: #fff;
+    font-size: 0.688rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 0.35rem 0.75rem;
+    border-radius: 0 0 0.5rem 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.plan-type-pill {
+    font-size: 0.688rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+}
+
+.plan-price {
+    font-size: 2.25rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.plan-price small {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--tblr-secondary);
+}
+
+/* ---------- Dark mode ---------- */
+[data-bs-theme="dark"] .text-custom {
+    color: #fff !important;
+}
+
+[data-bs-theme="dark"] .bg-light {
+    background-color: #182433 !important;
+    border: 1px solid #3d3d3d !important;
+}
+
+[data-bs-theme="dark"] .bg-white {
+    background-color: #182433 !important;
+    border: 1px solid #3d3d3d !important;
+}
+
+[data-bs-theme="dark"] .text-muted {
+    color: #f2f3f5 !important;
+}
+
+/* RTL support */
+[dir="rtl"] .plan-recommended-badge {
+    right: auto;
+    left: 1.25rem;
+    border-radius: 0 0 0.5rem 0.5rem;
+}
+
+/* Responsive */
+
+@media (max-width: 767.98px) {
+    #currentPlanModal .modal-dialog {
+        width: calc(100% - 1rem);
+        max-width: none;
+        margin-top: 10vh;
+        margin-bottom: 0;
+    }
+}
+
+@media (max-width: 320px) {
+    #currentPlanModal .modal-dialog {
+        width: calc(100% - 0.5rem);
+        margin-top: 5vh;
+    }
+}

@@ -2,32 +2,50 @@
 
 {{-- Custom CSS --}}
 @section('css')
-<style>
-    .span-radius {
-        border-radius: 8px 0 0 8px !important; 
-        padding-bottom: 14px;
-    }
+    <style>
+        .span-radius {
+            border-radius: 8px 0 0 8px !important;
+        }
 
-    .input-radius {
-        border-radius: 0 8px 8px 0 !important; 
-    }
-</style>
+        .input-radius {
+            border-radius: 0 8px 8px 0 !important;
+        }
+    </style>
 @endsection
 
 @section('content')
     <div class="page-wrapper">
-        <!-- Page title -->
+        <!-- Page title header -->
         <div class="page-header d-print-none">
             <div class="container-fluid">
-                <div class="row g-2 align-items-center">
+                <div class="row align-items-center">
+                    <!-- Breadcrumbs -->
+                    <div class="mb-1 ms-0">
+                        <ol class="breadcrumb" aria-label="breadcrumbs">
+                            <li class="breadcrumb-item">
+                                <a href="{{ route('admin.dashboard') }}" class="text-secondary text-decoration-none">
+                                    {{ __('Dashboard') }}
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item" aria-current="page">
+                                <a href="{{ route('admin.payment.methods') }}" class="text-secondary text-decoration-none">
+                                    {{ __('Payment Gateways') }}
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">
+                                <a href="#">{{ __('Edit Payment Method') }}</a>
+                            </li>
+                        </ol>
+                    </div>
                     <div class="col">
-                        <div class="page-pretitle">
-                            {{ __('Update') }}
-                        </div>
                         <h2 class="page-title">
                             <span class="me-1">{{ __($gateway_details->display_name) }}</span>
                             {{ __('Details') }}
                         </h2>
+                        <!-- Added helper subtitle under page heading -->
+                        <div class="text-muted mt-1">
+                            {{ __('Edit display details, upload branding icons, and configure gateway presentation.') }}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -35,7 +53,7 @@
 
         <div class="page-body">
             <div class="container-fluid">
-                {{-- Failed --}}
+                {{-- Failed alert --}}
                 @if (Session::has('failed'))
                     <div class="alert alert-important alert-danger alert-dismissible mb-2" role="alert">
                         <div class="d-flex">
@@ -47,7 +65,7 @@
                     </div>
                 @endif
 
-                {{-- Success --}}
+                {{-- Success alert --}}
                 @if (Session::has('success'))
                     <div class="alert alert-important alert-success alert-dismissible mb-2" role="alert">
                         <div class="d-flex">
@@ -60,9 +78,10 @@
                 @endif
 
                 <div class="row row-deck row-cards">
-                    <div class="col-sm-12 col-lg-12">
+                    <div class="col-md-6 col-sm-12">
+                        <!-- Upgraded to Borderless Shadowed Card Wrapper -->
                         <form action="{{ route('admin.update.payment.method') }}" method="post"
-                            enctype="multipart/form-data" class="card">
+                            enctype="multipart/form-data" class="card border-0 shadow-sm">
                             @csrf
                             <div class="card-header">
                                 <h4 class="page-title">{{ __('Payment Method Details') }}</h4>
@@ -72,10 +91,11 @@
                                     <div class="col-xl-12">
                                         <div class="row">
                                             {{-- Payment Gateway ID --}}
-                                            <input type="hidden" class="form-control" name="payment_gateway_id" value="{{ $gateway_details->payment_gateway_id }}">
+                                            <input type="hidden" class="form-control" name="payment_gateway_id"
+                                                value="{{ $gateway_details->payment_gateway_id }}">
 
                                             {{-- Payment Gateway Image (Upload) --}}
-                                            <div class="col-md-6 col-xl-6">
+                                            <div class="col-md-12 col-xl-6">
                                                 <div class="mb-3">
                                                     <label class="form-label">{{ __('Payment Gateway Image') }}</label>
                                                     <div class="input-group">
@@ -99,18 +119,20 @@
                                                                 </svg>
                                                             </span>
                                                         </div>
-                                                        <input type="file" class="form-control input-radius" name="payment_gateway_image" accept="image/png, image/jpeg, image/jpg, image/gif, image/svg, image/webp">
+                                                        <input type="file" class="form-control input-radius"
+                                                            name="payment_gateway_image"
+                                                            accept="image/png, image/jpeg, image/jpg, image/gif, image/svg, image/webp">
                                                     </div>
                                                 </div>
                                             </div>
 
                                             {{-- Payment Gateway Name --}}
-                                            <div class="col-md-6 col-xl-6">
+                                            <div class="col-md-12 col-xl-6">
                                                 <div class="mb-3">
                                                     <label
                                                         class="form-label required">{{ __('Payment Method Name') }}</label>
-                                                    <input type="text" class="form-control" name="payment_gateway_name" autocomplete="off"
-                                                        placeholder="{{ __('Payment Method') }}"
+                                                    <input type="text" class="form-control" name="payment_gateway_name"
+                                                        autocomplete="off" placeholder="{{ __('Payment Method') }}"
                                                         value="{{ $gateway_details->display_name }}" required>
                                                 </div>
                                             </div>
@@ -118,8 +140,19 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Simplified Footer with standard device-floppy save button -->
                             <div class="card-footer text-end">
-                                <button type="submit" class="btn btn-primary">
+                                <button type="submit" class="btn btn-primary btn-md d-inline-flex align-items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                        class="icon icon-tabler icon-tabler-device-floppy me-2" width="24"
+                                        height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                        fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                        <path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2" />
+                                        <path d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+                                        <path d="M14 4l0 4h-6l0 -4" />
+                                    </svg>
                                     {{ __('Save') }}
                                 </button>
                             </div>
@@ -128,6 +161,8 @@
                 </div>
             </div>
         </div>
+
+        {{-- Footer --}}
         @include('admin.includes.footer')
     </div>
 @endsection

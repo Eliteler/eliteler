@@ -11,17 +11,37 @@
 
 @section('content')
     <div class="page-wrapper">
-        <!-- Page title -->
+        <!-- Page title header -->
         <div class="page-header d-print-none">
             <div class="container-fluid">
                 <div class="row g-2 align-items-center">
+                    <!-- Breadcrumbs (Replaces Overview pretitle) -->
+                    <div class="mb-1 ms-0">
+                        <ol class="breadcrumb" aria-label="breadcrumbs">
+                            <li class="breadcrumb-item">
+                                <a href="{{ route('admin.dashboard') }}" class="text-secondary text-decoration-none">
+                                    {{ __('Dashboard') }}
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a href="{{ route('admin.marketing.campaigns') }}"
+                                    class="text-secondary text-decoration-none">
+                                    {{ __('Email Marketing') }}
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">
+                                <a href="#">{{ __('Customers') }}</a>
+                            </li>
+                        </ol>
+                    </div>
                     <div class="col">
-                        <div class="page-pretitle">
-                            {{ __('Overview') }}
-                        </div>
                         <h2 class="page-title">
                             {{ __('Customers') }}
                         </h2>
+                        <!-- Added helper subtitle under page heading -->
+                        <div class="text-muted mt-1">
+                            {{ __('View and manage customers for your marketing.') }}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -29,7 +49,7 @@
 
         <div class="page-body">
             <div class="container-fluid">
-                {{-- Failed --}}
+                {{-- Failed alert --}}
                 @if (Session::has('failed'))
                     <div class="alert alert-important alert-danger alert-dismissible mb-2" role="alert">
                         <div class="d-flex">
@@ -41,7 +61,7 @@
                     </div>
                 @endif
 
-                {{-- Success --}}
+                {{-- Success alert --}}
                 @if (Session::has('success'))
                     <div class="alert alert-important alert-success alert-dismissible mb-2" role="alert">
                         <div class="d-flex">
@@ -55,10 +75,11 @@
 
                 <div class="row row-deck row-cards">
                     <div class="col-sm-12 col-lg-12">
-                        <div class="card">
-                            {{-- Customers --}}
-                            <div class="table-responsive px-2 py-2">
-                                <table class="table table-vcenter card-table" id="customers-table">
+                        <div class="card border-0 shadow-sm">
+                            <div class="table-responsive px-3 pt-2 py-2">
+                                <!-- Table renders normally on desktop and transforms automatically via CSS on mobile -->
+                                <table class="table card-table table-vcenter text-nowrap responsive-card-table"
+                                    id="customers-table">
                                     <thead>
                                         <tr>
                                             <th>{{ __('#') }}</th>
@@ -69,11 +90,40 @@
                                             <th>{{ __('Valid Until') }}</th>
                                             <th>{{ __('Subscription Status') }}</th>
                                             <th>{{ __('Status') }}</th>
-                                            <th class="text-end">{{ __('Action') }}</th>
+                                            <th>{{ __('Action') }}</th>
                                         </tr>
                                     </thead>
                                 </table>
                             </div>
+
+                            {{-- Custom App-like Mobile Pagination footer --}}
+                            <div id="custom-mobile-pagination"
+                                class="d-flex d-md-none justify-content-between align-items-center px-3 py-3 border-top">
+                                <button id="mobile-prev-btn" class="btn btn-primary btn-sm" type="button">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                        class="icon icon-tabler icon-tabler-chevron-left me-1" width="24" height="24"
+                                        viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                        <path d="M15 6l-6 6l6 6"></path>
+                                    </svg>
+                                    {{ __('Previous') }}
+                                </button>
+
+                                <span id="mobile-page-info" class="text-secondary small font-weight-medium"></span>
+
+                                <button id="mobile-next-btn" class="btn btn-primary btn-sm" type="button">
+                                    {{ __('Next') }}
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                        class="icon icon-tabler icon-tabler-chevron-right ms-1" width="24"
+                                        height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                        fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                        <path d="M9 6l6 6l-6 6"></path>
+                                    </svg>
+                                </button>
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -88,52 +138,97 @@
 {{-- Custom JS --}}
 @section('scripts')
     <script type="text/javascript">
+        "use strict";
+
         $(document).ready(function() {
-            $('#customers-table').DataTable({
-                processing: false, // Disable processing indicator
+            var table = $('#customers-table').DataTable({
+                processing: false,
                 serverSide: true,
                 ajax: "{{ route('admin.marketing.customers') }}",
                 language: {
-                    "sProcessing": `{{ __("Processing...") }}`,
-                    "sLengthMenu": `{{ __("Show _MENU_ entries") }}`,
-                    "sSearch": `{{ __("Search:") }}`,
+                    "sProcessing": `{{ __('Processing...') }}`,
+                    "sLengthMenu": `{{ __('Show _MENU_ entries') }}`,
+                    "sSearch": ``,
+                    "sSearchPlaceholder": `{{ __('Search') }}`,
                     "oPaginate": {
-                        "sNext": `{{ __("Next") }}`,
-                        "sPrevious": `{{ __("Previous") }}`
+                        "sNext": `{{ __('Next') }}`,
+                        "sPrevious": `{{ __('Previous') }}`
                     },
-                    "sInfo": `{{ __("Showing _START_ to _END_ of _TOTAL_ entries") }}`,
-                    "sInfoEmpty": `{{ __("Showing 0 to 0 of 0 entries") }}`,
-                    "sInfoFiltered": `{{ __("(filtered from _MAX_ total entries)") }}`,
+                    "sInfo": `{{ __('Showing _START_ to _END_ of _TOTAL_ entries') }}`,
+                    "sInfoEmpty": `{{ __('Showing 0 to 0 of 0 entries') }}`,
+                    "sInfoFiltered": `{{ __('(filtered from _MAX_ total entries)') }}`,
                     "sInfoPostFix": "",
                     "sUrl": "",
                     "oAria": {
-                        "sSortAscending": `{{ __(": activate to sort column in ascending order") }}`,
-                        "sSortDescending": `{{ __(": activate to sort column in descending order") }}`
+                        "sSortAscending": `{{ __(': activate to sort column in ascending order') }}`,
+                        "sSortDescending": `{{ __(': activate to sort column in descending order') }}`
                     },
-                    loadingRecords: `{{ __("Please wait - loading...") }}`,
-                    emptyTable: `{{ __("No data available in the table") }}`
+                    loadingRecords: `{{ __('Please wait - loading...') }}`,
+                    emptyTable: `{{ __('No data available in the table') }}`
                 },
-                columns: [
-                    { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false },
-                    { data: 'name', name: 'name' },
-                    { data: 'email', name: 'email' },
-                    { data: 'email_verified_at', name: 'email_verified_at' },
-                    { data: 'subscriped_plan', name: 'subscriped_plan' },
-                    { data: 'valid_until', name: 'valid_until' },
-                    { data: 'subscriped_badge', name: 'subscriped_badge' },
-                    { data: 'status', name: 'status' },
-                    { data: 'action', name: 'action', orderable: false, searchable: false },
+                columns: [{
+                        data: 'DT_RowIndex',
+                        name: 'DT_RowIndex',
+                        orderable: false,
+                        searchable: false,
+                        className: 'rc-hide'
+                    },
+                    {
+                        data: 'name',
+                        name: 'name'
+                    }, // real column — keep searchable
+                    {
+                        data: 'email',
+                        name: 'email'
+                    }, // real column — keep searchable
+                    {
+                        data: 'email_verified_at',
+                        name: 'email_verified_at',
+                        searchable: false,
+                        orderable: false
+                    },
+                    {
+                        data: 'subscriped_plan',
+                        name: 'subscriped_plan',
+                        searchable: false,
+                        orderable: false
+                    },
+                    {
+                        data: 'valid_until',
+                        name: 'valid_until',
+                        searchable: false,
+                        orderable: false
+                    },
+                    {
+                        data: 'subscriped_badge',
+                        name: 'subscriped_badge',
+                        searchable: false,
+                        orderable: false
+                    },
+                    {
+                        data: 'status',
+                        name: 'status',
+                        searchable: false,
+                        orderable: false
+                    }, // it's an int (0/1), badge text won't match anyway
+                    {
+                        data: 'action',
+                        name: 'action',
+                        orderable: false,
+                        searchable: false
+                    },
                 ],
                 preDrawCallback: function(settings) {
-                    // Add placeholder-glow class to the table before rendering
+                    // Add placeholder-glow class to the table wrapper before rendering
                     $('#customers-table_wrapper').addClass('placeholder-glow');
 
-                    // Check if there are rows in the tbody after draw
+                    // Desktop Placeholder Rows (Adjusted to match 9 columns)
                     if ($('#customers-table tbody tr').length === 0) {
-                        // If there are no rows, add 10 placeholder rows with 9 columns each
                         var placeholderRows = '';
                         for (var i = 0; i < 10; i++) {
-                            placeholderRows += '<tr>' + '<td class="text-center"><div class="placeholder placeholder-xs col-12"></div></td>' .repeat(9) + '</tr>';
+                            placeholderRows += '<tr>' +
+                                '<td class="text-center"><div class="placeholder placeholder-xs col-12"></div></td>'
+                                .repeat(9) + '</tr>';
                         }
                         $('#customers-table tbody').html(placeholderRows);
                     }
@@ -142,14 +237,89 @@
                     // Remove the placeholder-glow class once the table is fully rendered
                     $('#customers-table_wrapper').removeClass('placeholder-glow');
 
-                    // clear any existing placeholder rows
+                    // clear any existing placeholder rows on desktop
                     $('#customers-table tbody tr').each(function() {
-                        var actionCell = $(this).find('td').eq(8); // Targeting the 8th column (index 8)
+                        var actionCell = $(this).find('td').eq(8);
                         if (actionCell.find('span.placeholder').length > 0) {
-                            actionCell.empty(); // Clear the placeholder once data is available
+                            actionCell.empty();
                         }
                     });
+
+                    // Force empty table message cell to span all 9 columns correctly on desktop viewports
+                    $('#customers-table tbody tr td.dataTables_empty').attr('colspan', 9);
+
+                    // Generate 'data-label' attributes based on the current <thead> elements
+                    var headers = [];
+                    $('#customers-table thead th').each(function() {
+                        headers.push($(this).text().trim());
+                    });
+
+                    $('#customers-table tbody tr').each(function() {
+                        $(this).find('td').each(function(index) {
+                            $(this).attr('data-label', headers[index]);
+                        });
+                    });
+
+                    // Update Custom Mobile Pagination Footer State dynamically
+                    const api = this.api();
+                    const pageInfo = api.page.info();
+                    const rowsCount = api.rows({
+                        page: 'current'
+                    }).data().length;
+
+                    // Hide/show dynamic mobile footer based on pages total and active record count
+                    if (pageInfo.pages <= 1 || rowsCount === 0) {
+                        $('#custom-mobile-pagination').addClass('d-none');
+                        $('#custom-mobile-pagination').removeClass('d-flex');
+                    } else {
+                        $('#custom-mobile-pagination').removeClass('d-none');
+                        $('#custom-mobile-pagination').addClass('d-flex');
+                    }
+
+                    const pageInfoText = `{{ __('Page :current of :total') }}`
+                        .replace(':current', pageInfo.page + 1)
+                        .replace(':total', pageInfo.pages || 1);
+                    $('#mobile-page-info').text(pageInfoText);
+
+                    // Toggle disabled state on Previous button
+                    if (pageInfo.page === 0) {
+                        $('#mobile-prev-btn').addClass('disabled').prop('disabled', true);
+                    } else {
+                        $('#mobile-prev-btn').removeClass('disabled').prop('disabled', false);
+                    }
+
+                    // Toggle disabled state on Next button
+                    if (pageInfo.page >= pageInfo.pages - 1) {
+                        $('#mobile-next-btn').addClass('disabled').prop('disabled', true);
+                    } else {
+                        $('#mobile-next-btn').removeClass('disabled').prop('disabled', false);
+                    }
                 }
+            });
+
+            // Trigger Skeleton Glow Loader state dynamically when table AJAX transactions are processing (e.g. searching)
+            table.on('processing.dt', function(e, settings, processing) {
+                if (processing) {
+                    $('#customers-table_wrapper').addClass('placeholder-glow');
+                    var placeholderRows = '';
+                    for (var i = 0; i < 10; i++) {
+                        placeholderRows += '<tr>' +
+                            '<td class="text-center"><div class="placeholder placeholder-xs col-12"></div></td>'
+                            .repeat(9) + '</tr>';
+                    }
+                    $('#customers-table tbody').html(placeholderRows);
+                }
+            });
+
+            // Bind click events on Mobile pagination triggers
+            $('#mobile-prev-btn').on('click', function(e) {
+                e.preventDefault();
+                table.page('previous').draw('page');
+            });
+
+            $('#mobile-next-btn').on('click', function(e) {
+                e.preventDefault();
+                table.page('next').draw('page');
             });
         });
     </script>

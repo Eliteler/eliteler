@@ -12,217 +12,107 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Setting;
-use App\Currency;
-use Illuminate\Http\Request;
-use App\ReferralWithdrawRequest;
-use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
-use App\ReferralWithdrawTransaction;
-use Yajra\DataTables\Facades\DataTables;
+use App\ReferralWithdrawRequest;
+use App\Services\Admin\ReferralService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Inertia\Inertia;
 
 class ReferralWithdrawalRequestController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        $this->middleware('auth');
-    }
-
-    /**
-     * Show the application dashboard.
-     *
-     * @return \Illuminate\Contracts\Support\Renderable
-     */
-
-    //  Referral Withdrawal Request
-    public function index(Request $request)
-    {
-        // Queries
-        $settings = Setting::where('status', 1)->first();
-        $config = DB::table('config')->get();
-
-        // Check enable referral system
-        if ($config[80]->config_value == '0') {
-            return abort(404);
-        }
-
-        // Referral Withdrawal Requests
-        $referral_withdraw_requests = ReferralWithdrawRequest::where('referral_withdraw_requests.status', 1)->join('users', 'users.user_id', '=', 'referral_withdraw_requests.user_id')
-            ->orderBy('referral_withdraw_requests.id', 'desc')->get();
-
-        // Currency symbol
-        $currencies = Currency::where('status', 1)->pluck('symbol', 'iso_code')->toArray();
-        $symbol = $currencies[$config[1]->config_value] ?? '';
-
-        if ($request->ajax()) {
-            return DataTables::of($referral_withdraw_requests)
-                ->addIndexColumn()
-                ->addColumn('created_at', function ($withdraw_request) {
-                    return formatDateForUser($withdraw_request->created_at);
-                })
-                ->addColumn('user_id', function ($withdraw_request) {
-                    return '<a href="' . route('admin.view.customer', $withdraw_request->user_id) . '" target="_blank"><span class="fw-bold">' . $withdraw_request->name . '</span></a>';
-                })
-                ->addColumn('amount', function ($withdraw_request) use ($symbol) {
-                    return formatCurrency($withdraw_request->amount);
-                })
-                ->addColumn('bank_details', function ($withdraw_request) {
-                    return "<span class='fw-bold'>" . $withdraw_request->bank_details . "</span>";
-                })
-                ->addColumn('payment_status', function ($withdraw_request) {
-                    if ($withdraw_request->payment_status == 0) {
-                        return '<span class="badge bg-warning badge-outline text-white">' . __("Pending") . '</span>';
-                    } else if ($withdraw_request->payment_status == 1) {
-                        return '<span class="badge bg-success badge-outline text-white">' . __("Accepted") . '</span>';
-                    } else if ($withdraw_request->payment_status == 2) {
-                        return '<span class="badge bg-primary badge-outline text-white">' . __("Transferred") . '</span>';
-                    } else {
-                        return '<span class="badge bg-danger badge-outline text-white">' . __("Rejected") . '</span>';
-                    }
-                })
-                ->addColumn('actions', function ($withdraw_request) {
-                    $actions = [
-                        0 => [
-                            ['status' => 1, 'label' => __('Accept')],
-                            ['status' => -1, 'label' => __('Reject')]
-                        ],
-                        1 => [
-                            ['status' => 2, 'label' => __('Transfer')],
-                            ['status' => -1, 'label' => __('Reject')]
-                        ],
-                        -1 => [
-                            ['status' => 1, 'label' => __('Accept')]
-                        ],
-                        2 => [
-                            ['status' => -1, 'label' => __('Reject')],
-                            ['status' => 1, 'label' => __('Accept')]
-                        ],
+    private const TABS = [
+        'pending'     => ReferralService::PENDING,
+        'accepted'    => ReferralService::ACCEPTED,
+        'transferred' => ReferralService::TRANSFERRED,
+        'rejected'    => ReferralService::REJECTED,
                     ];
 
-                    $actionBtn = '';
-                    foreach ($actions[$withdraw_request->payment_status] ?? [] as $action) {
-                        $actionBtn .= '<a href="#" onclick="updateWithdrawalRequest(`' . $withdraw_request->referral_withdraw_request_id . '`, ' . $action['status'] . ')" class="dropdown-item">' . $action['label'] . '</a>';
+    public function __construct(private ReferralService $referrals)
+    {
+        $this->middleware('auth');
+        $this->middleware(function ($request, $next) {
+            abort_unless(\App\Support\Admin\AdminSharedProps::features()['referral'], 404);
+
+            return $next($request);
+        });
                     }
 
-                    return '
-                        <a class="btn-action" href="#" data-toggle="dropdown" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
-                            <!-- Download SVG icon from http://tabler-icons.io/i/dots-vertical -->
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24"
-                                height="24" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round"
-                                class="icon icon-tabler icons-tabler-outline icon-tabler-dots fw-bold">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                <path d="M4 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                <path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                <path d="M18 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                            </svg>
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-end" style="">
-                            <div class="nav-item dropdown">
-                                ' . $actionBtn . '
-                            </div>
-                        </div>';
-                })
-                ->rawColumns(['created_at', 'user_id', 'amount', 'bank_details', 'payment_status', 'actions'])
-                ->make(true);
+    public function index(Request $request)
+    {
+        $tab    = array_key_exists($request->query('tab'), self::TABS) ? $request->query('tab') : 'pending';
+        $search = trim((string) $request->query('search', ''));
+
+        $base = fn() => ReferralWithdrawRequest::where('referral_withdraw_requests.status', 1)
+            ->leftJoin('users', 'users.user_id', '=', 'referral_withdraw_requests.user_id')
+            ->when($search !== '', fn($q) => $q->where(fn($q) => $q
+                    ->where('users.name', 'like', "%{$search}%")->orWhere('users.email', 'like', "%{$search}%")
+                    ->orWhere('referral_withdraw_requests.referral_withdraw_request_id', 'like', "%{$search}%")));
+
+        $page = $base()
+            ->when(self::TABS[$tab] !== null, fn($q) => $q->where('referral_withdraw_requests.payment_status', self::TABS[$tab]))
+            ->select('referral_withdraw_requests.*', 'users.name', 'users.email')
+            ->orderByDesc('referral_withdraw_requests.id')
+            ->paginate(20)
+            ->withQueryString();
+
+        $userIds = $page->getCollection()->pluck('user_id')->unique()->values()->all();
+        $earned  = $this->referrals->earnings($userIds);
+        $paid    = $this->referrals->paidOut($userIds);
+
+        $page->through(fn($row) => [
+            'id'       => $row->referral_withdraw_request_id,
+            'amount'   => (float) $row->amount,
+            'details'  => ReferralService::payoutDetails($row->bank_details),
+            'notes'    => $row->notes,
+            'status'   => array_search((int) $row->payment_status, self::TABS, true) ?: 'pending',
+            'date'     => $row->created_at ? Carbon::parse($row->created_at)->toIso8601String() : null,
+            'customer' => $row->name ? ['id' => $row->user_id, 'name' => $row->name, 'email' => $row->email] : null,
+            'balance'  => round(($earned[$row->user_id] ?? 0) - ($paid[$row->user_id] ?? 0), 2),
+        ]);
+
+        $counts = $base()->selectRaw('SUM(payment_status = 0) as pending, SUM(payment_status = 1) as accepted, SUM(payment_status = 2) as transferred, SUM(payment_status = -1) as rejected')->first();
+
+        return Inertia::render('referrals/withdrawals', [
+            'requests' => $page,
+            'tab'      => $tab,
+            'search'   => $search,
+            'counts'   => collect(array_keys(self::TABS))->mapWithKeys(fn($k) => [$k => (int) $counts->{$k}]),
+        ]);
         }
 
-        return view('admin.pages.referral-withdrawal-request.index', compact('settings', 'config'));
-    }
-
-    // Withdrawal request accepted / transfer / rejected
+    // Accept / reject
     public function updateWithdrawalRequestStatus(Request $request)
     {
-        // Queries
-        $settings = Setting::where('status', 1)->first();
-        $config = DB::table('config')->get();
+        $data       = $request->validate(['requestId' => 'required|string', 'status' => 'required|in:accepted,rejected']);
+        $withdrawal = ReferralWithdrawRequest::where('referral_withdraw_request_id', $data['requestId'])->first();
 
-        // Check enable referral system
-        if ($config[80]->config_value == '0') {
-            return abort(404);
+        if (! $withdrawal) {
+            return back()->with('failed', __('Not Found!'));
         }
 
-        // Parameters
-        $requestId = $request->query('requestId');
-        $paymentStatus = $request->query('status');
+        $this->referrals->setStatus($withdrawal, $data['status'] === 'accepted' ? ReferralService::ACCEPTED : ReferralService::REJECTED);
 
-        // Withdrawal Request
-        $withdrawalRequest = ReferralWithdrawRequest::where('referral_withdraw_request_id', $requestId)->first();
-
-        // Check withdrawal request is exist
-        if ($withdrawalRequest == null) {
-            return redirect()->route('admin.referral.withdrawal.request')->with('failed', __('Not Found!'));
+        return back()->with('success', $data['status'] === 'accepted' ? __('Request accepted. Send the money, then mark it as paid.') : __('Request rejected.'));
         }
 
-        // Check status
-        if ($paymentStatus == 'accepted') {
-            $paymentStatus = 1;
-        } elseif ($paymentStatus == 'rejected') {
-            $paymentStatus = -1;
-        }
-
-        // Update Payment Status
-        $withdrawalRequest->payment_status = $paymentStatus;
-        $withdrawalRequest->save();
-
-        // Payment status is 2
-        if ($paymentStatus == 2) {
-            // Save transaction details
-            $transaction = new ReferralWithdrawTransaction();
-            $transaction->referral_withdraw_request_id = $withdrawalRequest->referral_withdraw_request_id;
-            $transaction->transfer_id = $withdrawalRequest->transfer_id;
-            $transaction->notes = $withdrawalRequest->notes;
-            $transaction->payment_status = 2;
-            $transaction->save();
-        }
-
-        return redirect()->route('admin.referral.withdrawal.request')->with('success', __('Updated!'));
-    }
-
-    // Withdrawal request transfer
+    // Mark as paid out
     public function transfer(Request $request)
     {
-        // Queries
-        $settings = Setting::where('status', 1)->first();
-        $config = DB::table('config')->get();
+        $data = $request->validate([
+            'request_id'              => 'required|string',
+            'transfer_transaction_id' => 'required|string|max:191',
+            'transfer_notes'          => 'nullable|string|max:1000',
+        ], [], ['transfer_transaction_id' => __('transfer reference'), 'transfer_notes' => __('note')]);
 
-        // Check enable referral system
-        if ($config[80]->config_value == '0') {
-            return abort(404);
+        $withdrawal = ReferralWithdrawRequest::where('referral_withdraw_request_id', $data['request_id'])->first();
+
+        if (! $withdrawal) {
+            return back()->with('failed', __('Not Found!'));
         }
 
-        // Parameters
-        $requestId = $request->request_id;
-        $transactionId = $request->transfer_transaction_id;
-        $notes = $request->transfer_notes;
+        $this->referrals->setStatus($withdrawal, ReferralService::TRANSFERRED, $data['transfer_transaction_id'] ?? null, $data['transfer_notes'] ?? null);
 
-        // Withdrawal Request
-        $withdrawalRequest = ReferralWithdrawRequest::where('referral_withdraw_request_id', $requestId)->first();
-
-        // Check withdrawal request is exist
-        if ($withdrawalRequest == null) {
-            return redirect()->route('admin.referral.withdrawal.request')->with('failed', __('Not Found!'));
-        }
-
-        // Update Payment Status
-        $withdrawalRequest->payment_status = 2;
-        $withdrawalRequest->notes = $notes;
-        $withdrawalRequest->save();
-
-        // Save transaction details
-        $transaction = new ReferralWithdrawTransaction();
-        $transaction->referral_withdraw_request_id = $withdrawalRequest->referral_withdraw_request_id;
-        $transaction->transfer_id = $transactionId;
-        $transaction->notes = $notes;
-        $transaction->payment_status = 2;
-        $transaction->save();
-
-        return redirect()->route('admin.referral.withdrawal.request')->with('success', __('Transferred!'));
+        return back()->with('success', __('Payout recorded.'));
     }
 }

@@ -1,0 +1,91 @@
+/* Utility Classes */
+.no-radius {
+    border-radius: 0 !important;
+}
+
+.btn-height {
+    height: 44px !important;
+}
+
+.search-btn {
+    width: 42px;
+    height: 38px;
+    box-shadow: none !important;
+}
+
+/* Card Media & Footer Styling */
+.card-footer:last-child {
+    border-top: none !important;
+    border-bottom-left-radius: 16px !important;
+    border-bottom-right-radius: 16px !important;
+    background-color: transparent !important;
+}
+
+.card-img-top {
+    border-top-left-radius: 16px !important;
+    border-top-right-radius: 16px !important;
+}
+
+/* Tabler-Native Form Help Icon */
+.form-help {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background-color: var(
+        --tblr-bg-surface-secondary,
+        rgba(var(--tblr-body-color-rgb), 0.08)
+    );
+    color: var(--tblr-muted);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+    text-decoration: none;
+}
+
+.form-help:hover,
+.form-help:focus {
+    background-color: var(--tblr-primary);
+    color: var(--tblr-primary-fg, #ffffff);
+}
+
+/* Themes Grid Layout */
+.theme-row {
+    display: flex;
+    flex-wrap: wrap;
+    margin: -0.75rem;
+}
+
+.theme-item {
+    width: 100%;
+    padding: 0.75rem;
+    box-sizing: border-box;
+}
+
+/* Responsive Grid Breakpoints */
+@media (min-width: 768px) {
+    .theme-item {
+        width: 50%; /* 2 per row */
+    }
+}
+
+@media (min-width: 992px) {
+    .theme-item {
+        width: 20%; /* 5 per row */
+    }
+}
+
+/* Dark Mode Specific Adjustments */
+[data-bs-theme="dark"] .form-help {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--tblr-muted);
+}
+
+[data-bs-theme="dark"] .form-help:hover,
+[data-bs-theme="dark"] .form-help:focus {
+    background-color: var(--tblr-primary);
+    color: var(--tblr-primary-fg, #ffffff);
+}

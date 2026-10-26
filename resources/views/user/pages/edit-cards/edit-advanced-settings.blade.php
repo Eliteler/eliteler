@@ -1,207 +1,346 @@
 @extends('user.layouts.index', ['header' => true, 'nav' => true, 'demo' => true, 'settings' => $settings])
 
-{{-- Custom CSS --}}
+{{-- Custom CSS for Enhanced Typography & Modern Tabler Design --}}
 @section('css')
-    <style>
-        .form-control {
-            border-radius: 2px !important;
-        }
-
-        .code {
-            background: #333;
-            color: #fff;
-            font-family: monospace;
-        }
-
-        [data-bs-theme=light] {
-            --tblr-border-radius: 7px !important;
-        }
-
-        .form-control {
-            border-top-left-radius: 7px !important;
-            border-bottom-left-radius: 7px !important;
-        }
-    </style>
+    {{-- Advanced Settings CSS --}}
+    <link rel="stylesheet" href="{{ asset('css/advanced-settings.css') }}">
+    
+    {{-- CodeMirror CSS Assets --}}
+    <link rel="stylesheet" href="{{ asset('plugins/codemirror/css/codemirror.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('plugins/codemirror/css/dracula.min.css') }}">
 @endsection
 
 @section('content')
     <div class="page-wrapper">
+        <!-- Page Header -->
+        <div class="page-header d-print-none">
+            <div class="container-fluid">
+                <div class="row g-2 align-items-center">
+                    <nav aria-label="breadcrumb" class="mb-1">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item">
+                                <a href="{{ route('user.dashboard') }}" class="text-secondary text-decoration-none">
+                                    {{ __('Dashboard') }}
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a href="{{ route('user.cards') }}" class="text-secondary text-decoration-none">
+                                    {{ __('Digital Business Cards') }}
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">
+                                {{ __('Advanced Settings') }}
+                            </li>
+                        </ol>
+                    </nav>
+                    <div class="col">
+                        <h2 class="page-title text-dark fw-bold">
+                            {{ __('Advanced Settings') }}
+                        </h2>
+                        <div class="text-secondary mt-1">
+                            {{ __('Configure search engine metadata, password protection, progressive web app settings, and custom CSS and JavaScript.') }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page Body -->
         <div class="page-body">
             <div class="container-fluid">
-                {{-- Failed --}}
+                {{-- Failed Alert --}}
                 @if (Session::has('failed'))
-                    <div class="alert alert-important alert-danger alert-dismissible mb-2" role="alert">
+                    <div class="alert alert-important alert-danger alert-dismissible mb-3 border-0 shadow-sm"
+                        role="alert">
                         <div class="d-flex">
-                            <div>
-                                {{ Session::get('failed') }}
-                            </div>
+                            <div>{{ Session::get('failed') }}</div>
                         </div>
                         <a class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="close"></a>
                     </div>
                 @endif
 
-                {{-- Success --}}
+                {{-- Success Alert --}}
                 @if (Session::has('success'))
-                    <div class="alert alert-important alert-success alert-dismissible mb-2" role="alert">
+                    <div class="alert alert-important alert-success alert-dismissible mb-3 border-0 shadow-sm"
+                        role="alert">
                         <div class="d-flex">
-                            <div>
-                                {{ Session::get('success') }}
-                            </div>
+                            <div>{{ Session::get('success') }}</div>
                         </div>
                         <a class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="close"></a>
                     </div>
                 @endif
 
-                <div class="card">
+                <div class="card border-0 shadow-sm">
                     <div class="row g-0">
-                        <div class="col-12 col-md-2 border-end">
+                        <!-- Sidebar Navigation -->
+                        <div class="col-12 col-md-3 col-lg-2 border-end">
                             <div class="card-body">
-                                <h4 class="subheader">{{ __('Update Business Card') }}</h4>
+                                <h4 class="subheader mb-3 text-uppercase fw-bold text-muted">{{ __('Card Settings') }}</h4>
                                 <div class="list-group list-group-transparent">
-                                    {{-- Nav links --}}
                                     @include('user.pages.edit-cards.includes.nav-link', [
                                         'link' => 'advanced',
                                     ])
                                 </div>
                             </div>
                         </div>
-                        <div class="col-12 col-md-10 d-flex flex-column">
+
+                        <!-- Main Form Area -->
+                        <div class="col-12 col-md-9 col-lg-10 d-flex flex-column">
                             <form action="{{ route('user.update.advanced.setting', Request::segment(3)) }}" method="post"
                                 id="myForm" enctype="multipart/form-data">
                                 @csrf
-                                <div class="card-body">
-                                    <h3 class="card-title mb-4">{{ __('Advanced Settings') }}</h3>
+                                <div class="card-body p-3 p-lg-4">
+                                    <div class="mb-4">
+                                        <h3 class="card-title m-0 text-dark fw-bold">
+                                            {{ __('Advanced Card Configuration') }}</h3>
+                                        <p class="text-muted small mb-0 mt-1">
+                                            {{ __('Customize privacy parameters, search discoverability, developer code injections, and SEO assets.') }}
+                                        </p>
+                                    </div>
 
-                                    <div class="row">
+                                    {{-- Section 1: Feature Toggles Grid --}}
+                                    <div class="row g-3 mb-4">
+                                        {{-- Public Directory Toggle --}}
+                                        @if (plugin_active('Directory'))
+                                            @php
+                                                $directory_settings = DB::table('directory_settings')->first();
+                                            @endphp
 
-                                        <div class="row mb-3">
-                                            {{-- Directory Listing --}}
-                                            @if (is_dir(base_path('plugins/Directory')))
-                                                @php
-                                                    $directory_settings = DB::table('directory_settings')->first();
-                                                @endphp
-
-                                                @if ($directory_settings && $directory_settings->directory == 1)
+                                            @if ($directory_settings && $directory_settings->directory == 1)
+                                                <div
+                                                    class="col-12 col-sm-6 col-xl-3 {{ $directory_settings->default_enable_directory_customers == 1 ? 'd-none' : '' }}">
                                                     <div
-                                                        class="col-md-3 col-xl-3 {{ $directory_settings->default_enable_directory_customers == 1 ? 'd-none' : '' }}">
-                                                        <div class="mb-3">
-                                                            <label class="form-label d-flex align-items-center gap-2">
-                                                                {{ __('Show this vCard publicly?') }}
-                                                                <span class="form-help" data-bs-toggle="popover"
-                                                                    data-bs-placement="top"
-                                                                    data-bs-content="{{ __('This will shows your vcard publicly in the website directory.') }}"
-                                                                    data-bs-html="true">?</span>
-                                                            </label>
-
-                                                            <label class="form-check form-switch">
-                                                                <input type="checkbox" class="form-check-input"
-                                                                    name="directory_listing" id="directory"
-                                                                    {{ $directory_settings->default_enable_directory_customers == 1 || $business_card->directory_listing == 1 ? 'checked' : '' }}>
-                                                            </label>
+                                                        class="settings-switch-card d-flex flex-column justify-content-between">
+                                                        <div>
+                                                            <div
+                                                                class="d-flex align-items-center justify-content-between mb-2">
+                                                                <div class="text-primary">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon"
+                                                                        width="24" height="24" viewBox="0 0 24 24"
+                                                                        stroke-width="2" stroke="currentColor"
+                                                                        fill="none" stroke-linecap="round"
+                                                                        stroke-linejoin="round">
+                                                                        <path stroke="none" d="M0 0h24v24H0z"
+                                                                            fill="none" />
+                                                                        <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+                                                                        <path
+                                                                            d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" />
+                                                                        <path d="M9 14l2 2l4 -4" />
+                                                                    </svg>
+                                                                </div>
+                                                                <div class="form-check form-switch m-0">
+                                                                    <input type="checkbox" class="form-check-input"
+                                                                        name="directory_listing" id="directory"
+                                                                        {{ $directory_settings->default_enable_directory_customers == 1 || $business_card->directory_listing == 1 ? 'checked' : '' }}>
+                                                                </div>
+                                                            </div>
+                                                            <h5 class="fw-bold text-dark mb-1">
+                                                                {{ __('Directory Listing') }}</h5>
+                                                            <p class="text-muted small mb-0">
+                                                                {{ __('Show this card publicly in the directory.') }}</p>
                                                         </div>
-                                                    </div>
-                                                @endif
-                                            @endif
-
-                                            @if ($plan_details->password_protected == 1)
-                                                {{-- Password protected --}}
-                                                <div class="col-md-3 col-xl-3">
-                                                    <div class="mb-2">
-                                                        <div class="form-label">{{ __('Disable Password Protection') }}
-                                                        </div>
-                                                        <label class="form-check form-switch">
-                                                            <input class="form-check-input" type="checkbox"
-                                                                onchange="displayPasswordProtected()"
-                                                                {{ $business_card->password == null ? 'checked' : '' }}
-                                                                name="password_protected" id="password-protected">
-                                                        </label>
                                                     </div>
                                                 </div>
                                             @endif
+                                        @endif
 
-                                            @if ($plan_details->advanced_settings == 1)
-                                                {{-- Enable/Disable PWA --}}
-                                                <div class="col-md-3 col-xl-3">
-                                                    <div class="mb-2">
-                                                        <div class="form-label">{{ __('Enable PWA') }}
+                                        {{-- Password Protection Toggle --}}
+                                        @if ($plan_details->password_protected == 1)
+                                            <div class="col-12 col-sm-6 col-xl-3">
+                                                <div
+                                                    class="settings-switch-card d-flex flex-column justify-content-between">
+                                                    <div>
+                                                        <div class="d-flex align-items-center justify-content-between mb-2">
+                                                            <div class="text-primary">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon"
+                                                                    width="24" height="24" viewBox="0 0 24 24"
+                                                                    stroke-width="2" stroke="currentColor" fill="none"
+                                                                    stroke-linecap="round" stroke-linejoin="round">
+                                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                                                    <path
+                                                                        d="M5 13a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-6z" />
+                                                                    <path d="M11 16a1 1 0 1 0 2 0a1 1 0 0 0 -2 0" />
+                                                                    <path d="M8 11v-4a4 4 0 1 1 8 0v4" />
+                                                                </svg>
+                                                            </div>
+                                                            <div class="form-check form-switch m-0">
+                                                                <input class="form-check-input" type="checkbox"
+                                                                    onchange="displayPasswordProtected()"
+                                                                    {{ $business_card->password == null ? 'checked' : '' }}
+                                                                    name="password_protected" id="password-protected">
+                                                            </div>
                                                         </div>
-                                                        <label class="form-check form-switch">
-                                                            <input class="form-check-input" type="checkbox"
-                                                                {{ $business_card->is_enable_pwa == 1 ? 'checked' : '' }}
-                                                                name="is_enable_pwa">
-                                                        </label>
-                                                    </div>
-                                                </div>
-
-                                                {{-- Enable/Disable Language Switcher --}}
-                                                <div class="col-md-3 col-xl-3">
-                                                    <div class="mb-2">
-                                                        <div class="form-label">{{ __('Enable Language Switcher') }}
-                                                        </div>
-                                                        <label class="form-check form-switch">
-                                                            <input class="form-check-input" type="checkbox"
-                                                                {{ $business_card->is_enable_language_switcher == 1 ? 'checked' : '' }}
-                                                                name="is_enable_language_switcher">
-                                                        </label>
-                                                    </div>
-                                                </div>
-                                            @endif
-                                        </div>
-
-                                        <div class="{{ $business_card->password == null ? 'd-none' : '' }}"
-                                            id="passwordProtectedForm">
-                                            <h2 class="page-title mb-3">
-                                                {{ __('Set Password Protection') }}
-                                            </h2>
-
-                                            <!-- Password -->
-                                            <div class="col-md-6 col-xl-6">
-                                                <div class="mb-4">
-                                                    <label class="form-label">{{ __('Password') }}</label>
-                                                    <div class="input-group input-group-flat">
-                                                        <input type="password" class="form-control no-left-border"
-                                                            name="password" id="password"
-                                                            value="{{ $business_card->password }}" minlength="3"
-                                                            maxlength="20" placeholder="{{ __('Password') }}">
-
-                                                        {{-- Show password --}}
-                                                        <span class="input-group-text">
-                                                            <a class="input-group-link"
-                                                                onclick="showPassword()"><kbd>{{ __('Show Password') }}</kbd></a>
-                                                        </span>
+                                                        <h5 class="fw-bold text-dark mb-1">
+                                                            {{ __('Disable Password Protection') }}</h5>
+                                                        <p class="text-muted small mb-0">
+                                                            {{ __('Turn off password requirement for card visitors.') }}
+                                                        </p>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
- 
-                                        {{-- Advanced settings --}}
+                                        @endif
+
+                                        {{-- PWA Toggle --}}
                                         @if ($plan_details->advanced_settings == 1)
-                                            <h2 class="page-title mb-3">
-                                                {{ __('Custom CSS / JS') }}
-                                            </h2>
-
-                                            <div class="col-md-6 col-xl-6">
-                                                <div class="mb-3">
-                                                    <label class="form-label">{{ __('Custom CSS') }}</label>
-                                                    <textarea class="form-control code" name="custom_css" rows="4" data-bs-toggle="autosize" maxlength="25000"
-                                                        style="border-top-right-radius: 7px !important; border-bottom-right-radius: 7px !important;"
-                                                        placeholder="{{ __('Custom CSS') }}">{{ $business_card->custom_css }}</textarea>
+                                            <div class="col-12 col-sm-6 col-xl-3">
+                                                <div
+                                                    class="settings-switch-card d-flex flex-column justify-content-between">
+                                                    <div>
+                                                        <div
+                                                            class="d-flex align-items-center justify-content-between mb-2">
+                                                            <div class="text-primary">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon"
+                                                                    width="24" height="24" viewBox="0 0 24 24"
+                                                                    stroke-width="2" stroke="currentColor" fill="none"
+                                                                    stroke-linecap="round" stroke-linejoin="round">
+                                                                    <path stroke="none" d="M0 0h24v24H0z"
+                                                                        fill="none" />
+                                                                    <path
+                                                                        d="M6 5a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2v-14z" />
+                                                                    <path d="M11 4h2" />
+                                                                    <path d="M12 17v.01" />
+                                                                </svg>
+                                                            </div>
+                                                            <div class="form-check form-switch m-0">
+                                                                <input class="form-check-input" type="checkbox"
+                                                                    {{ $business_card->is_enable_pwa == 1 ? 'checked' : '' }}
+                                                                    name="is_enable_pwa">
+                                                            </div>
+                                                        </div>
+                                                        <h5 class="fw-bold text-dark mb-1">{{ __('PWA') }}</h5>
+                                                        <p class="text-muted small mb-0">
+                                                            {{ __('Allow card installation as an App on mobile devices.') }}
+                                                        </p>
+                                                    </div>
                                                 </div>
                                             </div>
 
-                                            <div class="col-md-6 col-xl-6">
-                                                <div class="mb-3">
-                                                    <label class="form-label">{{ __('Custom JS') }}</label>
-                                                    <textarea class="form-control code" name="custom_js" rows="4" data-bs-toggle="autosize" maxlength="25000"
-                                                        style="border-top-right-radius: 7px !important; border-bottom-right-radius: 7px !important;"
-                                                        placeholder="{{ __('Custom JS') }}">{{ $business_card->custom_js }}</textarea>
+                                            {{-- Language Switcher Toggle --}}
+                                            <div class="col-12 col-sm-6 col-xl-3">
+                                                <div
+                                                    class="settings-switch-card d-flex flex-column justify-content-between">
+                                                    <div>
+                                                        <div
+                                                            class="d-flex align-items-center justify-content-between mb-2">
+                                                            <div class="text-primary">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" class="icon"
+                                                                    width="24" height="24" viewBox="0 0 24 24"
+                                                                    stroke-width="2" stroke="currentColor" fill="none"
+                                                                    stroke-linecap="round" stroke-linejoin="round">
+                                                                    <path stroke="none" d="M0 0h24v24H0z"
+                                                                        fill="none" />
+                                                                    <path d="M4 5h7" />
+                                                                    <path d="M9 3v2c0 4.418 -2.239 8 -5 8" />
+                                                                    <path d="M5 9c0 2.144 2.952 3.908 6.7 4" />
+                                                                    <path d="M12 20l4 -9l4 9" />
+                                                                    <path d="M19.1 18h-6.2" />
+                                                                </svg>
+                                                            </div>
+                                                            <div class="form-check form-switch m-0">
+                                                                <input class="form-check-input" type="checkbox"
+                                                                    {{ $business_card->is_enable_language_switcher == 1 ? 'checked' : '' }}
+                                                                    name="is_enable_language_switcher">
+                                                            </div>
+                                                        </div>
+                                                        <h5 class="fw-bold text-dark mb-1">
+                                                            {{ __('Language Switcher') }}</h5>
+                                                        <p class="text-muted small mb-0">
+                                                            {{ __('Allow visitors to toggle between multi-language choices.') }}
+                                                        </p>
+                                                    </div>
                                                 </div>
                                             </div>
+                                        @endif
+                                    </div>
 
-                                            {{-- SEO Configuration Settings --}}
-                                            <h2 class="page-title mb-3">
-                                                {{ __('SEO Configuration Settings') }}
-                                            </h2>
+                                    {{-- Section 2: Password Configuration (Conditional) --}}
+                                    <div class="{{ $business_card->password == null ? 'd-none' : '' }}"
+                                        id="passwordProtectedForm">
+                                        <div class="advanced-section-card">
+                                            <div class="mb-3">
+                                                <h4 class="fw-bold text-dark mb-1">
+                                                    {{ __('Password Protection Configuration') }}</h4>
+                                                <p class="text-muted small mb-0">
+                                                    {{ __('Specify a security passcode required to view this digital business card.') }}
+                                                </p>
+                                            </div>
+
+                                            <div class="row">
+                                                <div class="col-12 col-md-6">
+                                                    <label class="form-label required"
+                                                        for="password">{{ __('Passcode') }}</label>
+                                                    <div class="input-group">
+                                                        <input type="password" class="form-control" name="password"
+                                                            id="password" value="{{ $business_card->password }}"
+                                                            minlength="3" maxlength="20"
+                                                            placeholder="{{ __('Enter password') }}">
+                                                        <button class="btn btn-outline-secondary input-group-text"
+                                                            type="button" onclick="showPassword()">
+                                                            <svg xmlns="http://www.w3.org/2000/svg" class="icon"
+                                                                width="20" height="20" viewBox="0 0 24 24"
+                                                                stroke-width="2" stroke="currentColor" fill="none"
+                                                                stroke-linecap="round" stroke-linejoin="round">
+                                                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                                                <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+                                                                <path
+                                                                    d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Section 3: Custom CSS / JS Code Injections --}}
+                                    @if ($plan_details->advanced_settings == 1)
+                                        <div class="advanced-section-card">
+                                            <div class="mb-3">
+                                                <h4 class="fw-bold text-dark mb-1">
+                                                    {{ __('Custom CSS & JavaScript Injections') }}</h4>
+                                                <p class="text-muted small mb-0">
+                                                    {{ __('Add custom stylesheet rules or tracking scripts to enhance functionality.') }}
+                                                </p>
+                                            </div>
+
+                                            <div class="row g-3">
+                                                {{-- Custom CSS Editor --}}
+                                                <div class="col-12 col-lg-6">
+                                                    <label
+                                                        class="form-label d-flex align-items-center justify-content-between"
+                                                        for="custom_css">
+                                                        <span>{{ __('Custom CSS') }}</span>
+                                                        <span
+                                                            class="badge bg-blue-lt text-uppercase fw-bold">{{ __('CSS') }}</span>
+                                                    </label>
+                                                    <textarea id="custom_css" class="form-control" name="custom_css" rows="5" maxlength="25000"
+                                                        placeholder="{{ __('Enter custom CSS') }}">{{ $business_card->custom_css }}</textarea>
+                                                </div>
+
+                                                {{-- Custom JS Editor --}}
+                                                <div class="col-12 col-lg-6">
+                                                    <label
+                                                        class="form-label d-flex align-items-center justify-content-between"
+                                                        for="custom_js">
+                                                        <span>{{ __('Custom JS') }}</span>
+                                                        <span
+                                                            class="badge bg-yellow-lt text-uppercase fw-bold">{{ __('JavaScript') }}</span>
+                                                    </label>
+                                                    <textarea id="custom_js" class="form-control" name="custom_js" rows="5" maxlength="25000"
+                                                        placeholder="{{ __('Enter custom JS') }}">{{ $business_card->custom_js }}</textarea>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {{-- Section 4: SEO Metadata Configuration --}}
+                                        <div class="advanced-section-card mb-0">
+                                            <div class="mb-3">
+                                                <h4 class="fw-bold text-dark mb-1">
+                                                    {{ __('Search Engine Optimization (SEO) Settings') }}</h4>
+                                                <p class="text-muted small mb-0">
+                                                    {{ __('Optimize search visibility, social media link shares, and search index metadata.') }}
+                                                </p>
+                                            </div>
 
                                             @php
                                                 $seoConfig = isset($business_card->seo_configurations)
@@ -209,65 +348,66 @@
                                                     : null;
                                             @endphp
 
-                                            {{-- Favicon --}}
-                                            <div class="col-md-6 col-xl-12">
-                                                <div class="mb-3">
-                                                    <div class="form-label">{{ __('Favicon') }}</div>
-                                                    <div>
-                                                        <input type="file" class="form-control" name="favicon"
-                                                            id="favicon" accept="image/*">
-                                                        <small class="form-hint text-muted mt-1 d-block"><i class="ti ti-photo me-1"></i>{{ __(':size px recommended', ['size' => '32 x 32 px']) }}</small>
-                                                    </div>
+                                            <div class="row g-3">
+                                                {{-- Favicon image --}}
+                                                <div class="col-12 col-md-6">
+                                                    <label class="form-label"
+                                                        for="favicon">{{ __('Favicon Icon') }}</label>
+                                                    <input type="file" class="form-control" name="favicon"
+                                                        placeholder="{{ __('Choose favicon image') }}" id="favicon"
+                                                        accept="image/*">
+                                                    <small
+                                                        class="text-muted mt-1 d-block">{{ __('Recommended size: 32x32 px or 64x64 px (.png / .ico).') }}</small>
                                                 </div>
-                                            </div>
 
-                                            {{-- Meta title --}}
-                                            <div class="col-md-6 col-xl-12">
-                                                <div class="mb-3">
-                                                    <div class="form-label">{{ __('Meta Title') }}</div>
-                                                    <div>
-                                                        <input type="text" class="form-control" name="meta_title"
-                                                            value="{{ $seoConfig->meta_title ?? '' }}"
-                                                            placeholder="{{ __('Meta Title') }}">
-                                                    </div>
+                                                {{-- Meta title --}}
+                                                <div class="col-12 col-md-6">
+                                                    <label class="form-label"
+                                                        for="meta_title">{{ __('Meta Title') }}</label>
+                                                    <input type="text" class="form-control" name="meta_title"
+                                                        id="meta_title" value="{{ $seoConfig->meta_title ?? '' }}"
+                                                        placeholder="{{ __('Enter meta title') }}">
                                                 </div>
-                                            </div>
 
-                                            {{-- Meta description --}}
-                                            <div class="col-md-6 col-xl-12">
-                                                <div class="mb-3">
-                                                    <div class="form-label">{{ __('Meta Description') }}</div>
-                                                    <div>
-                                                        <input type="text" class="form-control"
-                                                            name="meta_description"
-                                                            value="{{ $seoConfig->meta_description ?? '' }}"
-                                                            placeholder="{{ __('Meta Description') }}">
-                                                    </div>
+                                                {{-- Meta description --}}
+                                                <div class="col-12 col-md-6">
+                                                    <label class="form-label"
+                                                        for="meta_description">{{ __('Meta Description') }}</label>
+                                                    <textarea class="form-control" rows="3" name="meta_description" id="meta_description"
+                                                        placeholder="{{ __('Enter meta description') }}">{{ $seoConfig->meta_description ?? '' }}</textarea>
                                                 </div>
-                                            </div>
 
-                                            {{-- Meta keywords --}}
-                                            <div class="col-md-6 col-xl-12">
-                                                <div class="mb-3">
-                                                    <div class="form-label">{{ __('Meta Keywords') }}</div>
-                                                    <div>
-                                                        <input type="text" class="form-control" name="meta_keywords"
-                                                            value="{{ $seoConfig->meta_keywords ?? '' }}"
-                                                            placeholder="{{ __('Meta Keywords') }}">
-                                                    </div>
+                                                {{-- Meta keywords --}}
+                                                <div class="col-12 col-md-6">
+                                                    <label class="form-label"
+                                                        for="meta_keywords">{{ __('Meta Keywords') }}</label>
+                                                    <textarea class="form-control" rows="3" name="meta_keywords" id="meta_keywords"
+                                                        placeholder="{{ __('Enter meta keywords separated by commas') }}">{{ $seoConfig->meta_keywords ?? '' }}</textarea>
                                                 </div>
                                             </div>
-                                        @endif
-                                    </div>
+                                        </div>
+                                    @endif
                                 </div>
 
-                                <div class="card-footer text-end">
-                                    <div class="d-flex">
-                                        <a href="{{ route('user.edit.section.title', Request::segment(3)) }}"
-                                            class="btn btn-outline-primary ms-2">{{ __('Cancel') }}</a>
-                                        <button type="submit"
-                                            class="btn btn-primary ms-auto">{{ __('Save') }}</button>
-                                    </div>
+                                <!-- Form Footer -->
+                                <div class="card-footer border-top d-flex align-items-center justify-content-between py-3">
+                                    <a href="{{ route('user.cards') }}"
+                                        class="btn btn-danger text-decoration-none fw-semibold">
+                                        {{ __('Cancel') }}
+                                    </a>
+                                    <button type="submit"
+                                        class="btn btn-primary d-inline-flex align-items-center shadow-sm px-4 fw-semibold">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon me-2" width="20"
+                                            height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                            fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                            <path
+                                                d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2" />
+                                            <path d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+                                            <path d="M14 4l0 4l-6 0l0 -4" />
+                                        </svg>
+                                        {{ __('Save') }}
+                                    </button>
                                 </div>
                             </form>
                         </div>
@@ -275,33 +415,78 @@
                 </div>
             </div>
         </div>
+
+        {{-- Footer --}}
         @include('user.includes.footer')
     </div>
-
-    {{-- Password Protected --}}
-    @push('custom-js')
-        <script>
-            function displayPasswordProtected() {
-                "use strict";
-                var disp = $('input[name="password_protected"]:checked').length;
-                if (disp == 0) {
-                    $("#passwordProtectedForm").removeAttr('class', 'd-none');;
-                    $('#password').attr('required', 'required');
-                } else {
-                    $("#passwordProtectedForm").attr('class', 'd-none');;
-                    $('#password').removeAttr('required', 'required');
-                }
-            }
-
-            function showPassword() {
-                "use strict";
-                var password = document.getElementById("password");
-                if (password.type === "password") {
-                    password.type = "text";
-                } else {
-                    password.type = "password";
-                }
-            }
-        </script>
-    @endpush
 @endsection
+
+@push('custom-js')
+    {{-- CodeMirror Core & Mode Scripts --}}
+    <script src="{{ asset('plugins/codemirror/js/codemirror.min.js') }}"></script>
+    <script src="{{ asset('plugins/codemirror/js/css.min.js') }}"></script>
+    <script src="{{ asset('plugins/codemirror/js/javascript.min.js') }}"></script>
+
+    <script>
+        "use strict";
+
+        document.addEventListener("DOMContentLoaded", function() {
+            // Initialize CodeMirror for Custom CSS
+            var cssEl = document.getElementById("custom_css");
+            if (cssEl) {
+                var cssEditor = CodeMirror.fromTextArea(cssEl, {
+                    mode: "css",
+                    theme: "dracula",
+                    lineNumbers: true,
+                    lineWrapping: true,
+                    indentUnit: 2,
+                    tabSize: 2
+                });
+
+                cssEditor.on("change", function() {
+                    cssEditor.save();
+                });
+            }
+
+            // Initialize CodeMirror for Custom JS
+            var jsEl = document.getElementById("custom_js");
+            if (jsEl) {
+                var jsEditor = CodeMirror.fromTextArea(jsEl, {
+                    mode: "javascript",
+                    theme: "dracula",
+                    lineNumbers: true,
+                    lineWrapping: true,
+                    indentUnit: 2,
+                    tabSize: 2
+                });
+
+                jsEditor.on("change", function() {
+                    jsEditor.save();
+                });
+            }
+        });
+
+        function displayPasswordProtected() {
+            var isChecked = document.getElementById('password-protected').checked;
+            var formSection = document.getElementById("passwordProtectedForm");
+            var passwordInput = document.getElementById('password');
+
+            if (!isChecked) {
+                formSection.classList.remove('d-none');
+                passwordInput.setAttribute('required', 'required');
+            } else {
+                formSection.classList.add('d-none');
+                passwordInput.removeAttribute('required');
+            }
+        }
+
+        function showPassword() {
+            var password = document.getElementById("password");
+            if (password.type === "password") {
+                password.type = "text";
+            } else {
+                password.type = "password";
+            }
+        }
+    </script>
+@endpush

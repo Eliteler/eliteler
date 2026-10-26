@@ -1,0 +1,6 @@
+{{--
+    Eliteler: copyright link of the store footer. Links to $business_card_details->copyright when it looks like
+    a URL or domain, shows it as plain text otherwise, and falls back to the app URL / eliteler.net.
+    Optional param: $copyrightLinkClass (theme link colour). No trailing newline, so a "." can follow directly.
+--}}
+<a href="{{ !empty($business_card_details->copyright) && (str_starts_with($business_card_details->copyright, 'http') || str_contains($business_card_details->copyright, '.')) ? (str_starts_with($business_card_details->copyright, 'http') ? $business_card_details->copyright : 'https://'.$business_card_details->copyright) : (empty($business_card_details->copyright) ? env('APP_URL') : '#') }}" @if(!empty($business_card_details->copyright) && !str_starts_with($business_card_details->copyright, 'http') && !str_contains($business_card_details->copyright, '.')) onclick="return false;" style="pointer-events:none;cursor:default;" @endif target="_blank" rel="noopener noreferrer" @if (!empty($copyrightLinkClass)) class="{{ $copyrightLinkClass }}" @endif>{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : 'eliteler.net' }}</a>

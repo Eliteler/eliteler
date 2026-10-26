@@ -61,7 +61,7 @@ class ForgotPasswordController extends Controller
         $user = User::where('email', $request->email)->whereNotIn('status', [-1, 2])->first();
 
         if (!$user) {
-            return back()->withErrors(['email' => trans('We can\'t find a user with that email address.')]);
+            return back()->with('status', trans('If there\'s an account for this email, a password reset link was sent. If you didn\'t get the email, check that you\'ve entered your email correctly.'));
         }
 
         $token = Str::random(64);

@@ -12,59 +12,52 @@
 
 namespace Plugins\OrderNFCSystem\Controllers;
 
-use App\Setting;
+use App\Support\Admin\PluginPage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Validator;
 
+/**
+ * NFC card ordering on/off (config nfc_order_system, enable_disable_nfc_card_order_website)
+ * and activation key length (nfc_character_limit).
+ * Page: plugins/OrderNFCSystem/resources/js/settings.tsx.
+ */
 class NFCCardOrderController extends Controller
 {
     // Enable/Disable NFC Card Orders 
+    private const KEYS = ['nfc_order_system', 'enable_disable_nfc_card_order_website', 'nfc_character_limit'];
+
     public function index()
     {
-        // Queries
-        $settings = Setting::active()->first();
-        $config   = DB::table('config')->get();
+        $config = DB::table('config')->whereIn('config_key', self::KEYS)->pluck('config_value', 'config_key');
 
-        // Update Enable/Disable NFC Card Orders
-        return view()->file(base_path('plugins/OrderNFCSystem/Views/index.blade.php'), compact('settings', 'config'));
+        return PluginPage::render('OrderNFCSystem', 'settings', [
+            'values' => [
+                'enable_disable_nfc_card_order'         => (string) ($config['nfc_order_system'] ?? '0') === '1',
+                'enable_disable_nfc_card_order_website' => (string) ($config['enable_disable_nfc_card_order_website'] ?? '0') === '1',
+                'nfc_character_limit'                   => (string) ($config['nfc_character_limit'] ?? '12'),
+            ],
+        ]);
     }
 
-    // Update Enable/Disable NFC Card Orders
     public function update(Request $request)
     {
-        // Check if the form is valid
-        $nfcCardOrderSystem = $request->enable_disable_nfc_card_order == '1' ? 1 : 0;
-        $nfcCardOrderSystemInWebsite = $request->enable_disable_nfc_card_order_website == '1' ? 1 : 0;
+        $data = $request->validate([
+            'enable_disable_nfc_card_order'         => 'required|boolean',
+            'enable_disable_nfc_card_order_website' => 'required|boolean',
+            'nfc_character_limit'                   => 'required|integer|min:6|max:64',
+        ], [], [
+            'nfc_character_limit' => __('key length'),
+        ]);
 
-        // Character limit below 6
-        if (empty($request->nfc_character_limit) || $request->nfc_character_limit < 6) {
-            return redirect()->route('admin.plugin.status.nfc.cards.order')->with('failed', trans('Character limit must be greater than 6'));
+        foreach ([
+            'nfc_order_system'                      => $request->boolean('enable_disable_nfc_card_order') ? 1 : 0,
+            'enable_disable_nfc_card_order_website' => $request->boolean('enable_disable_nfc_card_order_website') ? 1 : 0,
+            'nfc_character_limit'                   => (int) $data['nfc_character_limit'],
+        ] as $key => $value) {
+            DB::table('config')->where('config_key', $key)->update(['config_value' => $value]);
         }
 
-        // Character limit
-        $characterLimit = $request->nfc_character_limit ?? 6;
-
-        // Update the database
-        DB::table('config')
-            ->where('config_key', 'nfc_order_system')
-            ->update([
-                'config_value'        => $nfcCardOrderSystem,
-            ]);
-
-        DB::table('config')
-            ->where('config_key', 'nfc_character_limit')
-            ->update([
-                'config_value'        => $characterLimit,
-            ]);
-
-        DB::table('config')
-            ->where('config_key', 'enable_disable_nfc_card_order_website')
-            ->update([
-                'config_value'        => $nfcCardOrderSystemInWebsite,
-            ]);
-
-        return redirect()->route('admin.plugin.status.nfc.cards.order')->with('success', trans('NFC Card Order System Updated Successfully!'));
+        return back()->with('success', __('NFC card ordering settings saved.'));
     }
 }

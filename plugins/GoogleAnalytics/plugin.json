@@ -1,8 +1,15 @@
 {
     "plugin_id": "GoogleAnalytics",
     "name": "Google Analytics",
-    "description": "Tracks and reports website traffic and user behavior insights.",
-    "version": "1.0.0",
+    "description": "Understand how visitors find and use your website.",
+    "version": "1.2.0",
     "img": "google_analytics.png",
-    "main_route": "admin.plugin.google_analytics.settings"
-}   
+    "main_route": "admin.plugin.google_analytics.settings",
+    "requires_admin": "1",
+    "platform": "gobiz-saas",
+    "min_version": "28.0.0",
+    "admin_pages": {
+        "settings": "dist/settings.js"
+    },
+    "documentation_url": null
+}

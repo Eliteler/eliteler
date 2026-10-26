@@ -9,6 +9,22 @@
     {{-- CSRF Token --}}
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
+    {{-- Dynamic URL configuration for Master Domain, Subdomain, and Custom Domain --}}
+    @php
+        $currentHost = request()->getHost();
+        $masterHost = parse_url(config('app.url'), PHP_URL_HOST);
+        $isCustomDomainOrSubdomain = $currentHost !== $masterHost;
+
+        // When running on custom domain or subdomain, root path serves the store directly
+        if ($isCustomDomainOrSubdomain) {
+            $storeUrl = url('/');
+            $productUrlPrefix = url('product');
+        } else {
+            $storeUrl = url($business_card_details->card_url);
+            $productUrlPrefix = url($business_card_details->card_url . '/product');
+        }
+    @endphp
+
     {{-- Store icon and color --}}
     @php
         $seo = null;
@@ -93,32 +109,72 @@
     {{-- Check business details --}}
     @if ($business_card_details != null)
         @php
-            $custom_css = $business_card_details->custom_css;
-            $custom_js = $business_card_details->custom_js;
+            $custom_css = trim($business_card_details->custom_css ?? '');
+            $custom_js = trim($business_card_details->custom_js ?? '');
 
-            // Ensure <style> tags for custom CSS
-            if (strpos($custom_css, '<style>') === false && strpos($custom_css, '</style>') === false) {
-                $custom_css = "<style>" . $custom_css . "</style>";
+            /*
+            |--------------------------------------------------------------------------
+            | Custom CSS
+            |--------------------------------------------------------------------------
+            */
+
+            if (!empty($custom_css) && stripos($custom_css, '<style') === false) {
+                $custom_css = "<style>{$custom_css}</style>";
             }
 
-            // Ensure <script> tags for custom JS
-            if (strpos($custom_js, '<script>') === false && strpos($custom_js, '</script>') === false) {
-                $custom_js = "<script>" . $custom_js . "</script>";
+            /*
+            |--------------------------------------------------------------------------
+            | Split HTML tags and plain JS
+            |--------------------------------------------------------------------------
+            */
+
+            $include_custom_js = '';
+
+            if (!empty($custom_js)) {
+                // Extract HTML tags like meta, script, iframe, noscript, etc.
+                preg_match_all(
+                '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/@endphp/is',
+        $custom_js,
+        $matches,
+    );
+
+    $html_tags = implode("\n", $matches[0]);
+
+    // Remove extracted HTML tags from original content
+    $plain_js = trim(
+        preg_replace(
+            '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/?>/is',
+            '',
+            $custom_js,
+        ),
+    );
+
+    // Add HTML tags directly
+    $include_custom_js .= $html_tags;
+
+    // Wrap remaining plain JS inside script tag
+    if (!empty($plain_js)) {
+        $include_custom_js .= "\n<script>
+            {
+                $plain_js
             }
-        @endphp
+        </script>";
+    }
+}
+?>
 
         {!! $custom_css !!}
-        {!! $custom_js !!}
+        {!! $include_custom_js !!}
 
         {{-- Theme CSS --}}
-        @if(!empty($business_card_details->theme_css))
+        @if (!empty($business_card_details->theme_css))
             <style>
                 {!! $business_card_details->theme_css !!}
             </style>
         @endif
 
         {{-- Theme JS --}}
-        @if(!empty($business_card_details->theme_js))
+        @if (!empty($business_card_details->theme_js))
             <script>
                 {!! $business_card_details->theme_js !!}
             </script>
@@ -172,7 +228,7 @@
                                         <div class="ratio ratio-16x9 mb-2">
                                             <img src="{{ url($productImages[0]) }}" id="product_image"
                                                 alt="{{ $product_details->product_name }}"
-                                                class="w-100 rounded-jewellery-shop object-fit-cover">
+                                                class="w-100 rounded-jewellery-shop object-fit-contain">
                                         </div>
                                     </a>
                                     <swiper-container space-between="10" class="mySwiper" autoplay-delay="2500"
@@ -186,7 +242,7 @@
                                             <swiper-slide>
                                                 <a href="{{ url($productImage) }}" data-fslightbox="gallery">
                                                     <div class="product-image-wrapper">
-                                                        <img class="img-fluid w-100 h-100 object-fit-cover rounded-jewellery-shop"
+                                                        <img class="img-fluid w-100 h-100 object-fit-contain rounded-jewellery-shop"
                                                             onclick="updateSrc(this)"
                                                             alt="{{ $product_details->product_name }}"
                                                             src="{{ url($productImage) }}">
@@ -239,7 +295,12 @@
                                     <!-- Cart Button -->
                                     @if ($product_details->product_status == 'instock')
                                         <div class="col-12 col-md-6">
-                                            <a onclick="addToCart('{{ $product_details->product_id }}')"
+                                            <a onclick="addToCart('{{ $product_details->product_id }}', this)"
+                                                data-id="{{ $product_details->product_id }}"
+                                                data-name="{{ $product_details->product_name }}"
+                                                data-price="{{ $product_details->sales_price }}"
+                                                data-image="{{ url(explode(',', $product_details->product_image)[0] ?? '') }}"
+                                                data-subtitle="{{ $product_details->product_short_description }}"
                                                 class="cursor-pointer btn btn-gold btn-lg w-100 rounded-jewellery-shop fs-2 fw-bold btn-effect">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -264,7 +325,7 @@
                                     {{-- Share --}}
                                     @include('templates.includes.store.share', [
                                         'productName' => $product_details->product_name,
-                                        'productUrl'  => url()->current()
+                                        'productUrl' => url()->current(),
                                     ])
                                 </div>
                             </div>
@@ -304,8 +365,8 @@
                                                         @php
                                                             $productImages = explode(',', $product->product_image);
                                                         @endphp
-                                                        <a
-                                                            href="{{ url($business_card_details->card_url . '/product/' . $product->id) }}">
+                                                        {{-- Dynamic product URL based on active domain --}}
+                                                        <a href="{{ $productUrlPrefix . '/' . $product->id }}">
                                                             <!-- Carousel Images -->
                                                             <div id="carousel-controls" class="carousel slide mb-3"
                                                                 data-bs-ride="carousel">
@@ -313,7 +374,7 @@
                                                                     @foreach ($productImages as $productImage)
                                                                         <div
                                                                             class="carousel-item {{ $loop->index == 0 ? 'active' : '' }} ratio ratio-4x3">
-                                                                            <img class="d-block img-fluid object-fit-cover w-100 rounded-jewellery-shop"
+                                                                            <img class="d-block img-fluid object-fit-contain w-100 rounded-jewellery-shop"
                                                                                 id="{{ $product->product_id }}_product_image"
                                                                                 style="object-fit: contain;"
                                                                                 alt="{{ $product->product_name }}"
@@ -371,7 +432,12 @@
 
                                                             <!-- Icon Button -->
                                                             @if ($product->product_status == 'instock')
-                                                                <a onclick="addToCart('{{ $product->product_id }}')"
+                                                                <a onclick="addToCart('{{ $product->product_id }}', this)"
+                                                                    data-id="{{ $product->product_id }}"
+                                                                    data-name="{{ $product->product_name }}"
+                                                                    data-price="{{ $product->sales_price }}"
+                                                                    data-image="{{ url(explode(',', $product->product_image)[0] ?? '') }}"
+                                                                    data-subtitle="{{ $product->product_short_description }}"
                                                                     class="cursor-pointer btn-effect">
                                                                     <i
                                                                         class="ti ti-shopping-bag-plus bg-gold text-white p-custom fs-1 rounded-jewellery-shop"></i>
@@ -466,46 +532,53 @@
                             <!-- Second Row: Policy Links -->
                             <div class="row mt-3">
                                 <div class="col">
-                                    <ul class="list-inline list-inline-dots text-center text-md-start text-lg-start mb-0">
+                                    <ul
+                                        class="list-inline list-inline-dots text-center text-md-start text-lg-start mb-0">
                                         {{-- Privacy Policy --}}
                                         @if ($business_card_details->privacy_policy)
                                             <li class="list-inline-item">
-                                                <a href="{{ route('store.privacy.policy', $business_card_details->card_url) }}" class="link-secondary">{{ __('Privacy Policy') }}</a>
+                                                <a href="{{ route('store.privacy.policy', $business_card_details->card_url) }}"
+                                                    class="link-secondary">{{ __('Privacy Policy') }}</a>
                                             </li>
                                         @endif
                                         
                                         {{-- Terms and Conditions --}}
                                         @if ($business_card_details->terms_and_conditions)
                                             <li class="list-inline-item">
-                                                <a href="{{ route('store.terms.and.conditions', $business_card_details->card_url) }}" class="link-secondary">{{ __('Terms & Conditions') }}</a>
+                                                <a href="{{ route('store.terms.and.conditions', $business_card_details->card_url) }}"
+                                                    class="link-secondary">{{ __('Terms & Conditions') }}</a>
                                             </li>
                                         @endif
 
                                         {{-- Return/Refund Policy --}}
                                         @if ($business_card_details->refund_policy)
                                             <li class="list-inline-item">
-                                                <a href="{{ route('store.refund.policy', $business_card_details->card_url) }}" class="link-secondary">{{ __('Return/Refund Policy') }}</a>
+                                                <a href="{{ route('store.refund.policy', $business_card_details->card_url) }}"
+                                                    class="link-secondary">{{ __('Return/Refund Policy') }}</a>
                                             </li>
                                         @endif
 
                                         {{-- Shipping Policy --}}
                                         @if ($business_card_details->shipping_policy)
                                             <li class="list-inline-item">
-                                                <a href="{{ route('store.shipping.policy', $business_card_details->card_url, $business_card_details->card_url) }}" class="link-secondary">{{ __('Shipping Policy') }}</a>
+                                                <a href="{{ route('store.shipping.policy', $business_card_details->card_url, $business_card_details->card_url) }}"
+                                                    class="link-secondary">{{ __('Shipping Policy') }}</a>
                                             </li>
                                         @endif
 
                                         {{-- Cookie Policy --}}
                                         @if ($business_card_details->cookie_policy)
                                             <li class="list-inline-item">
-                                                <a href="{{ route('store.cookie.policy', $business_card_details->card_url) }}" class="link-secondary">{{ __('Cookie Policy') }}</a>
+                                                <a href="{{ route('store.cookie.policy', $business_card_details->card_url) }}"
+                                                    class="link-secondary">{{ __('Cookie Policy') }}</a>
                                             </li>
                                         @endif
 
                                         {{-- Contact Information / Customer Support Policy --}}
                                         @if ($business_card_details->customer_support_policy)
                                             <li class="list-inline-item">
-                                                <a href="{{ route('store.contact.information', $business_card_details->card_url) }}" class="link-secondary">{{ __('Contact Us') }}</a>
+                                                <a href="{{ route('store.contact.information', $business_card_details->card_url) }}"
+                                                    class="link-secondary">{{ __('Contact Us') }}</a>
                                             </li>
                                         @endif
                                     </ul>
@@ -555,7 +628,7 @@
     </div>
 
     {{-- Place order --}}
-    <div class="modal modal-blur fade" id="orderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal modal-bg fade" id="orderModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-md modal-dialog-centered" role="document">
             <div class="modal-content">
                 <!-- Modal Header -->
@@ -572,7 +645,9 @@
                     <!-- Mobile -->
                     <div class="mb-3">
                         <label class="form-label required" for="cus_mobile">{{ __('Mobile') }}</label>
-                        <input type="number" class="form-control" placeholder="{{ __('Mobile number with country code, excluding +') }}" id="cus_mobile" required />
+                        <input type="number" class="form-control"
+                            placeholder="{{ __('Mobile number with country code, excluding +') }}" id="cus_mobile"
+                            required />
                     </div>
                     <!-- Address -->
                     <div class="mb-3">
@@ -624,14 +699,16 @@
 
                     {{-- Customer Notes --}}
                     <div class="mb-3">
-                        <small>{{ __("Customer Notes") }}: </small>
-                        <small class="text-muted">{{ __("After you click the Confirm button, WhatsApp will open. Tap 'Send' in WhatsApp to send your order to the shop owner.") }}</small>
+                        <small>{{ __('Customer Notes') }}: </small>
+                        <small
+                            class="text-muted">{{ __("After you click the Confirm button, WhatsApp will open. Tap 'Send' in WhatsApp to send your order to the shop owner.") }}</small>
                     </div>
                 </div>
                 <!-- Modal Footer -->
                 <div class="modal-footer">
                     <!-- Close -->
-                    <button type="button" class="btn btn-dark" data-bs-dismiss="modal">{{ __('Close') }}</button>
+                    <button type="button" class="btn btn-dark"
+                        data-bs-dismiss="modal">{{ __('Close') }}</button>
                     <!-- Confirm -->
                     <button type="button" class="btn btn-gold"
                         onclick="confirmOrder()">{{ __('Confirm') }}</button>
@@ -651,7 +728,11 @@
     </div>
 
     {{-- WharApp Chat --}}
-    @include('templates.includes.whatsapp-float', ['businessImage' => $business_card_details->profile, 'businessName' => $card_details->title, 'whatsappNumber' => $enquiry_button])
+    @include('templates.includes.whatsapp-float', [
+        'businessImage' => $business_card_details->profile,
+        'businessName' => $card_details->title,
+        'whatsappNumber' => $enquiry_button,
+    ])
 
     <!-- Core -->
     <script type="text/javascript" src="{{ url('js/tabler.min.js') }}"></script>
@@ -680,9 +761,7 @@
         };
 
         // Currencies
-        const currencies = {!! json_encode(App\Currency::where('status', 1)
-        ->select('iso_code', 'symbol', 'symbol_first')
-        ->get()) !!};
+        const currencies = {!! json_encode(App\Currency::where('status', 1)->select('iso_code', 'symbol', 'symbol_first')->get()) !!};
 
         // Determine currency symbol and position
         let currencySymbol = '';
@@ -789,19 +868,21 @@
         }
 
         // Add to cart function
-        function addToCart(pid) {
-            var productName = $("#product_name").text();
-            var price = $("#price").text();
-            var product_image = $("#product_image").attr("src");
-            var subtitle = $("#subtitle").text();
+        function addToCart(pid, btn) {
+
+            var productName = $(btn).data('name');
+            var price = $(btn).data('price');
+            var product_image = $(btn).data('image');
+            var subtitle = $(btn).data('subtitle');
 
             var found = cart.findIndex(item => item.product_id == pid);
+
             if (found !== -1) {
                 cart[found].qty++;
                 successAlert('{{ __('Cart updated') }}');
             } else {
                 cart.push({
-                    product_name: $.trim(productName),
+                    product_name: productName,
                     price: price,
                     product_id: pid,
                     currency: currency,
@@ -809,8 +890,10 @@
                     product_image: product_image,
                     subtitle: subtitle
                 });
-                successAlert("{{ __('Item added to cart') }}");
+
+                successAlert('{{ __('Item added to cart') }}');
             }
+
             updateList();
             updateBadge();
             updateStorage();
@@ -836,7 +919,7 @@
                 // LEFT: Image
                 cart_items += `
                 <div class="me-3 flex-shrink-0" style="width: 100px; height: 100px;">
-                    <img src="${item.product_image}" class="img-fluid rounded-jewellery-shop object-fit-cover h-100 w-100" alt="${item.product_name}" />
+                    <img src="${item.product_image}" class="img-fluid rounded-jewellery-shop object-fit-contain h-100 w-100" alt="${item.product_name}" />
                 </div>`;
 
                 // RIGHT: Product Info
@@ -1008,10 +1091,9 @@
                     grandTotal += itemCost;
                 });
 
-                // Place order ajax
-                // Place order ajax
+                // Place order ajax using relative/dynamic URL to avoid redirecting to master domain
                 $.ajax({
-                    url: "{{ config('app.url') }}/order/place",
+                    url: "{{ url('order/place') }}",
                     method: "POST",
                     data: {
                         _token: '{{ csrf_token() }}',
@@ -1024,7 +1106,7 @@
                         order_items: cart,
                         total_price: grandTotal,
                     },
-                    success: function (data) {
+                    success: function(data) {
                         // Check if order was placed successfully
                         if (data.status == "success") {
                             // Map of dynamic delivery type values to translated strings
@@ -1058,7 +1140,8 @@
                             waShareContent += productsList + `*${whatsAppMessage}*`;
 
                             // Construct WhatsApp link and open in new tab
-                            const link = `https://api.whatsapp.com/send/?phone=${whatsAppNumber}&text=${encodeURI(waShareContent)}`;
+                            const link =
+                                `https://api.whatsapp.com/send/?phone=${whatsAppNumber}&text=${encodeURI(waShareContent)}`;
                             // Confirm before opening
                             const opened = window.open(link, '_blank');
 
@@ -1078,7 +1161,7 @@
                             errorAlert(data.message);
                         }
                     },
-                    error: function (error) {
+                    error: function(error) {
                         // Show error message
                         errorAlert(error.responseJSON.message);
                     }

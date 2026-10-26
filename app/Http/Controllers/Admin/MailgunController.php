@@ -12,56 +12,50 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Setting;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Http\Controllers\Controller;
+use Inertia\Inertia;
 
 class MailgunController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
     public function __construct()
     {
         $this->middleware('auth');
     }
 
-    /**
-     * Show the application dashboard.
-     *
-     * @return \Illuminate\Contracts\Support\Renderable
-     */
-
-    // All Mailgun configurations
     public function index()
     {
-        // Get Mailgun configuration
-        $config = DB::table('config')->get();
-        $settings = Setting::where('status', 1)->first();
+        $config = DB::table('config')->whereIn('config_key', ['mailgun_smtp_password', 'mailgun_from_address', 'mailgun_region'])->pluck('config_value', 'config_key');
 
-        return view('admin.pages.marketing.mailgun.index', compact('config', 'settings'));
+        return Inertia::render('marketing/mailgun', [
+            'settings' => [
+                // The key itself is never sent to the browser
+                'hasKey' => ! empty($config['mailgun_smtp_password']),
+                'from'   => $config['mailgun_from_address'] ?? '',
+                'region' => ($config['mailgun_region'] ?? 'us') === 'eu' ? 'eu' : 'us',
+                'domain' => env('MAIN_DOMAIN'),
+            ],
+        ]);
     }
 
-    // Update Mailgun configuration
     public function update(Request $request)
     {
-        // Update Mailgun configurations
-        DB::table('config')->where('config_key', 'mailgun_smtp_password')->update([
-            'config_value' => $request->mailgun_api_key,
-        ]);
+        $data = $request->validate([
+            'mailgun_api_key'    => 'nullable|string|max:255',
+            'mailgun_from_email' => 'required|email',
+            'mailgun_region'     => 'required|in:us,eu',
+        ], [], ['mailgun_api_key' => __('API key'), 'mailgun_from_email' => __('sender email')]);
 
-        DB::table('config')->where('config_key', 'mailgun_from_address')->update([
-            'config_value' => $request->mailgun_from_email,
-        ]);
+        $values = ['mailgun_from_address' => $data['mailgun_from_email'], 'mailgun_region' => $data['mailgun_region']];
+        if (! empty($data['mailgun_api_key'])) {
+            $values['mailgun_smtp_password'] = $data['mailgun_api_key'];
+        }
 
-        // Update Mailgun region
-        DB::table('config')->where('config_key', 'mailgun_region')->update([
-            'config_value' => $request->mailgun_region,
-        ]);
+        foreach ($values as $key => $value) {
+            DB::table('config')->where('config_key', $key)->update(['config_value' => $value]);
+        }
 
-        return redirect()->route('admin.marketing.mailgun')->with('success', trans('Updated!'));
+        return back()->with('success', __('Mailgun settings saved.'));
     }
 }

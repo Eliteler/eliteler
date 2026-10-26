@@ -1,64 +1,173 @@
 <?php
 
 return [
-
-    /*
-     *
-     * Shared translations.
-     *
-     */
-    'title' => 'NativeCode Installer',
-    'next' => 'Nächster Schritt',
-    'finish' => 'Installieren',
-
-    /*
-     *
-     * Home page translations.
-     *
-     */
-    'welcome' => [
-        'title'   => 'Willkommen zum Installer',
-        'message' => 'Willkommen zum Laravel Installationsassistent.',
-    ],
-
-    /*
-     *
-     * Requirements page translations.
-     *
-     */
-    'requirements' => [
-        'title' => 'Vorraussetzungen',
-    ],
-
-    /*
-     *
-     * Permissions page translations.
-     *
-     */
-    'permissions' => [
-        'title' => 'Berechtigungen',
-    ],
-
-    /*
-     *
-     * Environment page translations.
-     *
-     */
+    'back' => 'Vorherige',
     'environment' => [
         'title' => 'Umgebungsvariablen',
         'save' => 'Speichere .env',
         'success' => 'Ihre .env Konfiguration wurde gespeichert.',
         'errors' => 'Ihre .env Konfiguration konnte nicht gespeichert werden. Bitte erstellen Sie diese manuell.',
+        'wizard' => [
+            'title' => null,
+            'tabs' => [
+                'environment' => null,
+                'database' => null,
+                'application' => null,
+            ],
+            'form' => [
+                'name_required' => null,
+                'app_name_label' => null,
+                'app_name_placeholder' => null,
+                'app_environment_label' => null,
+                'app_environment_label_local' => null,
+                'app_environment_label_developement' => null,
+                'app_environment_label_qa' => 'Qa',
+                'app_environment_label_production' => 'Produktion',
+                'app_environment_label_other' => 'Andere',
+                'app_environment_placeholder_other' => 'Betreten Sie Ihre Umgebung...',
+                'app_debug_label' => 'App-Debug',
+                'app_debug_label_true' => 'WAHR',
+                'app_debug_label_false' => 'FALSCH',
+                'app_log_level_label' => 'App-Protokollebene',
+                'app_log_level_label_debug' => 'debuggen',
+                'app_log_level_label_info' => 'Info',
+                'app_log_level_label_notice' => 'beachten',
+                'app_log_level_label_warning' => 'Warnung',
+                'app_log_level_label_error' => 'Fehler',
+                'app_log_level_label_critical' => 'kritisch',
+                'app_log_level_label_alert' => 'Alarm',
+                'app_log_level_label_emergency' => 'Notfall',
+                'app_url_label' => 'App-URL',
+                'app_url_placeholder' => 'App-URL',
+                'db_connection_failed' => 'Es konnte keine Verbindung zur Datenbank hergestellt werden.',
+                'db_connection_label' => 'Datenbankverbindung',
+                'db_connection_label_mysql' => 'MySQL',
+                'db_connection_label_sqlite' => 'sqlite',
+                'db_connection_label_pgsql' => 'pgsql',
+                'db_connection_label_sqlsrv' => 'sqlsrv',
+                'db_host_label' => 'Datenbankhost',
+                'db_host_placeholder' => 'Datenbankhost',
+                'db_port_label' => 'Datenbankport',
+                'db_port_placeholder' => 'Datenbankport',
+                'db_name_label' => 'Datenbankname',
+                'db_name_placeholder' => 'Datenbankname',
+                'db_username_label' => 'Datenbankbenutzername',
+                'db_username_placeholder' => 'Datenbankbenutzername',
+                'db_password_label' => 'Datenbankpasswort',
+                'db_password_placeholder' => 'Datenbankpasswort',
+                'app_tabs' => [
+                    'more_info' => 'Weitere Informationen',
+                    'broadcasting_title' => 'Broadcasting, Caching, Sitzung und Warteschlange',
+                    'broadcasting_label' => 'Broadcast-Treiber',
+                    'broadcasting_placeholder' => 'Broadcast-Treiber',
+                    'cache_label' => 'Cache-Treiber',
+                    'cache_placeholder' => 'Cache-Treiber',
+                    'session_label' => 'Sitzungstreiber',
+                    'session_placeholder' => 'Sitzungstreiber',
+                    'queue_label' => 'Warteschlangentreiber',
+                    'queue_placeholder' => 'Warteschlangentreiber',
+                    'redis_label' => 'Redis-Treiber',
+                    'redis_host' => 'Redis-Host',
+                    'redis_password' => 'Redis-Passwort',
+                    'redis_port' => 'Redis-Port',
+                    'mail_label' => 'Post',
+                    'mail_driver_label' => 'Mail-Treiber',
+                    'mail_driver_placeholder' => 'Mail-Treiber',
+                    'mail_host_label' => 'Mail-Host',
+                    'mail_host_placeholder' => 'Mail-Host',
+                    'mail_port_label' => 'Mail-Port',
+                    'mail_port_placeholder' => 'Mail-Port',
+                    'mail_username_label' => 'E-Mail-Benutzername',
+                    'mail_username_placeholder' => 'E-Mail-Benutzername',
+                    'mail_password_label' => 'E-Mail-Passwort',
+                    'mail_password_placeholder' => 'E-Mail-Passwort',
+                    'mail_encryption_label' => 'E-Mail-Verschlüsselung',
+                    'mail_encryption_placeholder' => 'E-Mail-Verschlüsselung',
+                    'pusher_label' => 'Pusher',
+                    'pusher_app_id_label' => 'Pusher-App-ID',
+                    'pusher_app_id_palceholder' => 'Pusher-App-ID',
+                    'pusher_app_key_label' => 'Pusher-App-Schlüssel',
+                    'pusher_app_key_palceholder' => 'Pusher-App-Schlüssel',
+                    'pusher_app_secret_label' => 'Geheimnis der Pusher-App',
+                    'pusher_app_secret_palceholder' => 'Geheimnis der Pusher-App',
+                ],
+                'buttons' => [
+                    'setup_database' => 'Datenbank einrichten',
+                    'setup_application' => 'Setup-Anwendung',
+                    'install' => 'Installieren',
+                ],
+            ],
+            'templateTitle' => 'Schritt 3 | ',
+        ],
+        'menu' => [
+            'templateTitle' => 'Schritt 3 | ',
+            'title' => 'Installation',
+            'desc' => 'Bitte wählen Sie aus, wie Sie die Apps-Datei <code>.env</code> konfigurieren möchten.',
+            'wizard-button' => 'Einrichtung des Formularassistenten',
+            'classic-button' => 'Klassischer Texteditor',
+        ],
+        'classic' => [
+            'templateTitle' => 'Schritt 3 | ',
+            'title' => 'Klassischer Umgebungseditor',
+            'save' => 'Speichern Sie .env',
+            'back' => 'Verwenden Sie den Formularassistenten',
+            'install' => 'Speichern und installieren',
+        ],
     ],
-
-    /*
-     *
-     * Final page translations.
-     *
-     */
     'final' => [
         'title' => 'Fertig!',
         'finished' => 'Die Anwendung wurde erfolgreich installiert.',
         'exit' => 'Hier klicken zum Beenden',
+        'templateTitle' => 'Installation abgeschlossen',
+        'migration' => 'Ausgabe der Migrations- und Seed-Konsole:',
+        'console' => 'Ausgabe der Anwendungskonsole:',
+        'log' => 'Eintrag im Installationsprotokoll:',
+        'env' => 'Endgültige .env-Datei:',
+    ],
+    'finish' => 'Installieren',
+    'forms' => [
+        'errorTitle' => 'Folgende Fehler sind aufgetreten:',
+    ],
+    'install' => 'Installieren',
+    'installed' => [
+        'success_log_message' => 'NativeCode Installer erfolgreich INSTALLIERT am',
+    ],
+    'next' => 'Nächster Schritt',
+    'permissions' => [
+        'title' => 'Berechtigungen',
+        'templateTitle' => 'Schritt 2 | ',
+        'next' => 'Umgebung konfigurieren',
+    ],
+    'requirements' => [
+        'title' => 'Vorraussetzungen',
+        'templateTitle' => 'Schritt 1 | ',
+        'next' => 'Überprüfen Sie die Berechtigungen',
+    ],
+    'title' => 'NativeCode Installer',
+    'updater' => [
+        'title' => 'Laravel-Updater',
+        'welcome' => [
+            'title' => 'Willkommen beim Updater',
+            'message' => 'Willkommen beim Update-Assistenten.',
+        ],
+        'overview' => [
+            'title' => 'Überblick',
+            'message' => 'Es gibt 1 Update.|Es gibt :anzahl Updates.',
+            'install_updates' => 'Installieren Sie Updates',
+        ],
+        'final' => [
+            'title' => 'Fertig',
+            'finished' => 'Die Datenbank der Anwendung wurde erfolgreich aktualisiert.',
+            'exit' => 'Klicken Sie hier, um den Vorgang zu beenden',
+        ],
+        'log' => [
+            'success_message' => 'NativeCode Installer erfolgreich AKTUALISIERT am',
+        ],
+    ],
+    'welcome' => [
+        'title' => 'Willkommen zum Installer',
+        'message' => 'Willkommen zum Laravel Installationsassistent.',
+        'templateTitle' => 'Willkommen',
+        'next' => 'Überprüfen Sie die Anforderungen',
     ],
 ];

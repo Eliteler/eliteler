@@ -116,7 +116,6 @@ class DuplicateController extends Controller
             $duplicateCard->cover = $businessCard->cover;
             $duplicateCard->profile = $businessCard->profile;
             $duplicateCard->card_url = $businessCard->card_url . '-' . Str::random(5);
-            $duplicateCard->custom_domain = $businessCard->custom_domain;
             $duplicateCard->card_type = $businessCard->card_type;
             $duplicateCard->title = $businessCard->title . ' (Duplicate)';
             $duplicateCard->title2 = $businessCard->title2;

@@ -12,68 +12,56 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Setting;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Validator;
+use Inertia\Inertia;
 
 class ReferralSystemConfigurationController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
     public function __construct()
     {
         $this->middleware('auth');
+        $this->middleware(function ($request, $next) {
+            abort_unless(\App\Support\Admin\AdminSharedProps::features()['referral'], 404);
+
+            return $next($request);
+        });
     }
 
-    /**
-     * Show the application dashboard.
-     *
-     * @return \Illuminate\Contracts\Support\Renderable
-     */
     public function referralSystemConfiguration()
     {
-        // Queries
-        $settings = Setting::where('status', 1)->first();
-        $config = DB::table('config')->get();
+        $config = DB::table('config')->whereIn('config_key', ['referral_commission_type', 'referral_commission_amount', 'referral_minimum_withdraw_amount'])->pluck('config_value', 'config_key');
 
-        // Check enable referral system
-        if ($config[80]->config_value == '0') {
-            return abort(404);
+        return Inertia::render('referrals/settings', [
+            'settings' => [
+                'type'    => $config['referral_commission_type'] == '0' ? 'percentage' : 'fixed',
+                'amount'  => (float) $config['referral_commission_amount'],
+                'minimum' => (float) $config['referral_minimum_withdraw_amount'],
+            ],
+        ]);
         } 
         
-        return view('admin.pages.referral-system-configuration.index', compact('settings', 'config'));
-    }
-
-    // Update referral system configuration
     public function updateReferralSystemConfiguration(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'referral_commission_type' => 'required',
-            'referral_commission_amount' => 'required',
-            'minimum_withdrawal_amount' => 'required',
+        $data = $request->validate([
+            'referral_commission_type'   => 'required|in:percentage,fixed',
+            'referral_commission_amount' => 'required|numeric|min:0' . ($request->input('referral_commission_type') === 'percentage' ? '|max:100' : ''),
+            'minimum_withdrawal_amount'  => 'required|numeric|min:0',
+        ], [], [
+            'referral_commission_amount' => __('commission'),
+            'minimum_withdrawal_amount'  => __('minimum payout'),
         ]);
 
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
+        // Stored as 0 = percentage of the amount paid, 1 = fixed amount
+        foreach ([
+            'referral_commission_type'         => $data['referral_commission_type'] === 'percentage' ? '0' : '1',
+            'referral_commission_amount'       => $data['referral_commission_amount'],
+            'referral_minimum_withdraw_amount' => $data['minimum_withdrawal_amount'],
+        ] as $key => $value) {
+            DB::table('config')->where('config_key', $key)->update(['config_value' => $value]);
         }
 
-        // Update config
-        DB::table('config')->where('config_key', 'referral_commission_type')->update([
-            'config_value' => $request->referral_commission_type,
-        ]);
-        DB::table('config')->where('config_key', 'referral_commission_amount')->update([
-            'config_value' => $request->referral_commission_amount,
-        ]);
-        DB::table('config')->where('config_key', 'referral_minimum_withdraw_amount')->update([
-            'config_value' => $request->minimum_withdrawal_amount,
-        ]);
-
-        // Redirect 
-        return redirect()->route('admin.referral.system.configuration')->with('success', __('Updated!'));
+        return back()->with('success', __('Referral settings saved. They apply to new referrals.'));
     }
 }

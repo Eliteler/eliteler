@@ -1,9 +1,31 @@
+@php
+    // Detect if current request is on a custom domain or subdomain
+    $currentHost = request()->getHost();
+    $masterHost = parse_url(config('app.url'), PHP_URL_HOST);
+    $isCustomDomainOrSubdomain = $currentHost !== $masterHost;
+
+    // Dynamic URLs for Home and Categories
+    $homeUrl = $isCustomDomainOrSubdomain ? url('/') : url($business_card_details->card_url);
+    $categoriesUrl = $isCustomDomainOrSubdomain
+        ? url('categories')
+        : url($business_card_details->card_url . '/categories');
+
+    // Dynamic active state detection
+    $isHomeActive = $isCustomDomainOrSubdomain
+        ? request()->is('/') || request()->is('')
+        : request()->is($business_card_details->card_url);
+    $isCategoriesActive = $isCustomDomainOrSubdomain
+        ? request()->is('categories*')
+        : request()->is($business_card_details->card_url . '/categories*');
+@endphp
+
 <nav
     class="navbar-2 border navbar-expand d-print-none p-3 d-lg-none {{ $bg == 'dark' ? 'bg-dark' : 'bg-white' }} fixed-bottom">
     <ul class="navbar-nav nav-justified d-flex justify-content-between w-100 px-5">
-        <li class="d-flex justify-content-center"><a
-                class="d-flex flex-column justify-content-center align-items-center {{ request()->is($business_card_details->card_url) && ($bg == 'dark' || $bg == 'light') ? 'text-' . $color : ($bg == 'dark' ? 'text-white' : 'text-dark') }}"
-                href="{{ config('app.url') }}/{{ $business_card_details->card_url }}">
+        {{-- Home Link --}}
+        <li class="d-flex justify-content-center">
+            <a class="d-flex flex-column justify-content-center align-items-center {{ $isHomeActive && ($bg == 'dark' || $bg == 'light') ? 'text-' . $color : ($bg == 'dark' ? 'text-white' : 'text-dark') }}"
+                href="{{ $homeUrl }}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                     class="">
@@ -14,9 +36,10 @@
                 </svg><span class="mt-1 fs-4">{{ __('Home') }}</span>
             </a>
         </li>
-        <li class="d-flex justify-content-center"><a
-                class="d-flex flex-column justify-content-center align-items-center {{ request()->is($business_card_details->card_url . '/categories') && ($bg == 'dark' || $bg == 'light') ? 'text-' . $color : ($bg == 'dark' ? 'text-white' : 'text-dark') }}"
-                href="{{ config('app.url') }}/{{ $business_card_details->card_url }}/categories">
+        {{-- Categories Link --}}
+        <li class="d-flex justify-content-center">
+            <a class="d-flex flex-column justify-content-center align-items-center {{ $isCategoriesActive && ($bg == 'dark' || $bg == 'light') ? 'text-' . $color : ($bg == 'dark' ? 'text-white' : 'text-dark') }}"
+                href="{{ $categoriesUrl }}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                     class="">
@@ -28,8 +51,9 @@
                 </svg><span class="mt-1 fs-4">{{ __('Categories') }}</span>
             </a>
         </li>
-        <li class="d-flex justify-content-center"><a
-                class="d-flex flex-column justify-content-center align-items-center {{ $bg == 'dark' ? 'text-white' : 'text-dark' }}"
+        {{-- Cart Link --}}
+        <li class="d-flex justify-content-center">
+            <a class="d-flex flex-column justify-content-center align-items-center {{ $bg == 'dark' ? 'text-white' : 'text-dark' }}"
                 data-bs-toggle="offcanvas" href="#offcanvasEnd" role="button" aria-controls="offcanvasEnd">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"

@@ -1,63 +1,173 @@
 <?php
 
 return [
-
-    /*
-     *
-     * Shared translations.
-     *
-     */
-    'title' => 'Procesul de instalare Laravel',
-    'next' => 'Pasul următor',
-
-    /*
-     *
-     * Home page translations.
-     *
-     */
-    'welcome' => [
-        'title'   => 'Bun venit în procesul de instalare...',
-        'message' => 'Bun venit în configurarea asistată.',
-    ],
-
-    /*
-     *
-     * Requirements page translations.
-     *
-     */
-    'requirements' => [
-        'title' => 'Cerințe',
-    ],
-
-    /*
-     *
-     * Permissions page translations.
-     *
-     */
-    'permissions' => [
-        'title' => 'Permisiuni',
-    ],
-
-    /*
-     *
-     * Environment page translations.
-     *
-     */
+    'back' => 'Anterior',
     'environment' => [
         'title' => 'Settări ale mediului',
         'save' => 'Salvează fișier .env',
         'success' => 'Setările tale au fost salvate în fișierul .env.',
         'errors' => 'Nu am putut salva fișierul .env, Te rugăm să-l creezi manual.',
+        'menu' => [
+            'templateTitle' => 'Pasul 3 | ',
+            'title' => 'Instalare',
+            'desc' => 'Vă rugăm să selectați cum doriți să configurați fișierul <code>.env</code> pentru aplicații.',
+            'wizard-button' => 'Configurare expert formular',
+            'classic-button' => 'Editor de text clasic',
+        ],
+        'wizard' => [
+            'templateTitle' => 'Pasul 3 | ',
+            'title' => 'Expert <code>.env</code> ghidat',
+            'tabs' => [
+                'environment' => 'Mediu',
+                'database' => 'Baza de date',
+                'application' => 'Aplicație',
+            ],
+            'form' => [
+                'name_required' => 'Este necesar un nume de mediu.',
+                'app_name_label' => 'Numele aplicației',
+                'app_name_placeholder' => 'Numele aplicației',
+                'app_environment_label' => 'Mediul aplicației',
+                'app_environment_label_local' => 'Local',
+                'app_environment_label_developement' => 'Dezvoltare',
+                'app_environment_label_qa' => 'Qa',
+                'app_environment_label_production' => 'Productie',
+                'app_environment_label_other' => 'Alte',
+                'app_environment_placeholder_other' => 'Intră în mediul tău...',
+                'app_debug_label' => 'Depanare aplicație',
+                'app_debug_label_true' => 'Adevărat',
+                'app_debug_label_false' => 'Fals',
+                'app_log_level_label' => 'Nivelul jurnalului aplicației',
+                'app_log_level_label_debug' => 'depanare',
+                'app_log_level_label_info' => 'info',
+                'app_log_level_label_notice' => 'observa',
+                'app_log_level_label_warning' => 'avertizare',
+                'app_log_level_label_error' => 'eroare',
+                'app_log_level_label_critical' => 'critic',
+                'app_log_level_label_alert' => 'alerta',
+                'app_log_level_label_emergency' => 'urgență',
+                'app_url_label' => 'Url aplicație',
+                'app_url_placeholder' => 'Url aplicație',
+                'db_connection_failed' => 'Nu s-a putut conecta la baza de date.',
+                'db_connection_label' => 'Conexiune la baza de date',
+                'db_connection_label_mysql' => 'mysql',
+                'db_connection_label_sqlite' => 'sqlite',
+                'db_connection_label_pgsql' => 'pgsql',
+                'db_connection_label_sqlsrv' => 'sqlsrv',
+                'db_host_label' => 'Database Host',
+                'db_host_placeholder' => 'Gazdă baze de date',
+                'db_port_label' => 'Database Port',
+                'db_port_placeholder' => 'Database Port',
+                'db_name_label' => 'Database Name',
+                'db_name_placeholder' => 'Database Name',
+                'db_username_label' => 'Database User Name',
+                'db_username_placeholder' => 'Nume de utilizator al bazei de date',
+                'db_password_label' => 'Parola bazei de date',
+                'db_password_placeholder' => 'Parola bazei de date',
+                'app_tabs' => [
+                    'more_info' => 'Mai multe informații',
+                    'broadcasting_title' => 'Broadcasting, Caching, Session, &amp; Queue',
+                    'broadcasting_label' => 'Driver de difuzare',
+                    'broadcasting_placeholder' => 'Driver de difuzare',
+                    'cache_label' => 'Cache Driver',
+                    'cache_placeholder' => 'Driver pentru cache',
+                    'session_label' => 'Driver de sesiune',
+                    'session_placeholder' => 'Driver de sesiune',
+                    'queue_label' => 'Queue Driver',
+                    'queue_placeholder' => 'Driver de coadă',
+                    'redis_label' => 'Soferul Redis',
+                    'redis_host' => 'Gazdă Redis',
+                    'redis_password' => 'Parola Redis',
+                    'redis_port' => 'Portul Redis',
+                    'mail_label' => 'Mail',
+                    'mail_driver_label' => 'Driver de e-mail',
+                    'mail_driver_placeholder' => 'Driver de e-mail',
+                    'mail_host_label' => 'Gazdă de e-mail',
+                    'mail_host_placeholder' => 'Gazdă de e-mail',
+                    'mail_port_label' => 'Portul de e-mail',
+                    'mail_port_placeholder' => 'Portul de e-mail',
+                    'mail_username_label' => 'Nume de utilizator Mail',
+                    'mail_username_placeholder' => 'Nume de utilizator Mail',
+                    'mail_password_label' => 'Parolă de e-mail',
+                    'mail_password_placeholder' => 'Parolă de e-mail',
+                    'mail_encryption_label' => 'Criptare e-mail',
+                    'mail_encryption_placeholder' => 'Criptare e-mail',
+                    'pusher_label' => 'Împingător',
+                    'pusher_app_id_label' => 'ID aplicație Pusher',
+                    'pusher_app_id_palceholder' => 'ID aplicație Pusher',
+                    'pusher_app_key_label' => 'Tasta aplicației Pusher',
+                    'pusher_app_key_palceholder' => 'Tasta aplicației Pusher',
+                    'pusher_app_secret_label' => 'Secretul aplicației Pusher',
+                    'pusher_app_secret_palceholder' => 'Secretul aplicației Pusher',
+                ],
+                'buttons' => [
+                    'setup_database' => 'Configurați baza de date',
+                    'setup_application' => 'Configurați aplicația',
+                    'install' => 'Instala',
+                ],
+            ],
+        ],
+        'classic' => [
+            'templateTitle' => 'Pasul 3 | ',
+            'title' => 'Editor de mediu clasic',
+            'save' => 'Salvați .env',
+            'back' => 'Utilizați Form Wizard',
+            'install' => 'Salvați și instalați',
+        ],
     ],
-
-    /*
-     *
-     * Final page translations.
-     *
-     */
     'final' => [
         'title' => 'Am terminat',
         'finished' => 'Aplicația a fost instalată cu succes.',
         'exit' => 'Click aici pentru a ieși',
+        'templateTitle' => 'Instalare gata',
+        'migration' => 'Ieșire pentru migrare și consolă de semințe:',
+        'console' => 'Ieșire din consola aplicației:',
+        'log' => 'Intrare jurnal de instalare:',
+        'env' => 'Fișierul .env final:',
+    ],
+    'finish' => 'Instala',
+    'forms' => [
+        'errorTitle' => 'Au apărut următoarele erori:',
+    ],
+    'install' => 'Instala',
+    'installed' => [
+        'success_log_message' => 'Instalatorul NativeCode s-a INSTALAT cu succes',
+    ],
+    'next' => 'Pasul următor',
+    'permissions' => [
+        'title' => 'Permisiuni',
+        'templateTitle' => 'Pasul 2 | ',
+        'next' => 'Configurați Mediul',
+    ],
+    'requirements' => [
+        'title' => 'Cerințe',
+        'templateTitle' => 'Pasul 1 | ',
+        'next' => 'Verificați permisiunile',
+    ],
+    'title' => 'Procesul de instalare Laravel',
+    'updater' => [
+        'title' => 'Laravel Updater',
+        'welcome' => [
+            'title' => 'Bun venit la Updater',
+            'message' => 'Bun venit la expertul de actualizare.',
+        ],
+        'overview' => [
+            'title' => 'Prezentare generală',
+            'message' => 'Există o actualizare.|Există :număr actualizări.',
+            'install_updates' => 'Instalați actualizări',
+        ],
+        'final' => [
+            'title' => 'Terminat',
+            'finished' => 'Baza de date a aplicației a fost actualizată cu succes.',
+            'exit' => 'Faceți clic aici pentru a ieși',
+        ],
+        'log' => [
+            'success_message' => 'Programul de instalare NativeCode a fost actualizat cu succes',
+        ],
+    ],
+    'welcome' => [
+        'title' => 'Bun venit în procesul de instalare...',
+        'message' => 'Bun venit în configurarea asistată.',
+        'templateTitle' => 'Bun venit',
+        'next' => 'Verificați cerințele',
     ],
 ];

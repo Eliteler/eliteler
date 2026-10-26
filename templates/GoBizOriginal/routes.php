@@ -29,10 +29,10 @@ Route::middleware(['web', 'auth', 'admin'])->group(function () {
     Route::post('admin/web-template/gobiz-original/pages/custom-page-update', [GoBizOriginalController::class, "updateCustomPage"])->name('admin.web-template.gobiz-original.update-custom-page')->middleware(['user.page.permission:web_templates', 'demo.mode']);
 
     // Update page status
-    Route::get('admin/web-template/gobiz-original/pages/update-page-status', [GoBizOriginalController::class, "updateStatus"])->name('admin.web-template.gobiz-original.update-page-status')->middleware(['user.page.permission:web_templates', 'demo.mode']);
+    Route::post('admin/web-template/gobiz-original/pages/update-page-status', [GoBizOriginalController::class, "updateStatus"])->name('admin.web-template.gobiz-original.update-page-status')->middleware(['user.page.permission:web_templates', 'demo.mode']);
 
     // Delete page
-    Route::get('admin/web-template/gobiz-original/pages/delete-page', [GoBizOriginalController::class, "deletePage"])->name('admin.web-template.gobiz-original.delete-page')->middleware(['user.page.permission:web_templates', 'demo.mode']);
+    Route::post('admin/web-template/gobiz-original/pages/delete-page', [GoBizOriginalController::class, "deletePage"])->name('admin.web-template.gobiz-original.delete-page')->middleware(['user.page.permission:web_templates', 'demo.mode']);
 
     // Config
     Route::get('admin/web-template/gobiz-original/config', [GoBizOriginalController::class, "templateConfig"])->name('admin.web-template.gobiz-original.config')->middleware('user.page.permission:web_templates');

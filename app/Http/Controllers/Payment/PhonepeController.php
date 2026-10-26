@@ -139,7 +139,7 @@ class PhonePeController extends Controller
                     $invoice_details['to_billing_state'] = $userData->billing_state;
                     $invoice_details['to_billing_zipcode'] = $userData->billing_zipcode;
                     $invoice_details['to_billing_country'] = $userData->billing_country;
-                    $invoice_details['to_billing_phone'] = $userData->billing_phone;
+                    $invoice_details['to_billing_phone'] = $userData->billing_country_code . $userData->billing_phone;
                     $invoice_details['to_billing_email'] = $userData->billing_email;
                     $invoice_details['to_vat_number'] = $userData->vat_number;
                     $invoice_details['subtotal'] = $plan_details->plan_price;

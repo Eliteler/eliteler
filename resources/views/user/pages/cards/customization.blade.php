@@ -89,52 +89,86 @@
 
 @section('content')
     <div class="page-wrapper">
+        <!-- Page Header (Wraps the inner container-fluid) -->
+        <div class="page-header d-print-none">
+            <div class="container-fluid">
+                <div class="row g-2 align-items-center">
+                    <div class="col">
+                        <!-- Hierarchical Breadcrumb Trail -->
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb mb-2">
+                                <li class="breadcrumb-item">
+                                    <a href="{{ route('user.dashboard') }}" class="text-secondary text-decoration-none">
+                                        {{ __('Dashboard') }}
+                                    </a>
+                                </li>
+                                <li class="breadcrumb-item">
+                                    <a href="{{ route('user.cards') }}" class="text-secondary text-decoration-none">
+                                        {{ __('Digital Business Cards') }}
+                                    </a>
+                                </li>
+                                <li class="breadcrumb-item active" aria-current="page">
+                                    {{ __('Design Customization') }}
+                                </li>
+                            </ol>
+                        </nav>
+
+                        <h2 class="page-title">
+                            {{ __('Design Customization') }}
+                        </h2>
+
+                        <!-- Descriptive Help Subtitle -->
+                        <div class="text-muted mt-1">
+                            {{ __('Customize visual themes, select custom font styles, assign interface color codes, and review responsive mobile layout alignments.') }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="page-body">
             <div class="container-fluid">
-                {{-- Failed --}}
+                {{-- Failed Alert --}}
                 @if (Session::has('failed'))
-                    <div class="alert alert-important alert-danger alert-dismissible mb-2" role="alert">
+                    <div class="alert alert-important alert-danger alert-dismissible mb-3 border-0 shadow-sm"
+                        role="alert">
                         <div class="d-flex">
-                            <div>
-                                {{ Session::get('failed') }}
-                            </div>
+                            <div>{{ Session::get('failed') }}</div>
                         </div>
                         <a class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="close"></a>
                     </div>
                 @endif
 
-                {{-- Success --}}
+                {{-- Success Alert --}}
                 @if (Session::has('success'))
-                    <div class="alert alert-important alert-success alert-dismissible mb-2" role="alert">
+                    <div class="alert alert-important alert-success alert-dismissible mb-3 border-0 shadow-sm"
+                        role="alert">
                         <div class="d-flex">
-                            <div>
-                                {{ Session::get('success') }}
-                            </div>
+                            <div>{{ Session::get('success') }}</div>
                         </div>
                         <a class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="close"></a>
                     </div>
                 @endif
 
-                <div class="card">
+                <!-- Card wrapper upgraded to Borderless Shadowed Pattern -->
+                <div class="card border-0 shadow-sm">
                     <div class="row g-0">
                         @php
                             $custom_styles = json_decode($business_card->custom_styles, true);
                         @endphp
-                        <div class="col-12 col-md-12">
+                        <div class="col-12">
                             <div class="alert alert-important alert-danger alert-dismissible mb-2 d-none" role="alert"
                                 id="error-message">
                                 <div class="d-flex">
-                                    <div id="status-message">
-
-                                    </div>
+                                    <div id="status-message"></div>
                                 </div>
                                 <a class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="close"></a>
                             </div>
-                            <div class="row">
+                            <div class="row g-0">
                                 {{-- Customization Form --}}
-                                <div class="col-12 col-md-7 p-4 border-lg-end">
+                                <div class="col-12 col-md-7 p-4 border-end">
                                     {{-- Header Section --}}
-                                    <h3 class="text-muted">{{ __('Header Section') }}</h3>
+                                    <h3 class="text-muted mb-3">{{ __('Header Section') }}</h3>
                                     <div>
                                         {{-- Profile Section --}}
                                         <div class="mb-4">
@@ -177,26 +211,28 @@
                                         </div>
                                         {{-- Title Color --}}
                                         <div class="mb-4">
-                                            <div class="form-label">{{ __('Title Color') }}</div>
+                                            <div class="form-label" for="colorPickerTitle">{{ __('Title Color') }}</div>
                                             <input type="text" id="colorPickerTitle"
                                                 value="{{ $custom_styles['title_color'] }}" class="form-control" />
                                         </div>
                                         {{-- Sub Title Color --}}
                                         <div class="mb-4">
-                                            <div class="form-label">{{ __('Subtitle Color') }}</div>
+                                            <div class="form-label" for="colorPickerSubTitle">{{ __('Subtitle Color') }}
+                                            </div>
                                             <input type="text" id="colorPickerSubTitle"
                                                 value="{{ $custom_styles['sub_title_color'] }}" class="form-control" />
                                         </div>
                                         {{-- Description Color --}}
                                         <div class="mb-4">
-                                            <div class="form-label">{{ __('Description Color') }}</div>
+                                            <div class="form-label" for="colorPickerDescription">
+                                                {{ __('Description Color') }}</div>
                                             <input type="text" id="colorPickerDescription"
                                                 value="{{ $custom_styles['description_color'] }}" class="form-control" />
                                         </div>
                                     </div>
 
                                     {{-- Body Section --}}
-                                    <h3 class="text-muted">{{ __('Body Section') }}</h3>
+                                    <h3 class="text-muted mt-5 mb-3">{{ __('Body Section') }}</h3>
                                     <div>
                                         {{-- Font --}}
                                         <div class="mb-4">
@@ -245,7 +281,7 @@
                                                             class="form-selectgroup-input"
                                                             {{ $custom_styles['font_family'] == $font ? 'checked' : '' }}>
                                                         <span
-                                                            class="form-selectgroup-label text-capitalize {{ __($fontClasses[$font]) ?? '' }}">
+                                                            class="form-selectgroup-label text-capitalize {{ $fontClasses[$font] ?? '' }}">
                                                             {{ $font }}
                                                         </span>
                                                     </label>
@@ -262,7 +298,8 @@
                                             <div class="form-selectgroup">
                                                 @foreach ($bg_styles as $bg_style)
                                                     <label class="form-selectgroup-item">
-                                                        <input type="radio" name="bg_style" value="{{ $bg_style }}"
+                                                        <input type="radio" name="bg_style"
+                                                            value="{{ $bg_style }}"
                                                             onclick="updateCustomStyle('bg_style'); toggleBackgroundStyle('{{ $bg_style }}')"
                                                             class="form-selectgroup-input"
                                                             {{ $custom_styles['background_type'] == $bg_style ? 'checked' : '' }}>
@@ -281,7 +318,8 @@
                                             {{-- Single Color Background --}}
                                             <div class="mt-4 {{ $custom_styles['background_type'] == 'single_color' ? '' : 'd-none' }}"
                                                 id="bg-single-color">
-                                                <div class="form-label">{{ __('Background Color') }}</div>
+                                                <div class="form-label" for="colorPickerBackground">
+                                                    {{ __('Background Color') }}</div>
                                                 <input type="text" id="colorPickerBackground"
                                                     value="{{ $custom_styles['background_color'] }}" />
                                             </div>
@@ -289,14 +327,16 @@
                                             {{-- Gradient Background --}}
                                             <div class="mt-4 {{ $custom_styles['background_type'] == 'gradient' ? '' : 'd-none' }}"
                                                 id="bg-gradient">
-                                                <div class="d-flex gap-8">
-                                                    <div>
-                                                        <div class="form-label">{{ __('Gradient From Color') }}</div>
+                                                <div class="row g-3">
+                                                    <div class="col-md-6">
+                                                        <div class="form-label" for="colorPickerBackgroundStart">
+                                                            {{ __('Gradient From Color') }}</div>
                                                         <input type="text" id="colorPickerBackgroundStart"
                                                             value="{{ $custom_styles['gradient_start'] }}" />
                                                     </div>
-                                                    <div>
-                                                        <div class="form-label">{{ __('Gradient To Color') }}</div>
+                                                    <div class="col-md-6">
+                                                        <div class="form-label" for="colorPickerBackgroundEnd">
+                                                            {{ __('Gradient To Color') }}</div>
                                                         <input type="text" id="colorPickerBackgroundEnd"
                                                             value="{{ $custom_styles['gradient_end'] }}" />
                                                     </div>
@@ -306,7 +346,8 @@
                                             {{-- Background Image --}}
                                             <div class="mt-4 {{ $custom_styles['background_type'] == 'image' ? '' : 'd-none' }}"
                                                 id="bg-image">
-                                                <div class="form-label">{{ __('Background Image') }}</div>
+                                                <div class="form-label" for="background_image">
+                                                    {{ __('Background Image') }}</div>
                                                 <input type="file" class="form-control" name="background_image"
                                                     id="background_image" accept=".jpeg,.png,.jpg,.svg"
                                                     onchange="updateCustomStyle('background_image')">
@@ -315,7 +356,8 @@
                                         </div>
                                         {{-- Heading Color Background --}}
                                         <div class="my-4">
-                                            <div class="form-label">{{ __('Heading Color') }}</div>
+                                            <div class="form-label" for="colorPickerHeading">{{ __('Heading Color') }}
+                                            </div>
                                             <input type="text" id="colorPickerHeading"
                                                 value="{{ $custom_styles['heading_color'] }}" />
                                         </div>
@@ -342,7 +384,7 @@
                                     </div>
 
                                     {{-- Button Style --}}
-                                    <h3 class="text-muted">{{ __('Button Styles') }}</h3>
+                                    <h3 class="text-muted mt-5 mb-3">{{ __('Button Styles') }}</h3>
                                     <div>
                                         {{-- Button Background Type --}}
                                         <div class="mb-4">
@@ -373,7 +415,8 @@
                                             {{-- Button Background Color --}}
                                             <div class="mt-4 {{ $custom_styles['button_background_type'] == 'single_color' ? '' : 'd-none' }}"
                                                 id="buton-bg-single-color">
-                                                <div class="form-label">{{ __('Button Background Color') }}</div>
+                                                <div class="form-label" for="colorPickerButtonBackground">
+                                                    {{ __('Button Background Color') }}</div>
                                                 <input type="text" id="colorPickerButtonBackground"
                                                     value="{{ $custom_styles['button_background_color'] }}" />
                                             </div>
@@ -381,14 +424,16 @@
                                             {{-- Button Gradient Background Color --}}
                                             <div class="mt-4 {{ $custom_styles['button_background_type'] == 'gradient' ? '' : 'd-none' }}"
                                                 id="button-bg-gradient">
-                                                <div class="d-flex gap-8">
-                                                    <div>
-                                                        <div class="form-label">{{ __('Gradient From Color') }}</div>
+                                                <div class="row g-3">
+                                                    <div class="col-md-6">
+                                                        <div class="form-label" for="colorPickerButtonBackgroundStart">
+                                                            {{ __('Gradient From Color') }}</div>
                                                         <input type="text" id="colorPickerButtonBackgroundStart"
                                                             value="{{ $custom_styles['button_gradient_start'] }}" />
                                                     </div>
-                                                    <div>
-                                                        <div class="form-label">{{ __('Gradient To Color') }}</div>
+                                                    <div class="col-md-6">
+                                                        <div class="form-label" for="colorPickerButtonBackgroundEnd">
+                                                            {{ __('Gradient To Color') }}</div>
                                                         <input type="text" id="colorPickerButtonBackgroundEnd"
                                                             value="{{ $custom_styles['button_gradient_end'] }}" />
                                                     </div>
@@ -397,14 +442,16 @@
 
                                             {{-- Button Icon Color Section --}}
                                             <div class="col-12 mt-4">
-                                                <div class="form-label">{{ __('Button Icon Color') }}</div>
+                                                <div class="form-label" for="colorPickerButtonIcon">
+                                                    {{ __('Button Icon Color') }}</div>
                                                 <input type="text" id="colorPickerButtonIcon"
                                                     value="{{ $custom_styles['button_icon_color'] }}" />
                                             </div>
 
                                             {{-- Button Text Color Section --}}
                                             <div class="col-12 mt-4">
-                                                <div class="form-label">{{ __('Button Text Color') }}</div>
+                                                <div class="form-label" for="colorPickerButtonText">
+                                                    {{ __('Button Text Color') }}</div>
                                                 <input type="text" id="colorPickerButtonText"
                                                     value="{{ $custom_styles['button_text_color'] }}" />
                                             </div>
@@ -431,27 +478,26 @@
                                                     </div>
                                                 </div>
                                             </div>
-
                                         </div>
                                     </div>
 
                                     {{-- Bottom Bar --}}
-                                    <h3 class="text-muted">{{ __('Bottom Bar') }}</h3>
+                                    <h3 class="text-muted mt-5 mb-3">{{ __('Bottom Bar') }}</h3>
                                     <div>
                                         {{-- Bottom Bar Color --}}
                                         <div class="mb-4">
-                                            <div class="form-label">{{ __('Bottom Bar Color') }}</div>
+                                            <div class="form-label" for="colorPickerBottomBar">
+                                                {{ __('Bottom Bar Color') }}</div>
                                             <input type="text" id="colorPickerBottomBar"
                                                 value="{{ $custom_styles['bottom_bar_color'] }}" />
                                         </div>
                                     </div>
                                 </div>
                                 {{-- Preview --}}
-                                <div class="col-12 col-md-5 position-relative p-4">
-                                    <h4 class="page-title">{{ __('Preview') }}</h4>
+                                <div class="col-12 col-md-5 position-relative p-4 bg-slate-50 border-start">
+                                    <h4 class="page-title mb-4">{{ __('Live Mockup Preview') }}</h4>
                                     <div id="iphone-x">
-                                        <div
-                                            class="device device-iphone-x d-flex justify-content-center ">
+                                        <div class="device device-iphone-x d-flex justify-content-center ">
                                             <div class="device-frame">
                                                 <div class="device-content">
                                                     <iframe id="vcardPreview"
@@ -470,24 +516,36 @@
                                 </div>
                             </div>
                         </div>
-
                     </div>
+
+                    <!-- Right-Aligned Custom Save trigger footer with Tabler styling rules -->
                     <div class="card-footer text-end">
-                        <div class="d-flex">
-                            <a href="{{ route('user.advanced.setting', Request::segment(3)) }}" class="btn btn-outline-primary ms-2">{{ __('Skip') }}</a>
-                        </div>
+                        <a href="{{ route('user.cards') }}"
+                            class="btn btn-primary btn-md d-inline-flex align-items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                class="icon icon-tabler icon-tabler-device-floppy me-2" width="24" height="24"
+                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2" />
+                                <path d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+                                <path d="M14 4l0 4l-6 0l0 -4" />
+                            </svg>
+                            {{ __('Finish') }}
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
+
+        {{-- Footer --}}
         @include('user.includes.footer')
     </div>
+@endsection
 
-    {{-- Custom JS --}}
-    @push('custom-js')
+@push('custom-js')
         <script src="{{ asset('js/spectrum.min.js') }}"></script>
         <script>
-            // color picker
             $(document).ready(function() {
                 "use strict";
                 $('#colorPickerTitle').spectrum({
@@ -784,18 +842,15 @@
                     contentType: false,
                 }).done(function(res) {
                     if (res.status == 'success') {
-
                         $('#vcardPreview')[0].contentWindow.location.reload();
                         $('#error-message').addClass('d-none');
                     } else {
-
                         $('#status-message').html(res.message);
                         $('#error-message').removeClass('d-none');
                     }
                 });
             }
 
-            // background style
             function toggleBackgroundStyle(style) {
                 "use strict";
                 if (style == 'single_color') {
@@ -813,7 +868,6 @@
                 }
             }
 
-            // button background style
             function toogleButtonBackgroundStyle(style) {
                 "use strict";
                 if (style == 'single_color') {
@@ -825,5 +879,4 @@
                 }
             }
         </script>
-    @endpush
-@endsection
+@endpush

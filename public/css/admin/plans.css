@@ -1,0 +1,282 @@
+/* Container & Layout */
+.plans-container {
+    background-color: var(--tblr-body-bg);
+    min-height: 100vh;
+}
+
+/* Page Header */
+.page-title-text {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--tblr-body-color);
+}
+
+.btn-create-plan {
+    background-color: var(--tblr-primary);
+    color: var(--tblr-primary-fg, #ffffff);
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-weight: 600;
+    border: none;
+    transition: all 0.2s ease;
+}
+
+.btn-create-plan:hover {
+    background-color: var(--tblr-primary);
+    color: var(--tblr-primary-fg, #ffffff);
+    box-shadow: 0 4px 12px rgba(var(--tblr-primary-rgb), 0.35);
+    opacity: 0.9;
+}
+
+/* Tabs & Search Filter Bar */
+.nav-pill-custom .nav-link {
+    color: var(--tblr-muted);
+    font-weight: 600;
+    border-radius: 10px;
+    padding: 8px 16px;
+    background: var(--tblr-bg-surface-secondary);
+    margin-right: 8px;
+    border: 1px solid var(--tblr-border-color);
+    transition: all 0.2s ease;
+}
+
+.nav-pill-custom .nav-link.active {
+    background-color: rgba(var(--tblr-primary-rgb), 0.15);
+    color: var(--tblr-primary);
+    border-color: rgba(var(--tblr-primary-rgb), 0.3);
+}
+
+.count-badge {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 6px;
+    margin-left: 6px;
+    background: var(--tblr-bg-surface);
+    color: var(--tblr-body-color);
+    border: 1px solid var(--tblr-border-color);
+}
+
+.nav-link.active .count-badge {
+    background: var(--tblr-primary);
+    color: var(--tblr-primary-fg, #ffffff);
+    border-color: transparent;
+}
+
+.search-input-group {
+    position: relative;
+    width: 260px;
+}
+
+.search-input-group input {
+    background-color: var(--tblr-bg-surface);
+    color: var(--tblr-body-color);
+    border-radius: 10px;
+    border: 1px solid var(--tblr-border-color);
+    padding-left: 40px;
+    height: 42px;
+    font-size: 0.9rem;
+}
+
+.search-input-group input:focus {
+    border-color: var(--tblr-primary);
+    outline: none;
+}
+
+.search-input-group .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 11px;
+    color: var(--tblr-muted);
+}
+
+/* Plan Cards Design */
+.modern-plan-card {
+    background: var(--tblr-card-bg, var(--tblr-bg-surface));
+    border: 1px solid var(--tblr-border-color);
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.modern-plan-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+}
+
+.plan-icon-box {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.plan-icon-purple {
+    background: rgba(var(--tblr-primary-rgb), 0.12);
+    color: var(--tblr-primary);
+}
+
+.plan-icon-green {
+    background: rgba(var(--tblr-success-rgb), 0.12);
+    color: var(--tblr-success);
+}
+
+.plan-icon-orange {
+    background: rgba(var(--tblr-warning-rgb), 0.12);
+    color: var(--tblr-warning);
+}
+
+.status-badge-active {
+    background-color: rgba(var(--tblr-success-rgb), 0.12);
+    color: var(--tblr-success);
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 4px 12px;
+}
+
+.status-badge-disabled {
+    background-color: var(--tblr-bg-surface-secondary);
+    color: var(--tblr-muted);
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 4px 12px;
+}
+
+.plan-price-title {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--tblr-body-color);
+}
+
+.plan-price-period {
+    color: var(--tblr-muted);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+/* Feature Items List Styling */
+.feature-item-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.feature-item-list li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-size: 0.88rem;
+    color: var(--tblr-body-color);
+    font-weight: 500;
+}
+
+.feature-section-title {
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    margin-top: 14px;
+    margin-bottom: 8px !important;
+    border-bottom: 1px dashed var(--tblr-border-color);
+    padding-bottom: 4px;
+    color: var(--tblr-muted);
+}
+
+.feature-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.feature-icon.is-on {
+    color: var(--tblr-success);
+}
+
+.feature-icon.is-off {
+    color: var(--tblr-muted);
+}
+
+.opacity-50 {
+    opacity: 0.55;
+}
+
+/* Custom Toggle Switch */
+.form-switch .form-check-input {
+    width: 2.6em;
+    height: 1.4em;
+    cursor: pointer;
+}
+
+/* Action Buttons */
+.btn-action-soft-edit {
+    background: rgba(var(--tblr-primary-rgb), 0.1);
+    color: var(--tblr-primary);
+    border-radius: 10px;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    transition: all 0.2s;
+}
+
+.btn-action-soft-edit:hover {
+    background: var(--tblr-primary);
+    color: var(--tblr-primary-fg, #ffffff);
+}
+
+.btn-action-soft-delete {
+    background: rgba(var(--tblr-danger-rgb), 0.1);
+    color: var(--tblr-danger);
+    border-radius: 10px;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    transition: all 0.2s;
+}
+
+.btn-action-soft-delete:hover {
+    background: var(--tblr-danger);
+    color: var(--tblr-danger-fg, #ffffff);
+}
+
+/* Footer Pagination */
+.pagination {
+    gap: 6px;
+    margin-bottom: 0;
+}
+
+.pagination .page-item .page-link {
+    background-color: var(--tblr-bg-surface);
+    border-radius: 8px !important;
+    border: 1px solid var(--tblr-border-color);
+    color: var(--tblr-body-color);
+    font-weight: 600;
+    padding: 6px 12px;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: var(--tblr-primary) !important;
+    border-color: var(--tblr-primary) !important;
+    color: var(--tblr-primary-fg, #ffffff) !important;
+}
+
+/* Specific Dark Mode Overrides */
+[data-bs-theme="dark"] .modern-plan-card {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+[data-bs-theme="dark"] .modern-plan-card:hover {
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
+}
+
+[data-bs-theme="dark"] .search-input-group input {
+    background-color: var(--tblr-bg-surface-dark, var(--tblr-bg-surface));
+}

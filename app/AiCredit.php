@@ -16,5 +16,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class AiCredit extends Model
 {
-    //
+    protected $table = 'ai_credits';
+
+    protected $fillable = [
+        'user_id',
+        'credits',
+        'trial_credits',
+    ];
 }

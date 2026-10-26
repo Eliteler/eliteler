@@ -1,5 +1,48 @@
 @extends('user.layouts.index', ['header' => false, 'nav' => false, 'demo' => true, 'settings' => $settings])
 
+@php
+    use App\Services\GoBizCommonService;
+
+    // Load config once
+    $config = GoBizCommonService::config();
+
+    // Fetch default country code from admin config if profile value is missing
+    $admin_country = \App\Country::where('country_name', $config[23]->config_value ?? '')->first();
+    $default_code = $admin_country ? ltrim($admin_country->phone_code, '+') : '1';
+
+    $phone_code = Auth::user()->country_code ?: $default_code;
+    $whatsapp_code = Auth::user()->whatsapp_country_code ?: $default_code;
+@endphp
+
+{{-- Custom CSS --}}
+@section('css')
+    <link rel="stylesheet" href="{{ asset('plugins/intlTelInput/intlTelInput.css') }}" />
+    <script src="{{ asset('plugins/intlTelInput/intlTelInput.min.js') }}"></script>
+    <style>
+        .iti {
+            width: 100%;
+        }
+
+        .iti--fullscreen-popup.iti--container {
+            top: 50px !important;
+        }
+
+        .iti__search-input {
+            width: calc(100% - 20px) !important;
+            margin: 10px !important;
+            padding: 8px 12px !important;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+
+        .iti__country-list {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+    </style>
+@endsection
+
 @section('content')
     <div class="page-wrapper">
         <!-- Page title -->
@@ -7,8 +50,9 @@
             <div class="container d-flex align-items-center justify-content-between gap-2">
                 <div class="d-flex align-item-center gap-2">
                     <a href="{{ url()->previous() }}" class="border rounded-3 p-2 text-white">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round"
                             class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-left icon-primary">
                             <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                             <path d="M5 12l14 0" />
@@ -24,11 +68,11 @@
                     <a href="{{ route('user.dashboard') }}">
                         @if (file_exists(public_path('img/logo-light.png')))
                             <img src="{{ optional(Auth::user())->choosed_theme == 'light' ? asset($settings->site_logo) : asset('img/logo-light.png') }}"
-                                width="200" height="50" alt="{{ $settings->site_name }}"
+                                width="200" height="50" alt="{{ config('app.name') }}"
                                 class="navbar-brand-image custom-logo">
                         @else
                             <img src="{{ $settings->site_logo }}" width="200" height="50"
-                                alt="{{ $settings->site_name }}" class="navbar-brand-image custom-logo">
+                                alt="{{ config('app.name') }}" class="navbar-brand-image custom-logo">
                         @endif
                     </a>
                 </div>
@@ -88,26 +132,40 @@
                                                     value="{{ Auth::user()->billing_email == null ? Auth::user()->email : Auth::user()->billing_email }}">
                                             </div>
                                         </div>
+
                                         {{-- Mobile Number --}}
                                         <div class="col-md-4 col-xl-4">
                                             <div class="mb-3">
-                                                <label class="form-label">{{ __('Mobile Number (With Country Code)') }}</label>
-                                                <input type="tel" class="form-control" name="billing_phone"
-                                                    placeholder="{{ __('Example: 91 9876543210') }}"
-                                                    value="{{ Auth::user()->billing_phone }}">
+                                                <label class="form-label">
+                                                    {{ __('Mobile Number') }}
+                                                </label>
+
+                                                <input type="hidden" name="country_code" id="country_code"
+                                                    value="{{ old('country_code', $phone_code) }}">
+
+                                                <input type="tel" class="form-control" id="mobile_number"
+                                                    name="mobile_number"
+                                                    value="{{ old('mobile_number', Auth::user()->mobile_number) }}">
                                             </div>
                                         </div>
+
                                         {{-- WhatsApp Number --}}
                                         <div class="col-md-4 col-xl-4">
                                             <div class="mb-3">
-                                                <label
-                                                    class="form-label">{{ __('WhatsApp Number (With Country Code)') }}</label>
-                                                <input type="text" class="form-control"
-                                                    name="billing_whatsapp"
-                                                    placeholder="{{ __('Example: 91 9876543210') }}"
-                                                    value="{{ Auth::user()->whatsapp_number }}">
+                                                <label class="form-label">
+                                                    {{ __('WhatsApp Number') }}
+                                                </label>
+
+                                                <input type="hidden" name="whatsapp_country_code"
+                                                    id="whatsapp_country_code"
+                                                    value="{{ old('whatsapp_country_code', $whatsapp_code) }}">
+
+                                                <input type="tel" class="form-control" id="whatsapp_number"
+                                                    name="whatsapp_number"
+                                                    value="{{ old('whatsapp_number', Auth::user()->whatsapp_number) }}">
                                             </div>
                                         </div>
+
                                         {{-- Billing Address --}}
                                         <div class="col-md-4 col-xl-4">
                                             <div class="mb-3">
@@ -147,11 +205,12 @@
                                         <div class="col-md-4 col-xl-4">
                                             <div class="mb-3">
                                                 <label class="form-label">{{ __('Billing Country') }}</label>
-                                                <select value="{{ Auth::user()->billing_country }}" name="billing_country" id="billing_country"
-                                                    class="form-control">
+                                                <select value="{{ Auth::user()->billing_country }}"
+                                                    name="billing_country" id="billing_country" class="form-control">
 
                                                     <option {{ Auth::user()->billing_country == null ? 'selected' : '' }}
-                                                        value="" selected disabled>{{ __('Choose Country') }}</option>
+                                                        value="" selected disabled>{{ __('Choose Country') }}
+                                                    </option>
                                                     <option
                                                         {{ Auth::user()->billing_country == 'Afghanistan' ? 'selected' : '' }}
                                                         value="Afghanistan">Afghanistan</option>
@@ -246,11 +305,7 @@
                                                         {{ Auth::user()->billing_country == 'Brazil' || Auth::user()->billing_country == 'Brasil' ? 'selected' : '' }}
                                                         value="Brasil">Brasil</option>
                                                     <option
-                                                        {{ Auth::user()->billing_country ==
-                                                        'British Indian Ocean
-                                                                                                            Territory'
-                                                            ? 'selected'
-                                                            : '' }}
+                                                        {{ Auth::user()->billing_country == 'British Indian Ocean Territory' ? 'selected' : '' }}
                                                         value="British Indian Ocean Territory">British Indian Ocean
                                                         Territory</option>
                                                     <option
@@ -307,11 +362,7 @@
                                                         {{ Auth::user()->billing_country == 'Congo' ? 'selected' : '' }}
                                                         value="Congo">Congo</option>
                                                     <option
-                                                        {{ Auth::user()->billing_country ==
-                                                        'Congo, The Democratic
-                                                                                                            Republic of The'
-                                                            ? 'selected'
-                                                            : '' }}
+                                                        {{ Auth::user()->billing_country == 'Congo, The Democratic Republic of The' ? 'selected' : '' }}
                                                         value="Congo, The Democratic Republic of The">Congo, The Democratic
                                                         Republic of The</option>
                                                     <option
@@ -368,11 +419,7 @@
                                                         {{ Auth::user()->billing_country == 'Ethiopia' ? 'selected' : '' }}
                                                         value="Ethiopia">Ethiopia</option>
                                                     <option
-                                                        {{ Auth::user()->billing_country ==
-                                                        'Falkland Islands
-                                                                                                            (Malvinas)'
-                                                            ? 'selected'
-                                                            : '' }}
+                                                        {{ Auth::user()->billing_country == 'Falkland Islands (Malvinas)' ? 'selected' : '' }}
                                                         value="Falkland Islands (Malvinas)">Falkland Islands (Malvinas)
                                                     </option>
                                                     <option
@@ -394,11 +441,7 @@
                                                         {{ Auth::user()->billing_country == 'French Polynesia' ? 'selected' : '' }}
                                                         value="French Polynesia">French Polynesia</option>
                                                     <option
-                                                        {{ Auth::user()->billing_country ==
-                                                        'French Southern
-                                                                                                            Territories'
-                                                            ? 'selected'
-                                                            : '' }}
+                                                        {{ Auth::user()->billing_country == 'French Southern Territories' ? 'selected' : '' }}
                                                         value="French Southern Territories">French Southern Territories
                                                     </option>
                                                     <option
@@ -453,19 +496,11 @@
                                                         {{ Auth::user()->billing_country == 'Haiti' ? 'selected' : '' }}
                                                         value="Haiti">Haiti</option>
                                                     <option
-                                                        {{ Auth::user()->billing_country ==
-                                                        'Heard Island and Mcdonald
-                                                                                                            Islands'
-                                                            ? 'selected'
-                                                            : '' }}
+                                                        {{ Auth::user()->billing_country == 'Heard Island and Mcdonald Islands' ? 'selected' : '' }}
                                                         value="Heard Island and Mcdonald Islands">Heard Island and Mcdonald
                                                         Islands</option>
                                                     <option
-                                                        {{ Auth::user()->billing_country ==
-                                                        'Holy See (Vatican City
-                                                                                                            State)'
-                                                            ? 'selected'
-                                                            : '' }}
+                                                        {{ Auth::user()->billing_country == 'Holy See (Vatican City State)' ? 'selected' : '' }}
                                                         value="Holy See (Vatican City State)">Holy See (Vatican City State)
                                                     </option>
                                                     <option
@@ -527,11 +562,7 @@
                                                         {{ Auth::user()->billing_country == 'Kiribati' ? 'selected' : '' }}
                                                         value="Kiribati">Kiribati</option>
                                                     <option
-                                                        {{ Auth::user()->billing_country ==
-                                                        "Korea, Democratic People's
-                                                                                                            Republic of"
-                                                            ? 'selected'
-                                                            : '' }}
+                                                        {{ Auth::user()->billing_country == "Korea, Democratic People's Republic of" ? 'selected' : '' }}
                                                         value="Korea, Democratic People's Republic of">Korea, Democratic
                                                         People's Republic of</option>
                                                     <option
@@ -544,11 +575,7 @@
                                                         {{ Auth::user()->billing_country == 'Kyrgyzstan' ? 'selected' : '' }}
                                                         value="Kyrgyzstan">Kyrgyzstan</option>
                                                     <option
-                                                        {{ Auth::user()->billing_country ==
-                                                        "Lao People's Democratic
-                                                                                                            Republic"
-                                                            ? 'selected'
-                                                            : '' }}
+                                                        {{ Auth::user()->billing_country == "Lao People's Democratic Republic" ? 'selected' : '' }}
                                                         value="Lao People's Democratic Republic">Lao People's Democratic
                                                         Republic</option>
                                                     <option
@@ -579,11 +606,7 @@
                                                         {{ Auth::user()->billing_country == 'Macao' ? 'selected' : '' }}
                                                         value="Macao">Macao</option>
                                                     <option
-                                                        {{ Auth::user()->billing_country ==
-                                                        'Macedonia, The Former
-                                                                                                            Yugoslav Republic of'
-                                                            ? 'selected'
-                                                            : '' }}
+                                                        {{ Auth::user()->billing_country == 'Macedonia, The Former Yugoslav Republic of' ? 'selected' : '' }}
                                                         value="Macedonia, The Former Yugoslav Republic of">Macedonia, The
                                                         Former Yugoslav Republic of</option>
                                                     <option
@@ -623,14 +646,9 @@
                                                         {{ Auth::user()->billing_country == 'Mexico' ? 'selected' : '' }}
                                                         value="Mexico">Mexico</option>
                                                     <option
-                                                        {{ Auth::user()->billing_country ==
-                                                        'Micronesia, Federated
-                                                                                                            States of'
-                                                            ? 'selected'
-                                                            : '' }}
+                                                        {{ Auth::user()->billing_country == 'Micronesia, Federated States of' ? 'selected' : '' }}
                                                         value="Micronesia, Federated States of">Micronesia, Federated
-                                                        States
-                                                        of</option>
+                                                        States of</option>
                                                     <option
                                                         {{ Auth::user()->billing_country == 'Moldova, Republic of' ? 'selected' : '' }}
                                                         value="Moldova, Republic of">Moldova, Republic of</option>
@@ -707,11 +725,7 @@
                                                         {{ Auth::user()->billing_country == 'Palau' ? 'selected' : '' }}
                                                         value="Palau">Palau</option>
                                                     <option
-                                                        {{ Auth::user()->billing_country ==
-                                                        'Palestinian Territory,
-                                                                                                            Occupied'
-                                                            ? 'selected'
-                                                            : '' }}
+                                                        {{ Auth::user()->billing_country == 'Palestinian Territory, Occupied' ? 'selected' : '' }}
                                                         value="Palestinian Territory, Occupied">Palestinian Territory,
                                                         Occupied</option>
                                                     <option
@@ -770,11 +784,7 @@
                                                         value="Saint Pierre and Miquelon">Saint Pierre and Miquelon
                                                     </option>
                                                     <option
-                                                        {{ Auth::user()->billing_country ==
-                                                        'Saint Vincent and The
-                                                                                                            Grenadines'
-                                                            ? 'selected'
-                                                            : '' }}
+                                                        {{ Auth::user()->billing_country == 'Saint Vincent and The Grenadines' ? 'selected' : '' }}
                                                         value="Saint Vincent and The Grenadines">Saint Vincent and The
                                                         Grenadines</option>
                                                     <option
@@ -820,11 +830,7 @@
                                                         {{ Auth::user()->billing_country == 'South Africa' ? 'selected' : '' }}
                                                         value="South Africa">South Africa</option>
                                                     <option
-                                                        {{ Auth::user()->billing_country ==
-                                                        'South Georgia and The South
-                                                                                                            Sandwich Islands'
-                                                            ? 'selected'
-                                                            : '' }}
+                                                        {{ Auth::user()->billing_country == 'South Georgia and The South Sandwich Islands' ? 'selected' : '' }}
                                                         value="South Georgia and The South Sandwich Islands">South Georgia
                                                         and The South Sandwich Islands</option>
                                                     <option
@@ -861,11 +867,7 @@
                                                         {{ Auth::user()->billing_country == 'Tajikistan' ? 'selected' : '' }}
                                                         value="Tajikistan">Tajikistan</option>
                                                     <option
-                                                        {{ Auth::user()->billing_country ==
-                                                        'Tanzania, United Republic
-                                                                                                            of'
-                                                            ? 'selected'
-                                                            : '' }}
+                                                        {{ Auth::user()->billing_country == 'Tanzania, United Republic of' ? 'selected' : '' }}
                                                         value="Tanzania, United Republic of">Tanzania, United Republic of
                                                     </option>
                                                     <option
@@ -917,11 +919,7 @@
                                                         {{ Auth::user()->billing_country == 'United States' ? 'selected' : '' }}
                                                         value="United States">United States</option>
                                                     <option
-                                                        {{ Auth::user()->billing_country ==
-                                                        'United States Minor
-                                                                                                            Outlying Islands'
-                                                            ? 'selected'
-                                                            : '' }}
+                                                        {{ Auth::user()->billing_country == 'United States Minor Outlying Islands' ? 'selected' : '' }}
                                                         value="United States Minor Outlying Islands">United States Minor
                                                         Outlying Islands</option>
                                                     <option
@@ -961,8 +959,6 @@
                                                         {{ Auth::user()->billing_country == 'Zimbabwe' ? 'selected' : '' }}
                                                         value="Zimbabwe">Zimbabwe</option>
                                                 </select>
-
-
                                             </div>
                                         </div>
                                         {{-- Tax Number --}}
@@ -1009,51 +1005,104 @@
             </div>
         </div>
     </div>
+@endsection
 
-    {{-- Custom JS --}}
-    @section('scripts')
-        <script type="text/javascript" src="{{ asset('js/tom-select.base.min.js') }}"></script>
-        <script>
-            // Array of element IDs
-            var elementSelectors = ['type', 'billing_country'];
-            
-            // Function to initialize TomSelect and enforce the "required" attribute
-            function initializeTomSelectWithRequired(el) {
-                new TomSelect(el, {
-                    copyClassesToDropdown: false,
-                    dropdownClass: 'dropdown-menu ts-dropdown',
-                    optionClass: 'dropdown-item',
-                    controlInput: '<input>',
-                    maxOptions: null,
-                    render: {
-                        item: function(data, escape) {
-                            if (data.customProperties) {
-                                return '<div><span class="dropdown-item-indicator">' + data.customProperties + '</span>' + escape(data.text) + '</div>';
-                            }
-                            return '<div>' + escape(data.text) + '</div>';
-                        },
-                        option: function(data, escape) {
-                            if (data.customProperties) {
-                                return '<div><span class="dropdown-item-indicator">' + data.customProperties + '</span>' + escape(data.text) + '</div>';
-                            }
-                            return '<div>' + escape(data.text) + '</div>';
-                        },
-                    },
+{{-- Custom JS --}}
+@section('scripts')
+    <script type="text/javascript" src="{{ asset('js/tom-select.base.min.js') }}"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            "use strict";
+
+            // Function to setup intlTelInput on a field
+            function initPhoneField(phoneSelector, countryCodeSelector) {
+                const phoneInput = document.querySelector(phoneSelector);
+                const countryCodeInput = document.querySelector(countryCodeSelector);
+
+                if (!phoneInput || !countryCodeInput) return null;
+
+                const iti = window.intlTelInput(phoneInput, {
+                    separateDialCode: true,
+                    preferredCountries: ["in", "us", "gb", "ae"],
                 });
-                
-                // Trigger validation on load
-                el.dispatchEvent(new Event('change'));
-            }
-            
-            // Loop through each element ID
-            elementSelectors.forEach(function(id) {
-                // Check if the element exists
-                var el = document.getElementById(id);
-                if (el) {
-                    // Apply TomSelect and enforce the "required" attribute
-                    initializeTomSelectWithRequired(el);
+
+                // Extract dial code & phone number
+                let dialCode = countryCodeInput.value ? countryCodeInput.value.replace(/[^0-9]/g, '') : '';
+                let phoneNum = phoneInput.value ? phoneInput.value : '';
+
+                // Setting '+' + dialCode sets the flag properly even if phoneNum is empty!
+                if (dialCode) {
+                    iti.setNumber('+' + dialCode + phoneNum);
                 }
+
+                // Sync hidden country code field
+                function updateCountryCode() {
+                    const countryData = iti.getSelectedCountryData();
+                    if (countryData && countryData.dialCode) {
+                        countryCodeInput.value = '+' + countryData.dialCode;
+                    } else {
+                        countryCodeInput.value = '';
+                    }
+                }
+
+                // Event Listeners
+                updateCountryCode();
+                phoneInput.addEventListener("countrychange", updateCountryCode);
+
+                if (phoneInput.form) {
+                    phoneInput.form.addEventListener("submit", updateCountryCode);
+                }
+
+                return iti;
+            }
+
+            // Initialize Mobile Field
+            initPhoneField("#mobile_number", "#country_code");
+
+            // Initialize WhatsApp Field
+            initPhoneField("#whatsapp_number", "#whatsapp_country_code");
+        });
+    </script>
+    <script>
+        // Array of element IDs for TomSelect
+        var elementSelectors = ['type', 'billing_country'];
+
+        // Function to initialize TomSelect and enforce the "required" attribute
+        function initializeTomSelectWithRequired(el) {
+            new TomSelect(el, {
+                copyClassesToDropdown: false,
+                dropdownClass: 'dropdown-menu ts-dropdown',
+                optionClass: 'dropdown-item',
+                controlInput: '<input>',
+                maxOptions: null,
+                render: {
+                    item: function(data, escape) {
+                        if (data.customProperties) {
+                            return '<div><span class="dropdown-item-indicator">' + data.customProperties +
+                                '</span>' + escape(data.text) + '</div>';
+                        }
+                        return '<div>' + escape(data.text) + '</div>';
+                    },
+                    option: function(data, escape) {
+                        if (data.customProperties) {
+                            return '<div><span class="dropdown-item-indicator">' + data.customProperties +
+                                '</span>' + escape(data.text) + '</div>';
+                        }
+                        return '<div>' + escape(data.text) + '</div>';
+                    },
+                },
             });
-        </script>
-    @endsection
+
+            // Trigger validation on load
+            el.dispatchEvent(new Event('change'));
+        }
+
+        // Loop through each element ID
+        elementSelectors.forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) {
+                initializeTomSelectWithRequired(el);
+            }
+        });
+    </script>
 @endsection

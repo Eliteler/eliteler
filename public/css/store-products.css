@@ -1,0 +1,205 @@
+/* GoBiz vCard SaaS
+|--------------------------------------------------------------------------
+| Developed by NativeCode © 2021 - https://nativecode.in
+| All rights reserved
+| Unauthorized distribution is prohibited
+|--------------------------------------------------------------------------
+*/
+
+.card:has(.table-responsive) {
+    border: rgba(var(--tblr-primary-rgb), 0.15) 1px solid !important;
+    border-radius: var(--tblr-border-radius-lg);
+}
+
+/* DataTables responsive layout and styling */
+.dataTables_wrapper {
+    padding: 0;
+}
+
+.dataTables_filter {
+    padding: 1rem 1.25rem 0.5rem 1.25rem;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.dataTables_filter label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0;
+    color: var(--tblr-muted);
+    font-weight: 500;
+}
+
+.dataTables_filter input {
+    border: 1.5px solid var(--tblr-border-color);
+    border-radius: var(--tblr-border-radius);
+    padding: 0.45rem 0.85rem;
+    font-size: 0.875rem;
+    background-color: var(--tblr-bg-forms);
+    color: var(--tblr-body-color);
+    min-width: 240px;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.dataTables_filter input:focus {
+    border-color: var(--tblr-primary) !important;
+    background-color: var(--tblr-bg-surface) !important;
+    box-shadow: 0 0 0 0.25rem rgba(var(--tblr-primary-rgb), 0.15) !important;
+    outline: 0;
+}
+
+div.dataTables_wrapper .dataTables_length select {
+    border: 1.5px solid var(--tblr-border-color);
+    border-radius: var(--tblr-border-radius);
+    padding: 0.35rem 1.5rem 0.35rem 0.5rem;
+    background-color: var(--tblr-bg-forms);
+    color: var(--tblr-body-color);
+}
+
+/* Media card styling */
+.media-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tox-promotion {
+    display: none !important;
+}
+
+.input-icon {
+    width: 100% !important;
+}
+
+/* Fix Nested Modal Z-Index */
+#openMediaModel {
+    z-index: 1060 !important;
+}
+
+.modal-backdrop.show:nth-of-type(2) {
+    z-index: 1055 !important;
+}
+
+/* Modern Multi-Select Media Card */
+.modal-media-card {
+    background-color: var(--tblr-bg-surface);
+    border: 2px solid var(--tblr-border-color-translucent);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 0.5rem;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+}
+
+.modal-media-card:hover {
+    border-color: var(--tblr-primary-subtle);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+
+.modal-media-card.selected {
+    border-color: var(--tblr-primary) !important;
+    background-color: var(--tblr-primary-lt) !important;
+    box-shadow: 0 0 0 2px var(--tblr-primary) !important;
+}
+
+/* Checkbox in top-left corner */
+.media-card-checkbox {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 5;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.modal-media-thumb {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 10px;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: var(--tblr-bg-surface-secondary);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Shimmer Glow Animation */
+.modal-media-thumb::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+        90deg,
+        rgba(var(--tblr-body-color-rgb), 0) 0,
+        rgba(var(--tblr-body-color-rgb), 0.05) 20%,
+        rgba(var(--tblr-body-color-rgb), 0.1) 60%,
+        rgba(var(--tblr-body-color-rgb), 0)
+    );
+    animation: modalImgShimmer 2s infinite ease-in-out;
+}
+
+@keyframes modalImgShimmer {
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+.modal-media-body {
+    padding: 0.65rem 0.25rem 0.25rem 0.25rem;
+    text-align: center;
+}
+
+.modal-media-title {
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--tblr-body-color);
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 767.98px) {
+    .dataTables_filter {
+        justify-content: center;
+        padding: 1rem;
+    }
+
+    .dataTables_filter label,
+    .dataTables_filter input {
+        width: 100%;
+    }
+
+    div.dataTables_wrapper div.dataTables_paginate {
+        display: flex !important;
+        justify-content: center !important;
+        flex-wrap: wrap !important;
+        margin-top: 0.75rem !important;
+    }
+
+    .modal-dialog {
+        margin-top: 5vh;
+    }
+}
+
+.input-icon {
+    width: 100% !important;
+}
+
+@media (max-width: 575.98px) {
+    .modal-dialog {
+        margin-top: 10vh;
+    }
+}

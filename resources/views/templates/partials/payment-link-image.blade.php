@@ -6,17 +6,19 @@
     <!-- {{ $payment->label }} Image -->
     <div class="lightgallery rounded-lg flex items-center justify-center">
         <a href="{{ url($payment->content) }}" data-sub-html="{{ $payment->label }}" onclick="return false;">
-            <img
-                src="{{ url($payment->content) }}"
-                alt="{{ $payment->label }}"
-                class="w-full h-full object-cover rounded-lg"
-                style="max-width: 320px; max-height: 320px;"
-            />
+            @if (isset($style) && $style === 'no')
+                <img src="{{ url($payment->content) }}" alt="{{ $payment->label }}"
+                    class="w-full h-full object-cover rounded-lg" />
+            @else
+                <img src="{{ url($payment->content) }}" alt="{{ $payment->label }}"
+                    class="w-full h-full object-cover rounded-lg" style="max-width: 320px; max-height: 320px;" />
+            @endif
         </a>
     </div>
 @else
     <!-- {{ $payment->label }} Icon -->
-    <i class="{{ $payment->icon }} text-4xl {{ $business_card_details->theme_id == "588969111143" || $business_card_details->theme_id == "588969111140" ? 'text-white' : '' }}"></i>
+    <i
+        class="{{ $payment->icon }} text-4xl {{ $business_card_details->theme_id == '588969111143' || $business_card_details->theme_id == '588969111140' ? 'text-white' : '' }}"></i>
 @endif
 
 <!-- LightGallery JS -->
@@ -26,7 +28,7 @@
 
 <!-- Initialize LightGallery -->
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
+    document.addEventListener("DOMContentLoaded", function() {
         const galleries = document.querySelectorAll(".lightgallery");
         galleries.forEach(gallery => {
             lightGallery(gallery, {

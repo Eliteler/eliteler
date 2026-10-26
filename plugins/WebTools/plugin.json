@@ -1,8 +1,15 @@
 {
     "plugin_id": "WebTools",
     "name": "Web Tools",
-    "description": "The Eliteler Web Tools Plugin provides HTML, CSS, and JS beautification and minification utilities.",
-    "version": "1.0.0",
+    "description": "Optimize your website's HTML, CSS, and JavaScript for better performance.",
+    "version": "1.2.0",
     "img": "webtools.png",
-    "main_route": "admin.plugin.webtools"
+    "main_route": "admin.plugin.webtools",
+    "requires_admin": "1",
+    "platform": "gobiz-saas",
+    "min_version": "28.0.0",
+    "admin_pages": {
+        "settings": "dist/settings.js"
+    },
+    "documentation_url": null
 }

@@ -35,8 +35,8 @@ class ScriptSanitizer
             'admin.update.blog',
             'admin.save.page',
             'admin.update.custom.page',
-            'admin.update.theme.css',
-            'admin.update.theme.js'
+            // Theme custom CSS/JS is admin-authored code and must be stored as-is
+            'admin.update.theme',
         ];
 
         // Keys to skip even on purified routes

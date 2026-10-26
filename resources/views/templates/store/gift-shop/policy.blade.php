@@ -1,3 +1,18 @@
+@php
+    $currentHost = request()->getHost();
+    $masterHost = parse_url(config('app.url'), PHP_URL_HOST);
+    $isCustomDomainOrSubdomain = $currentHost !== $masterHost;
+
+    // Dynamic store base URL and product URL prefix
+    if ($isCustomDomainOrSubdomain) {
+        $storeUrl = url('/');
+        $productUrlPrefix = url('product');
+    } else {
+        $storeUrl = url($business_card_details->card_url);
+        $productUrlPrefix = url($business_card_details->card_url . '/product');
+    }
+@endphp
+
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
@@ -23,7 +38,7 @@
         <link rel="apple-touch-icon" href="{{ url($seo->favicon) }}">
     @else
         <link rel="icon" href="{{ url($business_card_details->profile) }}" sizes="512x512" type="image/png">
-        <link rel="apple-touch-icon" href="{{ url($business_card_details->profile) }}">
+        <link rel="apple-touch-icon" href="{{ url($business_card_details->profile) }}">
     @endif
 
     <meta name="theme-color" content="red" />
@@ -52,7 +67,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
     <style>
-        body, a, button {
+        body,
+        a,
+        button {
             font-family: 'Lora', sans-serif !important;
             letter-spacing: -0.3px;
         }
@@ -66,22 +83,62 @@
     {{-- Check business details --}}
     @if ($business_card_details != null)
         @php
-            $custom_css = $business_card_details->custom_css;
-            $custom_js = $business_card_details->custom_js;
+            $custom_css = trim($business_card_details->custom_css ?? '');
+            $custom_js = trim($business_card_details->custom_js ?? '');
 
-            // Ensure <style> tags for custom CSS
-            if (strpos($custom_css, '<style>') === false && strpos($custom_css, '</style>') === false) {
-                $custom_css = "<style>" . $custom_css . "</style>";
+            /*
+            |--------------------------------------------------------------------------
+            | Custom CSS
+            |--------------------------------------------------------------------------
+            */
+
+            if (!empty($custom_css) && stripos($custom_css, '<style') === false) {
+                $custom_css = "<style>{$custom_css}</style>";
             }
 
-            // Ensure <script> tags for custom JS
-            if (strpos($custom_js, '<script>') === false && strpos($custom_js, '</script>') === false) {
-                $custom_js = "<script>" . $custom_js . "</script>";
+            /*
+            |--------------------------------------------------------------------------
+            | Split HTML tags and plain JS
+            |--------------------------------------------------------------------------
+            */
+
+            $include_custom_js = '';
+
+            if (!empty($custom_js)) {
+                // Extract HTML tags like meta, script, iframe, noscript, etc.
+                preg_match_all(
+                '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/@endphp/is',
+        $custom_js,
+        $matches,
+    );
+
+    $html_tags = implode("\n", $matches[0]);
+
+    // Remove extracted HTML tags from original content
+    $plain_js = trim(
+        preg_replace(
+            '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/?>/is',
+            '',
+            $custom_js,
+        ),
+    );
+
+    // Add HTML tags directly
+    $include_custom_js .= $html_tags;
+
+    // Wrap remaining plain JS inside script tag
+    if (!empty($plain_js)) {
+        $include_custom_js .= "\n<script>
+            {
+                $plain_js
             }
-        @endphp
+        </script>";
+    }
+}
+?>
 
         {!! $custom_css !!}
-        {!! $custom_js !!}
+        {!! $include_custom_js !!}
     @endif
 
     {{-- JS --}}
@@ -123,7 +180,8 @@
                         <div class="page-body">
                             <div class="container-xl">
                                 <div class="py-2">
-                                    <h1 class="fs-1 border-bottom mb-4 fw-bold contact-information-title">{{ __($pageTitle) }}</h1>
+                                    <h1 class="fs-1 border-bottom mb-4 fw-bold contact-information-title">
+                                        {{ __($pageTitle) }}</h1>
                                     
                                     <div class="col-lg-12 col-md-12 col-sm-12 px-2">
                                         {!! $pageContent ?? '' !!}
@@ -150,7 +208,9 @@
             <!-- Footer -->
                     <div class="footer-wave">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" preserveAspectRatio="none">
-                            <path fill="#d82b2a" fill-opacity="1" d="M0,32L48,58.7C96,85,192,139,288,133.3C384,128,480,64,576,69.3C672,75,768,149,864,181.3C960,213,1056,203,1152,165.3C1248,128,1344,64,1392,32L1440,0L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+                            <path fill="#d82b2a" fill-opacity="1"
+                                d="M0,32L48,58.7C96,85,192,139,288,133.3C384,128,480,64,576,69.3C672,75,768,149,864,181.3C960,213,1056,203,1152,165.3C1248,128,1344,64,1392,32L1440,0L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z">
+                            </path>
                         </svg>
                     </div>
                     <footer class="footer footer-transparent mb-7 mb-lg-0">
@@ -269,7 +329,7 @@
                     </footer>
 
                     <!-- Bottom Navbar -->
-                    @include('templates.includes.bottom-bar', ['color' => 'red','bg' => 'light'])
+                    @include('templates.includes.bottom-bar', ['color' => 'red', 'bg' => 'light'])
                     <!-- End Bottom Navbar -->
                 </div>
             </div>
@@ -307,7 +367,7 @@
     </div>
 
     {{-- Place order --}}
-    <div class="modal modal-blur fade" id="orderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal modal-bg fade" id="orderModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-md modal-dialog-centered" role="document">
             <div class="modal-content">
                 <!-- Modal Header -->
@@ -377,8 +437,9 @@
 
                     {{-- Customer Notes --}}
                     <div class="mb-3">
-                        <small>{{ __("Customer Notes") }}: </small>
-                        <small class="text-muted">{{ __("After you click the Confirm button, WhatsApp will open. Tap 'Send' in WhatsApp to send your order to the shop owner.") }}</small>
+                        <small>{{ __('Customer Notes') }}: </small>
+                        <small
+                            class="text-muted">{{ __("After you click the Confirm button, WhatsApp will open. Tap 'Send' in WhatsApp to send your order to the shop owner.") }}</small>
                     </div>
                 </div>
                 <!-- Modal Footer -->
@@ -404,7 +465,11 @@
     </div>
 
     {{-- WharApp Chat --}}
-    @include('templates.includes.whatsapp-float', ['businessImage' => $business_card_details->profile, 'businessName' => $card_details->title, 'whatsappNumber' => $enquiry_button])
+    @include('templates.includes.whatsapp-float', [
+        'businessImage' => $business_card_details->profile,
+        'businessName' => $card_details->title,
+        'whatsappNumber' => $enquiry_button,
+    ])
 
     <!-- Core -->
     <script type="text/javascript" src="{{ url('js/tabler.min.js') }}"></script>
@@ -549,7 +614,7 @@
                 // LEFT: Image
                 cart_items += `
                 <div class="me-3 flex-shrink-0" style="width: 100px; height: 100px;">
-                    <img src="${item.product_image}" class="img-fluid rounded-gift-shop object-fit-cover h-100 w-100" alt="${item.product_name}" />
+                    <img src="${item.product_image}" class="img-fluid rounded-gift-shop object-fit-contain h-100 w-100" alt="${item.product_name}" />
                 </div>`;
 
                 // RIGHT: Product Info
@@ -722,7 +787,7 @@
 
                 // Place order ajax
                 $.ajax({
-                    url: "{{ route('store.order.place') }}",
+                    url: "{{ url('order/place') }}",
                     method: "POST",
                     data: {
                         _token: '{{ csrf_token() }}',
@@ -735,7 +800,7 @@
                         order_items: cart,
                         total_price: grandTotal,
                     },
-                    success: function (data) {
+                    success: function(data) {
                         // Check if order was placed successfully
                         if (data.status == "success") {
                             // Map of dynamic delivery type values to translated strings
@@ -769,7 +834,8 @@
                             waShareContent += productsList + `*${whatsAppMessage}*`;
 
                             // Construct WhatsApp link and open in new tab
-                            const link = `https://api.whatsapp.com/send/?phone=${whatsAppNumber}&text=${encodeURI(waShareContent)}`;
+                            const link =
+                                `https://api.whatsapp.com/send/?phone=${whatsAppNumber}&text=${encodeURI(waShareContent)}`;
                             // Confirm before opening
                             const opened = window.open(link, '_blank');
 
@@ -789,7 +855,7 @@
                             errorAlert(data.message);
                         }
                     },
-                    error: function (error) {
+                    error: function(error) {
                         // Show error message
                         errorAlert(error.responseJSON.message);
                     }

@@ -41,11 +41,8 @@ class MaintenanceController extends Controller
     // Site Maintenance
     public function siteMaintenance(Request $request)
     {
-        // Queries
-        $settings = Setting::where('status', 1)->first();
-        $config = DB::table('config')->get();
-
-        return view('admin.pages.settings.index', compact('settings', 'config'));
+        // This page was the general settings view; maintenance mode is managed by its plugin
+        return redirect()->route('admin.settings');
     }
 
     // Maintenance Mode

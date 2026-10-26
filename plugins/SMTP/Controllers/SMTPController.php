@@ -1,106 +1,120 @@
 <?php
+
+/*
+ |--------------------------------------------------------------------------
+ | GoBiz vCard SaaS
+ |--------------------------------------------------------------------------
+ | Developed by NativeCode © 2021 - https://nativecode.in
+ | All rights reserved
+ | Unauthorized distribution is prohibited
+ |--------------------------------------------------------------------------
+*/
+
 namespace Plugins\SMTP\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Setting;
+use App\Support\Admin\PluginPage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\Rule;
 
+/**
+ * Outgoing email (MAIL_* in .env) and the customer email verification switch
+ * (config disable_user_email_verification: despite the name, "1" = verification required).
+ * Page: plugins/SMTP/resources/js/settings.tsx.
+ */
 class SMTPController extends Controller
 {
-    public function smtpSettings(Request $request)
+    private const DRIVERS = ['smtp' => 'SMTP', 'sendmail' => 'Sendmail (server)', 'log' => 'Log only (no emails sent)'];
+
+    private const ENCRYPTIONS = ['tls' => 'TLS (port 587)', 'ssl' => 'SSL (port 465)', 'null' => 'None'];
+
+    public function smtpSettings()
     {
-        $settings = Setting::where('id', 1)->first();
+        $driver = (string) env('MAIL_MAILER', 'smtp');
 
-        $email_configuration = [
-            'driver'     => env('MAIL_MAILER', 'smtp'),
-            'host'       => env('MAIL_HOST', 'smtp.mailgun.org'),
-            'port'       => env('MAIL_PORT', 587),
-            'username'   => env('MAIL_USERNAME'),
-            'password'   => env('MAIL_PASSWORD'),
-            'encryption' => env('MAIL_ENCRYPTION', 'tls'),
-            'address'    => env('MAIL_FROM_ADDRESS'),
-            'name'       => env('MAIL_FROM_NAME', $settings->site_name),
-        ];
-
-        $config = DB::table('config')->get();
-
-        return view()->file(base_path('plugins/SMTP/Views/index.blade.php'), compact('settings', 'email_configuration', 'config'));
+        return PluginPage::render('SMTP', 'settings', [
+            'values'        => [
+                'mail_sender'          => (string) env('MAIL_FROM_NAME', config('app.name')),
+                'mail_address'         => (string) env('MAIL_FROM_ADDRESS', ''),
+                'mail_driver'          => $driver,
+                'mail_host'            => (string) env('MAIL_HOST', ''),
+                'mail_port'            => (string) env('MAIL_PORT', '587'),
+                'mail_encryption'      => (string) (env('MAIL_ENCRYPTION') ?: 'null'),
+                'mail_username'        => (string) env('MAIL_USERNAME', ''),
+                'require_verification' => (string) DB::table('config')->where('config_key', 'disable_user_email_verification')->value('config_value') === '1',
+            ],
+            // The password never leaves the server
+            'savedPassword' => filled(env('MAIL_PASSWORD')),
+            'drivers'       => collect(self::DRIVERS + [$driver => $driver])->map(fn($label, $value) => ['value' => (string) $value, 'label' => __($label)])->values(),
+            'encryptions'   => collect(self::ENCRYPTIONS)->map(fn($label, $value) => ['value' => (string) $value, 'label' => __($label)])->values(),
+            'adminEmail'    => Auth::user()->email,
+        ]);
     }
 
     public function smtpSettingsUpdate(Request $request)
     {
-        // Mail username
-        $mailDriver = str_replace('"', "", $request->mail_driver);
-        $mailDriver = str_replace("'", "", $mailDriver);
+        $smtp = $request->input('mail_driver') === 'smtp';
 
-        // Mail host
-        $mailHost = str_replace('"', "", $request->mail_host);
-        $mailHost = str_replace("'", "", $mailHost);
-
-        // Mail port
-        $mailPort = str_replace('"', "", $request->mail_port);
-        $mailPort = str_replace("'", "", $mailPort);
-
-        // Mail username
-        $userName = str_replace('"', "", $request->mail_username);
-        $userName = str_replace("'", "", $userName);
-
-        // Mail password
-        $password = str_replace('"', "", $request->mail_password);
-        $password = str_replace("'", "", $password);
-
-        // Mail encryption
-        $mailEncryption = str_replace('"', "", $request->mail_encryption);
-        $mailEncryption = str_replace("'", "", $mailEncryption);
-
-        // Mail email
-        $senderEmail = str_replace('"', "", $request->mail_address);
-        $senderEmail = str_replace("'", "", $senderEmail);
-
-        // Mail sender name
-        $mailSenderName = str_replace('"', "", $request->mail_sender);
-        $mailSenderName = str_replace("'", "", $mailSenderName);
-
-        // Set new values using putenv (google login)
-        $this->updateEnvFile('MAIL_MAILER', $mailDriver);
-        $this->updateEnvFile('MAIL_HOST', $mailHost);
-        $this->updateEnvFile('MAIL_PORT', $mailPort);
-        $this->updateEnvFile('MAIL_USERNAME', $userName);
-        $this->updateEnvFile('MAIL_PASSWORD', '"' . $password . '"');
-        // Check mail encryption
-        $this->updateEnvFile('MAIL_ENCRYPTION', $mailEncryption);
-        $this->updateEnvFile('MAIL_FROM_ADDRESS', $senderEmail);
-        $this->updateEnvFile('MAIL_FROM_NAME', '"' . $mailSenderName . '"');
-
-        // User Email Verification Syetem
-        DB::table('config')->where('config_key', 'disable_user_email_verification')->update([
-            'config_value' => $request->disable_user_email_verification,
+        $data = $request->validate([
+            'mail_sender'          => 'required|string|max:100',
+            'mail_address'         => 'required|email|max:191',
+            'mail_driver'          => ['required', 'string', 'max:30', 'regex:/^[a-z]+$/'],
+            'mail_host'            => [$smtp ? 'required' : 'nullable', 'string', 'max:191'],
+            'mail_port'            => [$smtp ? 'required' : 'nullable', 'integer', 'between:1,65535'],
+            'mail_encryption'      => ['required', Rule::in(array_keys(self::ENCRYPTIONS))],
+            'mail_username'        => 'nullable|string|max:191',
+            'mail_password'        => 'nullable|string|max:191',
+            'require_verification' => 'required|boolean',
+        ], [], [
+            'mail_sender'   => __('sender name'),
+            'mail_address'  => __('sender email'),
+            'mail_driver'   => __('mailer'),
+            'mail_host'     => __('host'),
+            'mail_port'     => __('port'),
+            'mail_encryption' => __('encryption'),
+            'mail_username' => __('username'),
+            'mail_password' => __('password'),
         ]);
 
-        return redirect()->route('admin.plugin.smtp.settings')->with('success', __('SMTP Settings updated successfully.'));
+        // .env values can't contain quotes
+        $clean = fn($value) => str_replace(['"', "'"], '', trim((string) $value));
+
+        $this->updateEnvFile('MAIL_MAILER', $clean($data['mail_driver']));
+        $this->updateEnvFile('MAIL_HOST', $clean($data['mail_host'] ?? ''));
+        $this->updateEnvFile('MAIL_PORT', $clean($data['mail_port'] ?? ''));
+        $this->updateEnvFile('MAIL_USERNAME', '"' . $clean($data['mail_username'] ?? '') . '"');
+        // A blank password keeps the saved one
+        if (filled($data['mail_password'] ?? null)) {
+            $this->updateEnvFile('MAIL_PASSWORD', '"' . $clean($data['mail_password']) . '"');
+        }
+        $this->updateEnvFile('MAIL_ENCRYPTION', $data['mail_encryption']);
+        $this->updateEnvFile('MAIL_FROM_ADDRESS', $clean($data['mail_address']));
+        $this->updateEnvFile('MAIL_FROM_NAME', '"' . $clean($data['mail_sender']) . '"');
+
+        DB::table('config')->where('config_key', 'disable_user_email_verification')->update([
+            'config_value' => $request->boolean('require_verification') ? '1' : '0',
+        ]);
+
+        return back()->with('success', __('Email settings saved.'));
     }
 
-    // Test email
-    public function testEmail()
+    /** Send a test email with the saved settings to the signed-in admin. */
+    public function testEmail(Request $request)
     {
-        $message = [
-            'msg' => 'Test mail',
-        ];
-        $mail = false;
+        $to = Auth::user()->email;
+
         try {
-            Mail::to(ENV('MAIL_FROM_ADDRESS'))->send(new \App\Mail\TestMail($message));
-            $mail = true;
-        } catch (\Exception $e) {
-            // Page redirect
-            return redirect()->route('admin.plugin.smtp.settings')->with('failed', trans('Email configuration wrong.'));
+            Mail::to($to)->send(new \App\Mail\TestMail(['msg' => 'Test mail']));
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->with('failed', __('Couldn’t send the test email: :error', ['error' => $e->getMessage()]));
         }
-        // Check email
-        if ($mail == true) {
-            // Page redirect
-            return redirect()->route('admin.plugin.smtp.settings')->with('success', trans('Test mail send successfully.'));
-        }
+
+        return back()->with('success', __('Test email sent to :email.', ['email' => $to]));
     }
 
     public function updateEnvFile($key, $value)
@@ -135,5 +149,4 @@ class SMTPController extends Controller
             $_SERVER[$key] = $value;
         }
     }
-
 }

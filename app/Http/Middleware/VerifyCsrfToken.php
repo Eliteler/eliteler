@@ -42,6 +42,21 @@ class VerifyCsrfToken extends Middleware
         '/ai-credits/paddle-payment-webhook',
         '/ai-credits/flutterwave-callback',
 
+        '/sslcommerz/success',
+        '/sslcommerz/failure',
+        '/sslcommerz/cancel',
+        '/sslcommerz/ipn',
+
+        '/nfc/sslcommerz/success',
+        '/nfc/sslcommerz/failure',
+        '/nfc/sslcommerz/cancel',
+        '/nfc/sslcommerz/ipn',
+
+        '/ai-credit/sslcommerz/success',
+        '/ai-credit/sslcommerz/failure',
+        '/ai-credit/sslcommerz/cancel',
+        '/ai-credit/sslcommerz/ipn',
+
         '{id}',
         '{id}/product/*',
         '{id}/categories',

@@ -12,193 +12,147 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Plan;
-use App\Setting;
-use App\Currency;
-use App\Classes\SavePlan;
-use App\Classes\UpdatePlan;
-use Illuminate\Http\Request;
-use Yajra\DataTables\DataTables;
-use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Artisan;
+use App\Plan;
+use App\Services\Admin\PlanService;
+use App\User;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class PlanController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
-    public function __construct()
+    private const TABS = ['all' => null, 'active' => 1, 'disabled' => 0];
+
+    public function __construct(private PlanService $plans)
     {
         $this->middleware('auth');
     }
 
-    /**
-     * Show the application dashboard.
-     *
-     * @return \Illuminate\Contracts\Support\Renderable
-     */
-
-    // All Plans
+    // Plans
     public function plans(Request $request)
     {
-        // Queries
-        $settings = Setting::active()->first();
-        $config = DB::table('config')->get();
-        $plans = Plan::where('status', '!=', 2)->get();
+        $tab    = array_key_exists($request->query('status'), self::TABS) ? $request->query('status') : 'all';
+        $search = trim((string) $request->query('search', ''));
 
-        // Currency symbol
-        $currencies = Currency::where('status', 1)->pluck('symbol', 'iso_code')->toArray();
-        $symbol = $currencies[$config[1]->config_value] ?? '';
+        $subscribers = $this->plans->activeSubscribers();
 
-        if ($request->ajax()) {
-            return DataTables::of($plans)
-                ->addIndexColumn()
-                ->addColumn('plan_type', function ($plan) {
-                    return '<span class="badge bg-primary text-white">' . __($plan->plan_type ?: "-") . '</span>';
-                })
-                ->addColumn('plan_name', function ($plan) {
-                    return '<span class="fw-bold">' . __($plan->plan_name) . '</span>';
-                })
-                ->addColumn('plan_price', function ($plan) use ($symbol) {
-                    // Price
-                    $price = $plan->plan_price != 0 ? formatCurrency($plan->plan_price) : __('Free');
-                    return '<span class="fw-bold">' . $price . '</span>';
-                })
-                ->addColumn('validity', function ($plan) {
-                    return '<span class="fw-bold">' . match ($plan->validity) {
-                        9999 => __('Forever'),
-                        31, 30   => __('Monthly'),
-                        366, 365  => __('Yearly'),
-                        default => $plan->validity . ' ' . __('Days'),
-                    } . '</span>';
-                })
-                ->addColumn('status', function ($plan) {
-                    $statusLabel = $plan->status == 0 ? 'bg-red' : 'bg-green';
-                    $statusText = $plan->status == 0 ? __('Deactive') : __('Active');
-                    return '<span class="badge ' . $statusLabel . ' text-white">' . $statusText . '</span>';
-                })
-                ->addColumn('action', function ($plan) {
-                    $actions = '
-                        <a href="#" class="btn-action" data-bs-toggle="dropdown"
-                            aria-expanded="false">
-                            <!-- Download SVG icon from http://tabler-icons.io/i/dots-vertical -->
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24"
-                                height="24" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round"
-                                class="icon icon-tabler icons-tabler-outline icon-tabler-dots fw-bold">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                <path d="M4 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                <path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                <path d="M18 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                            </svg>
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-end">
-                            <a class="dropdown-item" href="' . route('admin.edit.plan', $plan->plan_id) . '">' . __('Edit') . '</a>';
+        $plans = Plan::query()
+            ->when($tab === 'all', fn($q) => $q->where('status', '!=', 2))
+            ->when($tab !== 'all', fn($q) => $q->where('status', self::TABS[$tab]))
+            ->when($search !== '', fn($q) => $q->where('plan_name', 'like', "%{$search}%"))
+            ->orderByRaw('status = 1 DESC')
+            ->orderBy('plan_price')
+            ->get()
+            ->map(fn(Plan $plan) => $this->plans->present($plan, $subscribers[$plan->plan_id] ?? 0));
 
-                    if ($plan->status == 0) {
-                        $actions .= '<a class="dropdown-item" href="#" onclick="getPlan(`' . $plan->plan_id . '`, `activated`); return false;">' . __('Activate') . '</a>';
-                    } else {
-                        $actions .= '<a class="dropdown-item" href="#" onclick="getPlan(`' . $plan->plan_id . '`, `deactivated`); return false;">' . __('Deactivate') . '</a>';
+        $counts = Plan::query()
+            ->where('status', '!=', 2)
+            ->when($search !== '', fn($q) =>
+                $q->where('plan_name', 'like', "%{$search}%")
+            )
+            ->selectRaw('
+                COUNT(*) as `all`,
+                SUM(status = 1) as active,
+                SUM(status = 0) as disabled
+            ')
+            ->first();
+
+        return Inertia::render('plans/index', [
+            'plans'   => $plans,
+            'tab'     => $tab,
+            'search'  => $search,
+            'counts'  => collect(array_keys(self::TABS))->mapWithKeys(fn($key) => [$key => (int) $counts->{$key} ?? 0]),
+            'plugins' => $this->plans->plugins(),
+        ]);
                     }
 
-                    $actions .= '<a class="dropdown-item" href="#" onclick="deletePlan(`' . $plan->plan_id . '`); return false;">' . __('Delete') . '</a>
-                        </div>';
-
-                    return $actions;
-                })
-                ->rawColumns(['plan_type', 'plan_name', 'plan_price', 'validity', 'status', 'action'])
-                ->make(true);
-        }
-
-        return view('admin.pages.plans.plans', compact('settings', 'config'));
-    }
-
-    // Add Plan
+    // New plan
     public function addPlan()
     {
-        // Queries
-        $config = DB::table('config')->get();
-        $settings = Setting::where('status', 1)->first();
-
-        return view('admin.pages.plans.add-plan', compact('settings', 'config'));
+        return Inertia::render('plans/form', [
+            'plan'    => null,
+            'plugins' => $this->plans->plugins(),
+        ]);
     }
 
-    // Save Plan
+    // Save new plan
     public function savePlan(Request $request)
     {
-        // Save
-        $plan = new SavePlan;
-        $plan->create($request);
+        $data = $request->validate($this->plans->rules((string) $request->input('plan_type')), [], $this->plans->attributes());
 
-        // Check result
-        if ($plan->result != 0) {
-            return redirect()->route('admin.add.plan')->with('success', trans('Created!'));
-        } else {
-            return redirect()->route('admin.add.plan')->with('failed', trans('Creation failed!'));
-        }
+        $plan          = new Plan();
+        $plan->plan_id = uniqid();
+        $this->plans->fill($plan, $data)->save();
+
+        return redirect()->route('admin.plans')->with('success', __('Plan “:name” created.', ['name' => $plan->plan_name]));
     }
 
-    // Edit Plan
-    public function editPlan(Request $request, $id)
+    // Edit plan
+    public function editPlan($id)
     {
-        // Queries
-        $plan_id = $request->id;
-        $plan_details = Plan::where('plan_id', $plan_id)->first();
-        $settings = Setting::where('status', 1)->first();
+        $plan = Plan::where('plan_id', $id)->first();
 
-        if ($plan_details == null) {
-            return redirect()->route('admin.plans')->with('failed', trans('Not Found!'));
-        } else {
-            return view('admin.pages.plans.edit-plan', compact('plan_details', 'settings'));
-        }
+        if (! $plan) {
+            return redirect()->route('admin.plans')->with('failed', __('Not Found!'));
     }
 
-    // Update Plan
+        return Inertia::render('plans/form', [
+            'plan'    => $this->plans->present($plan, $this->plans->activeSubscribers()[$plan->plan_id] ?? 0),
+            'plugins' => $this->plans->plugins(),
+        ]);
+    }
+
+    // Update plan
     public function updatePlan(Request $request)
     {
-        // Update
-        $updatePlan = new UpdatePlan;
-        $updatePlan->create($request);
+        $plan = Plan::where('plan_id', (string) $request->input('plan_id'))->first();
 
-        // Check result
-        if ($updatePlan->result != 0) {
-            return redirect()->route('admin.edit.plan', $request->plan_id)->with('success', trans('Updated!'));
-        } else {
-            return redirect()->route('admin.edit.plan', $request->plan_id)->with('failed', trans('Updated Failed!'));
-        }
+        if (! $plan) {
+            return redirect()->route('admin.plans')->with('failed', __('Not Found!'));
     }
 
-    // Status Plan
+        $data = $request->validate($this->plans->rules((string) $request->input('plan_type')), [], $this->plans->attributes());
+        $this->plans->fill($plan, $data)->save();
+
+        return redirect()->route('admin.edit.plan', $plan->plan_id)->with('success', __('Plan updated.'));
+    }
+
+    // Enable / disable
     public function statusPlan(Request $request)
     {
-        // Queries
-        $plan_details = Plan::where('plan_id', $request->query('id'))->first();
+        $data = $request->validate([
+            'id'     => 'required|string',
+            'status' => 'required|in:active,disabled',
+        ]);
 
-        if ($plan_details == null) {
-            return redirect()->route('admin.plans')->with('failed', trans('Not Found!'));
+        $plan = Plan::where('plan_id', $data['id'])->first();
+
+        if (! $plan) {
+            return back()->with('failed', __('Not Found!'));
         }
 
-        if ($plan_details->status == 0) {
-            $status = 1;
-        } else {
-            $status = 0;
+        $plan->status = $data['status'] === 'active' ? 1 : 0;
+        $plan->save();
+
+        return back()->with('success', match (true) {
+            $data['status'] === 'active' => __('Plan enabled.'),
+            default                      => __('Plan disabled.'),
+        });
         }
 
-        Plan::where('plan_id', $request->query('id'))->update(['status' => $status]);
-
-        return redirect()->route('admin.plans')->with('success', trans('Updated!'));
-    }
-
-    // Delete Plan
+    // Delete
     public function deletePlan(Request $request)
     {
-        // Queries
-        Plan::where('plan_id', $request->query('id'))->update(['status' => 2]);
+        $data = $request->validate(['id' => 'required|string']);
 
-        return redirect()->route('admin.plans')->with('success', trans('Deleted!'));
+        if (User::where('plan_id', $data['id'])->exists()) {
+            return back()->with('failed', __('This plan is in use by customers and cannot be deleted.'));
+        }
+
+        $updated = Plan::where('plan_id', $data['id'])->delete();
+
+        return $updated
+            ? back()->with('success', __('Plan deleted.'))
+            : back()->with('failed', __('Not Found!'));
     }
 }

@@ -12,13 +12,13 @@
 
 namespace App\Http\Controllers\User\Vcard\Edit;
 
-use App\Setting;
 use App\BusinessCard;
 use App\BusinessField;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use App\Setting;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class SocialLinkController extends Controller
 {
@@ -156,7 +156,7 @@ class SocialLinkController extends Controller
                                 $customContent = null;
 
                                 // Handle query string (e.g., ?v=VIDEO_ID)
-                                if (!empty($parsedUrl['query'])) {
+                                if (! empty($parsedUrl['query'])) {
                                     parse_str($parsedUrl['query'], $queryParams);
                                     if (isset($queryParams['v'])) {
                                         $customContent = $queryParams['v'];
@@ -164,17 +164,17 @@ class SocialLinkController extends Controller
                                 }
 
                                 // Handle youtu.be short links
-                                if (!$customContent && isset($parsedUrl['host']) && $parsedUrl['host'] === 'youtu.be') {
+                                if (! $customContent && isset($parsedUrl['host']) && $parsedUrl['host'] === 'youtu.be') {
                                     $customContent = ltrim($parsedUrl['path'], '/');
                                 }
 
                                 // Handle /shorts/VIDEO_ID
-                                if (!$customContent && isset($parsedUrl['path']) && strpos($parsedUrl['path'], '/shorts/') === 0) {
+                                if (! $customContent && isset($parsedUrl['path']) && strpos($parsedUrl['path'], '/shorts/') === 0) {
                                     $customContent = str_replace('/shorts/', '', $parsedUrl['path']);
                                 }
 
                                 // Fallback to full URL if no ID extracted
-                                if (!$customContent) {
+                                if (! $customContent) {
                                     $customContent = $url;
                                 }
                             }
@@ -198,7 +198,7 @@ class SocialLinkController extends Controller
                                 } elseif (strpos($value, '<iframe') !== false) {
                                     // Extract src attribute from iframe
                                     preg_match('/<iframe[^>]+src="([^"]+)"/', $value, $matches);
-                                    if (!empty($matches[1])) {
+                                    if (! empty($matches[1])) {
                                         $embedUrl = $matches[1];
                                         $customContent = str_replace('https://www.google.com/maps/embed?', '', $embedUrl);
                                     }
@@ -238,7 +238,7 @@ class SocialLinkController extends Controller
                     }
 
                     // Check type
-                    if ($business_card->type == "personal") {
+                    if ($business_card->type != 'business' && ($business_card->type != 'custom')) {
                         return redirect()->route('user.edit.appointment', $id)->with('success', trans('Bio links are updated.'));
                     } else {
                         return redirect()->route('user.edit.payment.links', $id)->with('success', trans('Bio links are updated.'));

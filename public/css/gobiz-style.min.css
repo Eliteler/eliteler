@@ -1,0 +1,1280 @@
+/* ==========================================================================
+   GoBiz vCard SaaS - MASTER STYLESHEET
+   Developed by NativeCode © 2021 - https://nativecode.in
+   All rights reserved.
+   Unauthorized distribution is prohibited.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. GLOBAL ACCENT VARIABLE HOOKS & DEFAULTS
+   -------------------------------------------------------------------------- */
+:root {
+    --tblr-primary: #066fd1;
+    --tblr-primary-rgb: 6, 111, 209;
+    --tblr-primary-fg: #ffffff;
+    --tblr-primary-lt: rgba(var(--tblr-primary-rgb), 0.1);
+    --tblr-blue: var(--tblr-primary);
+    --tblr-blue-rgb: var(--tblr-primary-rgb);
+    --tblr-blue-fg: var(--tblr-primary-fg);
+    --tblr-link-decoration: none !important;
+    --tblr-link-hover-decoration: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. LIGHT MODE DEFINITION
+   -------------------------------------------------------------------------- */
+:root,
+[data-bs-theme="light"],
+body[data-bs-theme="light"],
+body:not([data-bs-theme]) {
+    color-scheme: light !important;
+
+    /* Background Hierarchy */
+    --tblr-body-bg: #f8fafc !important;
+    --tblr-body-bg-rgb: 248, 250, 252 !important;
+    --tblr-bg-surface: #ffffff !important;
+    --tblr-bg-surface-secondary: #f1f5f9 !important;
+    --tblr-bg-surface-dark: #0f172a !important;
+    --tblr-secondary-bg: #f1f5f9 !important;
+    --tblr-secondary-bg-rgb: 241, 245, 249 !important;
+
+    /* Tertiary White Layer */
+    --tblr-bg-surface-tertiary: #ffffff !important;
+    --tblr-tertiary-bg: #ffffff !important;
+    --tblr-tertiary-bg-rgb: 255, 255, 255 !important;
+    --tblr-bg-forms: #ffffff !important;
+
+    /* Typography */
+    --tblr-heading-color: #0f172a !important;
+    --tblr-emphasis-color: #0f172a !important;
+    --tblr-body-color: #334155 !important;
+    --tblr-body-color-rgb: 51, 65, 85 !important;
+    --tblr-secondary-color: #64748b !important;
+    --tblr-muted: #64748b !important;
+    --tblr-tertiary-color: #94a3b8 !important;
+
+    /* Borders & Shadows */
+    --tblr-border-color: #e2e8f0 !important;
+    --tblr-border-color-translucent: rgba(15, 23, 42, 0.08) !important;
+    --tblr-border-active-color: #cbd5e1 !important;
+    --tblr-card-bg: #ffffff !important;
+    --tblr-card-border-color: #e2e8f0 !important;
+    --tblr-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+
+    /* Dynamic Link Colors (Replaces Default Blue) */
+    --tblr-link-color: var(--tblr-primary) !important;
+    --tblr-link-color-rgb: var(--tblr-primary-rgb) !important;
+    --tblr-link-hover-color: var(--tblr-primary) !important;
+    --tblr-link-hover-color-rgb: var(--tblr-primary-rgb) !important;
+    --tblr-focus-ring-color: rgba(var(--tblr-primary-rgb), 0.2) !important;
+}
+
+[data-bs-theme="light"] body,
+body:not([data-bs-theme]) {
+    background-color: #f8fafc !important;
+    color: #334155 !important;
+}
+
+[data-bs-theme="light"] .card,
+body:not([data-bs-theme]) .card {
+    background-color: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+}
+
+/* Tertiary Background - Light Mode (Pure White) */
+[data-bs-theme="light"] .bg-body-tertiary,
+body:not([data-bs-theme]) .bg-body-tertiary,
+body:not([data-bs-theme="dark"]) .bg-body-tertiary {
+    background-color: #ffffff !important;
+    color: var(--tblr-body-color, #334155) !important;
+}
+
+[data-bs-theme="light"] .form-control,
+[data-bs-theme="light"] .form-select,
+body:not([data-bs-theme]) .form-control,
+body:not([data-bs-theme]) .form-select {
+    background-color: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+}
+
+/* --------------------------------------------------------------------------
+   3. DARK MODE DEFINITION (DEEP SLATE NAVY)
+   -------------------------------------------------------------------------- */
+[data-bs-theme="dark"],
+body[data-bs-theme="dark"],
+body.theme-dark,
+html.theme-dark {
+    color-scheme: dark !important;
+
+    /* Background Hierarchy */
+    --tblr-body-bg: #0b1326 !important;
+    --tblr-body-bg-rgb: 11, 19, 38 !important;
+    --tblr-bg-surface: #111c35 !important;
+    --tblr-bg-surface-secondary: #172442 !important;
+    --tblr-bg-surface-dark: #070c18 !important;
+    --tblr-secondary-bg: #111c35 !important;
+    --tblr-secondary-bg-rgb: 17, 28, 53 !important;
+
+    /* Dark Mode Tertiary Layer */
+    --tblr-bg-surface-tertiary: #1c2b4c !important;
+    --tblr-tertiary-bg: #1c2b4c !important;
+    --tblr-tertiary-bg-rgb: 28, 43, 76 !important;
+    --tblr-bg-forms: #0e172c !important;
+
+    /* Typography */
+    --tblr-heading-color: #ffffff !important;
+    --tblr-emphasis-color: #ffffff !important;
+    --tblr-body-color: #cbd5e1 !important;
+    --tblr-body-color-rgb: 203, 213, 225 !important;
+    --tblr-secondary-color: #8da2be !important;
+    --tblr-muted: #8da2be !important;
+    --tblr-muted-color: #8da2be !important;
+    --tblr-tertiary-color: #556987 !important;
+
+    /* Borders & Shadows */
+    --tblr-border-color: rgba(255, 255, 255, 0.08) !important;
+    --tblr-border-color-translucent: rgba(255, 255, 255, 0.05) !important;
+    --tblr-border-active-color: rgba(255, 255, 255, 0.22) !important;
+    --tblr-card-bg: #111c35 !important;
+    --tblr-card-border-color: rgba(255, 255, 255, 0.08) !important;
+    --tblr-shadow-card: 0 4px 20px 0 rgba(0, 0, 0, 0.38) !important;
+
+    /* Status Metrics */
+    --tblr-success: #10b981 !important;
+    --tblr-danger: #f43f5e !important;
+    --tblr-warning: #f59e0b !important;
+    --tblr-info: #38bdf8 !important;
+
+    /* Code & Highlight */
+    --tblr-code-color: #f472b6 !important;
+    --tblr-code-bg: rgba(255, 255, 255, 0.06) !important;
+    --tblr-highlight-color: #fef08a !important;
+    --tblr-highlight-bg: rgba(245, 158, 11, 0.28) !important;
+
+    /* Validation */
+    --tblr-form-valid-color: #34d399 !important;
+    --tblr-form-valid-border-color: #10b981 !important;
+    --tblr-form-invalid-color: #fb7185 !important;
+    --tblr-form-invalid-border-color: #f43f5e !important;
+
+    /* Dynamic Links */
+    --tblr-link-color: var(--tblr-primary) !important;
+    --tblr-link-color-rgb: var(--tblr-primary-rgb) !important;
+    --tblr-link-hover-color: var(--tblr-primary) !important;
+    --tblr-link-hover-color-rgb: var(--tblr-primary-rgb) !important;
+}
+
+[data-bs-theme="dark"] body {
+    background-color: #0b1326 !important;
+    color: #cbd5e1 !important;
+}
+
+[data-bs-theme="dark"] .card {
+    background-color: #111c35 !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.38) !important;
+}
+
+[data-bs-theme="dark"] .card-header,
+[data-bs-theme="dark"] .card-footer {
+    background-color: rgba(255, 255, 255, 0.02) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Tertiary Background - Dark Mode (Deep Slate) */
+[data-bs-theme="dark"] .bg-body-tertiary,
+body.theme-dark .bg-body-tertiary {
+    background-color: #1c2b4c !important;
+    color: #cbd5e1 !important;
+}
+
+[data-bs-theme="dark"] .form-control,
+[data-bs-theme="dark"] .form-select {
+    background-color: #0e172c !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
+}
+
+[data-bs-theme="dark"] .table {
+    --tblr-table-color: #cbd5e1 !important;
+    --tblr-table-bg: transparent !important;
+    --tblr-table-border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-bs-theme="dark"] .modal-content,
+[data-bs-theme="dark"] .dropdown-menu {
+    background-color: #111c35 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* --------------------------------------------------------------------------
+   4. FORCE REMOVE BLUE FROM ALL <a> LINKS & KILL BLUE FOCUS BLUR
+   -------------------------------------------------------------------------- */
+
+/* Forces all anchor links (e.g. Table Customer Names) to use theme primary */
+a,
+a:is(:hover, :focus, :active) {
+    text-decoration: none !important;
+}
+
+/* Kill Blue Focus Rings, Blue Blur Shadows and Outlines on Click */
+a:focus,
+a:active,
+.navbar-vertical .nav-link:focus,
+.navbar-vertical .nav-link:active,
+.navbar-vertical .nav-item.active > .nav-link:focus,
+.navbar-vertical .nav-item.active > .nav-link:active,
+.navbar-vertical a:focus,
+.navbar-vertical a:active {
+    outline: none !important;
+    box-shadow: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+}
+
+/* --------------------------------------------------------------------------
+   5. SIDEBAR NAVIGATION ENGINE (USER SPECIFIED ACTIVE LINK STYLES)
+   -------------------------------------------------------------------------- */
+
+/* Sidebar Container Base */
+.navbar-vertical {
+    border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-bs-theme="light"] .navbar-vertical,
+body:not([data-bs-theme]) .navbar-vertical {
+    background-color: #ffffff !important;
+    border-right: 1px solid #e2e8f0 !important;
+}
+
+/* [data-bs-theme="dark"] .navbar-vertical {
+    background-color: #080e1c !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+} */
+
+/* Section Headers ("MAIN CONSOLE", "MY BUSINESS", etc.) */
+.navbar-vertical .subheader,
+.navbar-vertical .dropdown-header {
+    font-size: 0.68rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+    padding: 1.25rem 1rem 0.5rem 1rem !important;
+}
+
+[data-bs-theme="light"] .navbar-vertical .subheader,
+body:not([data-bs-theme]) .navbar-vertical .subheader {
+    color: #64748b !important;
+}
+
+[data-bs-theme="dark"] .navbar-vertical .subheader {
+    color: #556987 !important;
+}
+
+/* Inactive Navigation Links */
+.navbar-vertical .nav-link,
+.navbar-vertical a.nav-link {
+    display: flex !important;
+    align-items: center !important;
+    border-radius: 6px !important;
+    font-weight: 500 !important;
+    font-size: 0.875rem !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+    transition: all 0.15s ease-in-out !important;
+}
+
+[data-bs-theme="light"] .navbar-vertical .nav-link,
+body:not([data-bs-theme]) .navbar-vertical .nav-link {
+    color: #334155 !important;
+}
+
+[data-bs-theme="dark"] .navbar-vertical .nav-link {
+    color: #94a3b8 !important;
+    background-color: transparent !important;
+}
+
+/* Inactive Link Icons & Arrows */
+.navbar-vertical .nav-link .nav-link-icon,
+.navbar-vertical .nav-link .nav-link-icon svg,
+.navbar-vertical .nav-link .nav-link-toggle {
+    width: 1.15rem !important;
+    height: 1.15rem !important;
+    margin-right: 0.65rem !important;
+    transition: color 0.15s ease !important;
+}
+
+[data-bs-theme="light"] .navbar-vertical .nav-link .nav-link-icon,
+body:not([data-bs-theme]) .navbar-vertical .nav-link .nav-link-icon {
+    color: #64748b !important;
+}
+
+[data-bs-theme="dark"] .navbar-vertical .nav-link .nav-link-icon,
+[data-bs-theme="dark"] .navbar-vertical .nav-link .nav-link-icon svg {
+    color: #64748b !important;
+    stroke: currentColor !important;
+}
+
+/* Hover State */
+[data-bs-theme="light"] .navbar-vertical .nav-link:hover,
+body:not([data-bs-theme]) .navbar-vertical .nav-link:hover {
+    color: #0f172a !important;
+    background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-bs-theme="dark"] .navbar-vertical .nav-link:hover {
+    color: #ffffff !important;
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-bs-theme="dark"] .navbar-vertical .nav-link:hover .nav-link-icon,
+[data-bs-theme="dark"] .navbar-vertical .nav-link:hover .nav-link-icon svg {
+    color: #ffffff !important;
+}
+
+/* Kill Default Tabler Pseudo-element Artifacts */
+.navbar-vertical .nav-item.active:after,
+.navbar-vertical .nav-link.active:after,
+.navbar-vertical .nav-item.active:before,
+.navbar-vertical .nav-link.active:before {
+    display: none !important;
+    content: none !important;
+    border: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   USER SPECIFIED ACTIVE LINK STYLES: LIGHT MODE (ZERO BLUE / ZERO BLUR)
+   -------------------------------------------------------------------------- */
+.navbar-vertical .nav-item.active > .nav-link,
+.navbar-vertical .nav-item.active > a,
+[data-bs-theme="light"] .navbar-vertical .nav-item.active > .nav-link,
+[data-bs-theme="light"] .navbar-vertical .nav-item.active > a,
+body:not([data-bs-theme]) .navbar-vertical .nav-item.active > .nav-link,
+body:not([data-bs-theme]) .navbar-vertical .nav-item.active > a {
+    background-color: var(--tblr-bg-surface-secondary, #ededed) !important;
+    color: var(--tblr-body-color, #0f172a) !important;
+    font-weight: 600 !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+    border-radius: 6px !important;
+}
+
+/* Active Nav Icon (Light + Dark) - Takes Dynamic Theme Color e.g. Red */
+.navbar-vertical .nav-item.active > .nav-link .nav-link-icon,
+.navbar-vertical .nav-item.active .nav-link-icon,
+.navbar-vertical .nav-item.active .nav-link-icon svg,
+.navbar-vertical .nav-link.active .nav-link-icon,
+.navbar-vertical .nav-link.active .nav-link-icon svg,
+[data-bs-theme="light"]
+    .navbar-vertical
+    .nav-item.active
+    > .nav-link
+    .nav-link-icon,
+[data-bs-theme="dark"]
+    .navbar-vertical
+    .nav-item.active
+    > .nav-link
+    .nav-link-icon,
+[data-bs-theme="dark"]
+    .navbar-vertical
+    .nav-item.active
+    > .nav-link
+    .nav-link-icon
+    svg,
+body:not([data-bs-theme])
+    .navbar-vertical
+    .nav-item.active
+    > .nav-link
+    .nav-link-icon
+    svg {
+    color: var(--tblr-primary) !important;
+    stroke: var(--tblr-primary) !important;
+}
+
+/* --------------------------------------------------------------------------
+   USER SPECIFIED ACTIVE LINK STYLES: DARK MODE (ZERO BLUE / ZERO BLUR)
+   -------------------------------------------------------------------------- */
+[data-bs-theme="dark"] .navbar-vertical .nav-item.active > .nav-link,
+[data-bs-theme="dark"] .navbar-vertical .nav-item.active > a,
+body[data-bs-theme="dark"] .navbar-vertical .nav-item.active > .nav-link,
+body[data-bs-theme="dark"] .navbar-vertical .nav-item.active > a,
+body.theme-dark .navbar-vertical .nav-item.active > .nav-link,
+body.theme-dark .navbar-vertical .nav-item.active > a {
+    background-color: var(--tblr-bg-surface-secondary, #172442) !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+    border-radius: 6px !important;
+}
+
+/* --------------------------------------------------------------------------
+   6. FORCE THEME ACCENTS ON LOGO & USER AVATAR (REPLACES BLUE)
+   -------------------------------------------------------------------------- */
+
+/* Top Left Logo Icon Background */
+.navbar-brand .bg-primary,
+.navbar-brand .bg-blue,
+.navbar-brand svg {
+    background-color: var(--tblr-primary) !important;
+    color: var(--tblr-primary-fg, #ffffff) !important;
+}
+
+/* Top Right User Profile Avatar Icon */
+.avatar.bg-blue-lt,
+.avatar.bg-primary-lt,
+.avatar[class*="bg-"] {
+    background-color: rgba(var(--tblr-primary-rgb), 0.15) !important;
+    color: var(--tblr-primary) !important;
+}
+
+/* --------------------------------------------------------------------------
+   7. APEXCHARTS ENGINE REPAIR (PROVEN DYNAMIC COLOR SYSTEM)
+   -------------------------------------------------------------------------- */
+[data-bs-theme="dark"] .apexcharts-gridline,
+[data-bs-theme="dark"] .apexcharts-grid-row,
+[data-bs-theme="dark"] .apexcharts-grid-column {
+    stroke: rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-bs-theme="dark"] .apexcharts-xaxis line,
+[data-bs-theme="dark"] .apexcharts-yaxis line,
+[data-bs-theme="dark"] .apexcharts-xaxis-tick {
+    stroke: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-bs-theme="dark"] .apexcharts-text,
+[data-bs-theme="dark"] .apexcharts-xaxis-label,
+[data-bs-theme="dark"] .apexcharts-yaxis-label,
+[data-bs-theme="dark"] .apexcharts-legend-text {
+    fill: #8da2be !important;
+    color: #8da2be !important;
+    font-size: 11px !important;
+    font-weight: 500 !important;
+}
+
+.apexcharts-series path[stroke],
+.apexcharts-line-series path,
+svg path[stroke="#066fd1"],
+svg path[stroke="#206bc4"],
+svg path[stroke="#3b82f6"] {
+    stroke: var(--tblr-primary) !important;
+    stroke-width: 2.5px !important;
+}
+
+.apexcharts-bar-series path,
+svg path[fill="#066fd1"],
+svg path[fill="#206bc4"],
+svg path[fill="#3b82f6"] {
+    fill: var(--tblr-primary) !important;
+}
+
+.apexcharts-radialbar-area,
+.apexcharts-radial-series path {
+    stroke: var(--tblr-primary) !important;
+    stroke-linecap: round !important;
+}
+
+[data-bs-theme="dark"] .apexcharts-radialbar-track path,
+[data-bs-theme="dark"] .apexcharts-track path {
+    stroke: rgba(255, 255, 255, 0.08) !important;
+}
+
+[data-bs-theme="dark"] .apexcharts-tooltip {
+    background: #172442 !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: #ffffff !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6) !important;
+}
+
+[data-bs-theme="dark"] .apexcharts-tooltip-title {
+    background: #111c35 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
+}
+
+/* --------------------------------------------------------------------------
+   8. DYNAMIC COMPONENT BINDINGS (BUTTONS, CONTROLS, TITLES)
+   -------------------------------------------------------------------------- */
+.btn-primary,
+.btn-blue {
+    background-color: var(--tblr-primary) !important;
+    border-color: var(--tblr-primary) !important;
+    color: var(--tblr-primary-fg, #ffffff) !important;
+    font-weight: 600 !important;
+}
+
+.btn-primary:hover,
+.btn-blue:hover {
+    background-color: rgba(var(--tblr-primary-rgb), 0.85) !important;
+    border-color: rgba(var(--tblr-primary-rgb), 0.85) !important;
+    color: var(--tblr-primary-fg, #ffffff) !important;
+}
+
+.form-check-input:checked {
+    background-color: var(--tblr-primary) !important;
+    border-color: var(--tblr-primary) !important;
+}
+
+.form-switch .form-check-input:checked {
+    background-color: var(--tblr-primary) !important;
+    border-color: var(--tblr-primary) !important;
+}
+
+.progress-bar {
+    background-color: var(--tblr-primary) !important;
+}
+
+.badge.bg-primary,
+.badge.bg-blue {
+    background-color: rgba(var(--tblr-primary-rgb), 0.12) !important;
+    color: var(--tblr-primary) !important;
+    border: 1px solid rgba(var(--tblr-primary-rgb), 0.2) !important;
+}
+
+/* Highlighted Titles
+   (.text-blue is defined per theme in the palette sections below) */
+h1 span,
+h2 span,
+.page-title span,
+.text-primary {
+    color: var(--tblr-primary) !important;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.14) !important;
+    border-radius: 8px !important;
+}
+
+/* ==========================================================================
+   LANGUAGE SELECTION MODAL CARDS (.lang-card) - LIGHT & DARK MODE
+   ========================================================================== */
+
+/* 1. Base Structure for all Language Cards */
+.lang-card {
+    display: flex !important;
+    align-items: center !important;
+    padding: 0.65rem 1rem !important;
+    border-radius: 8px !important;
+    text-decoration: none !important;
+    transition: all 0.2s ease-in-out !important;
+    margin-bottom: 0.5rem !important;
+    position: relative !important;
+}
+
+.lang-card:hover {
+    transform: translateY(-1px) !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. LIGHT MODE (.lang-card)
+   -------------------------------------------------------------------------- */
+[data-bs-theme="light"] .lang-card,
+body:not([data-bs-theme="dark"]) .lang-card {
+    background-color: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #334155 !important;
+}
+
+/* Hover in Light Mode */
+[data-bs-theme="light"] .lang-card:hover,
+body:not([data-bs-theme="dark"]) .lang-card:hover {
+    border-color: var(--tblr-primary) !important;
+    background-color: rgba(var(--tblr-primary-rgb), 0.04) !important;
+    color: var(--tblr-primary) !important;
+}
+
+/* Active Selected Language Card in Light Mode */
+[data-bs-theme="light"] .lang-card.active,
+body:not([data-bs-theme="dark"]) .lang-card.active {
+    border-color: var(--tblr-primary) !important;
+    background-color: rgba(var(--tblr-primary-rgb), 0.08) !important;
+    color: var(--tblr-primary) !important;
+    font-weight: 600 !important;
+}
+
+/* --------------------------------------------------------------------------
+   3. DARK MODE (.lang-card)
+   -------------------------------------------------------------------------- */
+[data-bs-theme="dark"] .lang-card,
+body.theme-dark .lang-card {
+    background-color: #0e172c !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: #cbd5e1 !important;
+}
+
+/* Hover in Dark Mode */
+[data-bs-theme="dark"] .lang-card:hover,
+body.theme-dark .lang-card:hover {
+    border-color: var(--tblr-primary) !important;
+    background-color: rgba(var(--tblr-primary-rgb), 0.08) !important;
+    color: var(--tblr-primary) !important;
+}
+
+/* Active Selected Language Card in Dark Mode */
+[data-bs-theme="dark"] .lang-card.active,
+body.theme-dark .lang-card.active {
+    border-color: var(--tblr-primary) !important;
+    background-color: rgba(var(--tblr-primary-rgb), 0.14) !important;
+    color: var(--tblr-primary) !important;
+    font-weight: 600 !important;
+}
+
+/* Checkmark Icon inside Active Language Card */
+.lang-card.active svg,
+.lang-card.active .icon,
+.lang-card.active [class*="check"] {
+    color: var(--tblr-primary) !important;
+    stroke: var(--tblr-primary) !important;
+}
+
+/* ==========================================================================
+   DYNAMIC ADAPTATION FOR .bg-primary-lt & .nav-link-icon
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. DYNAMIC LIGHT PRIMARY BACKGROUND (.bg-primary-lt & .bg-blue-lt)
+   -------------------------------------------------------------------------- */
+.bg-primary-lt,
+.bg-blue-lt {
+    background-color: rgba(var(--tblr-primary-rgb), 0.12) !important;
+    color: var(--tblr-primary) !important;
+    border: 1px solid rgba(var(--tblr-primary-rgb), 0.18) !important;
+}
+
+/* Ensure SVG icons and text inside .bg-primary-lt match the primary color */
+.bg-primary-lt svg,
+.bg-blue-lt svg,
+.bg-primary-lt .icon,
+.bg-blue-lt .icon {
+    color: var(--tblr-primary) !important;
+    stroke: var(--tblr-primary) !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. DYNAMIC NAVIGATION LINK ICONS (.nav-link-icon)
+   (Inactive light color & active-state icon rules live in Section 5)
+   -------------------------------------------------------------------------- */
+/* Base Dimensions & Smooth Transition */
+.nav-link-icon,
+.nav-link-icon svg {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+    stroke: currentColor !important;
+    transition:
+        color 0.15s ease-in-out,
+        stroke 0.15s ease-in-out !important;
+}
+
+/* Inactive Icon Color in Dark Mode */
+[data-bs-theme="dark"] .navbar-vertical .nav-link:not(.active) .nav-link-icon,
+body.theme-dark .navbar-vertical .nav-link:not(.active) .nav-link-icon {
+    color: #8da2be !important;
+}
+
+/* Hover State: Icon glows with Dynamic Primary Color */
+.navbar-vertical .nav-link:not(.active):hover .nav-link-icon,
+.navbar-vertical .nav-link:not(.active):hover .nav-link-icon svg {
+    color: var(--tblr-primary) !important;
+    stroke: var(--tblr-primary) !important;
+}
+
+[data-bs-theme="light"] .google-wallet {
+    fill: var(--tblr-primary) !important;
+}
+
+[data-bs-theme="dark"] .google-wallet {
+    fill: #94a3b8 !important;
+}
+
+/* ==========================================================================
+   TEXT COLORS - LIGHT MODE
+   ========================================================================== */
+[data-bs-theme="light"] .text-body,
+body:not([data-bs-theme="dark"]) .text-body {
+    color: #334155 !important;
+}
+
+[data-bs-theme="light"] .text-body-emphasis,
+body:not([data-bs-theme="dark"]) .text-body-emphasis {
+    color: #0f172a !important;
+}
+
+[data-bs-theme="light"] .text-body-secondary,
+[data-bs-theme="light"] .text-secondary,
+[data-bs-theme="light"] .text-muted,
+body:not([data-bs-theme="dark"]) .text-body-secondary,
+body:not([data-bs-theme="dark"]) .text-secondary,
+body:not([data-bs-theme="dark"]) .text-muted {
+    color: #64748b !important;
+}
+
+[data-bs-theme="light"] .text-body-tertiary,
+body:not([data-bs-theme="dark"]) .text-body-tertiary {
+    color: #94a3b8 !important;
+}
+
+/* Functional Semantic States (Light Mode) - .text-primary is in Section 8 */
+[data-bs-theme="light"] .text-success,
+body:not([data-bs-theme="dark"]) .text-success {
+    color: #16a34a !important;
+}
+
+[data-bs-theme="light"] .text-danger,
+body:not([data-bs-theme="dark"]) .text-danger {
+    color: #dc2626 !important;
+}
+
+[data-bs-theme="light"] .text-warning,
+body:not([data-bs-theme="dark"]) .text-warning {
+    color: #d97706 !important;
+}
+
+[data-bs-theme="light"] .text-info,
+body:not([data-bs-theme="dark"]) .text-info {
+    color: #0284c7 !important;
+}
+
+/* Tabler Full Palette Colors (Light Mode) */
+[data-bs-theme="light"] .text-blue,
+body:not([data-bs-theme="dark"]) .text-blue {
+    color: #066fd1 !important;
+}
+[data-bs-theme="light"] .text-azure,
+body:not([data-bs-theme="dark"]) .text-azure {
+    color: #4299e1 !important;
+}
+[data-bs-theme="light"] .text-indigo,
+body:not([data-bs-theme="dark"]) .text-indigo {
+    color: #4263eb !important;
+}
+[data-bs-theme="light"] .text-purple,
+body:not([data-bs-theme="dark"]) .text-purple {
+    color: #ae3ec9 !important;
+}
+[data-bs-theme="light"] .text-pink,
+body:not([data-bs-theme="dark"]) .text-pink {
+    color: #d6336c !important;
+}
+[data-bs-theme="light"] .text-red,
+body:not([data-bs-theme="dark"]) .text-red {
+    color: #d63939 !important;
+}
+[data-bs-theme="light"] .text-orange,
+body:not([data-bs-theme="dark"]) .text-orange {
+    color: #f76707 !important;
+}
+[data-bs-theme="light"] .text-yellow,
+body:not([data-bs-theme="dark"]) .text-yellow {
+    color: #f59f00 !important;
+}
+[data-bs-theme="light"] .text-lime,
+body:not([data-bs-theme="dark"]) .text-lime {
+    color: #74b816 !important;
+}
+[data-bs-theme="light"] .text-green,
+body:not([data-bs-theme="dark"]) .text-green {
+    color: #2fb344 !important;
+}
+[data-bs-theme="light"] .text-teal,
+body:not([data-bs-theme="dark"]) .text-teal {
+    color: #0ca678 !important;
+}
+[data-bs-theme="light"] .text-cyan,
+body:not([data-bs-theme="dark"]) .text-cyan {
+    color: #17a2b8 !important;
+}
+[data-bs-theme="light"] .text-dark,
+body:not([data-bs-theme="dark"]) .text-dark {
+    color: #182433 !important;
+}
+[data-bs-theme="light"] .text-light,
+body:not([data-bs-theme="dark"]) .text-light {
+    color: #f8fafc !important;
+}
+
+/* --------------------------------------------------------------------------
+   TEXT COLORS - DARK MODE (LUMINOUS & SOFT ON DEEP SLATE NAVY)
+   (System body/heading/secondary variables are defined in Section 3)
+   -------------------------------------------------------------------------- */
+[data-bs-theme="dark"] .text-body,
+body.theme-dark .text-body {
+    color: #cbd5e1 !important;
+}
+
+[data-bs-theme="dark"] .text-body-emphasis,
+body.theme-dark .text-body-emphasis {
+    color: #ffffff !important;
+}
+
+[data-bs-theme="dark"] .text-body-secondary,
+[data-bs-theme="dark"] .text-secondary,
+[data-bs-theme="dark"] .text-muted,
+body.theme-dark .text-body-secondary,
+body.theme-dark .text-secondary,
+body.theme-dark .text-muted {
+    color: #8da2be !important;
+}
+
+[data-bs-theme="dark"] .text-body-tertiary,
+body.theme-dark .text-body-tertiary {
+    color: #556987 !important;
+}
+
+/* Functional Semantic States (Brightened for Dark Mode Accessibility)
+   - .text-primary is in Section 8 */
+[data-bs-theme="dark"] .text-success,
+body.theme-dark .text-success {
+    color: #34d399 !important; /* Soft luminous emerald green */
+}
+
+[data-bs-theme="dark"] .text-danger,
+body.theme-dark .text-danger {
+    color: #fb7185 !important; /* Soft luminous rose red */
+}
+
+[data-bs-theme="dark"] .text-warning,
+body.theme-dark .text-warning {
+    color: #fbbf24 !important; /* Bright warm amber */
+}
+
+[data-bs-theme="dark"] .text-info,
+body.theme-dark .text-info {
+    color: #38bdf8 !important; /* Clear sky blue */
+}
+
+/* Tabler Full Palette Colors (Soft Neon / High Visibility in Dark Mode) */
+[data-bs-theme="dark"] .text-blue,
+body.theme-dark .text-blue {
+    color: #60a5fa !important;
+}
+[data-bs-theme="dark"] .text-azure,
+body.theme-dark .text-azure {
+    color: #7dd3fc !important;
+}
+[data-bs-theme="dark"] .text-indigo,
+body.theme-dark .text-indigo {
+    color: #818cf8 !important;
+}
+[data-bs-theme="dark"] .text-purple,
+body.theme-dark .text-purple {
+    color: #c084fc !important;
+}
+[data-bs-theme="dark"] .text-pink,
+body.theme-dark .text-pink {
+    color: #f472b6 !important;
+}
+[data-bs-theme="dark"] .text-red,
+body.theme-dark .text-red {
+    color: #f87171 !important;
+}
+[data-bs-theme="dark"] .text-orange,
+body.theme-dark .text-orange {
+    color: #fb923c !important;
+}
+[data-bs-theme="dark"] .text-yellow,
+body.theme-dark .text-yellow {
+    color: #fde047 !important;
+}
+[data-bs-theme="dark"] .text-lime,
+body.theme-dark .text-lime {
+    color: #a3e635 !important;
+}
+[data-bs-theme="dark"] .text-green,
+body.theme-dark .text-green {
+    color: #4ade80 !important;
+}
+[data-bs-theme="dark"] .text-teal,
+body.theme-dark .text-teal {
+    color: #2dd4bf !important;
+}
+[data-bs-theme="dark"] .text-cyan,
+body.theme-dark .text-cyan {
+    color: #22d3ee !important;
+}
+[data-bs-theme="dark"] .text-dark,
+body.theme-dark .text-dark {
+    color: #94a3b8 !important;
+}
+[data-bs-theme="dark"] .text-light,
+body.theme-dark .text-light {
+    color: #f8fafc !important;
+}
+
+/* ==========================================================================
+   APPOINTMENTS CONTAINER & FULLCALENDAR (.fc) - LIGHT & DARK MODE
+   ========================================================================== */
+
+/* Base Dimensions for Calendar Elements */
+#appointments {
+    border-radius: 12px !important;
+    padding: 1.25rem !important;
+}
+
+.fc .fc-toolbar-title {
+    font-size: 1.15rem !important;
+    font-weight: 700 !important;
+}
+
+.fc .fc-col-header-cell {
+    padding: 0.6rem 0 !important;
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+}
+
+.fc .fc-daygrid-day-number {
+    font-size: 0.8125rem !important;
+    font-weight: 600 !important;
+    padding: 6px 8px !important;
+    text-decoration: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   1. LIGHT MODE (#appointments & FullCalendar)
+   -------------------------------------------------------------------------- */
+[data-bs-theme="light"] #appointments,
+body:not([data-bs-theme="dark"]) #appointments {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+}
+
+/* Toolbar Title */
+[data-bs-theme="light"] .fc .fc-toolbar-title,
+body:not([data-bs-theme="dark"]) .fc .fc-toolbar-title {
+    color: #1e293b !important;
+}
+
+/* Day Column Headers (Mon, Tue, Wed...) */
+[data-bs-theme="light"] .fc .fc-col-header-cell,
+body:not([data-bs-theme="dark"]) .fc .fc-col-header-cell {
+    background-color: #f8fafc !important;
+    color: #64748b !important;
+    border-color: #e2e8f0 !important;
+}
+
+/* Day Numbers (1, 2, 3...) */
+[data-bs-theme="light"] .fc .fc-daygrid-day-number,
+body:not([data-bs-theme="dark"]) .fc .fc-daygrid-day-number {
+    color: #334155 !important;
+}
+
+/* Calendar Grid Borders */
+[data-bs-theme="light"] .fc-theme-standard td,
+[data-bs-theme="light"] .fc-theme-standard th,
+body:not([data-bs-theme="dark"]) .fc-theme-standard td,
+body:not([data-bs-theme="dark"]) .fc-theme-standard th {
+    border-color: #f1f5f9 !important;
+}
+
+/* Current Day Highlight */
+[data-bs-theme="light"] .fc .fc-day-today,
+body:not([data-bs-theme="dark"]) .fc .fc-day-today {
+    background-color: rgba(var(--tblr-primary-rgb), 0.06) !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. DARK MODE (#appointments & FullCalendar)
+   -------------------------------------------------------------------------- */
+[data-bs-theme="dark"] #appointments,
+body.theme-dark #appointments {
+    background: #111c35 !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.38) !important;
+}
+
+/* Toolbar Title (White in Dark Mode) */
+[data-bs-theme="dark"] .fc .fc-toolbar-title,
+body.theme-dark .fc .fc-toolbar-title {
+    color: #ffffff !important;
+}
+
+/* Day Column Headers (Mon, Tue, Wed...) */
+[data-bs-theme="dark"] .fc .fc-col-header-cell,
+body.theme-dark .fc .fc-col-header-cell {
+    background-color: #172442 !important;
+    color: #8da2be !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Day Numbers (1, 2, 3...) */
+[data-bs-theme="dark"] .fc .fc-daygrid-day-number,
+body.theme-dark .fc .fc-daygrid-day-number {
+    color: #cbd5e1 !important;
+}
+
+/* Calendar Grid Borders (Subtle Dark Mode Lines) */
+[data-bs-theme="dark"] .fc-theme-standard td,
+[data-bs-theme="dark"] .fc-theme-standard th,
+body.theme-dark .fc-theme-standard td,
+body.theme-dark .fc-theme-standard th {
+    border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Current Day Highlight */
+[data-bs-theme="dark"] .fc .fc-day-today,
+body.theme-dark .fc .fc-day-today {
+    background-color: rgba(var(--tblr-primary-rgb), 0.15) !important;
+}
+
+/* --------------------------------------------------------------------------
+   FullCalendar Primary Buttons - Base (shared by Light & Dark)
+   -------------------------------------------------------------------------- */
+.fc .fc-button-primary {
+    background-color: var(--tblr-primary) !important;
+    border-color: var(--tblr-primary) !important;
+    color: var(--tblr-primary-fg, #ffffff) !important;
+    box-shadow: none !important;
+    font-weight: 600 !important;
+    font-size: 0.875rem !important;
+    border-radius: 6px !important;
+    padding: 0.45rem 0.85rem !important;
+    text-transform: capitalize !important;
+    transition: all 0.15s ease-in-out !important;
+    margin: 0.15rem 0.6rem !important;
+}
+
+.fc .fc-button-primary:hover {
+    background-color: rgba(var(--tblr-primary-rgb), 0.85) !important;
+    border-color: rgba(var(--tblr-primary-rgb), 0.85) !important;
+    color: var(--tblr-primary-fg, #ffffff) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* ==========================================================================
+   FULLCALENDAR SCROLLGRID & DAY HOVER EFFECTS (LIGHT & DARK MODE)
+   ========================================================================== */
+
+/* Base Transition for Smooth Day Cell Hover */
+.fc .fc-daygrid-day {
+    transition: background-color 0.15s ease-in-out !important;
+}
+
+/* --------------------------------------------------------------------------
+   1. LIGHT MODE (.fc-scrollgrid & Day Hover)
+   -------------------------------------------------------------------------- */
+/* Main Calendar Outer Grid Border in Light Mode */
+[data-bs-theme="light"] .fc-theme-standard .fc-scrollgrid,
+body:not([data-bs-theme="dark"]) .fc-theme-standard .fc-scrollgrid {
+    border-color: #e2e8f0 !important;
+}
+
+/* Day Cell Hover in Light Mode (Soft Off-White Highlight) */
+[data-bs-theme="light"] .fc .fc-daygrid-day:hover,
+body:not([data-bs-theme="dark"]) .fc .fc-daygrid-day:hover {
+    background-color: #f8fafc !important;
+    cursor: pointer !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. DARK MODE (.fc-scrollgrid & Day Hover)
+   -------------------------------------------------------------------------- */
+/* Main Calendar Outer Grid Border in Dark Mode */
+[data-bs-theme="dark"] .fc-theme-standard .fc-scrollgrid,
+body.theme-dark .fc-theme-standard .fc-scrollgrid {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Day Cell Hover in Dark Mode (Soft Translucent Surface Highlight) */
+[data-bs-theme="dark"] .fc .fc-daygrid-day:hover,
+body.theme-dark .fc .fc-daygrid-day:hover {
+    background-color: rgba(255, 255, 255, 0.04) !important;
+    cursor: pointer !important;
+}
+
+/* ==========================================================================
+   FULLCALENDAR PRIMARY BUTTONS (.fc-button-primary) - LIGHT & DARK MODE
+   (Base + hover shared styles are defined above)
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. LIGHT MODE (.fc-button-primary)
+   -------------------------------------------------------------------------- */
+[data-bs-theme="light"] .fc .fc-button-primary,
+body:not([data-bs-theme="dark"]) .fc .fc-button-primary {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Hover in Light Mode */
+[data-bs-theme="light"] .fc .fc-button-primary:hover,
+body:not([data-bs-theme="dark"]) .fc .fc-button-primary:hover {
+    background-color: rgba(var(--tblr-primary-rgb), 0.88) !important;
+    border-color: rgba(var(--tblr-primary-rgb), 0.88) !important;
+}
+
+/* Active State in Light Mode */
+[data-bs-theme="light"] .fc .fc-button-primary:not(:disabled).fc-button-active,
+[data-bs-theme="light"] .fc .fc-button-primary:not(:disabled):active,
+body:not([data-bs-theme="dark"])
+    .fc
+    .fc-button-primary:not(:disabled).fc-button-active,
+body:not([data-bs-theme="dark"]) .fc .fc-button-primary:not(:disabled):active {
+    background-color: var(--tblr-primary) !important;
+    border-color: var(--tblr-primary) !important;
+    color: var(--tblr-primary-fg, #ffffff) !important;
+    filter: brightness(90%) !important;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Focus Ring in Light Mode (No Blue Blur) */
+[data-bs-theme="light"] .fc .fc-button-primary:focus,
+body:not([data-bs-theme="dark"]) .fc .fc-button-primary:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 0.25rem rgba(var(--tblr-primary-rgb), 0.2) !important;
+}
+
+/* Disabled in Light Mode */
+[data-bs-theme="light"] .fc .fc-button-primary:disabled,
+body:not([data-bs-theme="dark"]) .fc .fc-button-primary:disabled {
+    opacity: 0.45 !important;
+    cursor: not-allowed !important;
+    background-color: var(--tblr-primary) !important;
+    border-color: var(--tblr-primary) !important;
+    color: var(--tblr-primary-fg, #ffffff) !important;
+    transform: none !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. DARK MODE (.fc-button-primary)
+   -------------------------------------------------------------------------- */
+[data-bs-theme="dark"] .fc .fc-button-primary,
+body.theme-dark .fc .fc-button-primary {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Active State in Dark Mode */
+[data-bs-theme="dark"] .fc .fc-button-primary:not(:disabled).fc-button-active,
+[data-bs-theme="dark"] .fc .fc-button-primary:not(:disabled):active,
+body.theme-dark .fc .fc-button-primary:not(:disabled).fc-button-active,
+body.theme-dark .fc .fc-button-primary:not(:disabled):active {
+    background-color: var(--tblr-primary) !important;
+    border-color: var(--tblr-primary) !important;
+    color: var(--tblr-primary-fg, #ffffff) !important;
+    filter: brightness(85%) !important;
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.45) !important;
+}
+
+/* Focus Ring in Dark Mode (No Blue Blur) */
+[data-bs-theme="dark"] .fc .fc-button-primary:focus,
+body.theme-dark .fc .fc-button-primary:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 0.25rem rgba(var(--tblr-primary-rgb), 0.3) !important;
+}
+
+/* Disabled in Dark Mode */
+[data-bs-theme="dark"] .fc .fc-button-primary:disabled,
+body.theme-dark .fc .fc-button-primary:disabled {
+    opacity: 0.35 !important;
+    cursor: not-allowed !important;
+    background-color: var(--tblr-primary) !important;
+    border-color: var(--tblr-primary) !important;
+    color: var(--tblr-primary-fg, #ffffff) !important;
+    transform: none !important;
+}
+
+/* ==========================================================================
+   FULLCALENDAR EVENTS & TODAY'S NUMBER (.fc-daygrid-event & Day Number)
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. TODAY'S DATE NUMBER (CIRCULAR ACCENT BADGE - GOOGLE/APPLE CALENDAR STYLE)
+   -------------------------------------------------------------------------- */
+/* Base Circular Shape for Today's Number */
+.fc .fc-day-today .fc-daygrid-day-number {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 24px !important;
+    height: 24px !important;
+    border-radius: 50% !important;
+    margin: 4px !important;
+    font-weight: 700 !important;
+}
+
+/* Today's Number in Light Mode */
+[data-bs-theme="light"] .fc .fc-day-today .fc-daygrid-day-number,
+body:not([data-bs-theme="dark"]) .fc .fc-day-today .fc-daygrid-day-number {
+    background-color: var(--tblr-primary) !important;
+    color: var(--tblr-primary-fg, #ffffff) !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Today's Number in Dark Mode */
+[data-bs-theme="dark"] .fc .fc-day-today .fc-daygrid-day-number,
+body.theme-dark .fc .fc-day-today .fc-daygrid-day-number {
+    background-color: var(--tblr-primary) !important;
+    color: var(--tblr-primary-fg, #ffffff) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. CALENDAR EVENTS (.fc-daygrid-event)
+   -------------------------------------------------------------------------- */
+/* Base Event Card Style */
+.fc-daygrid-event {
+    border-radius: 4px !important;
+    padding: 2px 6px !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    text-decoration: none !important;
+    margin-top: 2px !important;
+    transition:
+        transform 0.15s ease-in-out,
+        background-color 0.15s ease !important;
+}
+
+.fc-daygrid-event:hover {
+    transform: translateY(-1px) !important;
+}
+
+/* Event Card in Light Mode (Soft Primary Tint with Border) */
+[data-bs-theme="light"] .fc-daygrid-event,
+[data-bs-theme="light"] .fc-daygrid-event:hover,
+body:not([data-bs-theme="dark"]) .fc-daygrid-event,
+body:not([data-bs-theme="dark"]) .fc-daygrid-event:hover {
+    background-color: rgba(var(--tblr-primary-rgb)) !important;
+    border: 1px solid rgba(var(--tblr-primary-rgb), 0.25) !important;
+    color: var(--tblr-primary) !important;
+}
+
+/* Event Card in Dark Mode (Luminous Accent with White Text) */
+[data-bs-theme="dark"] .fc-daygrid-event,
+[data-bs-theme="dark"] .fc-daygrid-event:hover,
+body.theme-dark .fc-daygrid-event,
+body.theme-dark .fc-daygrid-event:hover {
+    background-color: rgba(var(--tblr-primary-rgb)) !important;
+    border: 1px solid rgba(var(--tblr-primary-rgb), 0.4) !important;
+    color: #ffffff !important;
+}
+
+/* ==========================================================================
+   CARD TABLE-RESPONSIVE WRAPPER PADDING - LIGHT & DARK MODE
+   ========================================================================== */
+
+/* Direct 1.25rem padding on the table responsive container */
+.card .table-responsive,
+.card > .table-responsive {
+    padding: 1.25rem !important;
+    border-radius: 16px !important;
+}
+
+/* --------------------------------------------------------------------------
+   1. LIGHT MODE
+   -------------------------------------------------------------------------- */
+[data-bs-theme="light"] .card .table-responsive,
+body:not([data-bs-theme="dark"]) .card .table-responsive {
+    background-color: var(--tblr-card-bg, #ffffff) !important;
+}
+
+/* --------------------------------------------------------------------------
+   2. DARK MODE
+   -------------------------------------------------------------------------- */
+[data-bs-theme="dark"] .card .table-responsive,
+body.theme-dark .card .table-responsive {
+    background-color: var(--tblr-card-bg, #111c35) !important;
+}

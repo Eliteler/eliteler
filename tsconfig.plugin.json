@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.admin.json",
+  "compilerOptions": {
+    "paths": {
+      "@admin/*": ["./resources/js/admin/*"],
+      "@lang/*": ["./resources/lang/*"],
+      "@gobiz/admin": ["./resources/js/admin/plugin-sdk/admin.ts"]
+    }
+  },
+  "include": ["resources/js/admin/types", "resources/js/admin/plugin-sdk", "plugins/*/resources/js", "templates/*/resources/js"]
+}

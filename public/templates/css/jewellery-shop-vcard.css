@@ -431,22 +431,29 @@ h4,
     position: relative;
     padding-bottom: 120px;
     overflow: visible;
-    min-height: 100vh;
+    min-height: 100dvh; /* Upgraded to 100dvh for consistent mobile browser rendering */
     z-index: 50;
+    box-sizing: border-box; /* Prevents padding-bottom from causing horizontal scroll */
 }
 
+/* Desktop Styles (Screens wider than 520px) */
 @media (min-width: 520px) {
     .vcard-container {
         border-radius: var(--r-xl);
         min-height: auto;
         overflow: hidden;
+        margin: 50px auto; /* Centers the card horizontally on desktop screens */
     }
 }
 
 #smooth-wrapper {
+    width: 100%;
     max-width: 100%;
+    display: flex;
+    justify-content: center;
+    min-height: 100dvh; /* Changed from 100vh to 100dvh for consistent mobile rendering */
+    box-sizing: border-box;
 }
-
 /* ── Cover Photo ── */
 .cover-photo {
     width: 100%;
@@ -791,9 +798,9 @@ h4,
 .desc {
     font-family: "DM Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-size: 14px;
-    color: var(--text-muted);
-    line-height: 1.8;
     font-weight: 300;
+    line-height: 1.8;
+    color: var(--text-muted);
     position: static;
     width: 100%;
 }

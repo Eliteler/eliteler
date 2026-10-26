@@ -111,6 +111,63 @@
 
     <!-- Flatpickr CSS -->
     <link href="{{ url('css/flatpickr.min.css') }}" rel="stylesheet">
+
+    @php
+        $custom_css = trim($business_card_details->custom_css ?? '');
+        $custom_js  = trim($business_card_details->custom_js ?? '');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Custom CSS
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            !empty($custom_css) &&
+            stripos($custom_css, '<style') === false
+        ) {
+            $custom_css = "<style>{$custom_css}</style>";
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Split HTML tags and plain JS
+        |--------------------------------------------------------------------------
+        */
+
+        $include_custom_js = '';
+
+        if (!empty($custom_js)) {
+
+            // Extract HTML tags like meta, script, iframe, noscript, etc.
+            preg_match_all(
+                '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/?>/is',
+                $custom_js,
+                $matches
+            );
+
+            $html_tags = implode("\n", $matches[0]);
+
+            // Remove extracted HTML tags from original content
+            $plain_js = trim(preg_replace(
+                '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/?>/is',
+                '',
+                $custom_js
+            ));
+
+            // Add HTML tags directly
+            $include_custom_js .= $html_tags;
+
+            // Wrap remaining plain JS inside script tag
+            if (!empty($plain_js)) {
+                $include_custom_js .= "\n<script>{$plain_js}</script>";
+            }
+        }
+    @endphp
+
+    {!! $custom_css !!}
+    {!! $include_custom_js !!}
+
     {{-- Check business details --}}
     @if ($business_card_details != null)
         <style>
@@ -479,6 +536,15 @@
                                     </div>
                                 @endif
                                 <!-- End Gallery Section -->
+
+                                <!-- Start Instagram Section -->
+                                @include('templates.includes.instagram-embed', [
+                                    'sectionClass' => 'relative',
+                                    'customHeader' => '<img src="' . asset('img/templates/photographer/2.png') . '" alt="" class="w-28 lg:w-32 absolute top-4 -left-4 opacity-60" /><h2 class="text-3xl lg:text-4xl font-medium text-gray-900 py-12 text-center relative head"><div class="absolute bottom-8 left-1/2 h-1.5 w-16 bg-gradient-to-tl from-[#ff7e5f] to-[#feb47b] -translate-x-1/2"></div>' . __('Instagram') . '</h2>',
+                                    'cardClass'    => 'overflow-hidden rounded-2xl shadow-sm bg-white border-0',
+                                    'labelClass'   => 'text-center py-2 text-orange-700 bg-gradient-to-tl from-[#ff7e5f] to-[#feb47b] rounded-b-2xl text-lg w-full font-semibold'
+                                ])
+                                <!-- End Instagram Section -->
 
                                 <!-- Start Services Section -->
                                 @if (count($service_details) > 0)
@@ -1665,7 +1731,38 @@
             {!! $business_card_details->custom_js !!}
         </script>
     @endif
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/{{ app()->getLocale() }}.js"></script>
+
+    @php
+        $flatpickrLocales = [
+            'pt_BR' => 'pt',
+            'zh' => 'zh',
+            'ar' => 'ar',
+            'bg' => 'bg',
+            'hr' => 'hr',
+            'nl' => 'nl',
+            'fr' => 'fr',
+            'de' => 'de',
+            'he' => 'he',
+            'hu' => 'hu',
+            'id' => 'id',
+            'it' => 'it',
+            'ja' => 'ja',
+            'lt' => 'lt',
+            'ms' => 'ms',
+            'pl' => 'pl',
+            'ro' => 'ro',
+            'ru' => 'ru',
+            'es' => 'es',
+            'sv' => 'sv',
+            'th' => 'th',
+            'tr' => 'tr',
+            'vi' => 'vn',
+        ];
+
+        $locale = $flatpickrLocales[app()->getLocale()] ?? 'en';
+    @endphp
+    
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/{{ $locale }}.js"></script>
     <script>
         // Assuming $appointment_slots contains data like: {"monday": [...], "tuesday": [...], ...}
         const disableSlots = {!! $appointment_slots !!}; // Outputting the time slots
@@ -1733,7 +1830,7 @@
             flatpickr("#appointment-date", {
                 dateFormat: "Y-m-d",
                 minDate: "today",
-                locale: "{{ app()->getLocale() }}",
+                locale: "{{ $locale }}",
                 disable: [
                     function(date) {
                         const day = date.toLocaleString("en-us", {
@@ -1755,7 +1852,7 @@
             flatpickr("#service_start_date", {
                 dateFormat: "Y-m-d",
                 minDate: "today",
-                locale: "{{ app()->getLocale() }}",
+                locale: "{{ $locale }}",
                 disable: [
                     function(date) {
                         return !allowedDays.includes(date.getDay());
@@ -1766,7 +1863,7 @@
             flatpickr("#service_end_date", {
                 dateFormat: "Y-m-d",
                 minDate: "today",
-                locale: "{{ app()->getLocale() }}",
+                locale: "{{ $locale }}",
                 disable: [
                     function(date) {
                         return !allowedDays.includes(date.getDay());

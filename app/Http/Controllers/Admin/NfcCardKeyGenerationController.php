@@ -13,412 +13,241 @@
 namespace App\Http\Controllers\Admin;
 
 use App\BusinessCard;
-use App\Setting;
-use App\NfcCardKey;
-use Illuminate\Support\Str;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use App\NfcCardKey;
 use App\NfcCardOrder;
-use App\User;
-use Yajra\DataTables\Facades\DataTables;
-use Illuminate\Support\Facades\Validator;
-use Termwind\Components\Span;
+use App\Services\Admin\Nfc\NfcKeyService;
+use App\Support\Admin\AdminSharedProps;
+use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use Inertia\Inertia;
 
 class NfcCardKeyGenerationController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     * 
-     * @return void
-     */
-    public function __construct()
+    private const TABS = ['all', 'linked', 'unlinked', 'vouchers'];
+
+    public function __construct(private NfcKeyService $keys)
     {
         $this->middleware('auth');
+        $this->middleware(function ($request, $next) {
+            abort_unless(AdminSharedProps::features()['nfc'], 404);
+
+            return $next($request);
+        });
     }
 
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function index(Request $request)
     {
-        // Queries
-        $settings = Setting::where('status', 1)->first();
-        $config = DB::table('config')->get();
+        $tab    = in_array($request->query('tab'), self::TABS, true) ? $request->query('tab') : 'all';
+        $type   = in_array($request->query('type'), ['order', 'manual'], true) ? $request->query('type') : 'all';
+        $search = trim((string) $request->query('search', ''));
 
-        // Check enable nfc card order system
-        if ($config[76]->config_value == '0') {
-            return abort(404);
+        $base = fn () => NfcCardKey::query()
+            ->leftJoin('business_cards', 'business_cards.card_id', '=', 'nfc_card_keys.card_id')
+            ->leftJoin('users', 'users.user_id', '=', 'business_cards.user_id')
+            ->where('nfc_card_keys.status', '!=', 2)
+            ->when($type === 'order', fn ($q) => $q->where('nfc_card_keys.key_type', 'online'))
+            ->when($type === 'manual', fn ($q) => $q->where('nfc_card_keys.key_type', 'offline'))
+            ->when($search !== '', fn ($q) => $q->where(function ($q) use ($search) {
+                $q->where('nfc_card_keys.unqiue_key', 'like', "%{$search}%")
+                    ->orWhere('business_cards.title', 'like', "%{$search}%")
+                    ->orWhere('users.name', 'like', "%{$search}%")
+                    ->orWhere('users.email', 'like', "%{$search}%");
+            }));
+
+        $keys = $base()
+            ->when($tab === 'linked', fn ($q) => $q->where('nfc_card_keys.link_status', 'linked'))
+            ->when($tab === 'unlinked', fn ($q) => $q->where('nfc_card_keys.link_status', '!=', 'linked'))
+            ->when($tab === 'vouchers', fn ($q) => $q->whereNotNull('nfc_card_keys.associated_plan_id'))
+            ->leftJoin('plans', 'plans.plan_id', '=', 'nfc_card_keys.associated_plan_id')
+            ->leftJoin('nfc_card_designs', 'nfc_card_designs.nfc_card_id', '=', 'nfc_card_keys.associated_nfc_card_id')
+            ->select([
+                'nfc_card_keys.nfc_card_key_id', 'nfc_card_keys.unqiue_key', 'nfc_card_keys.key_type', 'nfc_card_keys.link_status',
+                'nfc_card_keys.key_status', 'nfc_card_keys.associated_plan_id', 'nfc_card_keys.created_at',
+                'business_cards.title as card_title', 'business_cards.card_url',
+                'users.user_id as owner_id', 'users.name as owner_name',
+                'plans.plan_name', 'nfc_card_designs.nfc_card_name',
+            ])
+            ->orderByDesc('nfc_card_keys.id')
+            ->paginate(25)
+            ->withQueryString();
+
+        // Orders the online keys came from (one query for the page)
+        $pageKeys   = $keys->getCollection()->where('key_type', 'online')->pluck('unqiue_key');
+        $orderByKey = [];
+        if ($pageKeys->isNotEmpty()) {
+            NfcCardOrder::where(function ($q) use ($pageKeys) {
+                foreach ($pageKeys as $key) {
+                    $q->orWhereJsonContains('order_details->unique_key', $key);
+                }
+            })->get(['nfc_card_order_id', 'order_details'])->each(function ($order) use (&$orderByKey) {
+                $keys = json_decode($order->order_details ?? '', true)['unique_key'] ?? [];
+                foreach ((array) $keys as $key) {
+                    $orderByKey[$key] = $order->nfc_card_order_id;
+                }
+            });
         }
 
-        if ($request->ajax()) {
-            // Get nfc card key generations
-            $nfcCardKeys = NfcCardKey::where('status', '!=', 2)->orderBy('id', 'desc')->get();
+        $keys->through(fn ($row) => [
+            'id'      => $row->nfc_card_key_id,
+            'key'     => $row->unqiue_key,
+            'url'     => $this->keys->readUrl($row->unqiue_key),
+            'source'  => $row->key_type === 'online' ? 'order' : 'manual',
+            'orderId' => $orderByKey[$row->unqiue_key] ?? null,
+            'linked'  => $row->link_status === 'linked',
+            'card'    => $row->card_url ? ['title' => $row->card_title, 'url' => url($row->card_url)] : null,
+            'owner'   => $row->owner_id ? ['id' => $row->owner_id, 'name' => $row->owner_name] : null,
+            'plan'    => $row->plan_name,
+            'design'  => $row->nfc_card_name,
+            'voucher' => $row->associated_plan_id ? ($row->key_status === 'active' ? 'unused' : 'redeemed') : null,
+            'created' => $row->created_at ? Carbon::parse($row->created_at)->toIso8601String() : null,
+        ]);
 
-            return DataTables::of($nfcCardKeys)
-                ->addIndexColumn()
-                ->editColumn('created_at', function ($nfcCardKey) {
-                    return formatDateForUser($nfcCardKey->created_at);
-                })
-                ->editColumn('unqiue_key', function ($nfcCardKey) {
-                    return '<span class="fw-bold">' . $nfcCardKey->unqiue_key . '</span>';
-                })
-                ->editColumn('card_id', function ($nfcCardKey) {
-                    if (isset($nfcCardKey->card_id)) {
-                        // Get card id wise business card
-                        $businessCard = BusinessCard::where('card_id', $nfcCardKey->card_id)->first();
+        $counts = $base()
+            ->selectRaw("COUNT(*) as `all`, SUM(nfc_card_keys.link_status = 'linked') as linked, SUM(nfc_card_keys.link_status != 'linked') as unlinked, SUM(nfc_card_keys.associated_plan_id IS NOT NULL) as vouchers")
+            ->first();
 
-                        if (isset($businessCard)) {
-                        return '<a href="' . url($businessCard->card_url) . '" target="_blank">' . trans($businessCard->title) . '</a>';
-                        } else {
-                            return '<span class="fw-bold">' . __('Unassigned') . '</span>';
-                        }
-                    } else {
-                        return '<span class="fw-bold">' . __('Unassigned') . '</span>';
-                    }
-                })
-                ->editColumn('link_status', function ($nfcCardKey) {
-                    return $nfcCardKey->link_status == 'unlinked'
-                        ? '<span class="badge bg-red text-white">' . __('Unlinked') . '</span>'
-                        : '<span class="badge bg-green text-white">' . __('Linked') . '</span>';
-                })
-                ->editColumn('action', function ($nfcCardKey) {
-                    // Get NFC order details
-                    $nfcOrderDetails = NfcCardOrder::whereJsonContains('order_details->unique_key', $nfcCardKey->unqiue_key)->where('order_status', '!=', 'pending')->orWhere('order_status', '!=', 'cancelled')->orWhere('order_status', '!=', 'hold')->first();
-
-                    // Greeting Letter
-                    $actionBtn = '<a href="' . route('admin.key.greeting.letter', $nfcCardKey->unqiue_key) . '?type=key" class="dropdown-item">' . __('Greeting Letter') . '</a>';
-
-                    // Write in NFC Card
-                    $actionBtn .= '<a href="' . route('admin.key.write.to.nfc.card', $nfcCardKey->unqiue_key) . '?type=key" class="dropdown-item">' . __('Write in NFC Card') . '</a>';
-
-                    // Link / Unlink
-                    if ($nfcCardKey->link_status == 'linked') {
-                        $actionBtn .= '<a onclick="updateStatus(\'' . $nfcCardKey->nfc_card_key_id . '\', \'unlink\'); return false;" class="dropdown-item">' . __('Unlink to NFC Card') . '</a>';
-                    } else {
-                        $actionBtn .= '<a href="' . route('admin.link.key', $nfcCardKey->nfc_card_key_id) . '" class="dropdown-item">' . __('Link to NFC Card') . '</a>';
+        return Inertia::render('nfc/keys', [
+            'keys'    => $keys,
+            'filters' => compact('tab', 'type', 'search'),
+            'counts'  => collect(self::TABS)->mapWithKeys(fn ($key) => [$key => (int) $counts->{$key}]),
+            'plans'   => DB::table('plans')->where('status', 1)->orderBy('plan_price')->get(['plan_id', 'plan_name'])
+                ->map(fn ($p) => ['id' => $p->plan_id, 'name' => $p->plan_name]),
+            'designs' => DB::table('nfc_card_designs')->where('status', 1)->orderBy('id')->get(['nfc_card_id', 'nfc_card_name'])
+                ->map(fn ($d) => ['id' => $d->nfc_card_id, 'name' => $d->nfc_card_name]),
+            'open'    => $request->boolean('generate') ? 'generate' : ($request->query('link') ? 'link:' . $request->query('link') : null),
+        ]);
                     }
 
-                    // Delete
-                    $actionBtn .= '<a onclick="deleteKey(\'' . $nfcCardKey->nfc_card_key_id . '\'); return false;" class="dropdown-item">' . __('Delete') . '</a>';
-
-                    return '<a class="btn-action" href="#" data-toggle="dropdown" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
-                                <!-- Download SVG icon from http://tabler-icons.io/i/dots-vertical -->
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24"
-                                    height="24" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    class="icon icon-tabler icons-tabler-outline icon-tabler-dots fw-bold">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                    <path d="M4 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                    <path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                    <path d="M18 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                </svg>
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-end" style="">
-                                <div class="nav-item dropdown">
-                                    ' . $actionBtn . '
-                                </div>
-                            </div>';
-                })
-                ->rawColumns(['created_at', 'unqiue_key', 'card_id', 'link_status', 'action'])
-                ->make(true);
-        }
-
-        return view('admin.pages.nfc-card-key-generations.index', compact('settings', 'config'));
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
+    // Old pages: open the matching dialog on the keys page
     public function create()
     {
-        // Queries
-        $settings = Setting::where('status', 1)->first();
-        $config = DB::table('config')->get();
-
-        // Check enable nfc card order system
-        if ($config[76]->config_value == '0') {
-            return abort(404);
+        return redirect()->route('admin.key.generations', ['generate' => 1]);
         }
 
-        return view('admin.pages.nfc-card-key-generations.create', compact('settings', 'config'));
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
-    {
-        // Validation
-        $validator = Validator::make($request->all(), [
-            'nfc_card_key_generations' => 'required|numeric|min:1|max:999',
-        ]);
-
-        if ($validator->fails()) {
-            return back()->with('failed', $validator->messages()->all()[0])->withInput();
-        }
-
-        // Generate keys
-        $nfcCardKeyGenerations = $request->nfc_card_key_generations;
-
-        // Queries
-        $config = DB::table('config')->get();
-
-        // Generate NFC card key 
-        $characterLimit = (int) $config[92]->config_value;
-
-        for ($i = 0; $i < $nfcCardKeyGenerations; $i++) {
-            // Generate unqiue key
-            $unqiueKey = Str::random($characterLimit);
-
-            // Save
-            $nfcCardKey = new NfcCardKey();
-            $nfcCardKey->nfc_card_key_id = uniqid();
-            $nfcCardKey->key_type = 'offline';
-            $nfcCardKey->unqiue_key = $unqiueKey;
-            $nfcCardKey->save();
-        }
-
-        return redirect()->route('admin.key.generations')->with('success', trans('Keys generated!'));
-    }
-
-    /** 
-     * Link / Unlink the key generation.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function link($id)
     {
-        // Queries
-        $settings = Setting::where('status', 1)->first();
-        $config = DB::table('config')->get();
-
-        // Check enable nfc card order system
-        if ($config[76]->config_value == '0') {
-            return abort(404);
+        return redirect()->route('admin.key.generations', ['link' => $id]);
         }
 
-        // Get the key generation
-        $nfcCardKey = NfcCardKey::where('nfc_card_key_id', $id)->first();
-        
-        // All customers
-        $customers = User::where('role_id', 2)->get();
-
-        return view('admin.pages.nfc-card-key-generations.link', compact('settings', 'config', 'nfcCardKey', 'customers'));
+    public function keyWriteToNfcCard($key)
+    {
+        return redirect()->route('admin.key.generations', ['search' => $key]);
     }
 
-    /** 
-     * Update the link status of the key generation.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'nfc_card_key_generations' => 'required|integer|min:1|max:999',
+            'associated_plan_id'       => ['nullable', 'required_with:associated_nfc_card_id', Rule::exists('plans', 'plan_id')],
+            'associated_nfc_card_id'   => ['nullable', 'required_with:associated_plan_id', Rule::exists('nfc_card_designs', 'nfc_card_id')],
+        ], [
+            'associated_plan_id.required_with'     => __('Choose a plan to go with the NFC card, or clear both.'),
+            'associated_nfc_card_id.required_with' => __('Choose an NFC card to go with the plan, or clear both.'),
+        ], [
+            'nfc_card_key_generations' => __('number of keys'),
+        ]);
+
+        $created = $this->keys->generate((int) $data['nfc_card_key_generations'], $data['associated_plan_id'] ?? null, $data['associated_nfc_card_id'] ?? null);
+
+        return back()->with('success', trans_choice(':count key generated.|:count keys generated.', count($created), ['count' => count($created)]));
+    }
+
     public function updateLinkKey(Request $request)
     {
-        // Get data from request
-        $nfcCardKeyId = $request->key_id;
-        $cardId = $request->card_id;
+        $data = $request->validate([
+            'key_id'  => 'required|string',
+            'card_id' => ['required', Rule::exists('business_cards', 'card_id')],
+        ], [], ['card_id' => __('business card')]);
 
-        // Check if the key generation exists
-        $nfcCardKey = NfcCardKey::where('nfc_card_key_id', $nfcCardKeyId)->first();
+        $key = NfcCardKey::where('nfc_card_key_id', $data['key_id'])->first();
 
-        // Check if the key generation exists
-        if (!$nfcCardKey) {
-            return redirect()->route('admin.key.generations')->with('failed', trans('Key not found!'));
+        if (! $key) {
+            return back()->with('failed', __('Key not found!'));
         }
 
-        // Update status
-        NfcCardKey::where('nfc_card_key_id', $nfcCardKeyId)->update(['card_id' => $cardId, 'link_status' => 'linked', 'status' => 1, 'updated_at' => now()]);
+        $this->keys->link($key, $data['card_id']);
 
-        return redirect()->route('admin.key.generations')->with('success', trans('Link to NFC Card updated!'));
+        return back()->with('success', __('Key linked. Tapping the NFC card now opens this business card.'));
     }
 
-    /**
-     * Update the status of the key generation.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+    // Unlink
     public function action(Request $request)
     {
-        // Get data from request
-        $nfcCardKeyId = $request->query('id');
-        $cardId = $request->query('card_id');
-        $nfcCardKeyStatus = $request->query('status');
+        $data = $request->validate(['id' => 'required|string']);
+        $key  = NfcCardKey::where('nfc_card_key_id', $data['id'])->first();
 
-        // Check status
-        switch ($nfcCardKeyStatus) {
-            case 'link':
-                $linkStatus = 'linked';
-                $status = 1;
-                break;
-
-            case 'delete':
-                $linkStatus = 'unlinked';
-                $status = 1;
-
-                // Update status
-                NfcCardKey::where('nfc_card_key_id', $nfcCardKeyId)->update(['card_id' => null, 'link_status' => $linkStatus, 'status' => $status, 'updated_at' => now()]);
-                break;
-
-            default:
-                $linkStatus = 'unlinked';
-                $status = 1;
-
-                // Update status
-                NfcCardKey::where('nfc_card_key_id', $nfcCardKeyId)->update(['card_id' => null, 'link_status' => $linkStatus, 'status' => $status, 'updated_at' => now()]);
-                break;
+        if (! $key) {
+            return back()->with('failed', __('Key not found!'));
         }
 
-        return redirect()->route('admin.key.generations')->with('success', trans(':status to NFC Card updated!', ['status' => $linkStatus]));
+        $this->keys->unlink($key);
+
+        return back()->with('success', __('Key unlinked.'));
     }
 
-    // Write to NFC Card.
-    public function keyWriteToNfcCard(Request $request, $key)
-    {
-        // Queries
-        $settings = Setting::where('status', 1)->first();
-        $config = DB::table('config')->get();
-
-        // Check enable nfc card order system
-        if ($config[76]->config_value == '0') {
-            return abort(404);
-        }
-
-        // Get key details
-        $keyDetails = NfcCardKey::where('unqiue_key', $key)->first();
-
-        if(!$keyDetails) {
-            return redirect()->back()->with('failed', trans('Not Found!'));
-        }
-
-        return view('admin.pages.nfc-card-key-generations.print', compact('keyDetails', 'settings', 'config'));
-    }
-
-    // Greeting Letter  (Key Generation)
-    public function keyGreetingLetter(Request $request, $key)
-    {
-        // Queries
-        $settings = Setting::where('status', 1)->first();
-        $config = DB::table('config')->get();
-
-        // Check enable nfc card order system
-        if ($config[76]->config_value == '0') {
-            return abort(404);
-        }
-
-        // Get key details
-        $keyDetails = NfcCardKey::where('unqiue_key', $key)->first();
-
-        if(!$keyDetails) {
-            return redirect()->back()->with('failed', trans('Not Found!'));
-        }
-
-        $template = "
-        <div class='logo'>
-            <img src=':logo' alt=':websitename'>
-        </div>
-        <h2 class='d-print-none'>Welcome to :websitename! 🎉</h2>
-        <div class='content'>
-            <h4>Dear <strong>:customername</strong>,</h4>
-            <p>Your NFC Card is ready to help you share your contact details effortlessly. Activate your card and start networking with just a tap!</p>
-            <h3>🔑 Your Activation Code</h3>
-            <p class='activation-code'>:activationcode</p>
-            <h3 class='mt-3'>📌 How to Activate Your NFC Card?</h3>
-            <ol style='text-align: left;'>
-                <li><strong>Log in</strong> to your account.</li>
-                <li><strong>Go to</strong> the <strong>'Activate NFC Card'</strong> section.</li>
-                <li><strong>Enter the activation code</strong> and submit.</li>
-                <li>Your NFC card is now ready to use!</li>
-            </ol>
-            <div class='qr-code'>
-                <h3>📲 Scan to Activate</h3>
-                <canvas id='activateQrCode'></canvas>
-            </div>
-        </div>
-        <div class='mt-3'>
-            <span>Thank you for choosing <strong>:websitename</strong>!</span>
-            <p>If you need any assistance, feel free to contact us at 
-                <strong><a href='mailto::supportemail'>:supportemail</a></strong> 
-                or call us at <strong>:supportphone</strong>.
-            </p>
-        </div>
-        <div class='content'>
-            <p>Best regards,</p>
-            <h4>:websitename</h4>
-        </div>
-        ";
-
-        return view('admin.pages.nfc-card-key-generations.greeting-letter', compact('keyDetails', 'template', 'settings', 'config'));
-    }
-
-    // Update greeting letter (Key Generation)
-    public function updateKeyGreetingLetter(Request $request, $key)
-    {
-        // Validation
-        $validator = Validator::make($request->all(), [
-            'greeting_letter' => 'required'
-        ]);
-
-        if ($validator->fails()) {
-            return redirect()->route('admin.key.greeting.letter')->with('failed', $validator->errors()->first());
-        }
-
-        // Update the greeting letter
-        DB::table('config')->where('config_key', 'nfc_greetings')->update([
-            'config_value' => $request->greeting_letter,
-        ]);
-
-        // Page redirect
-        return redirect()->route('admin.key.greeting.letter', $key)->with('success', trans('Updated!'));
-    }
-
-    // Get customer cards
-    public function getCustomerCards(Request $request)
-    {
-        // Get data from request
-        $customerId = $request->customerId;
-
-        // Get customer cards
-        $customerCards = BusinessCard::where('user_id', $customerId)->where('card_status', 'activated')->get();
-
-        // Return customer cards
-        return response()->json($customerCards);
-    }
-
-    // Delete NFC card key
     public function delete(Request $request)
     {
-        // Get data from request
-        $nfcCardKeyId = $request->query('id');
+        $data = $request->validate(['id' => 'required|string']);
+        $key  = NfcCardKey::where('nfc_card_key_id', $data['id'])->first();
 
-        // Check if the key generation exists
-        $nfcCardKey = NfcCardKey::where('nfc_card_key_id', $nfcCardKeyId)->first();
-
-        // Check if the key generation exists
-        if (!$nfcCardKey) {
-            return redirect()->route('admin.key.generations')->with('failed', trans('Key not found!'));
+        if (! $key) {
+            return back()->with('failed', __('Key not found!'));
         }
 
-        // Check "card_id" is null
-        if ($nfcCardKey->card_id != null) {
-            return redirect()->route('admin.key.generations')->with('failed', trans('This key is linked to a card. Please unlink the card first.'));
+        if ($key->card_id !== null) {
+            return back()->with('failed', __('This key is linked to a card. Please unlink the card first.'));
         }
 
-        // Update status
-        NfcCardKey::where('nfc_card_key_id', $nfcCardKeyId)->update([
-            'status' => 2,
+        $key->forceFill(['status' => 2])->save();
+
+        return back()->with('success', __('Key deleted!'));
+    }
+
+    // Business cards of a customer, for the link dialog (JSON)
+    public function getCustomerCards(Request $request)
+    {
+        return BusinessCard::where('user_id', (string) $request->input('customerId'))
+            ->where('card_status', 'activated')
+            ->orderBy('title')
+            ->get(['card_id', 'title', 'card_url', 'card_type'])
+            ->map(fn ($card) => [
+                'id'    => $card->card_id,
+                'title' => $card->title,
+                'url'   => url($card->card_url),
+                'type'  => $card->card_type,
         ]);
+    }
 
-        return redirect()->route('admin.key.generations')->with('success', trans('Key deleted!'));
+    // Greeting letter editor for one key
+    public function keyGreetingLetter($key)
+    {
+        $nfcKey = NfcCardKey::where('unqiue_key', $key)->where('status', '!=', 2)->first();
+
+        if (! $nfcKey) {
+            return redirect()->route('admin.key.generations')->with('failed', __('Key not found!'));
+        }
+
+        $owner = $this->keys->ownerName($nfcKey);
+
+        return Inertia::render('nfc/greeting-letter', [
+            'activationKey' => $nfcKey->unqiue_key,
+            'template'    => $this->keys->template(),
+            'values'      => $this->keys->shortCodeValues($nfcKey->unqiue_key, $owner),
+            'qrUrl'       => $this->keys->activationUrl($nfcKey->unqiue_key),
+            'owner'       => $owner,
+            'shortCodes'  => NfcKeyService::SHORT_CODES,
+        ]);
+    }
+
+    public function updateKeyGreetingLetter(Request $request, $key)
+    {
+        $data = $request->validate(['greeting_letter' => 'required|string|max:65000'], [], ['greeting_letter' => __('greeting letter')]);
+
+        $this->keys->saveTemplate($data['greeting_letter']);
+
+        return back()->with('success', __('Greeting letter saved. It is used for every NFC card.'));
     }
 }

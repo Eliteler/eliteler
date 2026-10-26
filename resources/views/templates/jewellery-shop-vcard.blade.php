@@ -69,21 +69,61 @@
     {{-- Check business details --}}
     @if ($business_card_details != null)
         @php
-            $custom_css = $business_card_details->custom_css;
-            $custom_js = $business_card_details->custom_js;
-            if (strpos($custom_css, '<style>') === false && strpos($custom_css, '</style>') === false) {
-                $custom_css = '<style>' . $custom_css . '</style>';
+            $custom_css = trim($business_card_details->custom_css ?? '');
+            $custom_js  = trim($business_card_details->custom_js ?? '');
+
+            /*
+            |--------------------------------------------------------------------------
+            | Custom CSS
+            |--------------------------------------------------------------------------
+            */
+
+            if (
+                !empty($custom_css) &&
+                stripos($custom_css, '<style') === false
+            ) {
+                $custom_css = "<style>{$custom_css}</style>";
             }
-            if (strpos($custom_js, '<script>
-                ') === false && strpos($custom_js, '
-            </script>') === false) {
-                $custom_js = '<script>
-                    " . $custom_js . "
-                </script>';
+
+            /*
+            |--------------------------------------------------------------------------
+            | Split HTML tags and plain JS
+            |--------------------------------------------------------------------------
+            */
+
+            $include_custom_js = '';
+
+            if (!empty($custom_js)) {
+
+                // Extract HTML tags like meta, script, iframe, noscript, etc.
+                preg_match_all(
+                    '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/?>/is',
+                    $custom_js,
+                    $matches
+                );
+
+                $html_tags = implode("\n", $matches[0]);
+
+                // Remove extracted HTML tags from original content
+                $plain_js = trim(preg_replace(
+                    '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/?>/is',
+                    '',
+                    $custom_js
+                ));
+
+                // Add HTML tags directly
+                $include_custom_js .= $html_tags;
+
+                // Wrap remaining plain JS inside script tag
+                if (!empty($plain_js)) {
+                    $include_custom_js .= "\n<script>{$plain_js}</script>";
+            }
             }
         @endphp
+
         {!! $custom_css !!}
-        {!! $custom_js !!}
+        {!! $include_custom_js !!}
+        
         @if (!empty($business_card_details->theme_css))
             <style>
                 {!! $business_card_details->theme_css !!}
@@ -158,21 +198,25 @@
                         @endif
                         @if ($business_card_details->cover_type == 'youtube-ap')
                             <iframe class="cover-media-item"
+                                referrerpolicy="strict-origin-when-cross-origin"
                                 src="https://www.youtube.com/embed/{{ $business_card_details->cover }}?autoplay=1&mute=1&controls=0&loop=1&playlist={{ $business_card_details->cover }}"
                                 allow="autoplay; encrypted-media" frameborder="0"></iframe>
                         @endif
                         @if ($business_card_details->cover_type == 'youtube')
                             <iframe class="cover-media-item"
+                                referrerpolicy="strict-origin-when-cross-origin"
                                 src="https://www.youtube.com/embed/{{ $business_card_details->cover }}?autoplay=0&mute=1&controls=0&loop=1&playlist={{ $business_card_details->cover }}"
                                 allow="autoplay; encrypted-media" frameborder="0"></iframe>
                         @endif
                         @if ($business_card_details->cover_type == 'vimeo-ap')
                             <iframe class="cover-media-item"
+                                referrerpolicy="strict-origin-when-cross-origin"
                                 src="https://player.vimeo.com/video/{{ $business_card_details->cover }}?background=1&autoplay=1&loop=1&byline=0&title=0"
                                 allow="autoplay; fullscreen" frameborder="0"></iframe>
                         @endif
                         @if ($business_card_details->cover_type == 'vimeo')
                             <iframe class="cover-media-item"
+                                referrerpolicy="strict-origin-when-cross-origin"
                                 src="https://player.vimeo.com/video/{{ $business_card_details->cover }}?autoplay=0&loop=1&controls=1"
                                 allow="autoplay; fullscreen" frameborder="0"></iframe>
                         @endif
@@ -326,6 +370,7 @@
                                                         @endif
                                                         <iframe
                                                             src="https://www.youtube.com/embed/{{ $feature->content }}"
+                                                            referrerpolicy="strict-origin-when-cross-origin"
                                                             title="{{ $feature->label }}" frameborder="0"
                                                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                                             allowfullscreen class="youtube-iframe"></iframe>
@@ -464,6 +509,15 @@
                             </div>
                         @endif
 
+                        {{-- ── INSTAGRAM ── --}}
+                        @include('templates.includes.instagram-embed', [
+                            'columns'      => 1,
+                            'sectionClass' => 'section gsap-fade',
+                            'customHeader' => '<div class="section-header"><h2 class="section-title">' . __('Instagram') . '</h2><div class="section-deco"><span class="section-deco__dash"></span><span class="section-deco__diamond"></span><span class="section-deco__dash"></span></div></div>',
+                            'cardClass'    => 'gallery-card overflow-hidden shadow-md',
+                            'labelClass'   => 'gallery-caption-overlay p-3 text-center'
+                        ])
+
                         {{-- ── IFRAMES ── --}}
                         @if ($feature_details->where('type', 'iframe')->count() > 0)
                             <div class="section gsap-fade">
@@ -478,6 +532,7 @@
                                     @if ($feature->type == 'iframe')
                                         <div class="iframe-wrapper">
                                             <iframe src="{{ $feature->content }}" title="{{ $feature->label }}"
+                                                referrerpolicy="strict-origin-when-cross-origin"
                                                 frameborder="0" width="100%" height="270"
                                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                                 allowfullscreen></iframe>
@@ -744,6 +799,7 @@
                                     @if ($feature->type == 'map')
                                         <div class="map-wrapper">
                                             <iframe src="https://www.google.com/maps/embed?{!! $feature->content !!}"
+                                                referrerpolicy="strict-origin-when-cross-origin"
                                                 width="100%" height="220" style="border:0;display:block"
                                                 allowfullscreen loading="lazy"></iframe>
                                             @if ($feature->label)
@@ -1014,7 +1070,38 @@
     <script src="{{ url('js/swiper-bundle.min.js') }}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/{{ app()->getLocale() }}.js"></script>
+
+    @php
+        $flatpickrLocales = [
+            'pt_BR' => 'pt',
+            'zh' => 'zh',
+            'ar' => 'ar',
+            'bg' => 'bg',
+            'hr' => 'hr',
+            'nl' => 'nl',
+            'fr' => 'fr',
+            'de' => 'de',
+            'he' => 'he',
+            'hu' => 'hu',
+            'id' => 'id',
+            'it' => 'it',
+            'ja' => 'ja',
+            'lt' => 'lt',
+            'ms' => 'ms',
+            'pl' => 'pl',
+            'ro' => 'ro',
+            'ru' => 'ru',
+            'es' => 'es',
+            'sv' => 'sv',
+            'th' => 'th',
+            'tr' => 'tr',
+            'vi' => 'vn',
+        ];
+
+        $locale = $flatpickrLocales[app()->getLocale()] ?? 'en';
+    @endphp
+    
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/{{ $locale }}.js"></script>
     <script src="{{ asset('js/lightgallery.min.js') }}"></script>
     <script src="{{ asset('js/lightgallery-thumbnail.min.js') }}"></script>
     <script src="{{ asset('js/lightgallery-zoom.min.js') }}"></script>
@@ -1441,7 +1528,7 @@
             flatpickr('#appointment-date', {
                 dateFormat: 'Y-m-d',
                 minDate: 'today',
-                locale: '{{ app()->getLocale() }}',
+                locale: '{{ $locale }}',
                 disable: [function(date) {
                     const d = date.toLocaleString('en-us', {
                         weekday: 'long'
@@ -1458,7 +1545,7 @@
             flatpickr('#service_start_date', {
                 dateFormat: 'Y-m-d',
                 minDate: 'today',
-                locale: '{{ app()->getLocale() }}',
+                locale: '{{ $locale }}',
                 disable: [function(date) {
                     return !allowedDays.includes(date.getDay());
                 }]
@@ -1466,7 +1553,7 @@
             flatpickr('#service_end_date', {
                 dateFormat: 'Y-m-d',
                 minDate: 'today',
-                locale: '{{ app()->getLocale() }}',
+                locale: '{{ $locale }}',
                 disable: [function(date) {
                     return !allowedDays.includes(date.getDay());
                 }]

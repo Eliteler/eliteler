@@ -89,15 +89,6 @@ class ProductController extends Controller
                             return '<p>' . $short . '</p>';
                         }
                     })
-                    ->addColumn('product_status', function ($product) {
-                        if ($product->product_status == "outstock") {
-                            return '<span class="badge bg-red text-white text-white">' . __('Out of Stock') . '</span>';
-                        } elseif ($product->product_status == "instock") {
-                            return '<span class="badge bg-green text-white text-white">' . __('In Stock') . '</span>';
-                        } else {
-                            return '<span class="badge bg-orange text-white text-white">' . __('No Status') . '</span>';
-                        }
-                    })
                     ->addColumn('actions', function ($product) {
                         return '<div class="d-flex">
                             <button type="button" class="btn btn-success btn-icon m-1" onclick="editProduct(' . $product->id . ')">
@@ -108,7 +99,7 @@ class ProductController extends Controller
                             </button>
                         </div>';
                     })
-                    ->rawColumns(['product_name', 'product_description', 'product_status', 'actions'])
+                    ->rawColumns(['product_name', 'product_description', 'actions'])
                     ->make(true);
             }
 

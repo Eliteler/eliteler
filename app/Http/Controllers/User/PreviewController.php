@@ -12,31 +12,33 @@
 
 namespace App\Http\Controllers\User;
 
-use App\Setting;
-use App\Category;
-use App\Currency;
-use App\Testimonial;
 use App\BusinessCard;
-use App\StoreProduct;
 use App\BusinessField;
-use App\StoreCategory;
-use App\ServiceBooking;
-use App\StoreBusinessHour;
 use App\CardAppointmentTime;
-use Illuminate\Http\Request;
+use App\Category;
 use App\Classes\ServiceWorker;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\URL;
+use App\Currency;
+use App\Helpers\StorageHelper;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\File;
+use App\ServiceBooking;
+use App\Setting;
+use App\StoreBusinessHour;
+use App\StoreCategory;
+use App\StoreProduct;
+use App\Testimonial;
 use Artesaos\SEOTools\Facades\JsonLd;
+use Artesaos\SEOTools\Facades\OpenGraph;
 use Artesaos\SEOTools\Facades\SEOMeta;
 use Artesaos\SEOTools\Facades\SEOTools;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Storage;
-use Artesaos\SEOTools\Facades\OpenGraph;
+use Illuminate\Support\Facades\URL;
+use App\Support\Store\StoreTheme;
 
 class PreviewController extends Controller
 {
@@ -56,10 +58,11 @@ class PreviewController extends Controller
      * @return \Illuminate\Contracts\Support\Renderable
      */
 
+
     // View Card Preview
     public function index(Request $request, $id)
     {
-        // Queries
+        // Fetch card details regardless of active status for preview
         $card_details = DB::table('business_cards')->where('card_id', $id)->where('status', 1)->first();
 
         if (!$card_details) {
@@ -85,12 +88,7 @@ class PreviewController extends Controller
                 ->with('failed', trans('Invalid Theme'));
         }
 
-        // Check if card is activated
-        if (!$card_details) {
-            return view('errors.404');
-        }
-
-        // Check whatsapp number exists89
+        // Check whatsapp number exists
         $whatsAppNumberExists = BusinessField::where('card_id', $id)->where('type', 'wa')->exists();
 
         // Check storage folder
@@ -98,7 +96,7 @@ class PreviewController extends Controller
             File::link(storage_path('app/public'), public_path('storage'));
         }
 
-        // Check specify active card / store in user
+        // Check specify card / store details
         if (isset($card_details)) {
             if ($card_details->card_type == "store") {
                 $enquiry_button = '#';
@@ -125,10 +123,12 @@ class PreviewController extends Controller
                         'store_products.sales_price',
                         'store_products.badge',
                         'store_products.product_status',
+                            'store_products.has_variants',
                         'store_categories.category_name',
                         'store_categories.thumbnail',
                         'store_categories.category_id'
                     )
+                        ->selectSub(StoreProduct::minVariantPriceQuery(), 'min_variant_price')
                     ->groupBy(
                         'store_products.id',
                         'store_products.product_id',
@@ -139,6 +139,7 @@ class PreviewController extends Controller
                         'store_products.sales_price',
                         'store_products.badge',
                         'store_products.product_status',
+                            'store_products.has_variants',
                         'store_categories.category_name',
                         'store_categories.thumbnail',
                         'store_categories.category_id'
@@ -185,7 +186,7 @@ class PreviewController extends Controller
                     // Business Hours
                     $businessHours = StoreBusinessHour::where('store_id', $business_card_details->card_id)->first();
 
-                    // Paginate (consistent)
+                    // Paginate
                     $products = $products->paginate($request->filled('category') ? 9 : 8)->withQueryString();
 
                     // Get categories
@@ -195,48 +196,41 @@ class PreviewController extends Controller
                     $settings = Setting::where('status', 1)->first();
                     $config   = DB::table('config')->get();
 
-                    // Decode plan and SEO config only once
+                    // Decode plan and SEO config
                     $planDetails = json_decode($business_card_details->plan_details, true);
                     $seoConfig = json_decode($business_card_details->seo_configurations ?? '{}');
 
-                    // Meta Title Logic (branding)
+                    // Meta Title Logic
                     $siteTitle = $config[0]->config_value ?? '';
                     $baseTitle = $seoConfig->meta_title ?? $business_card_details->title;
                     $metaTitle = isset($planDetails['hide_branding']) && $planDetails['hide_branding'] == "1"
                         ? $baseTitle
                         : $baseTitle . ' - ' . $siteTitle;
 
-                    // Set Meta Titles
                     SEOTools::setTitle($metaTitle);
                     SEOMeta::setTitle($metaTitle);
                     OpenGraph::setTitle($metaTitle);
                     JsonLd::setTitle($metaTitle);
                     SEOMeta::addMeta('article:section', $metaTitle, 'property');
 
-                    // Set Description
                     $description = $seoConfig->meta_description ?? $business_card_details->sub_title;
                     SEOTools::setDescription($description);
                     SEOMeta::setDescription($description);
                     OpenGraph::setDescription($description);
                     JsonLd::setDescription($description);
 
-                    // Set Keywords
                     if (!empty($seoConfig->meta_keywords)) {
                         SEOMeta::addKeyword($seoConfig->meta_keywords);
                     } else {
                         SEOMeta::addKeyword([$metaTitle, "$metaTitle vcard online"]);
                     }
 
-                    // Add Canonical URL
                     SEOMeta::setCanonical(url()->current());
 
-                    // Set Favicon or Profile Image
                     $imageUrl = !empty($seoConfig->favicon) ? url($seoConfig->favicon) : url($business_card_details->profile);
                     SEOTools::addImages([$imageUrl]);
                     OpenGraph::addImage([$imageUrl]);
                     JsonLd::addImage([$imageUrl]);
-
-                    // Set OpenGraph URL
                     OpenGraph::setUrl(url($business_card_details->card_url));
 
                     // PWA
@@ -283,12 +277,8 @@ class PreviewController extends Controller
                     ];
 
                     $out = $this->generateNew($fill);
+                    $manifest = StorageHelper::uploadImage(json_encode($out), 'manifest', $business_card_details->card_id . '.json');
 
-                    Storage::disk('public')->put("manifest/" . $business_card_details->card_id . '.json', json_encode($out));
-
-                    $manifest = url("storage/manifest/" . $business_card_details->card_id . '.json');
-
-                    // Generate service worker
                     $generateServiceWorker = new ServiceWorker();
                     $generateServiceWorker->generateServiceWorker($business_card_details->card_id, $business_card_details->card_url);
 
@@ -302,7 +292,6 @@ class PreviewController extends Controller
                     $whatsapp_msg = $store_details['whatsapp_msg'];
                     $currency     = $store_details['currency'];
 
-                    // Get currency symbol
                     $currency = Currency::where('iso_code', $currency)->first();
                     $currency = $currency->symbol;
 
@@ -313,9 +302,7 @@ class PreviewController extends Controller
                     $shareContent = $config[30]->config_value;
                     $shareContent = str_replace("{ business_name }", $business_name, $shareContent);
                     $shareContent = str_replace("{ business_url }", $url, $shareContent);
-                    $shareContent = str_replace("{ appName }", $config[0]->config_value, $shareContent);
 
-                    // If branding enabled, then show app name.
                     if ($plan_details['hide_branding'] == "1") {
                         $shareContent = str_replace("{ appName }", $business_name, $shareContent);
                     } else {
@@ -325,7 +312,6 @@ class PreviewController extends Controller
                     $url          = urlencode($url);
                     $shareContent = urlencode($shareContent);
 
-                    // Set locale if not same as business card locale.
                     $locale = Session::get('locale') ?? $business_card_details->card_lang ?? config('app.locale');
                     App::setLocale($locale);
 
@@ -337,17 +323,25 @@ class PreviewController extends Controller
                     $shareComponent['telegram'] = "https://telegram.me/share/url?text=$shareContent&url=$url";
                     $shareComponent['whatsapp'] = "https://api.whatsapp.com/send/?phone&text=$shareContent";
 
-                    // Check password protected is enabled in user purchased plan
                     if ($plan_details['password_protected'] != 1) {
-                        // Update business card password
                         BusinessCard::where('card_id', $business_card_details->card_id)->update(['password' => null]);
-
-                        // Session password protected
                         Session::get('password_protected') == false;
                     }
 
                     $datas = compact('card_details', 'plan_details', 'store_details', 'categories', 'business_card_details', 'products', 'settings', 'shareComponent', 'shareContent', 'config', 'enquiry_button', 'whatsapp_msg', 'currency', 'manifest', 'whatsAppNumberExists', 'deliveryOptions', 'businessHours');
-                    return view('templates.store.' . $business_card_details->theme_code . '.index', $datas);
+
+                    // Render direct store template if called inside preview iframe
+                    if ($request->has('frame')) {
+                        return view('templates.stores.' . StoreTheme::resolve($business_card_details->theme_code)->view . '.index', $datas);
+                    }
+
+                    // Preview iframe URL pointing back with frame parameter
+                    $previewUrl = url()->current() . '?frame=1';
+
+                    // Preview Return URL
+                    $previewReturnUrl = route('user.stores');
+
+                    return view('user.pages.preview.index', compact('previewUrl', 'previewReturnUrl', 'datas'));
                 } else {
                     return redirect()->route('user.edit.card', $id)->with('failed', trans('Please fill out the basic business details.'));
                 }
@@ -372,10 +366,8 @@ class PreviewController extends Controller
                     $iframes           = DB::table('business_fields')->where('type', 'iframe')->where('card_id', $card_details->card_id)->orderBy('id', 'asc')->get();
                     $customTexts       = DB::table('business_fields')->where('type', 'text')->where('card_id', $card_details->card_id)->orderBy('id', 'asc')->get();
 
-                    // Appointment slots for the card
                     $appointmentSlots = CardAppointmentTime::where('card_id', $card_details->card_id)->orderBy('id', 'asc')->get();
 
-                    // Initialize the time slots array
                     $appointmentEnabled = false;
                     $appointment_slots  = [
                         'monday'    => [],
@@ -387,28 +379,21 @@ class PreviewController extends Controller
                         'sunday'    => [],
                     ];
 
-                    // Iterate through the appointment slots and categorize them by day
                     foreach ($appointmentSlots as $slot) {
-                        // Assuming your `CardAppointmentTime` model has a `day` attribute and a `time` attribute
-                        $day  = strtolower($slot->day); // Convert to lowercase to match array keys
-                        $time = $slot->time_slots;      // Assuming this contains the time range string like "16:00 - 17:00"
+                        $day  = strtolower($slot->day);
+                        $time = $slot->time_slots;
 
-                        // Check if the day exists in the time_slots array
                         if (array_key_exists($day, $appointment_slots)) {
-                            $appointment_slots[$day][] = $time; // Add the time to the appropriate day
-                            // Get price
+                            $appointment_slots[$day][] = $time;
                             $appointment_slots[$day][] = $slot->price;
                         }
 
                         $appointmentEnabled = true;
-                        
-                        // Add appointment title to array
                         $appointment_slots['title'] = $appointmentSlots[0]->title;
                     }
 
-                    $appointment_slots = json_encode($appointment_slots); // Convert the array to JSON
+                    $appointment_slots = json_encode($appointment_slots);
                     
-                    // service bookings 
                     $service_booking_details = ServiceBooking::where('vcard_id', $card_details->card_id)->first();
 
                     if ($make_enquiry != null) {
@@ -418,48 +403,39 @@ class PreviewController extends Controller
                     $settings = Setting::where('status', 1)->first();
                     $config   = DB::table('config')->get();
 
-                    // Decode plan and SEO config only once
                     $planDetails = json_decode($business_card_details->plan_details, true);
                     $seoConfig = json_decode($business_card_details->seo_configurations ?? '{}');
 
-                    // Meta Title Logic (branding)
                     $siteTitle = $config[0]->config_value ?? '';
                     $baseTitle = $seoConfig->meta_title ?? $business_card_details->title;
                     $metaTitle = isset($planDetails['hide_branding']) && $planDetails['hide_branding'] == "1"
                         ? $baseTitle
                         : $baseTitle . ' - ' . $siteTitle;
 
-                    // Set Meta Titles
                     SEOTools::setTitle($metaTitle);
                     SEOMeta::setTitle($metaTitle);
                     OpenGraph::setTitle($metaTitle);
                     JsonLd::setTitle($metaTitle);
                     SEOMeta::addMeta('article:section', $metaTitle, 'property');
 
-                    // Set Description
                     $description = $seoConfig->meta_description ?? $business_card_details->sub_title;
                     SEOTools::setDescription($description);
                     SEOMeta::setDescription($description);
                     OpenGraph::setDescription($description);
                     JsonLd::setDescription($description);
 
-                    // Set Keywords
                     if (!empty($seoConfig->meta_keywords)) {
                         SEOMeta::addKeyword($seoConfig->meta_keywords);
                     } else {
                         SEOMeta::addKeyword([$metaTitle, "$metaTitle vcard online"]);
                     }
 
-                    // Add Canonical URL
                     SEOMeta::setCanonical(url()->current());
 
-                    // Set Favicon or Profile Image
                     $imageUrl = !empty($seoConfig->favicon) ? url($seoConfig->favicon) : url($business_card_details->profile);
                     SEOTools::addImages([$imageUrl]);
                     OpenGraph::addImage([$imageUrl]);
                     JsonLd::addImage([$imageUrl]);
-
-                    // Set OpenGraph URL
                     OpenGraph::setUrl(url($business_card_details->card_url));
 
                     // PWA
@@ -506,12 +482,8 @@ class PreviewController extends Controller
                     ];
 
                     $out = $this->generateNew($fill);
+                    $manifest = StorageHelper::uploadImage(json_encode($out), 'manifest', $business_card_details->card_id . '.json');
 
-                    Storage::disk('public')->put("manifest/" . $business_card_details->card_id . '.json', json_encode($out));
-
-                    $manifest = url("storage/manifest/" . $business_card_details->card_id . '.json');
-
-                    // Generate service worker
                     $generateServiceWorker = new ServiceWorker();
                     $generateServiceWorker->generateServiceWorker($business_card_details->card_id, $business_card_details->card_url);
 
@@ -525,7 +497,6 @@ class PreviewController extends Controller
                     $shareContent = str_replace("{ business_name }", $business_name, $shareContent);
                     $shareContent = str_replace("{ business_url }", $url, $shareContent);
 
-                    // If branding enabled, then show app name.
                     if ($plan_details['hide_branding'] == "1") {
                         $shareContent = str_replace("{ appName }", $business_name, $shareContent);
                     } else {
@@ -535,7 +506,6 @@ class PreviewController extends Controller
                     $url          = urlencode($url);
                     $shareContent = urlencode($shareContent);
 
-                    // Set locale if not same as business card locale.
                     $locale = Session::get('locale') ?? $business_card_details->card_lang ?? config('app.locale');
                     App::setLocale($locale);
 
@@ -547,11 +517,9 @@ class PreviewController extends Controller
                     $shareComponent['telegram'] = "https://telegram.me/share/url?text=$shareContent&url=$url";
                     $shareComponent['whatsapp'] = "https://api.whatsapp.com/send/?phone&text=$shareContent";
 
-                    // Datas
                     $datas = compact('card_details', 'plan_details', 'business_card_details', 'feature_details', 'service_details', 'product_details', 'galleries_details', 'testimonials', 'payment_details', 'appointmentEnabled', 'appointment_slots', 'business_hours', 'settings', 'shareComponent', 'shareContent', 'config', 'enquiry_button', 'iframes', 'customTexts', 'manifest', 'whatsAppNumberExists', 'service_booking_details');
 
                     try {
-                        // Google Wallet Details
                         $google_wallet_details = DB::table('google_wallets_vcard')->where('card_id', $business_card_details->card_id)->first();
 
                         if ($google_wallet_details) {
@@ -559,21 +527,27 @@ class PreviewController extends Controller
                             $google_wallet_details->wallet_link = $wallet_url;
                         }
 
-                        // Push google wallet details in datas
                         $datas['google_wallet_details'] = $google_wallet_details;
                     } catch (\Throwable $th) {
                     }
 
-                    // Check password protected is enabled in user purchased plan
                     if ($plan_details['password_protected'] != 1) {
-                        // Update business card password
                         BusinessCard::where('card_id', $business_card_details->card_id)->update(['password' => null]);
-
-                        // Session password protected
                         Session::get('password_protected') == false;
                     }
 
-                    return view('templates.' . $business_card_details->theme_code, $datas);
+                    // Render direct vCard template if called inside preview iframe
+                    if ($request->has('frame')) {
+                        return view('templates.cards.' . $business_card_details->theme_code . '.index', $datas);
+                    }
+
+                    // Preview iframe URL pointing back with frame parameter
+                    $previewUrl = url()->current() . '?frame=1';
+
+                    // Preview Return URL
+                    $previewReturnUrl = route('user.cards');
+
+                    return view('user.pages.preview.index', compact('previewUrl', 'previewReturnUrl', 'datas'));
                 } else {
                     return redirect()->route('user.edit.card', $id)->with('failed', trans('Please fill out the basic business details.'));
                 }

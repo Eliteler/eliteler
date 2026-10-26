@@ -523,7 +523,7 @@ class PageSeeder extends Seeder
             'section_name' => 'faq',
             'section_title' => 'faq_title',
             'section_content' => 'Frequently Asked Question',
-            'title' => 'GoBiz Vcard SaaS - Privacy Policy',
+            'title' => 'GoBiz Vcard SaaS - FAQs',
             'description' => 'GoBiz is SaaS script featuring a Digital Business Card Builder, NFC Script, and WhatsApp Store Builder and 10+ plugins. Powered by https://nativecode.in.',
             'keywords' => 'vcard saas, vcard script, gobiz, vcard saas script, digital vcard script, vcard qr code script, php scripts for sale, buy php scripts, codecanyon php, codecanyon saas, codecanyon script, php saas scripts'
         ]);

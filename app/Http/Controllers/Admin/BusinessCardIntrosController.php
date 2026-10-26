@@ -13,122 +13,93 @@
 namespace App\Http\Controllers\Admin;
 
 use App\BusinessCardIntro;
-use App\Setting;
-use Illuminate\Http\Request;
+use App\Helpers\StorageHelper;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class BusinessCardIntrosController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
     public function __construct()
     {
         $this->middleware('auth');
     }
 
-    /**
-     * Show the application dashboard.
-     *
-     * @return \Illuminate\Contracts\Support\Renderable
-     */
-
     // Intros
     public function index(Request $request)
     {
-        // status
-        $status = $request->query('status');
+        $status = in_array($request->query('status'), ['active', 'disabled'], true) ? $request->query('status') : 'all';
 
-        // check status
-        $intros = BusinessCardIntro::getIntros($status);
+        // Business cards using each intro (business_cards.intro_screen holds the intro id)
+        $usage = DB::table('business_cards')
+            ->whereNotNull('intro_screen')
+            ->where('card_status', '!=', 'deleted')
+            ->selectRaw('intro_screen, COUNT(*) as total')
+            ->groupBy('intro_screen')
+            ->pluck('total', 'intro_screen');
 
-        // settings
-        $settings = Setting::active()->first();
+        $intros = BusinessCardIntro::getIntros($status)->map(fn (BusinessCardIntro $intro) => [
+            'id'        => $intro->business_card_intro_id,
+            'name'      => $intro->intro_name,
+            'thumbnail' => $intro->intro_thumbnail ? asset('img/intros/' . $intro->intro_thumbnail) : null,
+            'active'    => (string) $intro->status === '1',
+            'usage'     => (int) ($usage[$intro->business_card_intro_id] ?? 0),
+        ]);
 
-        // return view
-        return view('admin.pages.intros.index', compact('intros', 'settings'));
-    }
-
-    // Edit intro
-    public function edit(Request $request, $id)
-    {
-        // get intro
-        $intro = BusinessCardIntro::getIntro($id);
-
-        if (!$intro) {
-            return redirect()->route('admin.business-card-intros')->with('failed', trans('Not Found!'));
-        }
-
-        // settings
-        $settings = Setting::active()->first();
-
-        // return view
-        return view('admin.pages.intros.edit', compact('intro', 'settings'));
+        return Inertia::render('themes/intros', [
+            'intros'      => $intros,
+            'filters'     => ['status' => $status],
+            'maxUploadKb' => (int) env('SIZE_LIMIT', 2048),
+        ]);
     }
 
     // Update intro
     public function update(Request $request, $id)
     {
-        // Validate
-        $validated = Validator::make($request->all(), [
-            'intro_name' => 'required|min:3',
-            'intro_thumbnail' => 'nullable|mimes:jpeg,png,jpg,gif,svg|max:' . env('SIZE_LIMIT'),
+        $validated = $request->validate([
+            'intro_name'      => 'required|string|min:3|max:191',
+            'intro_thumbnail' => 'nullable|file|mimes:jpeg,png,jpg,gif,svg,webp|max:' . env('SIZE_LIMIT', 2048),
         ]);
 
-        if ($validated->fails()) {
-            return back()->with('failed', $validated->errors()->first());
-        }
-
-        // Get intro
         $intro = BusinessCardIntro::getIntro($id);
 
-        // Check intro exists
-        if (!$intro) {
-            return back()->with('failed', 'Not Found!');
+        if (! $intro) {
+            return back()->with('failed', __('Not Found!'));
         }
 
-        // Update name
-        $intro->intro_name = $request->intro_name;
+        $intro->intro_name = $validated['intro_name'];
 
-        // Handle file upload
         if ($request->hasFile('intro_thumbnail')) {
-            $file = $request->file('intro_thumbnail');
-            $fileName = 'intro-' . uniqid() . '.' . $file->getClientOriginalExtension();
+            if (! empty($intro->intro_thumbnail)) {
+                StorageHelper::deleteFile($intro->intro_thumbnail, 'intros');
+            }
 
-            Storage::disk('intros')->put($fileName, file_get_contents($file));
-
-            $intro->intro_thumbnail = $fileName;
+            $intro->intro_thumbnail = StorageHelper::uploadImage(
+                $request->file('intro_thumbnail'),
+                '',
+                'intro-' . uniqid(),
+                'intros'
+            );
         }
 
         $intro->save();
 
-        // Return success
-        return redirect()->route('admin.business-card-intros')
-            ->with('success', 'Updated!');
+        return back()->with('success', __('Intro updated.'));
     }
 
-    // Update intro status
-    public function status(Request $request, $id)
+    // Enable / disable intro
+    public function status($id)
     {
-        // Get intro
         $intro = BusinessCardIntro::getIntro($id);
 
-        // Check intro exists
-        if (!$intro) {
-            return back()->with('failed', 'Not Found!');
+        if (! $intro) {
+            return back()->with('failed', __('Not Found!'));
         }
 
-        // Update status
-        $intro->update([
-            'status' => $intro->status == '0' ? 1 : 0,
-        ]);
+        $enable = (string) $intro->status === '0';
+        $intro->update(['status' => $enable ? 1 : 0]);
 
-        // Return success
-        return redirect()->route('admin.business-card-intros')
-            ->with('success', 'Updated!');
+        return back()->with('success', $enable ? __('Intro enabled.') : __('Intro disabled.'));
     }
 }

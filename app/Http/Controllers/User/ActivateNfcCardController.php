@@ -54,17 +54,13 @@ class ActivateNfcCardController extends Controller
         $active_plan = json_decode($plan->plan_details);
 
         if ($active_plan != null) {
-            if ($active_plan->nfc_card == 1) {
                 // List of business cards
-                $businessCards = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_status', 'activated')->get();
+            $businessCards = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_status', 'activated')->where('status', '1')->get();
 
                 return view('user.pages.activate-nfc-card.index', compact('businessCards', 'settings', 'config'))->with('failed', __('This feature is not available on your current plan.'));
             } else {
                 return redirect()->route('user.plans')->with('failed', __('This feature is not available on your current plan. Upgrade to a plan that includes this feature.'));
             }
-        } else {
-            return redirect()->route('user.plans')->with('failed', __('This feature is not available on your current plan. Upgrade to a plan that includes this feature.'));
-        }
     }
 
     // Store NFC Card
@@ -82,7 +78,7 @@ class ActivateNfcCardController extends Controller
         }
 
         // Get the business card details
-        $businessCard = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_status', 'activated')->where('card_id', $request->businessCard)->first();
+        $businessCard = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_status', 'activated')->where('status', '1')->where('card_id', $request->businessCard)->first();
 
         // Check if the business card exists
         if (!$businessCard) {

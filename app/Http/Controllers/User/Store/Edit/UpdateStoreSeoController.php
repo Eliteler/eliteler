@@ -12,12 +12,13 @@
 
 namespace App\Http\Controllers\User\Store\Edit;
 
-use App\Setting;
 use App\BusinessCard;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Helpers\StorageHelper;
 use App\Http\Controllers\Controller;
+use App\Setting;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class UpdateStoreSeoController extends Controller
@@ -95,9 +96,8 @@ class UpdateStoreSeoController extends Controller
             // Favicon
             $favicon = null;
             if ($request->hasFile('favicon')) {
-                $fileName = uniqid() . '.png';
-                Storage::disk('public')->putFileAs('vcard/favicons', $request->file('favicon'), $fileName);
-                $favicon = 'storage/vcard/favicons/' . $fileName;
+            // Upload favicon using StorageHelper and get relative path
+            $favicon = StorageHelper::uploadImage($request->file('favicon'), 'vcard/favicons');
             }
 
             // JSON encode

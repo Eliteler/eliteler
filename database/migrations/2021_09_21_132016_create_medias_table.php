@@ -29,7 +29,6 @@ class CreateMediasTable extends Migration
             $table->string('user_id');
             $table->string('media_name');
             $table->longText('media_url');
-            $table->bigInteger('size')->default(0);
             $table->timestamp('created_at')->useCurrent();
             $table->timestamp('updated_at')->useCurrent();
         });

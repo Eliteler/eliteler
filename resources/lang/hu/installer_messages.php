@@ -1,63 +1,173 @@
 <?php
 
 return [
-
-    /*
-     *
-     * Shared translations.
-     *
-     */
-    'title' => 'تنصيب Laravel',
-    'next' => 'متابعة',
-
-    /*
-     *
-     * Home page translations.
-     *
-     */
-    'welcome' => [
-        'title'   => 'تنصيب Laravel',
-        'message' => 'أهلا بك في صفحة تنصيب Laravel',
-    ],
-
-    /*
-     *
-     * Requirements page translations.
-     *
-     */
-    'requirements' => [
-        'title' => 'المتطلبات',
-    ],
-
-    /*
-     *
-     * Permissions page translations.
-     *
-     */
-    'permissions' => [
-        'title' => 'تراخيص المجلدات',
-    ],
-
-    /*
-     *
-     * Environment page translations.
-     *
-     */
+    'back' => 'Előző',
     'environment' => [
         'title' => 'الإعدادات',
         'save' => 'حفظ ملف .env',
         'success' => 'تم حفظ الإعدادات بنجاح',
         'errors' => 'حدث خطأ أثناء إنشاء ملف .env. رجاءا قم بإنشاءه يدويا',
+        'menu' => [
+            'templateTitle' => '3. lépés | ',
+            'title' => 'Telepítés',
+            'desc' => 'Kérjük, válassza ki, hogyan szeretné konfigurálni az alkalmazások <code>.env</code> fájlját.',
+            'wizard-button' => 'Űrlapvarázsló beállítása',
+            'classic-button' => 'Klasszikus szövegszerkesztő',
+        ],
+        'wizard' => [
+            'templateTitle' => '3. lépés | ',
+            'title' => 'Irányított <code>.env</code> varázsló',
+            'tabs' => [
+                'environment' => 'Környezet',
+                'database' => 'Adatbázis',
+                'application' => 'Alkalmazás',
+            ],
+            'form' => [
+                'name_required' => 'Meg kell adni a környezet nevét.',
+                'app_name_label' => 'Alkalmazás neve',
+                'app_name_placeholder' => 'Alkalmazás neve',
+                'app_environment_label' => 'App Environment',
+                'app_environment_label_local' => 'Helyi',
+                'app_environment_label_developement' => 'Fejlesztés',
+                'app_environment_label_qa' => 'Qa',
+                'app_environment_label_production' => 'Termelés',
+                'app_environment_label_other' => 'Más',
+                'app_environment_placeholder_other' => 'Lépjen be a környezetébe...',
+                'app_debug_label' => 'Alkalmazás hibakeresés',
+                'app_debug_label_true' => 'Igaz',
+                'app_debug_label_false' => 'Hamis',
+                'app_log_level_label' => 'Alkalmazásnapló-szint',
+                'app_log_level_label_debug' => 'hibakeresés',
+                'app_log_level_label_info' => 'info',
+                'app_log_level_label_notice' => 'értesítés',
+                'app_log_level_label_warning' => 'figyelmeztetés',
+                'app_log_level_label_error' => 'hiba',
+                'app_log_level_label_critical' => 'kritikai',
+                'app_log_level_label_alert' => 'éber',
+                'app_log_level_label_emergency' => 'vészhelyzet',
+                'app_url_label' => 'Alkalmazás URL-je',
+                'app_url_placeholder' => 'Alkalmazás URL-je',
+                'db_connection_failed' => 'Nem sikerült csatlakozni az adatbázishoz.',
+                'db_connection_label' => 'Adatbázis kapcsolat',
+                'db_connection_label_mysql' => 'mysql',
+                'db_connection_label_sqlite' => 'sqlite',
+                'db_connection_label_pgsql' => 'pgsql',
+                'db_connection_label_sqlsrv' => 'sqlsrv',
+                'db_host_label' => 'Adatbázis gazdagép',
+                'db_host_placeholder' => 'Adatbázis gazdagép',
+                'db_port_label' => 'Adatbázis port',
+                'db_port_placeholder' => 'Adatbázis port',
+                'db_name_label' => 'Adatbázis neve',
+                'db_name_placeholder' => 'Adatbázis neve',
+                'db_username_label' => 'Adatbázis felhasználói név',
+                'db_username_placeholder' => 'Adatbázis felhasználói név',
+                'db_password_label' => 'Adatbázis jelszó',
+                'db_password_placeholder' => 'Adatbázis jelszó',
+                'app_tabs' => [
+                    'more_info' => 'További információ',
+                    'broadcasting_title' => 'Műsorszórás, gyorsítótárazás, munkamenet és sor',
+                    'broadcasting_label' => 'Broadcast Driver',
+                    'broadcasting_placeholder' => 'Broadcast Driver',
+                    'cache_label' => 'Cache Driver',
+                    'cache_placeholder' => 'Cache Driver',
+                    'session_label' => 'Session Driver',
+                    'session_placeholder' => 'Session Driver',
+                    'queue_label' => 'Queue Driver',
+                    'queue_placeholder' => 'Queue Driver',
+                    'redis_label' => 'Redis Driver',
+                    'redis_host' => 'Redis Host',
+                    'redis_password' => 'Redis jelszó',
+                    'redis_port' => 'Redis Port',
+                    'mail_label' => 'Felad',
+                    'mail_driver_label' => 'Mail Driver',
+                    'mail_driver_placeholder' => 'Mail Driver',
+                    'mail_host_label' => 'Mail Host',
+                    'mail_host_placeholder' => 'Mail Host',
+                    'mail_port_label' => 'Levélport',
+                    'mail_port_placeholder' => 'Levélport',
+                    'mail_username_label' => 'Levél felhasználónév',
+                    'mail_username_placeholder' => 'Levél felhasználónév',
+                    'mail_password_label' => 'Levelezési jelszó',
+                    'mail_password_placeholder' => 'Levelezési jelszó',
+                    'mail_encryption_label' => 'Levéltitkosítás',
+                    'mail_encryption_placeholder' => 'Levéltitkosítás',
+                    'pusher_label' => 'Toló',
+                    'pusher_app_id_label' => 'Pusher App Id',
+                    'pusher_app_id_palceholder' => 'Pusher App Id',
+                    'pusher_app_key_label' => 'Pusher App Key',
+                    'pusher_app_key_palceholder' => 'Pusher App Key',
+                    'pusher_app_secret_label' => 'Pusher App Secret',
+                    'pusher_app_secret_palceholder' => 'Pusher App Secret',
+                ],
+                'buttons' => [
+                    'setup_database' => 'Adatbázis beállítása',
+                    'setup_application' => 'Alkalmazás beállítása',
+                    'install' => 'Telepítés',
+                ],
+            ],
+        ],
+        'classic' => [
+            'templateTitle' => '3. lépés | ',
+            'title' => 'Klasszikus környezeti szerkesztő',
+            'save' => '.env',
+            'back' => 'Használja az Űrlapvarázslót',
+            'install' => 'Mentés és telepítés',
+        ],
     ],
-
-    /*
-     *
-     * Final page translations.
-     *
-     */
     'final' => [
         'title' => 'النهاية',
         'finished' => 'تم تنصيب البرنامج بنجاح...',
         'exit' => 'إضغط هنا للخروج',
+        'templateTitle' => 'A telepítés kész',
+        'migration' => 'Migrációs és vetőmag konzol kimenet:',
+        'console' => 'Alkalmazáskonzol kimenet:',
+        'log' => 'Telepítési napló bejegyzés:',
+        'env' => 'Végső .env fájl:',
+    ],
+    'finish' => 'Telepítés',
+    'forms' => [
+        'errorTitle' => 'A következő hibák történtek:',
+    ],
+    'install' => 'Telepítés',
+    'installed' => [
+        'success_log_message' => 'A NativeCode Installer sikeresen TELEPÍTETT',
+    ],
+    'next' => 'متابعة',
+    'permissions' => [
+        'title' => 'تراخيص المجلدات',
+        'templateTitle' => '2. lépés | ',
+        'next' => 'Környezet konfigurálása',
+    ],
+    'requirements' => [
+        'title' => 'المتطلبات',
+        'templateTitle' => '1. lépés | ',
+        'next' => 'Ellenőrizze az engedélyeket',
+    ],
+    'title' => 'تنصيب Laravel',
+    'updater' => [
+        'title' => 'Laravel frissítő',
+        'welcome' => [
+            'title' => 'Üdvözöljük a Frissítőben',
+            'message' => 'Üdvözöljük a frissítési varázslóban.',
+        ],
+        'overview' => [
+            'title' => 'Áttekintés',
+            'message' => '1 frissítés van.|Vannak :szám frissítések.',
+            'install_updates' => 'Frissítések telepítése',
+        ],
+        'final' => [
+            'title' => 'Befejezett',
+            'finished' => 'Az alkalmazás adatbázisa sikeresen frissítve.',
+            'exit' => 'Kattintson ide a kilépéshez',
+        ],
+        'log' => [
+            'success_message' => 'A NativeCode telepítő sikeresen FRISSÍTVE ekkor',
+        ],
+    ],
+    'welcome' => [
+        'title' => 'تنصيب Laravel',
+        'message' => 'أهلا بك في صفحة تنصيب Laravel',
+        'templateTitle' => 'Üdvözöljük',
+        'next' => 'Ellenőrizze a Követelményeket',
     ],
 ];

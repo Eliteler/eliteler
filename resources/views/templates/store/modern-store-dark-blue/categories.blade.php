@@ -1,3 +1,18 @@
+@php
+    $currentHost = request()->getHost();
+    $masterHost = parse_url(config('app.url'), PHP_URL_HOST);
+    $isCustomDomainOrSubdomain = $currentHost !== $masterHost;
+
+    // Dynamic store base URL and product URL prefix
+    if ($isCustomDomainOrSubdomain) {
+        $storeUrl = url('/');
+        $productUrlPrefix = url('product');
+    } else {
+        $storeUrl = url($business_card_details->card_url);
+        $productUrlPrefix = url($business_card_details->card_url . '/product');
+    }
+@endphp
+
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
@@ -48,7 +63,8 @@
     <link href="{{ url('app/css/store.css') }}" rel="stylesheet">
 
     {{-- Font --}}
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100;200;300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
 
     <style>
         body {
@@ -72,32 +88,72 @@
     {{-- Check business details --}}
     @if ($business_card_details != null)
         @php
-            $custom_css = $business_card_details->custom_css;
-            $custom_js = $business_card_details->custom_js;
+            $custom_css = trim($business_card_details->custom_css ?? '');
+            $custom_js = trim($business_card_details->custom_js ?? '');
 
-            // Ensure <style> tags for custom CSS
-            if (strpos($custom_css, '<style>') === false && strpos($custom_css, '</style>') === false) {
-                $custom_css = "<style>" . $custom_css . "</style>";
+            /*
+            |--------------------------------------------------------------------------
+            | Custom CSS
+            |--------------------------------------------------------------------------
+            */
+
+            if (!empty($custom_css) && stripos($custom_css, '<style') === false) {
+                $custom_css = "<style>{$custom_css}</style>";
             }
 
-            // Ensure <script> tags for custom JS
-            if (strpos($custom_js, '<script>') === false && strpos($custom_js, '</script>') === false) {
-                $custom_js = "<script>" . $custom_js . "</script>";
+            /*
+            |--------------------------------------------------------------------------
+            | Split HTML tags and plain JS
+            |--------------------------------------------------------------------------
+            */
+
+            $include_custom_js = '';
+
+            if (!empty($custom_js)) {
+                // Extract HTML tags like meta, script, iframe, noscript, etc.
+                preg_match_all(
+                '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/@endphp/is',
+        $custom_js,
+        $matches,
+    );
+
+    $html_tags = implode("\n", $matches[0]);
+
+    // Remove extracted HTML tags from original content
+    $plain_js = trim(
+        preg_replace(
+            '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/?>/is',
+            '',
+            $custom_js,
+        ),
+    );
+
+    // Add HTML tags directly
+    $include_custom_js .= $html_tags;
+
+    // Wrap remaining plain JS inside script tag
+    if (!empty($plain_js)) {
+        $include_custom_js .= "\n<script>
+            {
+                $plain_js
             }
-        @endphp
+        </script>";
+    }
+}
+?>
 
         {!! $custom_css !!}
-        {!! $custom_js !!}
+        {!! $include_custom_js !!}
 
         {{-- Theme CSS --}}
-        @if(!empty($business_card_details->theme_css))
+        @if (!empty($business_card_details->theme_css))
             <style>
                 {!! $business_card_details->theme_css !!}
             </style>
         @endif
 
         {{-- Theme JS --}}
-        @if(!empty($business_card_details->theme_js))
+        @if (!empty($business_card_details->theme_js))
             <script>
                 {!! $business_card_details->theme_js !!}
             </script>
@@ -151,17 +207,16 @@
                                     @foreach ($categories as $category)
                                         <div class="cursor-pointer col-6 col-md-3">
                                             <a
-                                                href="{{ url($business_card_details->card_url) . '?category=' . urlencode(strtolower($category->category_name)) }}">
+                                                href="{{ $storeUrl . '?category=' . urlencode(strtolower($category->category_name)) }}">
                                                 <div class="card radius-img">
                                                     <div
                                                         class="card-body d-flex flex-column align-items-center justify-content-center gap-2 p-3">
                                                         <!-- Thumbnail -->
-                                                        <div class="ratio ratio-1x1 d-flex align-items-center justify-content-center">
-                                                            <img
-                                                                src="{{ url($category->thumbnail) }}"
+                                                        <div
+                                                            class="ratio ratio-1x1 d-flex align-items-center justify-content-center">
+                                                            <img src="{{ url($category->thumbnail) }}"
                                                                 alt="{{ $category->category_name }}"
-                                                                class="img-fluid category-thumbnail"
-                                                            >
+                                                                class="img-fluid category-thumbnail">
                                                         </div>
                                                         <!-- Category Name -->
                                                         <div class="">
@@ -267,42 +322,48 @@
                                 {{-- Privacy Policy --}}
                                 @if ($business_card_details->privacy_policy)
                                     <li class="list-inline-item">
-                                        <a href="{{ route('store.privacy.policy', $business_card_details->card_url) }}" class="link-secondary">{{ __('Privacy Policy') }}</a>
+                                        <a href="{{ route('store.privacy.policy', $business_card_details->card_url) }}"
+                                            class="link-secondary">{{ __('Privacy Policy') }}</a>
                                     </li>
                                 @endif
                                 
                                 {{-- Terms and Conditions --}}
                                 @if ($business_card_details->terms_and_conditions)
                                     <li class="list-inline-item">
-                                        <a href="{{ route('store.terms.and.conditions', $business_card_details->card_url) }}" class="link-secondary">{{ __('Terms & Conditions') }}</a>
+                                        <a href="{{ route('store.terms.and.conditions', $business_card_details->card_url) }}"
+                                            class="link-secondary">{{ __('Terms & Conditions') }}</a>
                                     </li>
                                 @endif
 
                                 {{-- Return/Refund Policy --}}
                                 @if ($business_card_details->refund_policy)
                                     <li class="list-inline-item">
-                                        <a href="{{ route('store.refund.policy', $business_card_details->card_url) }}" class="link-secondary">{{ __('Return/Refund Policy') }}</a>
+                                        <a href="{{ route('store.refund.policy', $business_card_details->card_url) }}"
+                                            class="link-secondary">{{ __('Return/Refund Policy') }}</a>
                                     </li>
                                 @endif
 
                                 {{-- Shipping Policy --}}
                                 @if ($business_card_details->shipping_policy)
                                     <li class="list-inline-item">
-                                        <a href="{{ route('store.shipping.policy', $business_card_details->card_url, $business_card_details->card_url) }}" class="link-secondary">{{ __('Shipping Policy') }}</a>
+                                        <a href="{{ route('store.shipping.policy', $business_card_details->card_url, $business_card_details->card_url) }}"
+                                            class="link-secondary">{{ __('Shipping Policy') }}</a>
                                     </li>
                                 @endif
 
                                 {{-- Cookie Policy --}}
                                 @if ($business_card_details->cookie_policy)
                                     <li class="list-inline-item">
-                                        <a href="{{ route('store.cookie.policy', $business_card_details->card_url) }}" class="link-secondary">{{ __('Cookie Policy') }}</a>
+                                        <a href="{{ route('store.cookie.policy', $business_card_details->card_url) }}"
+                                            class="link-secondary">{{ __('Cookie Policy') }}</a>
                                     </li>
                                 @endif
 
                                 {{-- Contact Information / Customer Support Policy --}}
                                 @if ($business_card_details->customer_support_policy)
                                     <li class="list-inline-item">
-                                        <a href="{{ route('store.contact.information', $business_card_details->card_url) }}" class="link-secondary">{{ __('Contact Us') }}</a>
+                                        <a href="{{ route('store.contact.information', $business_card_details->card_url) }}"
+                                            class="link-secondary">{{ __('Contact Us') }}</a>
                                     </li>
                                 @endif
                             </ul>
@@ -348,7 +409,7 @@
     </div>
 
     {{-- Place order --}}
-    <div class="modal modal-blur fade" id="orderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal modal-bg fade" id="orderModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-md modal-dialog-centered" role="document">
             <div class="modal-content">
                 <!-- Modal Header -->
@@ -365,7 +426,9 @@
                     <!-- Mobile -->
                     <div class="mb-3">
                         <label class="form-label required" for="cus_mobile">{{ __('Mobile') }}</label>
-                        <input type="number" class="form-control" placeholder="{{ __('Mobile number with country code, excluding +') }}" id="cus_mobile" required />
+                        <input type="number" class="form-control"
+                            placeholder="{{ __('Mobile number with country code, excluding +') }}" id="cus_mobile"
+                            required />
                     </div>
                     <!-- Address -->
                     <div class="mb-3">
@@ -417,8 +480,9 @@
 
                     {{-- Customer Notes --}}
                     <div class="mb-3">
-                        <small>{{ __("Customer Notes") }}: </small>
-                        <small class="text-muted">{{ __("After you click the Confirm button, WhatsApp will open. Tap 'Send' in WhatsApp to send your order to the shop owner.") }}</small>
+                        <small>{{ __('Customer Notes') }}: </small>
+                        <small
+                            class="text-muted">{{ __("After you click the Confirm button, WhatsApp will open. Tap 'Send' in WhatsApp to send your order to the shop owner.") }}</small>
                     </div>
                 </div>
                 <!-- Modal Footer -->
@@ -444,7 +508,11 @@
     </div>
 
     {{-- WharApp Chat --}}
-    @include('templates.includes.whatsapp-float', ['businessImage' => $business_card_details->profile, 'businessName' => $card_details->title, 'whatsappNumber' => $enquiry_button])
+    @include('templates.includes.whatsapp-float', [
+        'businessImage' => $business_card_details->profile,
+        'businessName' => $card_details->title,
+        'whatsappNumber' => $enquiry_button,
+    ])
 
     <!-- Core -->
     <script type="text/javascript" src="{{ url('js/tabler.min.js') }}"></script>
@@ -463,9 +531,7 @@
         };
 
         // Currencies
-        const currencies = {!! json_encode(App\Currency::where('status', 1)
-        ->select('iso_code', 'symbol', 'symbol_first')
-        ->get()) !!};
+        const currencies = {!! json_encode(App\Currency::where('status', 1)->select('iso_code', 'symbol', 'symbol_first')->get()) !!};
 
         // Determine currency symbol and position
         let currencySymbol = '';
@@ -591,7 +657,7 @@
                 // LEFT: Image
                 cart_items += `
                 <div class="me-3 flex-shrink-0" style="width: 100px; height: 100px;">
-                    <img src="${item.product_image}" class="img-fluid rounded object-fit-cover h-100 w-100" alt="${item.product_name}" />
+                    <img src="${item.product_image}" class="img-fluid rounded object-fit-contain h-100 w-100" alt="${item.product_name}" />
                 </div>`;
 
                 // RIGHT: Product Info
@@ -613,7 +679,6 @@
                     `<button onclick="addQty(${index})" class="btn text-dark d-flex align-items-center justify-content-center" style="width:35px;height:35px;"><svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-plus m-0"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg></button>`;
                 cart_items +=
                     `<button onclick="removeFromCart(${index})" class="ms-3 btn btn-danger p-0 d-flex align-items-center justify-content-center" style="width:35px;height:35px;"><svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-trash m-0"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg></button>`;
-
                 cart_items += `</div>`; // end buttons
                 cart_items += `</div>`; // end text/info
                 cart_items += `</div>`; // end row
@@ -764,9 +829,8 @@
                 });
 
                 // Place order ajax
-                // Place order ajax
                 $.ajax({
-                    url: "{{ config('app.url') }}/order/place",
+                    url: "{{ url('order/place') }}",
                     method: "POST",
                     data: {
                         _token: '{{ csrf_token() }}',
@@ -779,7 +843,7 @@
                         order_items: cart,
                         total_price: grandTotal,
                     },
-                    success: function (data) {
+                    success: function(data) {
                         // Check if order was placed successfully
                         if (data.status == "success") {
                             // Map of dynamic delivery type values to translated strings
@@ -813,7 +877,8 @@
                             waShareContent += productsList + `*${whatsAppMessage}*`;
 
                             // Construct WhatsApp link and open in new tab
-                            const link = `https://api.whatsapp.com/send/?phone=${whatsAppNumber}&text=${encodeURI(waShareContent)}`;
+                            const link =
+                                `https://api.whatsapp.com/send/?phone=${whatsAppNumber}&text=${encodeURI(waShareContent)}`;
                             // Confirm before opening
                             const opened = window.open(link, '_blank');
 
@@ -833,7 +898,7 @@
                             errorAlert(data.message);
                         }
                     },
-                    error: function (error) {
+                    error: function(error) {
                         // Show error message
                         errorAlert(error.responseJSON.message);
                     }

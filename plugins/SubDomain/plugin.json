@@ -1,8 +1,15 @@
 {
     "plugin_id": "SubDomain",
-    "name": "Sub Domain",
-    "description": "Enable users to access their store/vcard through personalized subdomains for a branded experience.",
-    "version": "1.0.0",
+    "name": "Custom Subdomains",
+    "description": "Give users personalized subdomain for their digital business card.",
+    "version": "1.2.0",
     "img": "sub-domain.png",
-    "main_route": "admin.plugin.sub-domain"
-}    
+    "main_route": "admin.plugin.sub-domain",
+    "requires_admin": "1",
+    "platform": "gobiz-saas",
+    "min_version": "28.0.0",
+    "admin_pages": {
+        "settings": "dist/settings.js"
+    },
+    "documentation_url": null
+}

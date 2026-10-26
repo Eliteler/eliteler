@@ -12,8 +12,8 @@
 
 namespace App\Http\Controllers;
 
-use App\NfcCardKey;
 use App\BusinessCard;
+use App\NfcCardKey;
 use App\Services\GoBizCommonService;
 use Illuminate\Http\Request;
 
@@ -33,7 +33,7 @@ class ReadNfcCardController extends Controller
         // Get NFC Card Key details
         $nfcCardKey = NfcCardKey::where('unqiue_key', $id)->first();
 
-        if (!$nfcCardKey) {
+        if (! $nfcCardKey) {
             // title
             $title = __('NFC Card Not Linked!');
 
@@ -48,14 +48,19 @@ class ReadNfcCardController extends Controller
                 'robots' => 'noindex, nofollow',
             ];
 
-            return view('website.pages.nfc.index', compact('settings', 'config', 'title', 'description', 'meta'));
+            $web_template = getConfigData('web_template');
+
+            return view(
+                $web_template . '::Website.pages.nfc.index',
+                compact('settings', 'config', 'title', 'description', 'meta')
+            );
         }
 
         // Get business card details
         if ($nfcCardKey->card_id != null) {
             $businessCardDetails = BusinessCard::where('card_id', $nfcCardKey->card_id)->first();
 
-            if (!$businessCardDetails) {
+            if (! $businessCardDetails) {
                 // title
                 $title = __('NFC Card Not Linked!');
 
@@ -95,7 +100,12 @@ class ReadNfcCardController extends Controller
                 'robots' => 'noindex, nofollow',
             ];
 
-            return view('website.pages.nfc.index', compact('settings', 'config', 'title', 'description', 'meta'));
+            $web_template = getConfigData('web_template');
+
+            return view(
+                $web_template . '::Website.pages.nfc.index',
+                compact('settings', 'config', 'title', 'description', 'meta')
+            );
         }
     }
 }

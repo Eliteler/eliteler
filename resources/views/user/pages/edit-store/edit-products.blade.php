@@ -2,73 +2,56 @@
 
 {{-- Custom CSS --}}
 @section('css')
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/7.0.1/tinymce.min.js"
-        integrity="sha512-KGtsnWohFUg0oksKq7p7eDgA1Rw2nBfqhGJn463/rGhtUY825dBqGexj8eP04LwfnsSW6dNAHAlOqKJKquHsnw=="
-        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    {{-- Store CSS File --}}
+    <link href="{{ asset('css/store-products.css') }}" rel="stylesheet">
+
+    {{-- Dropzone CSS --}}
     <link href="{{ asset('css/dropzone.min.css') }}" rel="stylesheet">
-    <script src="{{ asset('js/dropzone.min.js') }}"></script>
-    <script src="{{ asset('js/clipboard.min.js') }}"></script>
-    <style>
-        .btn-group-sm>.btn,
-        .btn-sm {
-            --tblr-btn-line-height: 1.5;
-            --tblr-btn-icon-size: .75rem;
-            margin-right: 5px;
-            font-size: 12px !important;
-            margin: 13px 0 10px 5px !important;
-        }
-
-        .li-link {
-            padding: 10px;
-            margin: 4px;
-        }
-
-        .btn.disabled,
-        .btn:disabled,
-        fieldset:disabled .btn {
-            border-color: #0000 !important;
-        }
-
-        .custom-nav {
-            position: absolute;
-            right: 5px;
-            top: -2px;
-        }
-
-        .media-name {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .tox-promotion {
-            display: none !important;
-        }
-    </style>
 @endsection
 
 @section('content')
     <div class="page-wrapper">
-        <!-- Page title -->
+        <!-- Page Header -->
         <div class="page-header d-print-none">
             <div class="container-fluid">
                 <div class="row g-2 align-items-center">
-                    <div class="col">
-                        <div class="page-pretitle">
-                            {{ __('Overview') }}
-                        </div>
-                        <h2 class="page-title">
-                            {{ __('Products') }}
-                        </h2>
+                    <div class="col-12">
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb breadcrumb-arrows">
+                                <li class="breadcrumb-item">
+                                    <a href="{{ route('user.dashboard') }}"
+                                        class="text-muted d-inline-flex align-items-center gap-1">
+                                        {{ __('Dashboard') }}
+                                    </a>
+                                </li>
+                                <li class="breadcrumb-item">
+                                    <a href="{{ route('user.stores') }}" class="text-muted">{{ __('Stores') }}</a>
+                                </li>
+                                <li class="breadcrumb-item active fw-semibold" aria-current="page">
+                                    {{ __('Products') }}
+                                </li>
+                            </ol>
+                        </nav>
                     </div>
+
+                    <div class="col">
+                        <h2 class="page-title text-reset fw-bold">
+                            {{ __('Store Products') }}
+                        </h2>
+                        <div class="text-muted mt-1">
+                            {{ __('Manage, track, import, and export your digital store catalogs and service listings.') }}
+                        </div>
+                    </div>
+
                     <div class="col-auto ms-auto d-print-none">
-                        <div role="group">
-                            {{-- Export --}}
-                            <a href="{{ route('user.export.products', $business_card->card_id) }}" class="btn btn-icon btn-primary m-1" data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ __('Export') }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    class="icon icon-tabler icons-tabler-outline icon-tabler-package-export d-lg-none d-inline">
+                        <div class="d-flex gap-2">
+                            {{-- Export Button --}}
+                            <a href="{{ route('user.export.products', $business_card->card_id) }}"
+                                class="btn btn-primary btn-icon-only d-inline-flex align-items-center gap-1 shadow-sm"
+                                data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ __('Export Products') }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-package-export"
+                                    width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                    fill="none" stroke-linecap="round" stroke-linejoin="round">
                                     <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                                     <path d="M12 21l-8 -4.5v-9l8 -4.5l8 4.5v4.5" />
                                     <path d="M12 12l8 -4.5" />
@@ -77,16 +60,16 @@
                                     <path d="M15 18h7" />
                                     <path d="M19 15l3 3l-3 3" />
                                 </svg>
-                                <span class="d-lg-inline d-none">{{ __('Export') }}</span>
+                                <span class="d-none d-sm-inline">{{ __('Export') }}</span>
                             </a>
-                            {{-- Import --}}
-                            <button type="button" class="btn btn-icon btn-primary m-1" data-bs-toggle="modal"
-                                data-bs-target="#modal-import" data-bs-toggle="tooltip" data-bs-placement="bottom"
-                                title="{{ __('Import') }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    class="icon icon-tabler icons-tabler-outline icon-tabler-package-import d-lg-none d-inline">
+
+                            {{-- Import Modal Trigger --}}
+                            <button type="button"
+                                class="btn btn-primary btn-icon-only d-inline-flex align-items-center gap-1 shadow-sm"
+                                data-bs-toggle="modal" data-bs-target="#modal-import" title="{{ __('Import Products') }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-package-import"
+                                    width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                    fill="none" stroke-linecap="round" stroke-linejoin="round">
                                     <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                                     <path d="M12 21l-8 -4.5v-9l8 -4.5l8 4.5v4.5" />
                                     <path d="M12 12l8 -4.5" />
@@ -95,19 +78,21 @@
                                     <path d="M22 18h-7" />
                                     <path d="M18 15l-3 3l3 3" />
                                 </svg>
-                                <span class="d-lg-inline d-none">{{ __('Import') }}</span>
+                                <span class="d-none d-sm-inline">{{ __('Import') }}</span>
                             </button>
-                            {{-- Create new --}}
-                            <button type="button" class="btn btn-icon btn-primary m-1" onclick="addProduct()"
-                                data-bs-toggle="tooltip" data-bs-placement="bottom" title="{{ __('Create new') }}">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon d-lg-none d-inline" width="24"
-                                    height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
-                                    stroke-linecap="round" stroke-linejoin="round">
+
+                            {{-- Add Product Button --}}
+                            <button type="button"
+                                class="btn btn-primary btn-icon-only d-inline-flex align-items-center gap-1 shadow-sm"
+                                onclick="addProduct()">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-plus"
+                                    width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                    fill="none" stroke-linecap="round" stroke-linejoin="round">
                                     <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                                     <line x1="12" y1="5" x2="12" y2="19" />
                                     <line x1="5" y1="12" x2="19" y2="12" />
                                 </svg>
-                                <span class="d-lg-inline d-none">{{ __('Create new') }}</span>
+                                <span class="d-none d-sm-inline">{{ __('Add Product') }}</span>
                             </button>
                         </div>
                     </div>
@@ -115,70 +100,254 @@
             </div>
         </div>
 
+        <!-- Page Body -->
         <div class="page-body">
             <div class="container-fluid">
-                {{-- Failed --}}
+                {{-- Flash Notifications --}}
                 @if (Session::has('failed'))
-                    <div class="alert alert-important alert-danger alert-dismissible mb-2" role="alert">
-                        <div class="d-flex">
-                            <div>
-                                {{ Session::get('failed') }}
-                            </div>
+                    <div class="alert alert-important alert-danger alert-dismissible mb-3 border-0 shadow-sm"
+                        role="alert">
+                        <div class="d-flex align-items-center gap-2">
+                            <div>{{ Session::get('failed') }}</div>
                         </div>
                         <a class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="close"></a>
                     </div>
                 @endif
 
-                {{-- Success --}}
                 @if (Session::has('success'))
-                    <div class="alert alert-important alert-success alert-dismissible mb-2" role="alert">
-                        <div class="d-flex">
-                            <div>
-                                {{ Session::get('success') }}
-                            </div>
+                    <div class="alert alert-important alert-success alert-dismissible mb-3 border-0 shadow-sm"
+                        role="alert">
+                        <div class="d-flex align-items-center gap-2">
+                            <div>{{ Session::get('success') }}</div>
                         </div>
                         <a class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="close"></a>
                     </div>
                 @endif
 
-                {{-- Success of modal --}}
                 <div id="successMessage" style="display:none;"
-                    class="alert alert-important alert-success alert-dismissible mb-2">
-                </div>
-
-                {{-- Failed of modal --}}
+                    class="alert alert-important alert-success alert-dismissible mb-3 border-0 shadow-sm"></div>
                 <div id="errorMessage" style="display:none;"
-                    class="alert alert-important alert-danger alert-dismissible mb-2">
-                </div>
+                    class="alert alert-important alert-danger alert-dismissible mb-3 border-0 shadow-sm"></div>
 
-                <div class="card">
+                <!-- Unified Settings Card -->
+                <div class="card border-0 shadow-sm">
                     <div class="row g-0">
-                        <div class="col-12 col-md-2 border-end">
+                        {{-- Left Navigation Sidebar --}}
+                        <div class="col-12 col-md-3 col-lg-2 border-end">
                             <div class="card-body">
-                                <h4 class="subheader">{{ __('Update Store Category') }}</h4>
-                                <div class="list-group list-group-transparent">
-                                    {{-- Nav links --}}
+                                <h4 class="subheader mb-3 text-muted fw-bold">{{ __('Store Settings') }}</h4>
+                                <div class="list-group list-group-transparent mb-0">
                                     @include('user.pages.edit-store.include.nav-link', [
                                         'link' => 'products',
                                     ])
                                 </div>
                             </div>
                         </div>
-                        <div class="col-12 col-md-10 d-flex flex-column">
-                            <div class="card-body m-0 py-0 px-2">
-                                {{-- Categories --}}
-                                <div class="row">
-                                    <div class="table-responsive">
-                                        <table id="productsTable" class="table table-vcenter card-table">
-                                            <thead>
+
+                        {{-- Right Data Table Container --}}
+                        <div class="col-12 col-md-9 col-lg-10">
+                            <div class="card-body m-0">
+                                <table id="productsTable" class="table card-table table-vcenter text-nowrap table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th class="w-1">{{ __('#') }}</th>
+                                            <th>{{ __('Category') }}</th>
+                                            <th>{{ __('Image') }}</th>
+                                            <th>{{ __('Name') }}</th>
+                                            <th>{{ __('Description') }}</th>
+                                            <th>{{ __('Stock') }}</th>
+                                            <th class="w-1 text-end">{{ __('Actions') }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @include('user.includes.footer')
+    </div>
+
+    {{-- Add Product Modal --}}
+    <div class="modal modal-bg fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalLabel"
+        aria-hidden="true" data-bs-backdrop="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="addProductModalLabel">{{ __('Add New Product') }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addProductForm">
+                        <input type="hidden" id="cardId" value="{{ $business_card->card_id }}">
+
+                        <div class="row g-3">
+                            {{-- Category --}}
+                            <div class="col-md-4">
+                                <label class="form-label required">{{ __('Category') }}</label>
+                                <select name="product_category" id="productCategory" class="form-control categories"
+                                    required>
+                                    <option value="" selected disabled>{{ __('Choose a category') }}</option>
+                                    @foreach ($categories as $category)
+                                        <option value="{{ $category->category_id }}">{{ __($category->category_name) }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            {{-- Product Badge --}}
+                            <div class="col-md-4">
+                                <label class="form-label">{{ __('Product Badge') }}</label>
+                                <input type="text" class="form-control" id="productBadge" name="product_badge"
+                                    placeholder="{{ __('e.g., 20% OFF, Popular') }}">
+                            </div>
+
+                            {{-- Product Images Selector --}}
+                            <div class="col-md-4">
+                                <label class="form-label required">{{ __('Product Images') }}</label>
+                                <div class="input-group">
+                                    <input type="text" class="image form-control" id="productImage"
+                                        name="product_image" placeholder="{{ __('Select one or more images') }}" required
+                                        readonly>
+                                    <button class="btn btn-primary d-inline-flex align-items-center gap-1" type="button"
+                                        onclick="openMedia('productImage')">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-photo"
+                                            width="18" height="18" viewBox="0 0 24 24" stroke-width="2"
+                                            stroke="currentColor" fill="none" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                            <path d="M15 8h.01" />
+                                            <path
+                                                d="M3 6a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12z" />
+                                            <path d="M3 16l5 -5c.928 -.893 2.072 -.893 3 0l5 5" />
+                                            <path d="M14 14l1 -1c.928 -.893 2.072 -.893 3 0l3 3" />
+                                        </svg>
+                                        <span>{{ __('Browse') }}</span>
+                                    </button>
+                                </div>
+                                <small class="text-muted"
+                                    style="font-size: 0.75rem;">{{ __('You can select multiple photos from the media library.') }}</small>
+                                <small class="form-hint text-muted mt-1 d-block"><i class="ti ti-photo me-1"></i>{{ __(':size px recommended', ['size' => '800 x 800 px']) }}</small>
+                            </div>
+
+                            {{-- Product Name --}}
+                            <div class="col-md-6">
+                                <label for="productName" class="form-label required">{{ __('Product Name') }}</label>
+                                <input type="text" class="form-control" id="productName" name="product_name"
+                                    placeholder="{{ __('Enter product name') }}" required>
+                            </div>
+
+                            {{-- Product Short Description --}}
+                            <div class="col-md-6">
+                                <label for="productShortDescription"
+                                    class="form-label required">{{ __('Product Short Description') }}</label>
+                                <input type="text" class="form-control" id="productShortDescription"
+                                    name="product_short_description" placeholder="{{ __('Enter brief summary') }}"
+                                    required>
+                            </div>
+
+                            {{-- Product Detailed Description --}}
+                            <div class="col-12">
+                                <label for="productDescription"
+                                    class="form-label required">{{ __('Product Description') }}</label>
+                                <textarea class="form-control product-description" id="productDescription" name="product_description" rows="4"
+                                    placeholder="{{ __('Enter complete product details') }}"></textarea>
+                            </div>
+
+                            {{-- Regular Price --}}
+                            <div class="col-md-4">
+                                <label class="form-label">{{ __('Regular Price') }}</label>
+                                <input type="number" class="form-control" id="productRegularPrice"
+                                    name="product_regular_price" min="0" placeholder="{{ __('0.00') }}"
+                                    step=".001">
+                            </div>
+
+                            {{-- Sales Price --}}
+                            <div class="col-md-4">
+                                <label class="form-label required">{{ __('Sales Price') }}</label>
+                                <input type="number" class="form-control" id="productSalesPrice"
+                                    name="product_sales_price" min="0" step=".001"
+                                    placeholder="{{ __('0.00') }}" required>
+                            </div>
+
+                            {{-- Stock Status --}}
+                            <div class="col-md-4">
+                                <label class="form-label required"
+                                    for="productStatus">{{ __('Inventory Status') }}</label>
+                                <select id="productStatus" name="product_status" class="form-control product_status"
+                                    required>
+                                    <option value="instock" selected>{{ __('In Stock') }}</option>
+                                    <option value="outstock">{{ __('Out of Stock') }}</option>
+                                </select>
+                            </div>
+
+                            {{-- Modern Tabler Variations Toggle Box --}}
+                            <div class="col-12 mt-3 pt-3 border-top">
+                                <div class="card bg-surface-secondary border shadow-none mb-3">
+                                    <div class="card-body p-3 d-flex align-items-center justify-content-between">
+                                        <div>
+                                            <h4 class="card-title mb-1 fw-bold text-dark d-flex align-items-center gap-2">
+                                                <svg xmlns="http://www.w3.org/2000/svg"
+                                                    class="icon icon-tabler icon-tabler-layers-intersect text-primary"
+                                                    width="20" height="20" viewBox="0 0 24 24" stroke-width="2"
+                                                    stroke="currentColor" fill="none" stroke-linecap="round"
+                                                    stroke-linejoin="round">
+                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                                    <rect x="8" y="4" width="12" height="12" rx="2" />
+                                                    <rect x="4" y="8" width="12" height="12" rx="2" />
+                                                </svg>
+                                                {{ __('Product Variations') }}
+                                            </h4>
+                                            <div class="text-secondary small">
+                                                {{ __('Enable this if you offer different options such as size, color, or material with distinct prices.') }}
+                                            </div>
+                                        </div>
+                                        <label class="form-check form-switch form-switch-lg m-0 cursor-pointer">
+                                            <input class="form-check-input" type="checkbox" id="addHasVariants"
+                                                onchange="toggleVariants('add')">
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Modern Tabler Variations Table Section --}}
+                            <div class="col-12 d-none" id="addVariantsSection">
+                                <div class="card border rounded-3 overflow-hidden shadow-none mb-0">
+                                    <div
+                                        class="card-header bg-surface py-2 px-3 d-flex align-items-center justify-content-between">
+                                        <h4 class="card-title text-muted fw-semibold small m-0 text-uppercase"
+                                            style="letter-spacing: 0.05em;">
+                                            {{ __('Manage Variations & Stock') }}
+                                        </h4>
+                                        <button type="button"
+                                            class="btn btn-primary d-inline-flex align-items-center gap-1 shadow-sm px-3"
+                                            onclick="addVariantRow('add')">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                class="icon icon-tabler icon-tabler-plus" width="16" height="16"
+                                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                                fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                                <line x1="12" y1="5" x2="12" y2="19" />
+                                                <line x1="5" y1="12" x2="19" y2="12" />
+                                            </svg>
+                                            <span>{{ __('Add Variation') }}</span>
+                                        </button>
+                                    </div>
+                                    <div class="table-responsive m-0">
+                                        <table class="table card-table table-vcenter text-nowrap" id="addVariantsTable">
+                                            <thead class="bg-surface-secondary text-secondary small text-uppercase">
                                                 <tr>
-                                                    <th>{{ __('#') }}</th>
-                                                    <th>{{ __('Category') }}</th>
-                                                    <th>{{ __('Image') }}</th>
-                                                    <th>{{ __('Name') }}</th>
-                                                    <th>{{ __('Description') }}</th>
-                                                    <th>{{ __('Stock') }}</th>
-                                                    <th>{{ __('Actions') }}</th>
+                                                    <th style="min-width: 250px;">
+                                                        {{ __('Variant Name (e.g., Size, Color)') }} <span
+                                                            class="text-danger">*</span></th>
+                                                    <th style="width: 160px;">{{ __('Regular Price') }}</th>
+                                                    <th style="width: 160px;">{{ __('Sales Price') }} <span
+                                                            class="text-danger">*</span></th>
+                                                    <th style="width: 160px;">{{ __('Status') }}</th>
+                                                    <th class="w-1 text-center"></th>
                                                 </tr>
                                             </thead>
                                             <tbody></tbody>
@@ -187,971 +356,1163 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </form>
                 </div>
-            </div>
-
-            {{-- Footer --}}
-            @include('user.includes.footer')
-        </div>
-
-        {{-- Add product --}}
-        <div class="modal modal-blur fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalLabel"
-            aria-hidden="true">
-            <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="addProductModalLabel">{{ __('Add Product') }}</h5>
-                    </div>
-                    <div class="modal-body">
-                        <form id="addProductForm">
-                            <div class="row">
-                                <input type="hidden" id="cardId" value="{{ $business_card->card_id }}">
-                                {{-- Categories --}}
-                                <div class="col-md-4 col-xl-6">
-                                    <div class='mb-3'>
-                                        <label class='form-label required'>{{ __('Categories') }}</label>
-                                        <select name='product_category' id='productCategory'
-                                            class='form-control categories' required>
-                                            <option value='' selected disabled>{{ __('Choose a category') }}
-                                            </option>
-                                            @foreach ($categories as $category)
-                                                <option value='{{ $category->category_id }}'>
-                                                    {{ __($category->category_name) }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                </div>
-                                {{-- Product badge --}}
-                                <div class="col-md-4 col-xl-6">
-                                    <div class='mb-3'>
-                                        <label class='form-label'>{{ __('Product Badge') }}</label>
-                                        <input type='text' class='form-control' id='productBadge'
-                                            name="product_badge" placeholder='{{ __('Product Badge') }}'>
-                                    </div>
-                                </div>
-                                {{-- Product Image --}}
-                                <div class="col-md-4 col-xl-6">
-                                    <div class="mb-3">
-                                        <label class="form-label required">{{ __('Product Image') }}</label>
-                                        <div class="input-group mb-2">
-                                            <input type="text" class="image form-control" id="productImage"
-                                                name="product_image" placeholder="{{ __('Product Image') }}" required>
-                                            <button class="btn btn-primary btn-icon" type="button"
-                                                onclick="openMedia()">{{ __('Choose image') }}</button>
-                                        </div>
-                                        <small class="form-hint text-muted mt-1 d-block"><i class="ti ti-photo me-1"></i>{{ __(':size px recommended', ['size' => '800 x 800 px']) }}</small>
-                                    </div>
-                                </div>
-                                {{-- Product name --}}
-                                <div class="col-md-6 col-xl-6">
-                                    <div class="mb-3">
-                                        <label for="productName"
-                                            class="form-label required">{{ __('Product Name') }}</label>
-                                        <input type="text" class="form-control" id="productName" name="product_name"
-                                            placeholder="{{ __('Product Name') }}" required>
-                                    </div>
-                                </div>
-                                {{-- Product Short Description --}}
-                                <div class="col-md-6 col-xl-6">
-                                    <div class="mb-3">
-                                        <label for="productShortDescription"
-                                            class="form-label required">{{ __('Product Short Description') }}</label>
-                                        <input type="text" class="form-control" id="productShortDescription"
-                                            name="product_short_description"
-                                            placeholder="{{ __('Product Short Description') }}" required>
-                                    </div>
-                                </div>
-                                {{-- Product Description --}}
-                                <div class="col-md-12 col-xl-12">
-                                    <div class="mb-3">
-                                        <label for="productDescription"
-                                            class="form-label required">{{ __('Product Description') }}</label>
-                                        <textarea class="form-control product-description" id="productDescription" name="product_description"
-                                            placeholder="{{ __('Product Description') }}" required></textarea>
-                                    </div>
-                                </div>
-                                {{-- Regular Price --}}
-                                <div class="col-md-4 col-xl-6">
-                                    <div class='mb-3'>
-                                        <label class='form-label'>{{ __('Regular Price') }}</label>
-                                        <input type='number' class='form-control' id="productRegularPrice"
-                                            name='product_regular_price' min='1'
-                                            placeholder='{{ __('Regular Price') }}' min='1' step='.001'>
-                                    </div>
-                                </div>
-                                {{-- Sales Price --}}
-                                <div class="col-md-4 col-xl-6">
-                                    <div class='mb-3'>
-                                        <label class='form-label required'>{{ __('Sales Price') }}</label>
-                                        <input type='number' class='form-control' id="productSalesPrice"
-                                            name='product_sales_price[]' min='1' step='.001'
-                                            placeholder='{{ __('Sales Price') }}' required>
-                                    </div>
-                                </div>
-                                {{-- Status --}}
-                                <div class="col-md-4 col-xl-6">
-                                    <div class="mb-3">
-                                        <label class='form-label required'
-                                            for='product_status'>{{ __('Status') }}</label>
-                                        <select id="productStatus" name='product_status'
-                                            class='form-control product_status' required>
-                                            <option value="instock" selected>{{ __('In Stock') }}</option>
-                                            <option value="outstock">{{ __('Out of Stock') }}</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary"
-                            data-bs-dismiss="modal">{{ __('Close') }}</button>
-                        <button type="button" class="btn btn-primary"
-                            onclick="saveProduct()">{{ __('Save') }}</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- Update product --}}
-        <div class="modal modal-blur fade" id="editProductModal" tabindex="-1" aria-labelledby="editProductModalLabel"
-            aria-hidden="true">
-            <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="editProductModalLabel">{{ __('Edit Product') }}</h5>
-                    </div>
-                    <div class="modal-body">
-                        <form id="editProductForm">
-                            <div class="row">
-                                {{-- Product category --}}
-                                <div class="col-md-4 col-xl-6">
-                                    <div class='mb-3'>
-                                        <label class='form-label required'>{{ __('Categories') }}</label>
-                                        <select name='product_category' id='editProductCategory'
-                                            class='form-control categories' required>
-                                            @foreach ($categories as $category)
-                                                <option value='{{ $category->category_id }}'>
-                                                    {{ __($category->category_name) }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                </div>
-                                {{-- Product badge --}}
-                                <div class="col-md-4 col-xl-6">
-                                    <input type="hidden" id="productId">
-                                    <div class='mb-3'>
-                                        <label class='form-label'>{{ __('Product Badge') }}</label>
-                                        <input type='text' class='form-control' id='editProductBadge'
-                                            name="product_badge" placeholder='{{ __('Product Badge') }}'>
-                                    </div>
-                                </div>
-                                {{-- Product Image --}}
-                                <div class="col-md-4 col-xl-6">
-                                    <div class="mb-3">
-                                        <label class="form-label required">{{ __('Product Image') }}</label>
-                                        <div class="input-group mb-2">
-                                            <input type="text" class="image form-control" id="editProductImage"
-                                                name="product_image" placeholder="{{ __('Product Image') }}" required>
-                                            <button class="btn btn-primary btn-icon" type="button"
-                                                onclick="openMedia()">{{ __('Choose image') }}</button>
-                                        </div>
-                                        <small class="form-hint text-muted mt-1 d-block"><i class="ti ti-photo me-1"></i>{{ __(':size px recommended', ['size' => '800 x 800 px']) }}</small>
-                                    </div>
-                                </div>
-                                {{-- Product name --}}
-                                <div class="col-md-6 col-xl-6">
-                                    <div class="mb-3">
-                                        <label for="productName"
-                                            class="form-label required">{{ __('Product Name') }}</label>
-                                        <input type="text" class="form-control" id="editProductName"
-                                            name="product_name" required>
-                                    </div>
-                                </div>
-                                {{-- Product Short Description --}}
-                                <div class="col-md-6 col-xl-6">
-                                    <div class="mb-3">
-                                        <label for="productShortDescription"
-                                            class="form-label required">{{ __('Product Short Description') }}</label>
-                                        <input type="text" class="form-control" id="editProductShortDescription"
-                                            name="product_short_description" required>
-                                    </div>
-                                </div>
-                                {{-- Product Description --}}
-                                <div class="col-md-12 col-xl-12">
-                                    <div class="mb-3">
-                                        <label for="productDescription"
-                                            class="form-label required">{{ __('Product Description') }}</label>
-                                        <textarea class="form-control product-description" id="editProductDescription" name="product_description" required></textarea>
-                                    </div>
-                                </div>
-                                {{-- Regular Price --}}
-                                <div class="col-md-4 col-xl-6">
-                                    <div class='mb-3'>
-                                        <label class='form-label'>{{ __('Regular Price') }}</label>
-                                        <input type='number' class='form-control' id="editProductRegularPrice"
-                                            name='product_regular_price' min='1'
-                                            placeholder='{{ __('Regular Price') }}' min='1' step='.001'>
-                                    </div>
-                                </div>
-                                {{-- Sales Price --}}
-                                <div class="col-md-4 col-xl-6">
-                                    <div class='mb-3'>
-                                        <label class='form-label required'>{{ __('Sales Price') }}</label>
-                                        <input type='number' class='form-control' id="editProductSalesPrice"
-                                            name='product_sales_price[]' min='1' step='.001'
-                                            placeholder='{{ __('Sales Price') }}' required>
-                                    </div>
-                                </div>
-                                {{-- Status --}}
-                                <div class="col-md-4 col-xl-6">
-                                    <div class="mb-3">
-                                        <label class='form-label required'
-                                            for='product_status'>{{ __('Status') }}</label>
-                                        <select id="editProductStatus" name='product_status'
-                                            class='form-control product_status' required>
-                                            <option value="instock">{{ __('In Stock') }}</option>
-                                            <option value="outstock">{{ __('Out of Stock') }}</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary"
-                            data-bs-dismiss="modal">{{ __('Close') }}</button>
-                        <button type="button" class="btn btn-primary"
-                            onclick="updateProduct()">{{ __('Save') }}</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Delete product modal -->
-        <div class="modal modal-blur fade" id="deleteProductModal" tabindex="-1" role="dialog" aria-hidden="true">
-            <div class="modal-dialog modal-md modal-dialog-centered" role="document">
-                <div class="modal-content">
-                    <div class="modal-status"></div>
-                    <div class="modal-body text-center py-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon mb-2 text-danger icon-lg" width="24"
-                            height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
-                            stroke-linecap="round" stroke-linejoin="round">
+                <div class="modal-footer d-flex justify-content-between">
+                    <button type="button" class="btn btn-danger d-inline-flex align-items-center gap-1"
+                        data-bs-dismiss="modal">
+                        {{ __('Cancel') }}
+                    </button>
+                    <button type="button" class="btn btn-primary d-inline-flex align-items-center px-4 shadow-sm"
+                        onclick="saveProduct()">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-device-floppy"
+                            width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                            fill="none" stroke-linecap="round" stroke-linejoin="round">
                             <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                            <path d="M12 9v2m0 4v.01" />
-                            <path
-                                d="M5 19h14a2 2 0 0 0 1.84 -2.75l-7.1 -12.25a2 2 0 0 0 -3.5 0l-7.1 12.25a2 2 0 0 0 1.75 2.75" />
+                            <path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2" />
+                            <path d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+                            <path d="M14 4l0 4l-4 0l0 -4" />
                         </svg>
-                        <h3>{{ __('Are you sure?') }}</h3>
-                        <div id="delete_status" class="text-muted">
-                            {{ __('Are you sure you want to delete this product?') }}</div>
-                    </div>
-                    <div class="modal-footer">
-                        <div class="w-100">
-                            <div class="row">
-                                <div class="col">
-                                    <button type="button" class="btn w-100" data-bs-dismiss="modal">
-                                        {{ __('Cancel') }}
-                                    </button>
-                                </div>
-                                <div class="col">
-                                    <a class="btn btn-danger w-100" id="confirmDeleteButton">
-                                        {{ __('Yes, proceed') }}
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                        {{ __('Save') }}
+                    </button>
                 </div>
             </div>
         </div>
+    </div>
 
-        {{-- Media Library --}}
-        <div class="modal modal-blur fade" id="openMediaModel" tabindex="-1" role="dialog" aria-hidden="true">
-            <div class="modal-dialog modal-full-width modal-dialog-centered modal-dialog-scrollable" role="document">
-                <div class="modal-content">
-                    <div class="modal-status"></div>
-                    <div class="modal-body text-center py-4">
-                        <h3 class="mb-2">{{ __('Media Library') }}</h3>
-                        <div class="text-muted mb-5">
-                            {{ __('Upload multiple images') }}
-                        </div>
-
-                        {{-- Upload multiple images --}}
-                        @include('user.pages.cards.media.upload')
-
-                        {{-- Upload multiple images --}}
-                        @include('user.pages.cards.media.list')
-
-                        {{-- Pagination --}}
-                        <div id="pagination"></div>
-                    </div>
-                    <div class="modal-footer">
-                        <div class="w-100">
-                            <div class="row">
-                                <div class="col">
-                                    <button type="button" class="btn w-100" data-bs-dismiss="modal">
-                                        {{ __('Cancel') }}
-                                    </button>
-                                </div>
-                                <div class="col">
-                                    <button type="button" class="btn btn-primary w-100" data-bs-dismiss="modal">
-                                        {{ __('Select') }}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+    {{-- Edit Product Modal --}}
+    <div class="modal modal-bg fade" id="editProductModal" tabindex="-1" aria-labelledby="editProductModalLabel"
+        aria-hidden="true" data-bs-backdrop="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="editProductModalLabel">{{ __('Edit Product') }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-            </div>
-        </div>
+                <div class="modal-body">
+                    <form id="editProductForm">
+                        <input type="hidden" id="productId">
+                        <div class="row g-3">
+                            {{-- Category --}}
+                            <div class="col-md-4">
+                                <label class="form-label required">{{ __('Category') }}</label>
+                                <select name="product_category" id="editProductCategory" class="form-control categories"
+                                    required>
+                                    @foreach ($categories as $category)
+                                        <option value="{{ $category->category_id }}">{{ __($category->category_name) }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
 
-        {{-- Import --}}
-        <div class="modal modal-blur fade" id="modal-import" tabindex="-1" role="dialog" aria-hidden="true">
-            <div class="modal-dialog modal-md modal-dialog-centered modal-dialog-scrollable" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="modal-import-label">{{ __('Import') }}</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="importForm">
-                            <div class="row">
-                                <input type="hidden" id="cardId" value="{{ $business_card->card_id }}">
-                                {{-- File Import --}}
-                                <div class="col-md-12 col-xl-12">
-                                    <div class="mb-3">
-                                        <label class="form-label required">{{ __('File') }}</label>
-                                        <input type="file" class="form-control" name="csv_file" id="importFile"
-                                            accept=".csv"
-                                            placeholder="{{ __('File') }}" required>
+                            {{-- Product Badge --}}
+                            <div class="col-md-4">
+                                <label class="form-label">{{ __('Product Badge') }}</label>
+                                <input type="text" class="form-control" id="editProductBadge" name="product_badge"
+                                    placeholder="{{ __('e.g., 20% OFF') }}">
+                            </div>
+
+                            {{-- Product Images Selector --}}
+                            <div class="col-md-4">
+                                <label class="form-label required">{{ __('Product Images') }}</label>
+                                <div class="input-group">
+                                    <input type="text" class="image form-control" id="editProductImage"
+                                        name="product_image" placeholder="{{ __('Select one or more images') }}" required
+                                        readonly>
+                                    <button class="btn btn-primary d-inline-flex align-items-center gap-1" type="button"
+                                        onclick="openMedia('editProductImage')">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-photo"
+                                            width="18" height="18" viewBox="0 0 24 24" stroke-width="2"
+                                            stroke="currentColor" fill="none" stroke-linecap="round"
+                                            stroke-linejoin="round">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                            <path d="M15 8h.01" />
+                                            <path
+                                                d="M3 6a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v12a3 3 0 0 1 -3 3h-12a3 3 0 0 1 -3 -3v-12z" />
+                                            <path d="M3 16l5 -5c.928 -.893 2.072 -.893 3 0l5 5" />
+                                            <path d="M14 14l1 -1c.928 -.893 2.072 -.893 3 0l3 3" />
+                                        </svg>
+                                        <span>{{ __('Browse') }}</span>
+                                    </button>
+                                </div>
+                                <small class="text-muted"
+                                    style="font-size: 0.75rem;">{{ __('You can select multiple photos from the media library.') }}</small>
+                                <small class="form-hint text-muted mt-1 d-block"><i class="ti ti-photo me-1"></i>{{ __(':size px recommended', ['size' => '800 x 800 px']) }}</small>
+                            </div>
+
+                            {{-- Product Name --}}
+                            <div class="col-md-6">
+                                <label for="editProductName" class="form-label required">{{ __('Product Name') }}</label>
+                                <input type="text" class="form-control" id="editProductName"
+                                    placeholder="{{ __('Enter product name') }}" name="product_name" required>
+                            </div>
+
+                            {{-- Product Short Description --}}
+                            <div class="col-md-6">
+                                <label for="editProductShortDescription"
+                                    class="form-label required">{{ __('Product Short Description') }}</label>
+                                <input type="text" class="form-control" id="editProductShortDescription"
+                                    placeholder="{{ __('Enter brief summary') }}" name="product_short_description"
+                                    required>
+                            </div>
+
+                            {{-- Product Description --}}
+                            <div class="col-12">
+                                <label for="editProductDescription"
+                                    class="form-label required">{{ __('Product Description') }}</label>
+                                <textarea class="form-control product-description" id="editProductDescription" name="product_description"
+                                    rows="4" placeholder="{{ __('Enter product description') }}"></textarea>
+                            </div>
+
+                            {{-- Regular Price --}}
+                            <div class="col-md-4">
+                                <label class="form-label">{{ __('Regular Price') }}</label>
+                                <input type="number" class="form-control" id="editProductRegularPrice"
+                                    name="product_regular_price" min="0" placeholder="{{ __('0.00') }}"
+                                    step=".001">
+                            </div>
+
+                            {{-- Sales Price --}}
+                            <div class="col-md-4">
+                                <label class="form-label required">{{ __('Sales Price') }}</label>
+                                <input type="number" class="form-control" id="editProductSalesPrice"
+                                    name="product_sales_price" min="0" step=".001"
+                                    placeholder="{{ __('0.00') }}" required>
+                            </div>
+
+                            {{-- Stock Status --}}
+                            <div class="col-md-4">
+                                <label class="form-label required"
+                                    for="editProductStatus">{{ __('Inventory Status') }}</label>
+                                <select id="editProductStatus" name="product_status" class="form-control product_status"
+                                    required>
+                                    <option value="instock">{{ __('In Stock') }}</option>
+                                    <option value="outstock">{{ __('Out of Stock') }}</option>
+                                </select>
+                            </div>
+
+                            {{-- Modern Tabler Variations Toggle Box --}}
+                            <div class="col-12 mt-3 pt-3 border-top">
+                                <div class="card bg-surface-secondary border shadow-none mb-3">
+                                    <div class="card-body p-3 d-flex align-items-center justify-content-between">
+                                        <div>
+                                            <h4 class="card-title mb-1 fw-bold text-dark d-flex align-items-center gap-2">
+                                                <svg xmlns="http://www.w3.org/2000/svg"
+                                                    class="icon icon-tabler icon-tabler-layers-intersect text-primary"
+                                                    width="20" height="20" viewBox="0 0 24 24" stroke-width="2"
+                                                    stroke="currentColor" fill="none" stroke-linecap="round"
+                                                    stroke-linejoin="round">
+                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                                    <rect x="8" y="4" width="12" height="12" rx="2" />
+                                                    <rect x="4" y="8" width="12" height="12" rx="2" />
+                                                </svg>
+                                                {{ __('Product Variations') }}
+                                            </h4>
+                                            <div class="text-secondary small">
+                                                {{ __('Enable this if you offer different options such as size, color, or material with distinct prices.') }}
+                                            </div>
+                                        </div>
+                                        <label class="form-check form-switch form-switch-lg m-0 cursor-pointer">
+                                            <input class="form-check-input" type="checkbox" id="editHasVariants"
+                                                onchange="toggleVariants('edit')">
+                                        </label>
                                     </div>
                                 </div>
                             </div>
-                        </form>
+
+                            {{-- Modern Tabler Variations Table Section --}}
+                            <div class="col-12 d-none" id="editVariantsSection">
+                                <div class="card border rounded-3 overflow-hidden shadow-none mb-0">
+                                    <div
+                                        class="card-header bg-surface py-2 px-3 d-flex align-items-center justify-content-between">
+                                        <h4 class="card-title text-muted fw-semibold small m-0 text-uppercase"
+                                            style="letter-spacing: 0.05em;">
+                                            {{ __('Manage Variations & Stock') }}
+                                        </h4>
+                                        <button type="button"
+                                            class="btn btn-primary d-inline-flex align-items-center gap-1 shadow-sm px-3"
+                                            onclick="addVariantRow('edit')">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                class="icon icon-tabler icon-tabler-plus" width="16" height="16"
+                                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                                fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                                <line x1="12" y1="5" x2="12" y2="19" />
+                                                <line x1="5" y1="12" x2="19" y2="12" />
+                                            </svg>
+                                            <span>{{ __('Add Variation') }}</span>
+                                        </button>
+                                    </div>
+                                    <div class="table-responsive m-0">
+                                        <table class="table card-table table-vcenter text-nowrap" id="editVariantsTable">
+                                            <thead class="bg-surface-secondary text-secondary small text-uppercase">
+                                                <tr>
+                                                    <th style="min-width: 250px;">
+                                                        {{ __('Variant Name (e.g., Size, Color)') }} <span
+                                                            class="text-danger">*</span></th>
+                                                    <th style="width: 160px;">{{ __('Regular Price') }}</th>
+                                                    <th style="width: 160px;">{{ __('Sales Price') }} <span
+                                                            class="text-danger">*</span></th>
+                                                    <th style="width: 160px;">{{ __('Status') }}</th>
+                                                    <th class="w-1 text-center"></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer d-flex justify-content-between">
+                    <button type="button" class="btn btn-danger d-inline-flex align-items-center gap-1"
+                        data-bs-dismiss="modal">
+                        {{ __('Cancel') }}
+                    </button>
+                    <button type="button" class="btn btn-primary d-inline-flex align-items-center px-4 shadow-sm"
+                        onclick="updateProduct()">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-device-floppy"
+                            width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                            fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2" />
+                            <path d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+                            <path d="M14 4l0 4l-4 0l0 -4" />
+                        </svg>
+                        {{ __('Update') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Delete Product Modal --}}
+    <div class="modal modal-bg fade" id="deleteProductModal" tabindex="-1" role="dialog" aria-hidden="true"
+        data-bs-backdrop="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-body text-center py-4">
+                    <div class="avatar avatar-lg bg-danger-lt mb-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-trash text-danger"
+                            width="28" height="28" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                            fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <path d="M4 7l16 0" />
+                            <path d="M10 11l0 6" />
+                            <path d="M14 11l0 6" />
+                            <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
+                            <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" />
+                        </svg>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn me-auto" data-bs-dismiss="modal">{{ __('Close') }}</button>
-
-                        {{-- Sample CSV --}}
-                        <a href="{{ asset('storage/import/store/store_products.csv') }}" class="btn btn-secondary" download="sample_import_data_products.csv">
-                            {{ __('Sample CSV') }}
-                        </a>
-
-                        <button type="button" class="btn btn-primary" onclick="importProduct()">{{ __('Import') }}</button>
+                    <h3 class="fw-bold">{{ __('Are you sure?') }}</h3>
+                    <div class="text-muted">{{ __('This product item will be permanently removed from your catalog.') }}
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <div class="w-100">
+                        <div class="row g-2">
+                            <div class="col">
+                                <button type="button" class="btn btn-primary-lt w-100" data-bs-dismiss="modal">
+                                    {{ __('Cancel') }}
+                                </button>
+                            </div>
+                            <div class="col">
+                                <button type="button" class="btn btn-danger w-100" id="confirmDeleteButton">
+                                    {{ __('Yes, Delete') }}
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- Custom JS --}}
-    @push('custom-js')
-        <script type="text/javascript" src="{{ asset('js/tom-select.base.min.js') }}"></script>
-        <!-- Initialize DataTables -->
-        <script>
-            // Get products
-            $(document).ready(function() {
-                "use strict";
-                $('#productsTable').DataTable({
-                    processing: false,
-                    serverSide: true,
-                    ajax: {
-                        url: "{{ route('user.edit.products', $business_card->card_id) }}", // Replace with your actual API endpoint
-                        dataSrc: 'data' // If your data is nested under a key 'data' in the response
+    {{-- Multi-Select Media Library Modal --}}
+    <div class="modal modal-bg fade" id="openMediaModel" tabindex="-1" aria-labelledby="openMediaModelLabel"
+        aria-hidden="true" data-bs-backdrop="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+                <div
+                    class="modal-header border-bottom py-3 px-3 px-md-4 bg-surface d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-2 gap-md-3">
+                        <div class="avatar avatar-md bg-primary-lt rounded-circle flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                class="icon icon-tabler icon-tabler-photo text-primary" width="22" height="22"
+                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <line x1="15" y1="8" x2="15.01" y2="8" />
+                                <rect x="4" y="4" width="16" height="16" rx="3" />
+                                <path d="M4 15l4 -4a3 5 0 0 1 3 0l5 5" />
+                                <path d="M14 14l1 -1c.928 -.893 2.072 -.893 3 0l3 3" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h4 class="modal-title fw-bold mb-0 text-reset fs-3" id="openMediaModelLabel">
+                                {{ __('Media Library') }}
+                            </h4>
+                            <div class="text-muted small" style="font-size: 0.75rem;">
+                                {{ __('Select multiple photos or upload new assets') }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-column flex-md-row gap-1 bg-surface-secondary p-1 rounded-3" role="tablist">
+                        <button
+                            class="nav-link active px-3 py-1 fw-semibold small d-inline-flex align-items-center gap-1 border-0 bg-transparent text-muted"
+                            data-bs-toggle="tab" data-bs-target="#modal-tab-browse" type="button" role="tab">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                class="icon icon-tabler icon-tabler-folders text-primary" width="16" height="16"
+                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <path
+                                    d="M9 4h3l2 2h5a2 2 0 0 1 2 2v7a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2" />
+                                <path d="M17 17v2a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-9a2 2 0 0 1 2 -2h2" />
+                            </svg>
+                            <span class="text-primary fw-bold">{{ __('Browse') }}</span>
+                        </button>
+                        <button
+                            class="nav-link px-3 py-1 fw-semibold small d-inline-flex align-items-center gap-1 border-0 bg-transparent text-muted"
+                            data-bs-toggle="tab" data-bs-target="#modal-tab-upload" type="button" role="tab">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-cloud-upload"
+                                width="16" height="16" viewBox="0 0 24 24" stroke-width="2"
+                                stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <path d="M7 18a4.6 4.4 0 0 1 0 -9a5 4.5 0 0 1 11 2h1a3.5 3.5 0 0 1 0 7h-1" />
+                                <polyline points="9 15 12 12 15 15" />
+                                <line x1="12" y1="12" x2="12" y2="21" />
+                            </svg>
+                            <span>{{ __('Upload') }}</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="modal-body p-3 p-md-4">
+                    <div id="uploadMessage"></div>
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="modal-tab-browse" role="tabpanel">
+                            @include('user.pages.cards.media.list')
+                        </div>
+                        <div class="tab-pane fade" id="modal-tab-upload" role="tabpanel">
+                            @include('user.pages.cards.media.upload')
+                        </div>
+                    </div>
+                    <div id="pagination" class="mt-2"></div>
+                </div>
+
+                <div class="modal-footer border-top py-3 px-3 px-md-4 d-flex align-items-center justify-content-between">
+                    <button type="button" class="btn btn-primary-lt fw-semibold" data-bs-dismiss="modal">
+                        {{ __('Cancel') }}
+                    </button>
+                    <button type="button" class="btn btn-primary fw-semibold px-4 shadow-sm"
+                        onclick="applySelectedMedia()">
+                        {{ __('Select Images') }} (<span id="selectedMediaCount">0</span>)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Product CSV Import Modal --}}
+    <div class="modal modal-bg fade" id="modal-import" tabindex="-1" aria-labelledby="modal-import-label"
+        aria-hidden="true" data-bs-backdrop="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="modal-import-label">{{ __('Import Products Catalog') }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="importForm">
+                        <input type="hidden" id="cardId" value="{{ $business_card->card_id }}">
+
+                        <div class="mb-3">
+                            <label class="form-label required">{{ __('CSV File') }}</label>
+                            <input type="file" class="form-control" name="csv_file" id="importFile" accept=".csv"
+                                required>
+                            <small class="form-hint">{{ __('Supported format: CSV (.csv)') }}</small>
+                        </div>
+
+                        <div
+                            class="p-3 bg-surface-secondary rounded border d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                    class="icon icon-tabler icon-tabler-file-type-csv text-success" width="24"
+                                    height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                    fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+                                    <path d="M5 12v-7a2 2 0 0 1 2 -2h7l5 5v4" />
+                                    <path d="M7 16.5a1.5 1.5 0 0 0 -3 0v3a1.5 1.5 0 0 0 3 0" />
+                                    <path
+                                        d="M10 20.25c0 .414 .336 .75 .75 .75h1.25a1 1 0 0 0 1 -1v-1a1 1 0 0 0 -1 -1h-1a1 1 0 0 1 -1 -1v-1a1 1 0 0 1 1 -1h1.25a.75 .75 0 0 1 .75 .75" />
+                                    <path d="M16 15l2 6l2 -6" />
+                                </svg>
+                                <span class="small text-muted">{{ __('Need sample CSV template?') }}</span>
+                            </div>
+                            <a href="{{ asset('storage/import/store/store_products.csv') }}"
+                                class="btn btn-primary d-inline-flex align-items-center gap-1"
+                                download="sample_import_data_products.csv">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-download"
+                                    width="16" height="16" viewBox="0 0 24 24" stroke-width="2"
+                                    stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
+                                    <polyline points="7 11 12 16 17 11" />
+                                    <line x1="12" y1="4" x2="12" y2="16" />
+                                </svg>
+                                <span>{{ __('Download') }}</span>
+                            </a>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer d-flex justify-content-between">
+                    <button type="button" class="btn btn-danger d-inline-flex align-items-center gap-1"
+                        data-bs-dismiss="modal">
+                        {{ __('Cancel') }}
+                    </button>
+                    <button type="button" class="btn btn-primary d-inline-flex align-items-center px-4 shadow-sm"
+                        onclick="importProduct()">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-upload me-1"
+                            width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                            fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
+                            <polyline points="7 9 12 4 17 9" />
+                            <line x1="12" y1="4" x2="12" y2="16" />
+                        </svg>
+                        {{ __('Import') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+@endsection
+
+{{-- Custom JS --}}
+@push('custom-js')
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/7.0.1/tinymce.min.js"
+        integrity="sha512-KGtsnWohFUg0oksKq7p7eDgA1Rw2nBfqhGJn463/rGhtUY825dBqGexj8eP04LwfnsSW6dNAHAlOqKJKquHsnw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="{{ asset('js/dropzone.min.js') }}"></script>
+    <script src="{{ asset('js/clipboard.min.js') }}"></script>
+    <script type="text/javascript" src="{{ asset('js/tom-select.base.min.js') }}"></script>
+
+    <script>
+        let targetInputId = 'productImage';
+        let selectedMediaUrls = [];
+
+        $(document).ready(function() {
+            "use strict";
+
+            var productsTable = $('#productsTable').DataTable({
+                processing: false,
+                serverSide: true,
+                dom: "<'d-flex justify-content-end px-3 pt-3 search-wrapper'f>" +
+                    "<'table-responsive px-3 pt-2 py-2'tr>" +
+                    "<'card-footer d-flex flex-column flex-sm-row align-items-center justify-content-between gap-3 bg-transparent border-top-0'<'text-muted'i><'pagination-wrapper'p>>",
+                ajax: {
+                    url: "{{ route('user.edit.products', $business_card->card_id) }}",
+                    dataSrc: 'data'
+                },
+                language: {
+                    sProcessing: `{{ __('Processing...') }}`,
+                    sLengthMenu: `{{ __('Show _MENU_ entries') }}`,
+                    sSearch: ``,
+                    sSearchPlaceholder: `{{ __('Search products...') }}`,
+                    oPaginate: {
+                        sNext: `{{ __('Next') }}`,
+                        sPrevious: `{{ __('Previous') }}`
                     },
-                    language: {
-                        "sProcessing": `{{ __('Processing...') }}`,
-                        "sLengthMenu": `{{ __('Show _MENU_ entries') }}`,
-                        "sSearch": `{{ __('Search:') }}`,
-                        "oPaginate": {
-                            "sNext": `{{ __('Next') }}`,
-                            "sPrevious": `{{ __('Previous') }}`
-                        },
-                        "sInfo": `{{ __('Showing _START_ to _END_ of _TOTAL_ entries') }}`,
-                        "sInfoEmpty": `{{ __('Showing 0 to 0 of 0 entries') }}`,
-                        "sInfoFiltered": `{{ __('(filtered from _MAX_ total entries)') }}`,
-                        "sInfoPostFix": "",
-                        "sUrl": "",
-                        "oAria": {
-                            "sSortAscending": `{{ __(': activate to sort column in ascending order') }}`,
-                            "sSortDescending": `{{ __(': activate to sort column in descending order') }}`
-                        },
-                        loadingRecords: `{{ __('Please wait - loading...') }}`,
-                        emptyTable: `{{ __('No data available in the table') }}` // Message for an empty table
+                    sInfo: `{{ __('Showing _START_ to _END_ of _TOTAL_ entries') }}`,
+                    sInfoEmpty: `{{ __('Showing 0 to 0 of 0 entries') }}`,
+                    sInfoFiltered: `{{ __('(filtered from _MAX_ total entries)') }}`,
+                    loadingRecords: `{{ __('Please wait - loading...') }}`,
+                    emptyTable: `{{ __('No products found in catalog.') }}`
+                },
+                columns: [{
+                        data: 'DT_RowIndex',
+                        name: 'DT_RowIndex',
+                        orderable: false,
+                        searchable: false,
+                        className: 'rc-hide'
                     },
-                    columns: [{
-                            data: 'DT_RowIndex',
-                            name: 'DT_RowIndex',
-                            orderable: false,
-                            searchable: false
-                        },
-                        {
-                            data: 'product_category',
-                            name: 'product_category'
-                        },
-                        {
-                            data: 'product_image',
-                            name: 'product_image',
-                            render: function(data, type, full, meta) {
-                                return '<img src="' + data +
-                                    '" alt="Product Image" style="width: 50px; height: 50px;"/>';
-                            }
-                        },
-                        {
-                            data: 'product_name',
-                            name: 'product_name'
-                        },
-                        {
-                            data: 'product_description',
-                            name: 'product_description'
-                        },
-                        {
-                            data: 'product_status',
-                            name: 'product_status'
-                        },
-                        {
-                            data: 'actions',
-                            name: 'actions',
-                            orderable: false,
-                            searchable: false
-                        },
-                    ]
-                });
+                    {
+                        data: 'product_category',
+                        name: 'product_category',
+                        searchable: true
+                    },
+                    {
+                        data: 'product_image',
+                        name: 'product_image',
+                        orderable: false,
+                        searchable: false
+                    },
+                    {
+                        data: 'product_name',
+                        name: 'product_name',
+                        searchable: true
+                    },
+                    {
+                        data: 'product_description',
+                        name: 'product_description',
+                        searchable: true
+                    },
+                    {
+                        data: 'product_status',
+                        name: 'product_status',
+                        searchable: true
+                    },
+                    {
+                        data: 'actions',
+                        name: 'actions',
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-end'
+                    }
+                ],
+                preDrawCallback: function(settings) {
+                    var api = new $.fn.dataTable.Api(settings);
+                    var total_columns = api.columns().count();
+                    var $tbody = $(settings.nTable).find('tbody');
+
+                    $tbody.closest('.table-responsive').addClass('placeholder-glow');
+
+                    var placeholderRows = '';
+                    for (var i = 0; i < 5; i++) {
+                        placeholderRows += '<tr>' +
+                            '<td class="text-center"><div class="placeholder placeholder-xs col-12"></div></td>'
+                            .repeat(total_columns) +
+                            '</tr>';
+                    }
+                    $tbody.html(placeholderRows);
+                },
+                drawCallback: function(settings) {
+                    var api = new $.fn.dataTable.Api(settings);
+                    var total_columns = api.columns().count();
+                    var $table = $(settings.nTable);
+
+                    $table.closest('.table-responsive').removeClass('placeholder-glow');
+                    $table.find('tbody tr td.dataTables_empty').attr('colspan', total_columns);
+
+                    var headers = [];
+                    $table.find('thead th').each(function() {
+                        headers.push($(this).text().trim());
+                    });
+
+                    $table.find('tbody tr').each(function() {
+                        $(this).find('td').each(function(index) {
+                            var label = headers[index] || '';
+                            $(this).attr('data-label', label);
+                        });
+                    });
+                }
             });
 
-            // Open Media modal
-            function openMedia() {
-                "use strict";
-                $('#openMediaModel').modal('show');
+            $(document).on('click', '.modal', function(e) {
+                if ($(e.target).hasClass('modal')) {
+                    $(this).modal('hide');
+                }
+            });
+        });
 
-                loadMedia(); // Initial load
+        var productSearchTimer;
+        $(document).on('input', '#productsTable_filter input', function() {
+            var value = this.value;
+            var table = $('#productsTable').DataTable();
+            clearTimeout(productSearchTimer);
+            productSearchTimer = setTimeout(function() {
+                table.search(value).draw();
+            }, 300);
+        });
 
-                // Array to store selected media IDs
-                var selectedMediaIds = [];
+        // Toggle variations container
+        function toggleVariants(type) {
+            if ($('#' + type + 'HasVariants').is(':checked')) {
+                $('#' + type + 'VariantsSection').removeClass('d-none');
+                if ($('#' + type + 'VariantsTable tbody tr').length === 0) {
+                    addVariantRow(type);
+                }
+            } else {
+                $('#' + type + 'VariantsSection').addClass('d-none');
+            }
+        }
 
-                // Handle individual select
-                $(document).on('change', '.select-media', function() {
-                    var mediaId = $(this).data('id');
-                    if (this.checked) {
-                        $(`.media-card[data-id="${mediaId}"]`).addClass('selected');
-                        selectedMediaIds.push(mediaId);
+        // Render Tabler UI styled variation row
+        function addVariantRow(type, data = null) {
+            let name = data ? (data.variant_name || '') : '';
+            let regularPrice = data && data.regular_price ? data.regular_price : '';
+            let salesPrice = data ? (data.sales_price || '') : '';
+            let status = data ? (data.status || 'instock') : 'instock';
+
+            let row = `
+                <tr>
+                    <td class="py-2">
+                        <input type="text" class="form-control variant-name" 
+                               placeholder="{{ __('e.g., XL / Red or 256GB') }}" 
+                               value="${name}" required>
+                    </td>
+                    <td class="py-2">
+                        <input type="number" step=".001" class="form-control variant-regular-price" 
+                               placeholder="0.00" 
+                               value="${regularPrice}">
+                    </td>
+                    <td class="py-2">
+                        <input type="number" step=".001" class="form-control variant-sales-price" 
+                               placeholder="0.00" 
+                               value="${salesPrice}" required>
+                    </td>
+                    <td class="py-2">
+                        <select class="form-select variant-status">
+                            <option value="instock" ${status === 'instock' ? 'selected' : ''}>{{ __('In Stock') }}</option>
+                            <option value="outstock" ${status === 'outstock' ? 'selected' : ''}>{{ __('Out of Stock') }}</option>
+                        </select>
+                    </td>
+                    <td class="py-2 text-center">
+                        <button type="button" class="btn btn-icon btn-danger rounded-circle" 
+                                title="{{ __('Remove variant') }}" 
+                                onclick="$(this).closest('tr').remove()">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-trash" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                <line x1="4" y1="7" x2="20" y2="7" />
+                                <line x1="10" y1="11" x2="10" y2="17" />
+                                <line x1="14" y1="11" x2="14" y2="17" />
+                                <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
+                                <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" />
+                            </svg>
+                        </button>
+                    </td>
+                </tr>
+            `;
+            $('#' + type + 'VariantsTable tbody').append(row);
+        }
+
+        // Extract variants array from table
+        function getVariantsData(type) {
+            let variants = [];
+            $('#' + type + 'VariantsTable tbody tr').each(function() {
+                let name = $(this).find('.variant-name').val();
+                let regularPrice = $(this).find('.variant-regular-price').val();
+                let salesPrice = $(this).find('.variant-sales-price').val();
+                let status = $(this).find('.variant-status').val();
+
+                if (name && salesPrice) {
+                    variants.push({
+                        name: name,
+                        regular_price: regularPrice,
+                        sales_price: salesPrice,
+                        status: status
+                    });
+                }
+            });
+            return variants;
+        }
+
+        function openMedia(inputId = 'productImage') {
+            targetInputId = inputId;
+            let existingVal = $('#' + targetInputId).val();
+            selectedMediaUrls = existingVal ? existingVal.split(',').map(item => item.trim()).filter(Boolean) : [];
+            updateSelectedCount();
+
+            showModalSkeleton();
+            $('#openMediaModel').modal('show');
+            loadMedia(1);
+        }
+
+        function toggleCardSelection(mediaUrl, element) {
+            if (selectedMediaUrls.includes(mediaUrl)) {
+                selectedMediaUrls = selectedMediaUrls.filter(url => url !== mediaUrl);
+                $(element).removeClass('selected').find('.media-card-checkbox').prop('checked', false);
+            } else {
+                selectedMediaUrls.push(mediaUrl);
+                $(element).addClass('selected').find('.media-card-checkbox').prop('checked', true);
+            }
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            $('#selectedMediaCount').text(selectedMediaUrls.length);
+        }
+
+        function applySelectedMedia() {
+            if (selectedMediaUrls.length > 0) {
+                $('#' + targetInputId).val(selectedMediaUrls.join(','));
+            } else {
+                $('#' + targetInputId).val('');
+            }
+            $('#openMediaModel').modal('hide');
+        }
+
+        // Open Add Product Modal with clean state 
+        function addProduct() {
+            $('#addProductForm').trigger("reset");
+            $('#addHasVariants').prop('checked', false);
+            $('#addVariantsSection').addClass('d-none');
+            $('#addVariantsTable tbody').empty();
+
+            const modal = new bootstrap.Modal(document.getElementById('addProductModal'));
+            modal.show();
+
+            setTimeout(function() {
+                tinymce.remove('#productDescription');
+                tinymce.init({
+                    selector: '#productDescription',
+                    height: 200,
+                    menubar: false,
+                    statusbar: false,
+                    content_style: 'body { font-family: "Figtree", sans-serif; font-size: 14px; }'
+                });
+            }, 300);
+        }
+
+        // Save Product and Variations
+        function saveProduct() {
+            "use strict";
+            var cardId = $('#cardId').val();
+            var productBadge = $('#productBadge').val();
+            var productCategory = $('#productCategory').val();
+            var productImage = $('#productImage').val();
+            var productName = $('#productName').val();
+            var productShortDescription = $('#productShortDescription').val();
+            var productDescription = tinymce.get('productDescription') ? tinymce.get('productDescription').getContent() :
+            '';
+            var productRegularPrice = $('#productRegularPrice').val();
+            var productSalesPrice = $('#productSalesPrice').val();
+            var productStatus = $('#productStatus').val();
+
+            var hasVariants = $('#addHasVariants').is(':checked') ? 1 : 0;
+            var variantsData = hasVariants ? getVariantsData('add') : [];
+
+            function showError(message) {
+                $('#errorMessage').text(message).show();
+                $('#errorMessage').delay(2500).fadeOut(500);
+            }
+
+            if (!productCategory) {
+                showError("{{ __('Product category is required.') }}");
+                return;
+            }
+            if (!productImage) {
+                showError("{{ __('Product image is required.') }}");
+                return;
+            }
+            if (!productName) {
+                showError("{{ __('Product name is required.') }}");
+                return;
+            }
+            if (!productShortDescription) {
+                showError("{{ __('Product short description is required.') }}");
+                return;
+            }
+
+            // Auto-fill sales price from first variant if variations are enabled
+            if (hasVariants) {
+                if (variantsData.length === 0) {
+                    showError("{{ __('Please add at least one complete variation.') }}");
+                    return;
+                }
+                if (!productSalesPrice) {
+                    productSalesPrice = variantsData[0].sales_price;
+                }
+            } else {
+                if (!productSalesPrice) {
+                    showError("{{ __('Product sales price is required.') }}");
+                    return;
+                }
+            }
+
+            $.ajax({
+                url: '{{ route('user.save.product') }}',
+                method: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    card_id: cardId,
+                    product_badge: productBadge,
+                    product_category: productCategory,
+                    product_image: productImage,
+                    product_name: productName,
+                    product_short_description: productShortDescription,
+                    product_description: productDescription,
+                    product_regular_price: productRegularPrice,
+                    product_sales_price: productSalesPrice,
+                    product_status: productStatus,
+                    has_variants: hasVariants,
+                    variants: JSON.stringify(variantsData)
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $('#successMessage').text("{{ __('New Product added successfully!') }}").show();
+                        $('#successMessage').delay(2500).fadeOut(500);
+                        $('#addProductModal').modal('hide');
+                        $('#addProductForm').trigger("reset");
+                        $('#productsTable').DataTable().ajax.reload(null, false);
                     } else {
-                        $(`.media-card[data-id="${mediaId}"]`).removeClass('selected');
-                        $('#selectAllMedia').prop('checked', false);
-                        // Remove mediaId from the array
-                        selectedMediaIds = selectedMediaIds.filter(id => id !== mediaId);
+                        $('#errorMessage').text(response.message || "{{ __('Failed to add product.') }}")
+                            .show();
+                        $('#errorMessage').delay(2500).fadeOut(500);
                     }
-
-                    // Set in image url to input field
-                    $('.image').val(selectedMediaIds);
-                });
-            }
-
-            // Open add product modal
-            function addProduct() {
-                "use strict";
-                $('#addProductModal').modal('show');
-            }
-
-            // Save Product
-            function saveProduct() {
-                "use strict";
-                var cardId = $('#cardId').val();
-                var productBadge = $('#productBadge').val();
-                var productCategory = $('#productCategory').val();
-                var productImage = $('#productImage').val();
-                var productName = $('#productName').val();
-                var productShortDescription = $('#productShortDescription').val();
-                var productDescription = tinymce.get('productDescription').getContent();
-                var productRegularPrice = $('#productRegularPrice').val();
-                var productSalesPrice = $('#productSalesPrice').val();
-                var productStatus = $('#productStatus').val();
-
-                // Show error message
-                function showError(message) {
-                    $('#errorMessage').text(message).show();
-                    $('#errorMessage').delay(1500).fadeOut(200);
-                    $('#addProductModal').modal('hide');
+                },
+                error: function() {
+                    $('#errorMessage').text("{{ __('Something went wrong! Please try again.') }}").show();
+                    $('#errorMessage').delay(2500).fadeOut(500);
                 }
-
-                if (productCategory === '') {
-                    showError("{{ __('Product category is required.') }}");
-                    return;
-                }
-
-                if (productImage === '') {
-                    showError("{{ __('Product image is required.') }}");
-                    return;
-                }
-
-                if (productName === '') {
-                    showError("{{ __('Product name is required.') }}");
-                    return;
-                }
-
-                if (productShortDescription === '') {
-                    showError("{{ __('Product short description is required.') }}");
-                    return;
-                }
-
-                if (productDescription === '') {
-                    showError("{{ __('Product description is required.') }}");
-                    return;
-                }
-
-                if (productSalesPrice === '') {
-                    showError("{{ __('Product sales price is required.') }}");
-                    return;
-                }
-
-                $.ajax({
-                    url: '{{ route('user.save.product') }}',
-                    method: 'POST',
-                    data: {
-                        _token: '{{ csrf_token() }}',
-                        card_id: cardId,
-                        product_badge: productBadge,
-                        product_category: productCategory,
-                        product_image: productImage,
-                        product_name: productName,
-                        product_short_description: productShortDescription,
-                        product_description: productDescription,
-                        product_regular_price: productRegularPrice,
-                        product_sales_price: productSalesPrice,
-                        product_status: productStatus,
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            // Display success message
-                            $('#successMessage').text("{{ __('New Product added successfully!') }}").show();
-                            $('#successMessage').delay(1000).fadeOut(1000);
-                            $('#addProductModal').modal('hide');
-                            $('#addProductForm').trigger("reset");
-
-                            // Reload product table
-                            $('#productsTable').DataTable().ajax.reload();
-                        } else {
-                            // Display error message
-                            $('#addProductModal').modal('hide');
-                            $('#errorMessage').text("{{ __('Failed to add product.') }}").show();
-                            $('#errorMessage').delay(1000).fadeOut(1000);
-                        }
-                    }
-                });
-            }
-
-            // Edit product modal
-            function editProduct(productId) {
-                "use strict";
-                $.ajax({
-                    url: '/user/store/get-products/' + productId,
-                    method: 'GET',
-                    success: function(response) {
-                        if (response.success) {
-                            $('#productId').val(response.data.id);
-                            $('#editProductBadge').val(response.data.badge);
-                            $('#editProductCurrency').val(response.data.currency);
-                            $('#editProductImage').val(response.data.product_image);
-                            $('#editProductName').val(response.data.product_name);
-                            $('#editProductShortDescription').val(response.data.product_short_description);
-                            $('#editProductRegularPrice').val(response.data.regular_price);
-                            $('#editProductSalesPrice').val(response.data.sales_price);
-                            $('#editProductStatus').val(response.data.product_status);
-
-                            let editor = tinymce.get('editProductDescription');
-                            if (editor) {
-                                let subtitle = response.data.product_description || '';
-                                editor.setContent(subtitle);
-                            } else {
-                                console.error('TinyMCE editor not ready.');
-                            }
-
-                            $('#editProductModal').modal('show');
-                        } else {
-                            // Display error message
-                            $('#errorMessage').text("{{ __('Failed to fetch product data.') }}").show();
-                            $('#errorMessage').delay(1000).fadeOut(1000);
-                        }
-                    }
-                });
-            }
-
-            // Update product
-            function updateProduct() {
-                "use strict";
-                var productId = $('#productId').val();
-                var productBadge = $('#editProductBadge').val();
-                var productCategory = $('#editProductCategory').val();
-                var productImage = $('#editProductImage').val();
-                var productName = $('#editProductName').val();
-                var productShortDescription = $('#editProductShortDescription').val();
-                var productDescription = tinymce.get('editProductDescription').getContent();
-                var productRegularPrice = $('#editProductRegularPrice').val();
-                var productSalesPrice = $('#editProductSalesPrice').val();
-                var productStatus = $('#editProductStatus').val();
-
-                // Show error message
-                function showError(message) {
-                    $('#errorMessage').text(message).show();
-                    $('#errorMessage').delay(1500).fadeOut(200);
-                    $('#editProductModal').modal('hide');
-                }
-
-                if (productCategory === '') {
-                    showError("{{ __('Product category is required.') }}");
-                    return;
-                }
-
-                if (productImage === '') {
-                    showError("{{ __('Product image is required.') }}");
-                    return;
-                }
-
-                if (productName === '') {
-                    showError("{{ __('Product name is required.') }}");
-                    return;
-                }
-
-                if (productShortDescription === '') {
-                    showError("{{ __('Product short description is required.') }}");
-                    return;
-                }
-
-                if (productDescription === '') {
-                    showError("{{ __('Product description is required.') }}");
-                    return;
-                }
-
-                if (productSalesPrice === '') {
-                    showError("{{ __('Product sales price is required.') }}");
-                    return;
-                }
-
-                $.ajax({
-                    url: '{{ route('user.update.product') }}',
-                    method: 'POST',
-                    data: {
-                        _token: '{{ csrf_token() }}',
-                        product_id: productId,
-                        product_badge: productBadge,
-                        product_category: productCategory,
-                        product_image: productImage,
-                        product_name: productName,
-                        product_short_description: productShortDescription,
-                        product_description: productDescription,
-                        product_regular_price: productRegularPrice,
-                        product_sales_price: productSalesPrice,
-                        product_status: productStatus,
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            // Display success message
-                            $('#successMessage').text("{{ __('Product updated successfully!') }}").show();
-                            $('#successMessage').delay(1000).fadeOut(1000);
-                            $('#editProductModal').modal('hide');
-
-                            // Reload products table
-                            $('#productsTable').DataTable().ajax.reload();
-                        } else {
-                            // Display error message
-                            $('#editProductModal').modal('hide');
-                            $('#errorMessage').text("{{ __('Failed to update product.') }}").show();
-                            $('#errorMessage').delay(1000).fadeOut(1000);
-                        }
-                    }
-                });
-            }
-
-            // Function to delete the product
-            function deleteProduct(productId) {
-                $('#deleteProductModal').data('product-id', productId).modal('show');
-            }
-
-            // jQuery to handle the modal "Okay" button click
-            $(document).ready(function() {
-                $('#confirmDeleteButton').click(function() {
-                    deleteConfirmProduct();
-                });
             });
+        }
 
-            // Confirm delete product
-            function deleteConfirmProduct() {
+        // Fetch & Open Edit Product Modal
+        function editProduct(productId) {
+            "use strict";
+            $.ajax({
+                url: '/user/store/get-products/' + productId,
+                method: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        $('#productId').val(response.data.id);
+                        $('#editProductBadge').val(response.data.badge);
+                        $('#editProductCategory').val(response.data.category_id).trigger('change');
+                        $('#editProductImage').val(response.data.product_image);
+                        $('#editProductName').val(response.data.product_name);
+                        $('#editProductShortDescription').val(response.data.product_short_description);
+                        $('#editProductRegularPrice').val(response.data.regular_price);
+                        $('#editProductSalesPrice').val(response.data.sales_price);
+                        $('#editProductStatus').val(response.data.product_status);
+
+                        // Populate variants data
+                        $('#editVariantsTable tbody').empty();
+                        if (response.data.has_variants == 1 && response.data.variants && response.data.variants
+                            .length > 0) {
+                            $('#editHasVariants').prop('checked', true);
+                            $('#editVariantsSection').removeClass('d-none');
+                            response.data.variants.forEach(function(v) {
+                                addVariantRow('edit', v);
+                            });
+                        } else {
+                            $('#editHasVariants').prop('checked', false);
+                            $('#editVariantsSection').addClass('d-none');
+                        }
+
+                        $('#editProductModal').modal('show');
+
+                        tinymce.remove('#editProductDescription');
+                        tinymce.init({
+                            selector: '#editProductDescription',
+                            height: 200,
+                            menubar: false,
+                            statusbar: false,
+                            content_style: 'body { font-family: "Figtree", sans-serif; font-size: 14px; }',
+                            setup: function(editor) {
+                                editor.on('init', function() {
+                                    editor.setContent(response.data.product_description ||
+                                        '');
+                                });
+                            }
+                        });
+                    } else {
+                        $('#errorMessage').text("{{ __('Failed to fetch product data.') }}").show();
+                        $('#errorMessage').delay(2500).fadeOut(500);
+                    }
+                },
+                error: function() {
+                    $('#errorMessage').text("{{ __('Something went wrong!') }}").show();
+                    $('#errorMessage').delay(2500).fadeOut(500);
+                }
+            });
+        }
+
+        // Update Existing Product and Variations
+        function updateProduct() {
+            "use strict";
+            var productId = $('#productId').val();
+            var productBadge = $('#editProductBadge').val();
+            var productCategory = $('#editProductCategory').val();
+            var productImage = $('#editProductImage').val();
+            var productName = $('#editProductName').val();
+            var productShortDescription = $('#editProductShortDescription').val();
+            var productDescription = tinymce.get('editProductDescription') ? tinymce.get('editProductDescription')
+                .getContent() : '';
+            var productRegularPrice = $('#editProductRegularPrice').val();
+            var productSalesPrice = $('#editProductSalesPrice').val();
+            var productStatus = $('#editProductStatus').val();
+
+            var hasVariants = $('#editHasVariants').is(':checked') ? 1 : 0;
+            var variantsData = hasVariants ? getVariantsData('edit') : [];
+
+            function showError(message) {
+                $('#errorMessage').text(message).show();
+                $('#errorMessage').delay(2500).fadeOut(500);
+            }
+
+            if (!productCategory) {
+                showError("{{ __('Product category is required.') }}");
+                return;
+            }
+            if (!productImage) {
+                showError("{{ __('Product image is required.') }}");
+                return;
+            }
+            if (!productName) {
+                showError("{{ __('Product name is required.') }}");
+                return;
+            }
+            if (!productShortDescription) {
+                showError("{{ __('Product short description is required.') }}");
+                return;
+            }
+
+            if (hasVariants) {
+                if (variantsData.length === 0) {
+                    showError("{{ __('Please add at least one complete variation.') }}");
+                    return;
+                }
+                if (!productSalesPrice) {
+                    productSalesPrice = variantsData[0].sales_price;
+                }
+            } else {
+                if (!productSalesPrice) {
+                    showError("{{ __('Product sales price is required.') }}");
+                    return;
+                }
+            }
+
+            $.ajax({
+                url: '{{ route('user.update.product') }}',
+                method: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    product_id: productId,
+                    product_badge: productBadge,
+                    product_category: productCategory,
+                    product_image: productImage,
+                    product_name: productName,
+                    product_short_description: productShortDescription,
+                    product_description: productDescription,
+                    product_regular_price: productRegularPrice,
+                    product_sales_price: productSalesPrice,
+                    product_status: productStatus,
+                    has_variants: hasVariants,
+                    variants: JSON.stringify(variantsData)
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $('#successMessage').text("{{ __('Product updated successfully!') }}").show();
+                        $('#successMessage').delay(2500).fadeOut(500);
+                        $('#editProductModal').modal('hide');
+                        $('#productsTable').DataTable().ajax.reload(null, false);
+                    } else {
+                        $('#errorMessage').text(response.message || "{{ __('Failed to update product.') }}")
+                            .show();
+                        $('#errorMessage').delay(2500).fadeOut(500);
+                    }
+                },
+                error: function() {
+                    $('#errorMessage').text("{{ __('Something went wrong!') }}").show();
+                    $('#errorMessage').delay(2500).fadeOut(500);
+                }
+            });
+        }
+
+        // Open Delete Confirmation Modal
+        function deleteProduct(productId) {
+            $('#deleteProductModal').data('product-id', productId).modal('show');
+        }
+
+        // Handle Delete Confirmation
+        $(document).ready(function() {
+            $('#confirmDeleteButton').click(function() {
                 var productId = $('#deleteProductModal').data('product-id');
                 $.ajax({
                     url: '/user/delete-product/' + productId,
                     type: 'DELETE',
                     data: {
-                        _token: $('meta[name="csrf-token"]').attr('content') // Include CSRF token
+                        _token: $('meta[name="csrf-token"]').attr('content')
                     },
                     success: function(response) {
-                        // Display success message
-                        $('#successMessage').text("{{ __('Product deleted successfully!') }}").show();
-                        $('#successMessage').delay(1000).fadeOut(1000);
+                        $('#successMessage').text("{{ __('Product deleted successfully!') }}")
+                            .show();
+                        $('#successMessage').delay(2500).fadeOut(500);
                         $('#deleteProductModal').modal('hide');
-
-                        // Reload product table
-                        $('#productsTable').DataTable().ajax.reload();
+                        $('#productsTable').DataTable().ajax.reload(null, false);
                     },
-                    error: function(xhr) {
-                        // Display error message
-                        $('#addProductModal').modal('hide');
-                        $('#errorMessage').text("{{ __('Error deleting product') }}").show();
-                        $('#errorMessage').delay(1000).fadeOut(1000);
+                    error: function() {
+                        $('#deleteProductModal').modal('hide');
+                        $('#errorMessage').text("{{ __('Error deleting product.') }}").show();
+                        $('#errorMessage').delay(2500).fadeOut(500);
                     }
                 });
-            }
-        </script>
-        {{-- Upload image in dropzone --}}
-        <script type="text/javascript">
-            // Default
-            $('#success').hide();
-            $('#failed').hide();
+            });
+        });
 
-            Dropzone.options.dropzone = {
-                maxFilesize: {{ env('SIZE_LIMIT') / 1024 }},
-                acceptedFiles: ".jpeg,.jpg,.png,.gif",
-                timeout: 180000,
-                success: function(file, response) {
-                    if (response.status == 'success') {
-                        // Feature Request
-                        // $('#success').show();
-                        // window.location.href = `{{ route('user.media') }}`;
+        // Dropzone Configurations
+        Dropzone.options.dropzone = {
+            maxFilesize: {{ env('SIZE_LIMIT') / 1024 }},
+            acceptedFiles: ".jpeg,.jpg,.png,.gif",
+            timeout: 180000,
+            init: function() {
+                this.on("success", function(file, response) {
+                    $('#uploadMessage').empty();
+                    if (response.status === 'success') {
+                        $('#uploadMessage').html(`
+                            <div class="alert alert-important alert-success alert-dismissible mb-2" role="alert">
+                                ${response.message || '{{ __('Image uploaded successfully!') }}'}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        `);
+                        this.removeFile(file);
                         loadMedia();
+                        setTimeout(function() {
+                            $('#uploadMessage .alert').fadeOut();
+                        }, 3000);
                     } else {
-                        $('#failed').show();
-                        $('#failedMessage').html(`<span>` + response.message + `</span>`);
-                    }
-                }
-            };
-        </script>
-        {{-- Media with pagination --}}
-        <script>
-            // Default values
-            var currentPage = 1;
-            var totalPages = 1;
-
-            // Previous image
-            function loadPreviousPage() {
-                "use strict";
-
-                if (currentPage > 1) {
-                    currentPage--;
-                    loadMedia(currentPage);
-                }
-            }
-
-            // Next page
-            function loadNextPage() {
-                "use strict";
-
-                if (currentPage < totalPages) {
-                    currentPage++;
-                    loadMedia(currentPage);
-                }
-            }
-
-            // Load media images
-            function loadMedia(page = 1) {
-                $.ajax({
-                    url: '{{ route('user.media') }}',
-                    method: 'GET',
-                    data: {
-                        page: page
-                    },
-                    dataType: 'json',
-                    success: handleMediaResponse,
-                    error: function(xhr, status, error) {
-                        console.error(error);
+                        $('#uploadMessage').html(`
+                            <div class="alert alert-important alert-danger alert-dismissible mb-2" role="alert">
+                                ${response.message || '{{ __('Upload failed. Please try again.') }}'}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        `);
                     }
                 });
-            }
 
-            // Media response
-            function handleMediaResponse(response) {
-                "use strict";
-
-                var mediaData = response.media.data;
-                if (mediaData.length > 0) {
-                    $('#noImagesFound').hide();
-                    $('#showPagination').removeClass('d-none').addClass('card pagination-card');
-                    displayMediaCards(mediaData);
-                    updatePaginationInfo(response.media);
-                } else {
-                    $('#noImagesFound').show();
-                    $('#showPagination').addClass('d-none');
-                    $('#mediaCardsContainer').html('');
-                    updatePaginationInfo(response.media);
-                }
-            }
-
-            function displayMediaCards(mediaData) {
-                "use strict";
-
-                // Generate media image
-                var mediaCardsHtml = '';
-                mediaData.forEach(function(media) {
-                    mediaCardsHtml += `
-        <div class="col-6 col-lg-4 col-xl-2">
-            <label class="form-imagecheck mb-2 media-card" data-id="${media.id}">
-                <input name="form-imagecheck" type="checkbox" value="3" class="form-imagecheck-input select-media" id="select-media-${media.media_url}" data-id="${media.media_url}">
-                    <span class="form-imagecheck-figure">
-                    <img src="${media.base_url}${media.media_url}" alt="${media.media_name}" class="form-imagecheck-image" style="height: 200px; object-fit: cover;">
-                </span>
-            </label>
-        </div>
-    `;
+                this.on("error", function(file, response) {
+                    $('#uploadMessage').html(`
+                        <div class="alert alert-important alert-danger alert-dismissible mb-2" role="alert">
+                            {{ __('Upload failed. Please try again.') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    `);
+                    this.removeFile(file);
                 });
-                $('#mediaCardsContainer').html(mediaCardsHtml);
             }
+        };
 
-            // Update pagination
-            function updatePaginationInfo(media) {
-                "use strict";
+        var currentPage = 1;
+        var totalPages = 1;
 
-                $('#paginationStartIndex').text(media.from);
-                $('#paginationEndIndex').text(media.to);
-                $('#paginationTotalCount').text(media.total);
-                currentPage = media.current_page;
-                totalPages = media.last_page;
-
-                $('#prevPageBtn').prop('disabled', currentPage <= 1);
-                $('#nextPageBtn').prop('disabled', currentPage >= totalPages);
+        function loadPreviousPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                loadMedia(currentPage);
             }
+        }
 
-            // Load more image in pagination
-            $(document).ready(function() {
-                "use strict";
+        function loadNextPage() {
+            if (currentPage < totalPages) {
+                currentPage++;
+                loadMedia(currentPage);
+            }
+        }
 
-                loadMedia(); // Initial load
-            });
-        </script>
+        function showModalSkeleton() {
+            let skeletonHtml = '';
+            for (let i = 0; i < 8; i++) {
+                skeletonHtml += `
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <div class="modal-media-card placeholder-glow">
+                            <div class="modal-media-thumb placeholder"></div>
+                            <div class="modal-media-body">
+                                <div class="placeholder col-8 rounded mb-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            $('#mediaCardsContainer').html(skeletonHtml);
+            $('#noImagesFound').hide();
+            $('#showPagination').hide();
+        }
 
-        {{-- Clipboard --}}
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                "use strict";
+        function loadMedia(page = 1) {
+            showModalSkeleton();
 
-                var clipboard = new ClipboardJS('.copyBoard');
+            $.ajax({
+                url: '{{ route('user.media') }}',
+                method: 'GET',
+                data: {
+                    page: page
+                },
+                dataType: 'json',
+                success: function(response) {
+                    var mediaData = response.media.data;
+                    if (mediaData && mediaData.length > 0) {
+                        $('#noImagesFound').hide();
+                        $('#showPagination').show();
 
-                // Success
-                clipboard.on('success', function(e) {
-                    "use strict";
+                        var mediaCardsHtml = '';
+                        mediaData.forEach(function(media) {
+                            const isSelected = selectedMediaUrls.includes(media.media_url);
+                            mediaCardsHtml += `
+                                <div class="col-6 col-md-4 col-lg-3">
+                                    <div class="modal-media-card ${isSelected ? 'selected' : ''}" onclick="toggleCardSelection('${media.media_url}', this)">
+                                        <input type="checkbox" class="form-check-input media-card-checkbox" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation(); toggleCardSelection('${media.media_url}', $(this).closest('.modal-media-card'))">
+                                        <div class="modal-media-thumb" style="background-image: url('${media.base_url}${media.media_url}');"></div>
+                                        <div class="modal-media-body">
+                                            <div class="modal-media-title" title="${media.media_name}">${media.media_name}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        $('#mediaCardsContainer').html(mediaCardsHtml);
 
-                    // Place value in the field
-                    $('.image').val(e.text);
+                        $('#paginationStartIndex').text(response.media.from || 1);
+                        $('#paginationEndIndex').text(response.media.to || response.media.total);
+                        $('#paginationTotalCount').text(response.media.total || 0);
+                        currentPage = response.media.current_page;
+                        totalPages = response.media.last_page;
 
-                    // Hide media modal
-                    $('#openMediaModel').modal('hide');
-                });
-
-                // Error
-                clipboard.on('error', function(e) {
-                    "use strict";
-
-                    showErrorAlert('{{ __('Failed to copy text to clipboard. Please try again.') }}');
-                });
-
-                // Show success message
-                function showSuccessAlert(message) {
-                    "use strict";
-
-                    showAlert(message, 'success');
-                }
-
-                // Show error message
-                function showErrorAlert(message) {
-                    "use strict";
-
-                    showAlert(message, 'danger');
-                }
-
-                // Show alert
-                function showAlert(message, type) {
-                    "use strict";
-
-                    var alertDiv = document.createElement('div');
-                    alertDiv.classList.add('alert', 'alert-important', 'alert-' + type, 'alert-dismissible');
-                    alertDiv.setAttribute('role', 'alert');
-
-                    var innerContent = '<div class="d-flex">' +
-                        '<div>' +
-                        message +
-                        '</div>' +
-                        '</div>' +
-                        '<a class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>';
-
-                    alertDiv.innerHTML = innerContent;
-                    document.querySelector('#showAlert').appendChild(alertDiv);
-
-                    setTimeout(function() {
-                        "use strict";
-
-                        alertDiv.remove();
-                    }, 3000);
+                        $('#prevPageBtn').prop('disabled', currentPage <= 1).toggleClass('disabled',
+                            currentPage <= 1);
+                        $('#nextPageBtn').prop('disabled', currentPage >= totalPages).toggleClass('disabled',
+                            currentPage >= totalPages);
+                    } else {
+                        $('#noImagesFound').show();
+                        $('#showPagination').hide();
+                        $('#mediaCardsContainer').html('');
+                    }
                 }
             });
+        }
 
-            // Tiny MCE
-            tinymce.init({
-                selector: 'textarea.product-description',
-                plugins: 'preview importcss searchreplace autolink autosave save directionality visualblocks visualchars link charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount charmap quickbars emoticons',
-                menubar: 'file edit view insert format tools',
-                toolbar: 'undo redo | bold italic underline strikethrough | fontfamily fontsize blocks | alignleft aligncenter alignright alignjustify | outdent indent |  numlist bullist | forecolor backcolor removeformat | pagebreak | charmap emoticons | preview save print | insertfile link anchor | ltr rtl',
-                content_style: 'body { font-family:Times New Roman,Arial,sans-serif; font-size:16px }',
-                height: "200",
-                menubar: false,
-                statusbar: false,
+        function importProduct() {
+            "use strict";
+            var form = $('#importForm')[0];
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
 
-                // Correct mobile settings (limited fields allowed)
-                mobile: {
-                    plugins: 'paste',
-                    toolbar: 'undo redo | bold italic underline strikethrough | fontfamily fontsize blocks | alignleft aligncenter alignright alignjustify | outdent indent | numlist bullist | forecolor backcolor removeformat | pagebreak | charmap emoticons | preview save print | insertfile link anchor | ltr rtl'
-                }
-            });
-        </script>
-        <script>
-            // Import
-            function importProduct() {
-                "use strict";
+            var formData = new FormData(form);
+            formData.append('_token', '{{ csrf_token() }}');
+            formData.append('card_id', $('#cardId').val());
 
-                var form = $('#importForm')[0]; // Get the form element
-                var formData = new FormData(form); // Create FormData from the form
-                formData.append('_token', '{{ csrf_token() }}');
-                formData.append('card_id', $('#cardId').val()); // Add extra field not in form
-
-                $.ajax({
-                    url: '{{ route('user.import.products') }}',
-                    method: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
-                    success: function(response) {
-                        if (response.success) {
-                            // Display success message
-                            $('#successMessage').text(response.message).show();
-                            $('#successMessage').delay(3000).fadeOut(1000);
-                            $('#modal-import').modal('hide');
-                            $('#importForm').trigger("reset");
-
-                            // Reload product table
-                            $('#productsTable').DataTable().ajax.reload();
-                        } else {
-                            // Display error message
-                            $('#modal-import').modal('hide');
-                            $('#errorMessage').text(response.message).show();
-                            $('#errorMessage').delay(3000).fadeOut(1000);
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        // Display error message
+            $.ajax({
+                url: '{{ route('user.import.products') }}',
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    if (response.success) {
+                        $('#successMessage').text(response.message ||
+                            "{{ __('Products imported successfully!') }}").show();
+                        $('#successMessage').delay(2500).fadeOut(500);
                         $('#modal-import').modal('hide');
-                        $('#errorMessage').text("{{ __('Something went wrong!') }}").show();
-                        $('#errorMessage').delay(3000).fadeOut(1000);
+                        $('#importForm').trigger("reset");
+                        $('#productsTable').DataTable().ajax.reload(null, false);
+                    } else {
+                        $('#modal-import').modal('hide');
+                        $('#errorMessage').text(response.message || "{{ __('Import failed.') }}").show();
+                        $('#errorMessage').delay(2500).fadeOut(500);
                     }
-                });
-            }
-        </script>
-    @endpush
-@endsection
+                },
+                error: function() {
+                    $('#modal-import').modal('hide');
+                    $('#errorMessage').text("{{ __('Something went wrong!') }}").show();
+                    $('#errorMessage').delay(2500).fadeOut(500);
+                }
+            });
+        }
+    </script>
+@endpush

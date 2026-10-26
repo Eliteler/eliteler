@@ -1,0 +1,125 @@
+/* GoBiz vCard SaaS
+|--------------------------------------------------------------------------
+| Developed by NativeCode © 2021 - https://nativecode.in
+| All rights reserved
+| Unauthorized distribution is prohibited
+|--------------------------------------------------------------------------
+*/
+
+.page-wrapper,
+.card,
+.form-label,
+.form-control,
+.ts-control,
+.modal-title,
+.modal-body {
+    font-family: var(
+        --tblr-font-sans-serif,
+        "Figtree",
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif
+    ) !important;
+    letter-spacing: -0.01em;
+}
+
+.form-label {
+    font-weight: 600 !important;
+    font-size: 0.875rem !important;
+    color: var(--tblr-body-color, #1e293b) !important;
+    margin-bottom: 0.4rem !important;
+}
+
+.form-control {
+    border: 1px solid var(--tblr-border-color, #d1d5db) !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    line-height: 1.5 !important;
+    padding: 0.55rem 0.85rem !important;
+    min-height: 42px !important;
+    box-shadow: none !important;
+    transition:
+        border-color 0.15s ease-in-out,
+        box-shadow 0.15s ease-in-out !important;
+    border-radius: var(--tblr-border-radius, 8px) !important;
+}
+
+.form-control:focus {
+    border-color: var(--tblr-primary, #206bc4) !important;
+    box-shadow: 0 0 0 0.25rem rgba(var(--tblr-primary-rgb, 32, 107, 196), 0.15) !important;
+}
+
+/* Modern Switch & Section Cards */
+.settings-switch-card {
+    border: 1px solid var(--tblr-border-color, #e2e8f0);
+    border-radius: var(--tblr-border-radius-lg, 12px);
+    padding: 1.25rem;
+    transition: all 0.2s ease-in-out;
+    height: 100%;
+}
+
+.settings-switch-card:hover {
+    border-color: var(--tblr-border-color, #cbd5e1);
+    box-shadow: var(--tblr-box-shadow, 0 4px 12px rgba(0, 0, 0, 0.04));
+}
+
+.advanced-section-card {
+    border: 1px solid var(--tblr-border-color, #f1f5f9);
+    border-radius: var(--tblr-border-radius-lg, 12px);
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+    transition: all 0.2s ease-in-out;
+}
+
+[data-bs-theme="dark"] .advanced-section-card {
+    border-color: var(--tblr-border-color, #cbd5e1) !important;
+}
+
+.advanced-section-card:hover {
+    border-color: var(--tblr-border-color, #e2e8f0);
+    box-shadow: var(--tblr-box-shadow-sm, 0 2px 8px rgba(0, 0, 0, 0.04));
+}
+
+.form-check-input {
+    cursor: pointer;
+    width: 2.75rem !important;
+    height: 1.5rem !important;
+}
+
+.form-check-input:checked {
+    background-color: var(--tblr-primary, #206bc4) !important;
+    border-color: var(--tblr-primary, #206bc4) !important;
+}
+
+/* CodeMirror Custom Height & Styling */
+.CodeMirror {
+    height: 220px;
+    border-radius: var(--tblr-border-radius, 8px);
+    font-family: "Fira Code", "Courier New", monospace;
+    font-size: 13px;
+    padding: 6px 0;
+    border: 1px solid var(--tblr-border-color, #e6e8ec);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.CodeMirror-gutters {
+    border-right: 1px solid #2c313a !important;
+    border-top-left-radius: 7px;
+    border-bottom-left-radius: 7px;
+}
+
+.input-group-text {
+    border: 1px solid var(--tblr-border-color, #d1d5db);
+    border-left: none;
+    border-top-right-radius: var(--tblr-border-radius, 8px) !important;
+    border-bottom-right-radius: var(--tblr-border-radius, 8px) !important;
+}
+
+.input-group .form-control {
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}

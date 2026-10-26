@@ -189,12 +189,13 @@
                             <div class="card-header d-flex align-items-end justify-content-between">
                                 <h3 class="card-title">{{ __('Upload') }}</h3>
                                 <h4 class="m-0 p-0 text-muted">{{ __('Credits') }}: <span
-                                        id="credits">{{ $credits >= 999 ? 'Unlimited' : $credits }}</span></h4>
+                                        id="credits">{{ $credits == -1 ? 'Unlimited' : $credits }}</span></h4>
                             </div>
                             <div class="card-body">
                                 <label for="image" class="vcard-uploader">
                                     <h4 class="text-muted">{{ __('Drop or click to upload') }}</h4>
-                                    <p class="text-muted small">( {{ __('Max') }} {{ $uploadSizeMB }}{{ __('MB') }} )</p>
+                                    <p class="text-muted small">( {{ __('Max') }} {{ $uploadSizeMB }}{{ __('MB') }}
+                                        )</p>
                                 </label>
                                 <input type="file" id="image" class="d-none" accept="image/png,image/jpeg">
                             </div>
@@ -253,7 +254,7 @@
     </div>
 
     <!-- QR MODAL -->
-    <div class="modal modal-blur fade" id="openQR" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal modal-bg fade" id="openQR" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -444,7 +445,7 @@
                             // Decrease credits
                             const creditsVal = `{{ $credits }}`;
 
-                            if (creditsVal < 999) {
+                            if (creditsVal > 0) {
                                 credits.text(creditsVal - 1);
                             }
                         }

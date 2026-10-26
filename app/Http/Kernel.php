@@ -43,8 +43,8 @@ class Kernel extends HttpKernel
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \App\Http\Middleware\SetLocale::class,
             \RealRashid\SweetAlert\ToSweetAlert::class,
-            \Inertia\Middleware::class,
             \App\Http\Middleware\HandleInertiaRequests::class,
+            \Modules\TranslationManager\app\Http\Middleware\ShareSyncStatusMiddleware::class,
         ],
 
         'api' => [
@@ -75,6 +75,7 @@ class Kernel extends HttpKernel
         'Installer' => \App\Http\Middleware\Installer::class,
         'user.page.permission' => \App\Http\Middleware\UserPagePermission::class,
         'demo.mode' => \App\Http\Middleware\CheckDemoMode::class,
+        'revenue.visible' => \App\Http\Middleware\RevenueVisible::class,
 
         'admin' => AdminMiddleware::class,
         'user' => UserMiddleware::class,

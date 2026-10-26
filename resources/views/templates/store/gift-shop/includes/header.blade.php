@@ -1,3 +1,18 @@
+@php
+    $currentHost = request()->getHost();
+    $masterHost = parse_url(config('app.url'), PHP_URL_HOST);
+    $isCustomDomainOrSubdomain = $currentHost !== $masterHost;
+
+    // Dynamic store base URL and product URL prefix
+    if ($isCustomDomainOrSubdomain) {
+        $storeUrl = url('/');
+        $productUrlPrefix = url('product');
+    } else {
+        $storeUrl = url($business_card_details->card_url);
+        $productUrlPrefix = url($business_card_details->card_url . '/product');
+    }
+@endphp
+
 <header class="navbar navbar-expand m-0 p-0 pb-1">
     {{-- Greeting message --}}
     <h3 class="alert alert-important alert-warning bg-dark">
@@ -6,7 +21,7 @@
     <div class="container-xl mx-auto" style="margin-top: -10px;">
         <div class="navbar-brand navbar-brand-autodark d-none-navbar-horizontal pe-0 pe-md-3" style="margin-top: -4px;">
             <!-- Logo -->
-            <a href="{{ url($business_card_details->card_url) }}">
+            <a href="{{ $storeUrl }}">
                 <img src="{{ url($business_card_details->profile) }}" alt="{{ $business_card_details->title }}"
                     class="navbar-brand-image logo-height" />
             </a>
@@ -18,8 +33,8 @@
             <!-- Cart -->
             <div class="nav-item dropdown">
                 <div class="nav-item">
-                    <a class="position-relative cursor-pointer btn-effect" data-bs-toggle="offcanvas" href="#offcanvasEnd"
-                        role="button" aria-controls="offcanvasEnd" onclick="openOffcanvas()">
+                    <a class="position-relative cursor-pointer btn-effect" data-bs-toggle="offcanvas"
+                        href="#offcanvasEnd" role="button" aria-controls="offcanvasEnd" onclick="openOffcanvas()">
                         <i class="ti ti-shopping-bag bg-{{ $bg_color }} text-white p-2 rounded-btn"></i>
                         <span class="badge-2 bg-{{ $badge_color }} text-white fs-5 badge-notification badge-pill"
                             id="badge">0</span></a>

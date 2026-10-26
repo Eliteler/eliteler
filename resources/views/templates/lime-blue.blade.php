@@ -90,22 +90,60 @@
     {{-- Check business details --}}
     @if ($business_card_details != null)
         @php
-            $custom_css = $business_card_details->custom_css;
-            $custom_js = $business_card_details->custom_js;
+            $custom_css = trim($business_card_details->custom_css ?? '');
+            $custom_js  = trim($business_card_details->custom_js ?? '');
 
-            // Ensure <style> tags for custom CSS
-            if (strpos($custom_css, '<style>') === false && strpos($custom_css, '</style>') === false) {
-                $custom_css = "<style>" . $custom_css . "</style>";
+            /*
+            |--------------------------------------------------------------------------
+            | Custom CSS
+            |--------------------------------------------------------------------------
+            */
+
+            if (
+                !empty($custom_css) &&
+                stripos($custom_css, '<style') === false
+            ) {
+                $custom_css = "<style>{$custom_css}</style>";
             }
 
-            // Ensure <script> tags for custom JS
-            if (strpos($custom_js, '<script>') === false && strpos($custom_js, '</script>') === false) {
-                $custom_js = "<script>" . $custom_js . "</script>";
+            /*
+            |--------------------------------------------------------------------------
+            | Split HTML tags and plain JS
+            |--------------------------------------------------------------------------
+            */
+
+            $include_custom_js = '';
+
+            if (!empty($custom_js)) {
+
+                // Extract HTML tags like meta, script, iframe, noscript, etc.
+                preg_match_all(
+                    '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/?>/is',
+                    $custom_js,
+                    $matches
+                );
+
+                $html_tags = implode("\n", $matches[0]);
+
+                // Remove extracted HTML tags from original content
+                $plain_js = trim(preg_replace(
+                    '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/?>/is',
+                    '',
+                    $custom_js
+                ));
+
+                // Add HTML tags directly
+                $include_custom_js .= $html_tags;
+
+                // Wrap remaining plain JS inside script tag
+                if (!empty($plain_js)) {
+                    $include_custom_js .= "\n<script>{$plain_js}</script>";
+                }
             }
         @endphp
 
         {!! $custom_css !!}
-        {!! $custom_js !!}
+        {!! $include_custom_js !!}
 
         {{-- Theme CSS --}}
         @if(!empty($business_card_details->theme_css))
@@ -512,6 +550,14 @@
                                 @endforeach
                             </div>
                         @endif
+
+                        {{-- Instagram Section --}}
+                        @include('templates.includes.instagram-embed', [
+                            'sectionClass' => 'w-full px-5 py-4',
+                            'customHeader' => '<div class="bg-custom w-full mt-4 mb-6 flex justify-center align-middle py-2 rounded-lg"><p class="heading font-black text-white text-xl px-4 py-2">' . __('Instagram') . '</p></div>',
+                            'cardClass'    => 'w-full overflow-hidden bg-white border-2 rounded-lg',
+                            'labelClass'   => 'px-5 py-3 text-gray-800 font-semibold sub-heading text-center'
+                        ])
 
                         {{-- Testimonials --}}
                         @if ($testimonials != null && !$testimonials->isEmpty())
@@ -1034,7 +1080,7 @@
                                     class="flex pb-5 px-3 m-auto pt-5 font-semibold text-dark text-sm flex-col md:flex-row max-w-6xl">
                                     <div class="mt-2">
                                         {{ __('Copyright') }} &copy;
-                                        <a class="text-{{ $business_card_details->{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}</a>
+                                        @php $__cr = $business_card_details->copyright ?? ''; $__cr_is_domain = !empty($__cr) && (str_starts_with($__cr, 'http') || str_contains($__cr, '.')); $__cr_url = $__cr_is_domain ? (str_starts_with($__cr, 'http') ? $__cr : 'https://'.$__cr) : (!empty($__cr) ? null : env('APP_URL')); $__cr_text = !empty($__cr) ? $__cr : parse_url(config('app.url'), PHP_URL_HOST); @endphp @if($__cr_url)<a class="text-{{ $business_card_details->theme_color }}" href="{{ $__cr_url }}" target="_blank" rel="noopener noreferrer">{{ $__cr_text }}</a>@else<span class="text-{{ $business_card_details->theme_color }}">{{ $__cr_text }}</span>@endif
                                         <span id="year"></span>{{ __('. All Rights Reserved.') }}
                                     </div>
                                 </div>
@@ -1285,7 +1331,37 @@
     <script src="{{ url('js/flatpickr.min.js') }}"></script>
 
     {{-- Flatpickr JS --}}
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/{{ app()->getLocale() }}.js"></script>
+    @php
+        $flatpickrLocales = [
+            'pt_BR' => 'pt',
+            'zh' => 'zh',
+            'ar' => 'ar',
+            'bg' => 'bg',
+            'hr' => 'hr',
+            'nl' => 'nl',
+            'fr' => 'fr',
+            'de' => 'de',
+            'he' => 'he',
+            'hu' => 'hu',
+            'id' => 'id',
+            'it' => 'it',
+            'ja' => 'ja',
+            'lt' => 'lt',
+            'ms' => 'ms',
+            'pl' => 'pl',
+            'ro' => 'ro',
+            'ru' => 'ru',
+            'es' => 'es',
+            'sv' => 'sv',
+            'th' => 'th',
+            'tr' => 'tr',
+            'vi' => 'vn',
+        ];
+
+        $locale = $flatpickrLocales[app()->getLocale()] ?? 'en';
+    @endphp
+    
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/{{ $locale }}.js"></script>
     @php
         if (isset($service_booking_details) && $service_booking_details->service_booking == 1) {
             $service_booking_available_days = json_decode($service_booking_details->service_booking_available_days);
@@ -1318,7 +1394,7 @@
             flatpickr("#appointment-date", {
                 dateFormat: "Y-m-d",
                 minDate: "today",
-                locale: "{{ app()->getLocale() }}",
+                locale: "{{ $locale }}",
                 disable: [
                     function(date) {
                         const day = date.toLocaleString("en-us", {
@@ -1340,7 +1416,7 @@
             flatpickr("#service_start_date", {
                 dateFormat: "Y-m-d",
                 minDate: "today",
-                locale: "{{ app()->getLocale() }}",
+                locale: "{{ $locale }}",
                 disable: [
                     function(date) {
                         return !allowedDays.includes(date.getDay());
@@ -1351,7 +1427,7 @@
             flatpickr("#service_end_date", {
                 dateFormat: "Y-m-d",
                 minDate: "today",
-                locale: "{{ app()->getLocale() }}",
+                locale: "{{ $locale }}",
                 disable: [
                     function(date) {
                         return !allowedDays.includes(date.getDay());

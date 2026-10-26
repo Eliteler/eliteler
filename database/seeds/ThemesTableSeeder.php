@@ -153,6 +153,36 @@ class ThemesTableSeeder extends Seeder
             "theme_price" => "Free"
         ]);
 
+        // Pet Store
+        DB::table('themes')->insert([
+            "theme_id" => "588969111157",
+            "theme_code" => "pet-store",
+            "theme_thumbnail" => "pet-store.png",
+            "theme_name" => "Pet Store",
+            "theme_description" => "WhatsApp Store",
+            "theme_price" => "Free"
+        ]);
+
+        // Furniture Store
+        DB::table('themes')->insert([
+            "theme_id" => "588969111158",
+            "theme_code" => "furniture",
+            "theme_thumbnail" => "furniture.png",
+            "theme_name" => "Furniture",
+            "theme_description" => "WhatsApp Store",
+            "theme_price" => "Free"
+        ]);
+
+        // Toy Store
+        DB::table('themes')->insert([
+            "theme_id" => "588969111159",
+            "theme_code" => "toy-store",
+            "theme_thumbnail" => "toy-store.png",
+            "theme_name" => "Toy Store",
+            "theme_description" => "WhatsApp Store",
+            "theme_price" => "Free"
+        ]);
+
         // Store Dark
         DB::table('themes')->insert([
             "theme_id" => "588969111078",
@@ -1327,6 +1357,116 @@ class ThemesTableSeeder extends Seeder
             "theme_code" => "resort",
             "theme_thumbnail" => "resort.png",
             "theme_name" => "Resort",
+            "theme_description" => "vCard",
+            "theme_price" => "Free"
+        ]);
+
+        // Modern 3D
+        DB::table('themes')->insert([
+            "theme_id" => "588969111160",
+            "theme_code" => "modern",
+            "theme_name" => "Modern 3D",
+            "theme_description" => "vCard",
+            "theme_thumbnail" => "modern.png",
+            "theme_price" => "Free"
+        ]);
+
+        // Pet Store
+        DB::table('themes')->insert([
+            "theme_id" => "588969111161",
+            "theme_code" => "pet-store-vcard",
+            "theme_thumbnail" => "pet-store-card.png",
+            "theme_name" => "Pet Store",
+            "theme_description" => "vCard",
+            "theme_price" => "Free"
+        ]);
+
+        // Real Estate
+        DB::table('themes')->insert([
+            "theme_id" => "588969111162",
+            "theme_code" => "real-estate-vcard",
+            "theme_thumbnail" => "real-estate-card.png",
+            "theme_name" => "Real Estate",
+            "theme_description" => "vCard",
+            "theme_price" => "Free"
+        ]);
+
+        // Jewellery Shop
+        DB::table('themes')->insert([
+            "theme_id" => "588969111163",
+            "theme_code" => "jewellery-shop-vcard",
+            "theme_thumbnail" => "jewellery-shop-card.png",
+            "theme_name" => "Jewellery Shop",
+            "theme_description" => "vCard",
+            "theme_price" => "Free"
+        ]);
+
+        // Mechanic
+        DB::table('themes')->insert([
+            "theme_id" => "588969111164",
+            "theme_code" => "mechanic-vcard",
+            "theme_thumbnail" => "mechanic-card.png",
+            "theme_name" => "Mechanic",
+            "theme_description" => "vCard",
+            "theme_price" => "Free"
+        ]);
+
+        // Electrician
+        DB::table('themes')->insert([
+            "theme_id" => "588969111165",
+            "theme_code" => "electrician-vcard",
+            "theme_thumbnail" => "electrician-card.png",
+            "theme_name" => "Electrician",
+            "theme_description" => "vCard",
+            "theme_price" => "Free"
+        ]);
+
+        // Gift Shop
+        DB::table('themes')->insert([
+            "theme_id" => "588969111166",
+            "theme_code" => "gift-shop",
+            "theme_thumbnail" => "gift-shop.png",
+            "theme_name" => "Gift Shop",
+            "theme_description" => "WhatsApp Store",
+            "theme_price" => "Free"
+        ]);
+
+        // Construction
+        DB::table('themes')->insert([
+            "theme_id" => "588969111167",
+            "theme_code" => "construction-vcard",
+            "theme_thumbnail" => "construction-card.png",
+            "theme_name" => "Construction",
+            "theme_description" => "vCard",
+            "theme_price" => "Free"
+        ]);
+
+        // Barber
+        DB::table('themes')->insert([
+            "theme_id" => "588969111168",
+            "theme_code" => "barber-vcard",
+            "theme_thumbnail" => "barber-card.webp",
+            "theme_name" => "Barber Shop",
+            "theme_description" => "vCard",
+            "theme_price" => "Free"
+        ]);
+
+        // Parlour
+        DB::table('themes')->insert([
+            "theme_id" => "588969111169",
+            "theme_code" => "parlour-vcard",
+            "theme_thumbnail" => "parlour-card.webp",
+            "theme_name" => "Parlour",
+            "theme_description" => "vCard",
+            "theme_price" => "Free"
+        ]);
+
+        // Botanical Parlour
+        DB::table('themes')->insert([
+            "theme_id" => "588969111170",
+            "theme_code" => "beauty-salon",
+            "theme_thumbnail" => "beauty-salon.webp",
+            "theme_name" => "Beauty Salon",
             "theme_description" => "vCard",
             "theme_price" => "Free"
         ]);

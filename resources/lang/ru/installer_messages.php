@@ -1,52 +1,8 @@
 <?php
 
 return [
-
-    /*
-     *
-     * Shared translations.
-     *
-     */
-    'title'        => 'Установка Laravel',
-    'next'         => 'Следующий шаг',
-
-    /*
-     *
-     * Home page translations.
-     *
-     */
-    'welcome'      => [
-        'title'   => 'Установка Laravel',
-        'message' => 'Добро пожаловать в первоначальную настройку фреймворка Laravel.',
-        'next'    => 'Следующий шаг',
-    ],
-
-    /*
-     *
-     * Requirements page translations.
-     *
-     */
-    'requirements' => [
-        'title' => 'Необходимые модули',
-        'next'  => 'Следующий шаг',
-    ],
-
-    /*
-     *
-     * Permissions page translations.
-     *
-     */
-    'permissions'  => [
-        'title' => 'Проверка прав на папках',
-        'next'  => 'Следующий шаг',
-    ],
-
-    /*
-     *
-     * Environment page translations.
-     *
-     */
-    'environment'  => [
+    'back' => 'Предыдущий',
+    'environment' => [
         'menu' => [
             'templateTitle' => 'Шаг 3 | Настройки среды',
             'title' => 'Настройки среды',
@@ -102,7 +58,6 @@ return [
                 'db_username_placeholder' => 'Имя пользователя базы данных',
                 'db_password_label' => 'Пароль базы данных',
                 'db_password_placeholder' => 'Пароль базы данных',
-
                 'app_tabs' => [
                     'more_info' => 'Больше информации',
                     'broadcasting_title' => 'Broadcasting, Caching, Session, &amp; Queue',
@@ -118,7 +73,6 @@ return [
                     'redis_host' => 'Redis Host',
                     'redis_password' => 'Redis Password',
                     'redis_port' => 'Redis Port',
-
                     'mail_label' => 'Mail',
                     'mail_driver_label' => 'Mail Driver',
                     'mail_driver_placeholder' => 'Mail Driver',
@@ -132,7 +86,6 @@ return [
                     'mail_password_placeholder' => 'Mail Password',
                     'mail_encryption_label' => 'Mail Encryption',
                     'mail_encryption_placeholder' => 'Mail Encryption',
-
                     'pusher_label' => 'Pusher',
                     'pusher_app_id_label' => 'Pusher App Id',
                     'pusher_app_id_palceholder' => 'Pusher App Id',
@@ -146,6 +99,7 @@ return [
                     'setup_application' => 'Настройка приложения',
                     'install' => 'Установить',
                 ],
+                'db_connection_failed' => 'Не удалось подключиться к базе данных.',
             ],
         ],
         'classic' => [
@@ -155,20 +109,65 @@ return [
             'back' => 'Использовать мастер форм',
             'install' => 'Сохранить и установить',
         ],
-        'title'   => 'Настройки окружения',
-        'save'    => 'Сохранить .env',
+        'title' => 'Настройки окружения',
+        'save' => 'Сохранить .env',
         'success' => 'Настройки успешно сохранены в файле .env',
-        'errors'  => 'Произошла ошибка при сохранении файла .env, пожалуйста, сохраните его вручную',
+        'errors' => 'Произошла ошибка при сохранении файла .env, пожалуйста, сохраните его вручную',
     ],
-
-    /*
-     *
-     * Final page translations.
-     *
-     */
-    'final'        => [
-        'title'    => 'Готово',
+    'final' => [
+        'title' => 'Готово',
         'finished' => 'Приложение успешно настроено.',
-        'exit'     => 'Нажмите для выхода',
+        'exit' => 'Нажмите для выхода',
+        'templateTitle' => 'Установка завершена',
+        'migration' => 'Вывод консоли миграции и исходного кода:',
+        'console' => 'Вывод консоли приложения:',
+        'log' => 'Запись в журнале установки:',
+        'env' => 'Окончательный файл .env:',
+    ],
+    'finish' => 'Установить',
+    'forms' => [
+        'errorTitle' => 'Произошли следующие ошибки:',
+    ],
+    'install' => 'Установить',
+    'installed' => [
+        'success_log_message' => 'Установщик NativeCode успешно УСТАНОВЛЕН на',
+    ],
+    'next' => 'Следующий шаг',
+    'permissions' => [
+        'title' => 'Проверка прав на папках',
+        'next' => 'Следующий шаг',
+        'templateTitle' => 'Шаг 2 | ',
+    ],
+    'requirements' => [
+        'title' => 'Необходимые модули',
+        'next' => 'Следующий шаг',
+        'templateTitle' => 'Шаг 1 | ',
+    ],
+    'title' => 'Установка Laravel',
+    'updater' => [
+        'title' => 'Программа обновления Ларавел',
+        'welcome' => [
+            'title' => 'Добро пожаловать в программу обновлений',
+            'message' => 'Добро пожаловать в мастер обновления.',
+        ],
+        'overview' => [
+            'title' => 'Обзор',
+            'message' => 'Есть 1 обновление.|Обновлений :number.',
+            'install_updates' => 'Установить обновления',
+        ],
+        'final' => [
+            'title' => 'Законченный',
+            'finished' => 'База данных приложения успешно обновлена.',
+            'exit' => 'Нажмите здесь, чтобы выйти',
+        ],
+        'log' => [
+            'success_message' => 'Установщик NativeCode успешно ОБНОВЛЕН',
+        ],
+    ],
+    'welcome' => [
+        'title' => 'Установка Laravel',
+        'message' => 'Добро пожаловать в первоначальную настройку фреймворка Laravel.',
+        'next' => 'Следующий шаг',
+        'templateTitle' => 'Добро пожаловать',
     ],
 ];

@@ -123,170 +123,82 @@
                 @endif
 
                 <div class="card card-lg">
-                    <div class="p-3" id="invoice">
-                        <div class="card-body">
-                            <!-- Header Section -->
-                            <div class="row mb-4">
-                                <div class="col-6">
+                    {{-- Invoice parameters --}}
+                    @php
+                        // Ensure billing details array is safely extracted
+                        $billingData = is_array($transaction->billing_details)
+                            ? $transaction->billing_details
+                            : json_decode($transaction->billing_details, true) ?? [];
 
-                                    {{-- Logo --}}
-                                    <img src="{{ asset($settings->site_logo) }}" class="img-fluid"
-                                        alt="{{ config('app.name') }}"><br>
+                        // Normalize transaction properties to match partial expectations
+                        $normalizedTransaction = (object) [
+                            'invoice_prefix' => $transaction->invoice_prefix,
+                            'invoice_number' => $transaction->invoice_number,
+                            'created_at' => $transaction->transaction_date,
+                            'currency' => $transaction->transaction_currency ?? ($transaction->currency ?? ''),
+                            'payment_method' => $transaction->payment_gateway_name,
+                            'payment_transaction_id' => $transaction->transaction_id,
+                        ];
 
-                                    {{-- Name --}}
-                                    <span
-                                        class="h4">{{ $transaction->billing_details['from_billing_name'] }}</span><br>
+                        // Build dynamic item title
+                        $itemTitle =
+                            __($planDetails->plan_name) .
+                            ' - ' .
+                            (function_exists('formatCurrency')
+                                ? formatCurrency($planDetails->plan_price)
+                                : $planDetails->plan_price) .
+                            '/' .
+                            $term;
+                    @endphp
 
-                                    {{-- Address --}}
-                                    <span>
-                                        {{ $transaction->billing_details['from_billing_address'] }},
-                                        {{ $transaction->billing_details['from_billing_city'] }},
-                                        {{ $transaction->billing_details['from_billing_state'] }}
-                                        {{ $transaction->billing_details['from_billing_country'] }} <br>
-                                    </span>
-
-                                    {{-- Email --}}
-                                    <span><strong>{{ __('Email') }}</strong>:
-                                        {{ $transaction->billing_details['from_billing_email'] }}</span><br>
-
-                                    {{-- Phone --}}
-                                    @if ($transaction->billing_details['from_billing_phone'] ?? null)
-                                        <span><strong>{{ __('Phone') }}</strong>:
-                                            {{ $transaction->billing_details['from_billing_phone'] }}</span><br>
-                                    @endif
-
-                                    {{-- Tax Number --}}
-                                    @if ($transaction->billing_details['from_vat_number'] ?? null)
-                                        <span><strong>{{ __('Tax Number') }}</strong>:
-                                            {{ $transaction->billing_details['from_vat_number'] }}</span><br>
-                                    @endif
-                                </div>
-                                <div class="col-6 text-end">
-                                    <h1>{{ __('INVOICE') }}</h1>
-                                    <h4># {{ $transaction->invoice_prefix }}{{ $transaction->invoice_number }}</h4>
-                                </div>
-                            </div>
-
-                            <!-- Billing Information -->
-                            <div class="row mb-4">
-                                <div class="col-6">
-                                    <h4 class="text-muted">{{ __('Bill To') }}</h4>
-                                    <span
-                                        class="h4">{{ $transaction->billing_details['to_billing_name'] ?? '' }}</span><br>
-                                    @if ($transaction->billing_details['to_billing_address'] ?? null)
-                                    <span>
-                                        {{ $transaction->billing_details['to_billing_address'] ?? '' }},
-                                        {{ $transaction->billing_details['to_billing_city'] ?? '' }},
-                                        {{ $transaction->billing_details['to_billing_state'] ?? '' }}
-                                        {{ $transaction->billing_details['to_billing_country'] ?? '' }} <br>
-                                    </span>
-                                    @endif
-
-                                    {{-- Email --}}
-                                    @if ($transaction->billing_details['to_billing_email'] ?? null)
-                                        <span><strong>{{ __('Email') }}</strong>:
-                                            {{ $transaction->billing_details['to_billing_email'] }}</span><br>
-                                    @endif
-
-                                    {{-- Phone --}}
-                                    @if ($transaction->billing_details['to_billing_phone'] ?? null)
-                                        <span><strong>{{ __('Phone') }}</strong>:
-                                            {{ $transaction->billing_details['to_billing_phone'] }}</span><br>
-                                    @endif
-
-                                    {{-- Tax Number --}}
-                                    @if ($transaction->billing_details['to_vat_number'] ?? null)
-                                        <span><strong>{{ __('Tax Number') }}</strong>:
-                                            {{ $transaction->billing_details['to_vat_number'] }}</span><br>
-                                    @endif
-                                </div>
-                                <div class="col-6 text-end">
-                                    <p><strong>{{ __('Date') }}</strong>:
-                                        {{ date('M d, Y', strtotime($transaction->transaction_date)) }}</p>
-                                    <p><strong>{{ __('Payment Terms') }}</strong>: {{ __($term) }}</p>
-                                    <h5><strong>{{ __('Balance Due') }}</strong>: {{ formatCurrency(0.0) }}</h5>
-                                </div>
-                            </div>
-
-                            <!-- Items Table -->
-                            <table class="table table-borderless border">
-                                <thead class="border-bottom">
-                                    <tr>
-                                        <th>{{ __('Item') }}</th>
-                                        <th class="text-end">{{ __('Quantity') }}</th>
-                                        <th class="text-end">{{ __('Rate') }}</th>
-                                        <th class="text-end">{{ __('Amount') }}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr class="fw-bold">
-                                        <td>{{ __($planDetails->plan_name) }} -
-                                            {{ formatCurrency($planDetails->plan_price) }}/{{ $term }}</td>
-                                        <td class="text-end">1</td>
-                                        <td class="text-end">{{ formatCurrency($planDetails->plan_price) }}</td>
-                                        <td class="text-end">{{ formatCurrency($planDetails->plan_price) }}</td>
-                                    </tr>
-                                </tbody>
-                                <tfoot class="border-top fw-bold">
-                                    {{-- Subtotal --}}
-                                    <tr>
-                                        <td colspan="3" class="text-end">{{ __('Subtotal') }}</td>
-                                        <td class="text-end">
-                                            {{ formatCurrency($transaction->billing_details['subtotal']) }}</td>
-                                    </tr>
-
-                                    {{-- Tax --}}
-                                    @if ($transaction->billing_details['tax_amount'] > 0)
-                                        <tr>
-                                            <td colspan="3" class="text-end">
-                                                {{ __($transaction->billing_details['tax_name']) }}
-                                                ({{ $transaction->billing_details['tax_value'] }}%)</td>
-                                            <td class="text-end">
-                                                {{ formatCurrency($transaction->billing_details['tax_amount']) }}</td>
-                                        </tr>
-                                    @endif
-
-                                    {{-- Applied Coupon --}}
-                                    @if (isset($transaction->billing_details['applied_coupon']) != null)
-                                        <tr>
-                                            <td colspan="3" class="font-weight-bold text-end">
-                                                <strong>{{ __('Applied Coupon') }} :
-                                                    {{ $transaction->billing_details['applied_coupon'] }}</strong>
-                                            </td>
-                                            <td class="font-weight-bold text-end">
-                                                - {{ formatCurrency($transaction->billing_details['discounted_price']) }}
-                                            </td>
-                                        </tr>
-                                    @endif
-
-                                    {{-- Total --}}
-                                    <tr>
-                                        <td colspan="3" class="text-end"><strong>{{ __('Total') }}</strong></td>
-                                        <td class="text-end">
-                                            <strong>{{ formatCurrency($transaction->billing_details['invoice_amount']) }}</strong>
-                                        </td>
-                                    </tr>
-
-                                    {{-- Amount Paid --}}
-                                    <tr>
-                                        <td colspan="3" class="text-end">{{ __('Amount Paid') }}</td>
-                                        <td class="text-end">
-                                            {{ formatCurrency($transaction->billing_details['invoice_amount']) }}</td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-
-                            <!-- Notes Section -->
-                            <p class="mt-5"><strong>{{ __('Notes') }}</strong>:<br><span
-                                    class="text-muted">{{ __('Payment from ') }}{{ __($transaction->payment_gateway_name) }}<br>{{ __('Transaction ID: ') }}
-                                    {{ $transaction->transaction_id }}</span></p>
-
-                            {{-- Footer --}}
-                            <p class="text-center text-muted mt-5">
-                                {{ __($config[29]->config_value ?? 'Thank you for your business!') }}
-                            </p>
-                        </div>
-                    </div>
+                    @include('partials.invoice', [
+                        // General configurations
+                        'settings' => $settings,
+                        'config' => $config,
+                        'currencies' => $currencies,
+                        'transaction' => $normalizedTransaction,
+                        'paymentTerms' => __($term),
+                    
+                        // Sender details (From)
+                        'fromName' => $billingData['from_billing_name'] ?? '',
+                        'fromAddress' => $billingData['from_billing_address'] ?? null,
+                        'fromCity' => $billingData['from_billing_city'] ?? null,
+                        'fromState' => $billingData['from_billing_state'] ?? null,
+                        'fromCountry' => $billingData['from_billing_country'] ?? null,
+                        'fromEmail' => $billingData['from_billing_email'] ?? '',
+                        'fromPhone' => $billingData['from_billing_phone'] ?? null,
+                        'fromVat' => $billingData['from_vat_number'] ?? null,
+                    
+                        // Customer details (To / Bill To)
+                        'toName' => $billingData['to_billing_name'] ?? '',
+                        'toAddress' => $billingData['to_billing_address'] ?? null,
+                        'toCity' => $billingData['to_billing_city'] ?? null,
+                        'toState' => $billingData['to_billing_state'] ?? null,
+                        'toCountry' => $billingData['to_billing_country'] ?? null,
+                        'toEmail' => $billingData['to_billing_email'] ?? '',
+                        'toPhone' => $billingData['to_billing_phone'] ?? null,
+                        'toVat' => $billingData['to_vat_number'] ?? null,
+                    
+                        // Line item details
+                        'itemTitle' => $itemTitle,
+                        'planDetails' => (object) [
+                            'plan_name' => $itemTitle,
+                            'no_of_ai_credits' => null,
+                            'quantity' => 1,
+                            'plan_price' => $planDetails->plan_price,
+                        ],
+                    
+                        // Billing summary
+                        'billing' => [
+                            'subtotal' => $billingData['subtotal'] ?? 0,
+                            'tax_name' => $billingData['tax_name'] ?? '',
+                            'tax_value' => $billingData['tax_value'] ?? 0,
+                            'tax_amount' => $billingData['tax_amount'] ?? 0,
+                            'applied_coupon' => $billingData['applied_coupon'] ?? null,
+                            'discounted_price' => $billingData['discounted_price'] ?? 0,
+                            'invoice_amount' => $billingData['invoice_amount'] ?? 0,
+                        ],
+                    ])
                 </div>
                 {{-- Footer --}}
                 @include('user.includes.footer')

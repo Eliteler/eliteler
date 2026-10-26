@@ -1,8 +1,15 @@
 {
     "plugin_id": "WhatsAppChatButton",
     "name": "WhatsApp Chat Button",
-    "description": "WhatsApp Chat Button in your website.",
-    "version": "1.0.0",
+    "description": "Add a WhatsApp chat button so visitors can contact you instantly.",
+    "version": "1.2.0",
     "img": "whatsapp.png",
-    "main_route": "admin.plugin.whatsapp_chat_button.settings"
+    "main_route": "admin.plugin.whatsapp_chat_button.settings",
+    "requires_admin": "1",
+    "platform": "gobiz-saas",
+    "min_version": "28.0.0",
+    "admin_pages": {
+        "settings": "dist/settings.js"
+    },
+    "documentation_url": null
 }

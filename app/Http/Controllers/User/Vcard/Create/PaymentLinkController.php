@@ -12,13 +12,14 @@
 
 namespace App\Http\Controllers\User\Vcard\Create;
 
+use App\BusinessCard;
+use App\Helpers\StorageHelper;
+use App\Http\Controllers\Controller;
 use App\Payment;
 use App\Setting;
-use App\BusinessCard;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class PaymentLinkController extends Controller
@@ -103,15 +104,8 @@ class PaymentLinkController extends Controller
                     $payment->position = $i + 1;
 
                     if ($request->type[$i] === 'image' && $request->hasFile("value.$i")) {
-                        $file = $request->file("value.$i");
-
-                        $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-
-                        // Store image in 'storage/app/public/payments'
-                        Storage::disk('public')->putFileAs('payments', $file, $filename);
-
-                        // Save public URL
-                        $payment->content = Storage::url("payments/{$filename}"); // returns 'storage/payments/filename.ext'
+                        // Upload payment image using StorageHelper and get relative path
+                        $payment->content = StorageHelper::uploadImage($request->file("value.$i"), 'payments');
                     } else {
                         // For text, link, or UPI
                         $payment->content = $request->value[$i];

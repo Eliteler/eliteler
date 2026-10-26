@@ -8,8 +8,10 @@
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    @if(isset($business_card_details->seo_configurations) && json_decode($business_card_details->seo_configurations)->favicon != null)
-        <link rel="icon" href="{{ url(json_decode($business_card_details->seo_configurations)->favicon) }}" sizes="512x512" type="image/png" />
+    @if (isset($business_card_details->seo_configurations) &&
+            json_decode($business_card_details->seo_configurations)->favicon != null)
+        <link rel="icon" href="{{ url(json_decode($business_card_details->seo_configurations)->favicon) }}"
+            sizes="512x512" type="image/png" />
         <link rel="apple-touch-icon" href="{{ url(json_decode($business_card_details->seo_configurations)->favicon) }}">
     @else
         <link rel="icon" href="{{ url($business_card_details->profile) }}" sizes="512x512" type="image/png" />
@@ -48,32 +50,72 @@
     {{-- Check business details --}}
     @if ($business_card_details != null)
         @php
-            $custom_css = $business_card_details->custom_css;
-            $custom_js = $business_card_details->custom_js;
+            $custom_css = trim($business_card_details->custom_css ?? '');
+            $custom_js = trim($business_card_details->custom_js ?? '');
 
-            // Ensure <style> tags for custom CSS
-            if (strpos($custom_css, '<style>') === false && strpos($custom_css, '</style>') === false) {
-                $custom_css = "<style>" . $custom_css . "</style>";
+            /*
+            |--------------------------------------------------------------------------
+            | Custom CSS
+            |--------------------------------------------------------------------------
+            */
+
+            if (!empty($custom_css) && stripos($custom_css, '<style') === false) {
+                $custom_css = "<style>{$custom_css}</style>";
             }
 
-            // Ensure <script> tags for custom JS
-            if (strpos($custom_js, '<script>') === false && strpos($custom_js, '</script>') === false) {
-                $custom_js = "<script>" . $custom_js . "</script>";
+            /*
+            |--------------------------------------------------------------------------
+            | Split HTML tags and plain JS
+            |--------------------------------------------------------------------------
+            */
+
+            $include_custom_js = '';
+
+            if (!empty($custom_js)) {
+                // Extract HTML tags like meta, script, iframe, noscript, etc.
+                preg_match_all(
+                '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/@endphp/is',
+        $custom_js,
+        $matches,
+    );
+
+    $html_tags = implode("\n", $matches[0]);
+
+    // Remove extracted HTML tags from original content
+    $plain_js = trim(
+        preg_replace(
+            '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/?>/is',
+            '',
+            $custom_js,
+        ),
+    );
+
+    // Add HTML tags directly
+    $include_custom_js .= $html_tags;
+
+    // Wrap remaining plain JS inside script tag
+    if (!empty($plain_js)) {
+        $include_custom_js .= "\n<script>
+            {
+                $plain_js
             }
-        @endphp
+        </script>";
+    }
+}
+?>
 
         {!! $custom_css !!}
-        {!! $custom_js !!}
+        {!! $include_custom_js !!}
 
         {{-- Theme CSS --}}
-        @if(!empty($business_card_details->theme_css))
+        @if (!empty($business_card_details->theme_css))
             <style>
                 {!! $business_card_details->theme_css !!}
             </style>
         @endif
 
         {{-- Theme JS --}}
-        @if(!empty($business_card_details->theme_js))
+        @if (!empty($business_card_details->theme_js))
             <script>
                 {!! $business_card_details->theme_js !!}
             </script>
@@ -111,13 +153,17 @@
                         <div class="w-full lg:w-1/2 bg-white p-4">
 
                             {{-- Language Switcher --}}
-                            @if ($business_card_details->is_enable_language_switcher == 1 && is_array(config('app.languages')) && count(config('app.languages')) > 1)
+                            @if (
+                                $business_card_details->is_enable_language_switcher == 1 &&
+                                    is_array(config('app.languages')) &&
+                                    count(config('app.languages')) > 1)
                             @include('templates.includes.language-switcher')
                             @endif
                             
                             <!-- Profile -->
                             <div class="relative {{ $business_card_details->cover_type == 'photo' ? 'py-2' : '' }}">
-                                <div class="relative {{ $business_card_details->cover_type == 'photo' ? '' : '' }} rounded overflow-hidden">
+                                <div
+                                    class="relative {{ $business_card_details->cover_type == 'photo' ? '' : '' }} rounded overflow-hidden">
                                     @if ($business_card_details->cover_type == 'photo')
                                         <div class="relative">
                                             <img class="w-full object-contain"
@@ -330,7 +376,8 @@
                                         <div class="swiper-wrapper mb-3">
                                             @foreach ($service_details as $service_detail)
                                                 <div class="swiper-slide pb-4">
-                                                    <div class="flex flex-col justify-between rounded-lg overflow-hidden h-350">
+                                                    <div
+                                                        class="flex flex-col justify-between rounded-lg overflow-hidden h-350">
                                                         <!-- Image -->
                                                         <img src="{{ url($service_detail->service_image) }}"
                                                             alt="{{ $service_detail->service_name }}"
@@ -339,7 +386,8 @@
                                                         <!-- Content -->
                                                         <div class="flex-1 mt-4">
                                                             {{-- Service Name --}}
-                                                            <h3 class="text-xl font-semibold mb-1 service-name text-left">
+                                                            <h3
+                                                                class="text-xl font-semibold mb-1 service-name text-left">
                                                                 {{ $service_detail->service_name }}
                                                             </h3>
                                                             {{-- Service Description --}}
@@ -385,7 +433,8 @@
                                             <div class="swiper-wrapper mb-3">
                                                 @foreach ($product_details as $product_detail)
                                                     <div class="swiper-slide pb-4">
-                                                        <div class="flex flex-col rounded-lg overflow-hidden h-400 p-2">
+                                                        <div
+                                                            class="flex flex-col rounded-lg overflow-hidden h-400 p-2">
                                                             <!-- Product Image -->
                                                             <img src="{{ url($product_detail->product_image) }}"
                                                                 alt="{{ $product_detail->product_name }}"
@@ -396,18 +445,23 @@
                                                                 <h3 class="text-xl font-semibold mb-1 product-name">
                                                                     {{ $product_detail->product_name }}
                                                                 </h3>
-                                                                <p class="text-sm text-gray-500 mb-1 product-desc" title="{{ $product_detail->product_description }}">
+                                                                <p class="text-sm text-gray-500 mb-1 product-desc"
+                                                                    title="{{ $product_detail->product_description }}">
                                                                     {{ strlen($product_detail->product_description) > 140
                                                                         ? substr($product_detail->product_description, 0, 140) . '...'
                                                                         : $product_detail->product_description }}
                                                                 </p>
 
                                                                 @if ($product_detail->sales_price != 0)
-                                                                <p class="text-sm text-gray-700 font-bold text-left">
-                                                                    <span id="{{ $product_detail->product_id }}_currency"></span>
-                                                                    <span id="{{ $product_detail->product_id }}_price">{{ formatCurrencyVcard($product_detail->sales_price, $product_detail->currency) }}</span>
+                                                                    <p
+                                                                        class="text-sm text-gray-700 font-bold text-left">
+                                                                        <span
+                                                                            id="{{ $product_detail->product_id }}_currency"></span>
+                                                                        <span
+                                                                            id="{{ $product_detail->product_id }}_price">{{ formatCurrencyVcard($product_detail->sales_price, $product_detail->currency) }}</span>
                                                                     @if ($product_detail->sales_price != $product_detail->regular_price)
-                                                                        <span class="text-xs line-through text-gray-500 font-bold ml-1">
+                                                                            <span
+                                                                                class="text-xs line-through text-gray-500 font-bold ml-1">
                                                                             {{ formatCurrencyVcard($product_detail->regular_price, $product_detail->currency) }}
                                                                         </span>
                                                                     @endif
@@ -431,6 +485,49 @@
                                             </div>
 
                                             <!-- Swiper navigation -->
+                                            <div class="swiper-button-next"></div>
+                                            <div class="swiper-button-prev"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+
+                            <!-- Gallery -->
+                            @if (count($galleries_details) > 0 && !$galleries_details->isEmpty())
+                                <div class="py-5">
+                                    <h2 class="w-full md:w-auto mt-2 mb-2 md:mb-0 text-2xl font-bold">
+                                        {{ __($galleries_details[0]->title) }}
+                                    </h2>
+                                    <div class="flex flex-wrap -mx-3 px-3">
+                                        {{-- Swiper container --}}
+                                        <div class="swiper products">
+                                            <div class="swiper-wrapper mb-3">
+                                                @foreach ($galleries_details as $galleries_detail)
+                                                    <div class="swiper-slide pb-4">
+                                                        <div
+                                                            class="flex flex-col rounded-lg overflow-hidden h-400 p-2">
+                                                            <!-- Image -->
+                                                            <img src="{{ url($galleries_detail->gallery_image) }}"
+                                                                alt="{{ $galleries_detail->caption }}"
+                                                                class="w-full h-48 object-cover rounded" />
+
+                                                            <!-- Content -->
+                                                            <div class="flex-1 mt-4">
+                                                                <h3 class="text-xl font-semibold mb-1 product-name">
+                                                                    {{ $galleries_detail->caption }}</h3>
+                                                                <p class="text-sm text-gray-500 mb-1 product-desc"
+                                                                    title="{{ $galleries_detail->caption }}">
+                                                                    {{ strlen($galleries_detail->caption) > 140
+                                                                        ? substr($galleries_detail->caption, 0, 140) . '...'
+                                                                        : $galleries_detail->caption }}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>                                                    
+                                                @endforeach
+                                            </div>
+
+                                            <!-- If we need pagination -->
                                             <div class="swiper-button-next"></div>
                                             <div class="swiper-button-prev"></div>
                                         </div>
@@ -509,7 +606,9 @@
                                                                     <div class="pt-6 px-2">
                                                                         <div
                                                                             class="flex mb-4 justify-between items-center">
-                                                                            <iframe referrerpolicy="strict-origin-when-cross-origin" width="600" height="315"
+                                                                            <iframe
+                                                                                referrerpolicy="strict-origin-when-cross-origin"
+                                                                                width="600" height="315"
                                                                                 src="https://www.youtube.com/embed/{!! $feature->content !!}"
                                                                                 title="{{ $feature->label }}"
                                                                                 frameborder="0"
@@ -552,7 +651,8 @@
                                         <div class="-mx-2">
                                             <div class="pt-6 px-2">
                                                 <div class="flex mb-4 justify-between items-center">
-                                                    <iframe referrerpolicy="strict-origin-when-cross-origin" class="rounded-xl" src="{{ $iframe->content }}"
+                                                    <iframe referrerpolicy="strict-origin-when-cross-origin"
+                                                        class="rounded-xl" src="{{ $iframe->content }}"
                                                         style="width: 100%;" height="350" allowfullscreen=""
                                                         loading="lazy"
                                                         referrerpolicy="no-referrer-when-downgrade"></iframe>
@@ -595,7 +695,8 @@
                                                             @foreach (explode('.', $payment->content) as $sentence)
                                                                 @if (trim($sentence))
                                                                     <!-- Make sure the sentence is not empty -->
-                                                                    <p class="whitespace-break-spaces text-sm">{{ trim($sentence) }}</p>
+                                                                    <p class="whitespace-break-spaces text-sm">
+                                                                        {{ trim($sentence) }}</p>
                                                                 @endif
                                                             @endforeach
                                                         </p>
@@ -614,12 +715,13 @@
                                                     </div>
                                                 @endif
 
-                                                @if($payment->type == 'image')
+                                                @if ($payment->type == 'image')
                                                     <div class="w-full mx-5 my-6">
                                                         {{-- Image --}}
                                                         <img class="w-full h-64 object-cover rounded-lg mb-2"
                                                             src="{{ url($payment->content) }}"
-                                                            alt="{{ $payment->label }}" style="width: 100%; height: 54vh; object-fit: cover;" />
+                                                            alt="{{ $payment->label }}"
+                                                            style="width: 100%; height: 54vh; object-fit: cover;" />
                                                         <p class="font-semibold break-word text-lg text-center">
                                                             {{ $payment->label }}</p>
                                                     </div>
@@ -636,7 +738,12 @@
 
                             {{-- Show appointment slots in the calendar --}}
                             @if ($appointmentEnabled == true && isset($plan_details['appointment']) == 1)
-                                @include('templates.includes.basic-appointment', ['section_bg' => 'white', 'bg_color' => 'white', 'btn_color' => 'gray-500', 'text_color' => 'black'])
+                                @include('templates.includes.basic-appointment', [
+                                    'section_bg' => 'white',
+                                    'bg_color' => 'white',
+                                    'btn_color' => 'gray-500',
+                                    'text_color' => 'black',
+                                ])
                             @endif
 
                             <!-- Business Hours -->
@@ -873,7 +980,8 @@
                                             <div class="-mx-2">
                                                 <div class="pt-6 px-2">
                                                     <div class="flex mb-4 justify-between items-center">
-                                                        <iframe referrerpolicy="strict-origin-when-cross-origin" class="rounded-xl"
+                                                        <iframe referrerpolicy="strict-origin-when-cross-origin"
+                                                            class="rounded-xl"
                                                             src="https://www.google.com/maps/embed?{!! $feature->content !!}"
                                                             style="width: 100%;" height="350" style="border:0;"
                                                             allowfullscreen="" loading="lazy"
@@ -897,7 +1005,8 @@
                                         'text_color' => 'text-gray-700',
                                         'head_style' => 'w-full md:w-auto mt-2 mb-2 md:mb-0 text-2xl font-bold',
                                         'input_style' => 'w-full p-4 text-xs bg-gray-100 outline-none rounded',
-                                        'btn_style' => 'mb-2 w-full py-4 bg-gray-500 hover:bg-gray-600 text-sm rounded font-bold text-gray-50 transition duration-200',
+                                        'btn_style' =>
+                                            'mb-2 w-full py-4 bg-gray-500 hover:bg-gray-600 text-sm rounded font-bold text-gray-50 transition duration-200',
                                     ])
                                 @endif
                             @endif
@@ -905,7 +1014,9 @@
 
                             <!-- Start Google Wallet section -->
                             @if (is_dir(base_path('plugins/GoogleWallet')))
-                                @if (isset($plan_details['google_wallet']) && $plan_details['google_wallet'] == 1 && $business_card_details->is_google_wallet_hidden == 0)
+                                @if (isset($plan_details['google_wallet']) &&
+                                        $plan_details['google_wallet'] == 1 &&
+                                        $business_card_details->is_google_wallet_hidden == 0)
                                     <div class="py-5">
                                         <div class="mb-5">
                                             <h2 class="w-full md:w-auto text-2xl font-bold">
@@ -923,8 +1034,11 @@
                                             {{-- Google Wallet Button --}}
                                             @if ($google_wallet_details->wallet_link != null)
                                                 <div class="flex justify-center mt-6">                                        
-                                                    <a href="{{ $google_wallet_details->wallet_link }}" class="w-full lg:w-1/2" target="_blank" rel="noopener noreferrer">
-                                                        <img src="{{ url()->to('/') . '/img/google-wallet-btn.png'}}" alt="" class="w-full object-cover">
+                                                    <a href="{{ $google_wallet_details->wallet_link }}"
+                                                        class="w-full lg:w-1/2" target="_blank"
+                                                        rel="noopener noreferrer">
+                                                        <img src="{{ url()->to('/') . '/img/google-wallet-btn.png' }}"
+                                                            alt="" class="w-full object-cover">
                                                     </a>
                                                 </div>
                                             @endif                                    
@@ -998,7 +1112,9 @@
                                                     </div>
                                                     
                                                     {{-- ReCaptcha --}}
-                                                    @include('templates.includes.recaptcha', ['recaptchaId' => 'recaptcha-one'])
+                                                    @include('templates.includes.recaptcha', [
+                                                        'recaptchaId' => 'recaptcha-one',
+                                                    ])
 
                                                     <div class="text-center">
                                                         <button
@@ -1208,7 +1324,7 @@
         {{-- Check Newsletter --}}
         @if (!empty($business_card_details->is_newsletter_pop_active) && $business_card_details->is_newsletter_pop_active == 1)
             @include('templates.includes.newsletter_modal', [
-                'primary_color' => 'gray'
+                'primary_color' => 'gray',
             ])
         @endif
     @endif
@@ -1218,7 +1334,7 @@
         {{-- Check Information Popup --}}
         @if (!empty($business_card_details->is_info_pop_active) && $business_card_details->is_info_pop_active == 1)
             @include('templates.includes.information_popup_modal', [
-                'primary_color' => 'gray'
+                'primary_color' => 'gray',
             ])
         @endif
     @endif
@@ -1238,7 +1354,9 @@
 
                         <!-- Modal Content -->
                         <div class="mt-6 space-y-4">
-                            <form action="{{ config('app.url') }}/check-password/{{ $business_card_details->card_id }}" method="post">
+                            <form
+                                action="{{ config('app.url') }}/check-password/{{ $business_card_details->card_id }}"
+                                method="post">
                                 @csrf
                                 <p class="text-lg text-gray-600">{{ __('Enter your vcard Password') }}</p>
                                 <div class="flex">
@@ -1288,7 +1406,37 @@
     <script src="{{ url('js/flatpickr.min.js') }}"></script>
 
     {{-- Flatpickr JS --}}
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/{{ app()->getLocale() }}.js"></script>
+    @php
+        $flatpickrLocales = [
+            'pt_BR' => 'pt',
+            'zh' => 'zh',
+            'ar' => 'ar',
+            'bg' => 'bg',
+            'hr' => 'hr',
+            'nl' => 'nl',
+            'fr' => 'fr',
+            'de' => 'de',
+            'he' => 'he',
+            'hu' => 'hu',
+            'id' => 'id',
+            'it' => 'it',
+            'ja' => 'ja',
+            'lt' => 'lt',
+            'ms' => 'ms',
+            'pl' => 'pl',
+            'ro' => 'ro',
+            'ru' => 'ru',
+            'es' => 'es',
+            'sv' => 'sv',
+            'th' => 'th',
+            'tr' => 'tr',
+            'vi' => 'vn',
+        ];
+
+        $locale = $flatpickrLocales[app()->getLocale()] ?? 'en';
+    @endphp
+
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/{{ $locale }}.js"></script>
     @php
         if (isset($service_booking_details) && $service_booking_details->service_booking == 1) {
             $service_booking_available_days = json_decode($service_booking_details->service_booking_available_days);
@@ -1321,7 +1469,7 @@
             flatpickr("#appointment-date", {
                 dateFormat: "Y-m-d",
                 minDate: "today",
-                locale: "{{ app()->getLocale() }}",
+                locale: "{{ $locale }}",
                 disable: [
                     function(date) {
                         const day = date.toLocaleString("en-us", {
@@ -1343,7 +1491,7 @@
             flatpickr("#service_start_date", {
                 dateFormat: "Y-m-d",
                 minDate: "today",
-                locale: "{{ app()->getLocale() }}",
+                locale: "{{ $locale }}",
                 disable: [
                     function(date) {
                         return !allowedDays.includes(date.getDay());
@@ -1354,7 +1502,7 @@
             flatpickr("#service_end_date", {
                 dateFormat: "Y-m-d",
                 minDate: "today",
-                locale: "{{ app()->getLocale() }}",
+                locale: "{{ $locale }}",
                 disable: [
                     function(date) {
                         return !allowedDays.includes(date.getDay());
@@ -1431,7 +1579,10 @@
 
                 if (data.success) {
                     // Reset form
-                    ['customer_name', 'customer_email', 'customer_phone', 'no_of_persons', 'customer_address', 'customer_notes', 'service_start_date', 'service_start_time', 'service_end_date', 'service_end_time']
+                        ['customer_name', 'customer_email', 'customer_phone', 'no_of_persons', 'customer_address',
+                            'customer_notes', 'service_start_date', 'service_start_time', 'service_end_date',
+                            'service_end_time'
+                        ]
                     .forEach(id => {
                         document.getElementById(id).value = '';
                     });
@@ -1528,7 +1679,7 @@
             };
 
             // Conditionally add reCAPTCHA response
-            @if(env('RECAPTCHA_ENABLE') == 'on')
+            @if (env('RECAPTCHA_ENABLE') == 'on')
                 formData.g_recaptcha_response = grecaptcha.getResponse(window.recaptchaWidgets['recaptcha-two']);
             @endif
 
@@ -1596,8 +1747,7 @@
     </script>
 
     <script>
-        function generateOption(selectedDate, day) 
-        {
+        function generateOption(selectedDate, day) {
             "use strict";
             
             fetch('/get-available-time-slots', {
@@ -1616,12 +1766,14 @@
                 // Check response
                 if (data.success == true) {
                     // Set available time slots in select option
-                    document.getElementById('time-slot-select').innerHTML = `<option value="">{{ __('Select a time slot') }}`;
+                        document.getElementById('time-slot-select').innerHTML =
+                            `<option value="">{{ __('Select a time slot') }}`;
                     // Available time slots in JSON.parse(data.available_time_slots)
                     var available_time_slots = JSON.parse(data.available_time_slots);
                     
                     available_time_slots.forEach(time_slot => {
-                        document.getElementById('time-slot-select').innerHTML += `<option value="${time_slot}">${time_slot}</option>`;
+                            document.getElementById('time-slot-select').innerHTML +=
+                                `<option value="${time_slot}">${time_slot}</option>`;
                     });
 
                     // Set price

@@ -17,13 +17,13 @@
 
                 <div class="form-group {{ $errors->has('purchase_code') ? ' has-error ' : '' }}">
                     <div class="mb-3">
-                        <label class="form-label"> {{ __('Purchase code') }}</label>
+                        <label class="form-label"> {{ __('License key') }}</label>
                         <input type="text" class="form-control" name="purchase_code" id="purchase_code"
                             value="{{ old('purchase_code') }}" onkeypress="return /[0-9a-zA-Z-]/i.test(event.key)"
                             placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off">
                         <small class="form-hint">
                             <p><a href="https://help.market.envato.com/hc/en-us/articles/202822600-Where-Is-My-Purchase-Code-"
-                                    target="_blank">{{ __('Where is my purchase code?') }}</a>
+                                    target="_blank">{{ __('Where is my license key?') }}</a>
                             </p>
                         </small>
                     </div>

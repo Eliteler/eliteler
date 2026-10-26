@@ -1,59 +1,7 @@
 <?php
 
 return [
-
-    /*
-     *
-     * Shared translations.
-     *
-     */
-    'title' => 'Kurulum',
-    'next' => 'Sonraki Adım',
     'back' => 'Önceki Adım',
-    'finish' => 'Kur',
-    'forms' => [
-        'errorTitle' => 'Hatalar tespit edildi :',
-    ],
-
-    /*
-     *
-     * Home page translations.
-     *
-     */
-    'welcome' => [
-        'templateTitle' => 'Kurulum\'a Hoşgeldiniz',
-        'title'   => 'Kurulum',
-        'message' => 'Kolay Kurulum Sihirbazı.',
-        'next'    => 'Gereksinimleri Denetle',
-    ],
-
-    /*
-     *
-     * Requirements page translations.
-     *
-     */
-    'requirements' => [
-        'templateTitle' => 'Adım 1 | Sunucu Gereksinimleri',
-        'title' => 'Sunucu Gereksinimleri',
-        'next'    => 'İzinleri Kontrol Et',
-    ],
-
-    /*
-     *
-     * Permissions page translations.
-     *
-     */
-    'permissions' => [
-        'templateTitle' => 'Adım 2 | İzinler',
-        'title' => 'İzinler',
-        'next' => 'Ortam ayarlarına geç',
-    ],
-
-    /*
-     *
-     * Environment page translations.
-     *
-     */
     'environment' => [
         'menu' => [
             'templateTitle' => 'Adım 3 | Ortam Ayarları',
@@ -125,7 +73,6 @@ return [
                     'redis_host' => 'Redis Host',
                     'redis_password' => 'Redis Şifre',
                     'redis_port' => 'Redis Port',
-
                     'mail_label' => 'Mail',
                     'mail_driver_label' => 'Posta Sürücüsü',
                     'mail_driver_placeholder' => 'Posta Sürücüsü',
@@ -139,7 +86,6 @@ return [
                     'mail_password_placeholder' => 'Posta Parolası',
                     'mail_encryption_label' => 'Posta Güvenlik Türü',
                     'mail_encryption_placeholder' => 'Posta Güvenlik Türü',
-
                     'pusher_label' => 'Pusher',
                     'pusher_app_id_label' => 'İtici Uygulama Kimliği',
                     'pusher_app_id_palceholder' => 'İtici Uygulama Kimliği',
@@ -153,6 +99,7 @@ return [
                     'setup_application' => 'Uygulama Ayarları',
                     'install' => 'Yükle',
                 ],
+                'db_connection_failed' => 'Veritabanına bağlanılamadı.',
             ],
         ],
         'classic' => [
@@ -165,23 +112,6 @@ return [
         'success' => '.env dosyası ayarları kaydedildi.',
         'errors' => '.env dosyasını kaydedemiyoruz, lütfen el ile oluşturun.',
     ],
-
-    'install' => 'Kurulum',
-
-    /*
-     *
-     * Installed Log translations.
-     *
-     */
-    'installed' => [
-        'success_log_message' => 'Uygulama başarıyla KURULDU ',
-    ],
-
-    /*
-     *
-     * Final page translations.
-     *
-     */
     'final' => [
         'title' => 'Kurulum Bitti',
         'templateTitle' => 'Kurulum Bitti',
@@ -192,54 +122,50 @@ return [
         'env' => 'Son .env Dosyası:',
         'exit' => 'Çıkmak için burayı tıklayın',
     ],
-
-    /*
-     *
-     * Update specific translations
-     *
-     */
+    'finish' => 'Kur',
+    'forms' => [
+        'errorTitle' => 'Hatalar tespit edildi :',
+    ],
+    'install' => 'Kurulum',
+    'installed' => [
+        'success_log_message' => 'Uygulama başarıyla KURULDU ',
+    ],
+    'next' => 'Sonraki Adım',
+    'permissions' => [
+        'templateTitle' => 'Adım 2 | İzinler',
+        'title' => 'İzinler',
+        'next' => 'Ortam ayarlarına geç',
+    ],
+    'requirements' => [
+        'templateTitle' => 'Adım 1 | Sunucu Gereksinimleri',
+        'title' => 'Sunucu Gereksinimleri',
+        'next' => 'İzinleri Kontrol Et',
+    ],
+    'title' => 'Kurulum',
     'updater' => [
-        /*
-         *
-         * Shared translations.
-         *
-         */
         'title' => 'Güncelleyici',
-
-        /*
-         *
-         * Welcome page translations for update feature.
-         *
-         */
         'welcome' => [
             'title' => 'Güncelleyiciye Hoş Geldiniz',
             'message' => 'Güncelleme sihirbazına hoş geldiniz.',
         ],
-
-        /*
-         *
-         * Welcome page translations for update feature.
-         *
-         */
         'overview' => [
-            'title'   => 'Genel bakış',
+            'title' => 'Genel bakış',
             'message' => '1 güncelleme var.| :number güncellemeleri var.',
             'install_updates' => 'Güncellemeyi yükle',
         ],
-
-        /*
-         *
-         * Final page translations.
-         *
-         */
         'final' => [
             'title' => 'Tamamlandı',
             'finished' => 'Uygulamanın veritabanını başarıyla güncelleştirildi.',
             'exit' => 'Çıkmak ve uygulamayı başlatmak için buraya tıklayın',
         ],
-
         'log' => [
             'success_message' => 'Uygulama GÜNCELLENDİ  ',
         ],
+    ],
+    'welcome' => [
+        'templateTitle' => 'Kurulum\'a Hoşgeldiniz',
+        'title' => 'Kurulum',
+        'message' => 'Kolay Kurulum Sihirbazı.',
+        'next' => 'Gereksinimleri Denetle',
     ],
 ];

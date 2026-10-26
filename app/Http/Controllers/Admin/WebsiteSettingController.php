@@ -12,13 +12,14 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Helpers\StorageHelper;
+use App\Http\Controllers\Controller;
 use App\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Mews\Purifier\Facades\Purifier;
-use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Mews\Purifier\Facades\Purifier;
 
 class WebsiteSettingController extends Controller
 {
@@ -41,19 +42,19 @@ class WebsiteSettingController extends Controller
     // Update Website Setting
     public function index(Request $request)
     {
-        Setting::where('id', '1')->update([
-            'site_name' => $request->site_name
-        ]);
-
         // App name
         $appName = str_replace('"', "", $request->app_name);
         $appName = str_replace("'", "", $appName);
+
+        Setting::where('id', '1')->update([
+            'site_name' => $appName
+        ]);
 
         // Set new values using putenv
         $this->updateEnvFile('APP_NAME', '"' . $appName . '"');
 
         DB::table('config')->where('config_key', 'site_name')->update([
-            'config_value' => $request->site_name
+            'config_value' => $appName
         ]);
 
         DB::table('config')->where('config_key', 'app_theme')->update([
@@ -71,9 +72,8 @@ class WebsiteSettingController extends Controller
             'custom_scripts' => $request->custom_js, // Trusted field (script)
         ]);
 
-        // Check if logo file is uploaded
+        // 1. Site Logo
         if ($request->hasFile('site_logo')) {
-            // Validate image
             $validator = Validator::make($request->all(), [
                 'site_logo' => 'mimes:jpeg,png,jpg,gif,svg|max:' . env('SIZE_LIMIT'),
             ]);
@@ -82,48 +82,83 @@ class WebsiteSettingController extends Controller
                 return back()->with('failed', $validator->messages()->first())->withInput();
             }
 
-            // Generate filename and path
-            $file = $request->file('site_logo');
-            $fileName = uniqid('logo_') . '.' . $file->getClientOriginalExtension();
-            $path = 'images/web/elements/' . $fileName;
+            // Delete old site logo from storage
+            $setting = Setting::find(1);
+            if ($setting) {
+                StorageHelper::deleteFile($setting->site_logo);
+            }
 
-            // Store the file in public disk
-            Storage::disk('public')->put($path, file_get_contents($file));
+            // Upload new logo and get relative path
+            $siteLogoUrl = StorageHelper::uploadImage($request->file('site_logo'), 'images/web/elements');
 
-            // Public URL to access the logo (if needed)
-            $siteLogoUrl = 'storage/' . $path;
-
-            // Update settings
+            // Update settings in DB
             Setting::where('id', 1)->update([
                 'google_analytics_id' => $request->google_analytics_id,
-                'site_name' => $request->site_name,
+                'site_name' => $appName,
                 'site_logo' => $siteLogoUrl,
                 'tawk_chat_bot_key' => $request->tawk_chat_bot_key,
             ]);
         }
 
+        // 2. Site Logo Light (Fixed name 'logo-light')
         if ($request->hasFile('site_logo_light')) {
             $validator = Validator::make($request->all(), [
-                'site_logo_light' => 'mimes:jpeg,png,jpg,gif,svg|max:' . env('SIZE_LIMIT'),
+                'site_logo_light' => [
+                    'required',
+                    'file',
+                    'mimes:jpeg,jpg,png,gif,svg',
+                    'mimetypes:image/jpeg,image/png,image/gif,image/svg+xml',
+                    'max:' . env('SIZE_LIMIT'),
+                ],
             ]);
 
             if ($validator->fails()) {
-                return back()->with('failed', $validator->messages()->first())->withInput();
+                return back()
+                    ->with('failed', $validator->messages()->first())
+                    ->withInput();
             }
 
-            // Store as a fixed filename, overwrite if exists
-            $site_logo_light = '/img/logo-light.png';
-            $request->site_logo_light->move(public_path('img'), $site_logo_light);
+            $file = $request->file('site_logo_light');
 
-            // Update only the other settings (logo already uploaded)
+            // Verify uploaded file
+            if (!$file->isValid()) {
+                return back()
+                    ->with('failed', 'Invalid image file.')
+                    ->withInput();
+            }
+
+            // Get and verify extension
+            $extension = strtolower($file->getClientOriginalExtension());
+            $allowedExtensions = ['jpeg', 'jpg', 'png', 'gif', 'svg'];
+
+            if (!in_array($extension, $allowedExtensions, true)) {
+                return back()
+                    ->with('failed', 'Invalid image format.')
+                    ->withInput();
+            }
+
+            // Delete existing logo-light files
+            foreach ($allowedExtensions as $ext) {
+                $oldFile = public_path('img/logo-light.' . $ext);
+
+                if (file_exists($oldFile)) {
+                    unlink($oldFile);
+                }
+            }
+
+            // Upload to public/img with fixed filename
+            $filename = 'logo-light.' . $extension;
+            $file->move(public_path('img'), $filename);
+
+            // Update settings in DB
             Setting::where('id', 1)->update([
                 'google_analytics_id' => $request->google_analytics_id,
-                'site_name' => $request->site_name,
+                'site_name' => $appName,
                 'tawk_chat_bot_key' => $request->tawk_chat_bot_key,
             ]);
         }
 
-        // === Favicon ===
+        // 3. Favicon
         if ($request->hasFile('favi_icon')) {
             $validator = Validator::make($request->all(), [
                 'favi_icon' => 'mimes:jpeg,png,jpg,gif,svg|max:' . env("SIZE_LIMIT"),
@@ -133,17 +168,25 @@ class WebsiteSettingController extends Controller
                 return back()->with('failed', $validator->messages()->first())->withInput();
             }
 
-            $favi_icon = $this->uploadImage($request->file('favi_icon'));
+            // Delete old favicon
+            $setting = Setting::find(1);
+            if ($setting) {
+                StorageHelper::deleteFile($setting->favicon);
+            }
 
+            // Upload new favicon using StorageHelper
+            $favi_icon = StorageHelper::uploadImage($request->file('favi_icon'), 'images/web/elements');
+
+            // Update settings in DB
             Setting::where('id', 1)->update([
                 'google_analytics_id' => $request->google_analytics_id,
-                'site_name' => $request->site_name,
+                'site_name' => $appName,
                 'favicon' => $favi_icon,
                 'tawk_chat_bot_key' => $request->tawk_chat_bot_key,
             ]);
         }
 
-        // === Primary Image ===
+        // 4. Primary Image
         if ($request->hasFile('primary_image')) {
             $validator = Validator::make($request->all(), [
                 'primary_image' => 'mimes:jpeg,png,jpg,gif,webp,svg|max:' . env("SIZE_LIMIT"),
@@ -153,14 +196,20 @@ class WebsiteSettingController extends Controller
                 return back()->with('failed', $validator->messages()->first())->withInput();
             }
 
-            $primary_image = $this->uploadImage($request->file('primary_image'));
+            // Delete old primary image
+            $oldPrimaryImage = DB::table('config')->where('config_key', 'primary_image')->value('config_value');
+            StorageHelper::deleteFile($oldPrimaryImage);
 
+            // Upload new primary image
+            $primary_image = StorageHelper::uploadImage($request->file('primary_image'), 'images/web/elements');
+
+            // Update config in DB
             DB::table('config')->where('config_key', 'primary_image')->update([
                 'config_value' => $primary_image,
             ]);
         }
 
-        // === Secondary Image ===
+        // 5. Secondary Image
         if ($request->hasFile('secondary_image')) {
             $validator = Validator::make($request->all(), [
                 'secondary_image' => 'mimes:jpeg,png,jpg,gif,webp,svg|max:' . env("SIZE_LIMIT"),
@@ -170,8 +219,14 @@ class WebsiteSettingController extends Controller
                 return back()->with('failed', $validator->messages()->first())->withInput();
             }
 
-            $secondary_image = $this->uploadImage($request->file('secondary_image'));
+            // Delete old secondary image
+            $oldSecondaryImage = DB::table('config')->where('config_key', 'secondary_image')->value('config_value');
+            StorageHelper::deleteFile($oldSecondaryImage);
 
+            // Upload new secondary image
+            $secondary_image = StorageHelper::uploadImage($request->file('secondary_image'), 'images/web/elements');
+
+            // Update config in DB
             DB::table('config')->where('config_key', 'secondary_image')->update([
                 'config_value' => $secondary_image,
             ]);
@@ -217,9 +272,7 @@ class WebsiteSettingController extends Controller
     // Helper function to handle file uploads
     function uploadImage($file, $folder = 'images/web/elements')
     {
-        $filename = uniqid() . '.' . $file->getClientOriginalExtension();
-        $path = $folder . '/' . $filename;
-        Storage::disk('public')->put($path, file_get_contents($file));
-        return 'storage/' . $path; // return public URL path
+        // Upload file and return relative path using StorageHelper
+        return StorageHelper::uploadImage($file, $folder);
     }
 }

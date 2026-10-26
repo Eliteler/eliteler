@@ -2,29 +2,40 @@
 
 {{-- Custom CSS --}}
 @section('css')
-<style>
-    @media (max-width: 768px) {
-        .table-responsive {
-            overflow: initial;
-            -webkit-overflow-scrolling: touch;
+    <style>
+        .ts-control>input {
+            display: contents !important;
         }
-    }
-</style>
+    </style>
 @endsection
 
 @section('content')
     <div class="page-wrapper">
-        <!-- Page title -->
+        <!-- Page title header -->
         <div class="page-header d-print-none">
             <div class="container-fluid">
-                <div class="row g-2 align-items-center">
+                <div class="row align-items-center">
+                    <!-- Breadcrumbs -->
+                    <div class="mb-1 ms-0">
+                        <ol class="breadcrumb" aria-label="breadcrumbs">
+                            <li class="breadcrumb-item">
+                                <a href="{{ route('user.dashboard') }}" class="text-secondary text-decoration-none">
+                                    {{ __('Dashboard') }}
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">
+                                <a href="#">{{ __('My Orders') }}</a>
+                            </li>
+                        </ol>
+                    </div>
                     <div class="col">
-                        <div class="page-pretitle">
-                            {{ __('Overview') }}
-                        </div>
                         <h2 class="page-title">
                             {{ __('My Orders') }}
                         </h2>
+                        <!-- Added helper subtitle under page heading -->
+                        <div class="text-muted mt-1">
+                            {{ __('View and manage your registered NFC card orders and statuses.') }}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -44,7 +55,7 @@
                     </div>
                 @endif
 
-                {{-- Failed --}}
+                {{-- Failed alert --}}
                 @if (Session::has('failed'))
                     <div class="alert alert-important alert-danger alert-dismissible mb-2" role="alert">
                         <div class="d-flex">
@@ -58,9 +69,12 @@
 
                 <div class="row row-deck row-cards">
                     <div class="col-sm-12 col-lg-12">
-                        <div class="card card-table">
-                            <div class="table-responsive">
-                                <table class="table table-vcenter" id="nfc-card-order-table">
+                        <!-- Upgraded to Borderless Shadowed Card Wrapper -->
+                        <div class="card border-0 shadow-sm">
+                            <div class="table-responsive px-3 pt-2 py-2">
+                                <!-- Table renders normally on desktop and transforms automatically via CSS on mobile -->
+                                <table class="table card-table table-vcenter text-nowrap responsive-card-table"
+                                    id="nfc-card-order-table">
                                     <thead>
                                         <tr>
                                             <th>{{ __('#') }}</th>
@@ -72,16 +86,40 @@
                                             <th>{{ __('Total') }}</th>
                                             <th>{{ __('Payment Status') }}</th>
                                             <th>{{ __('Delivery Status') }}</th>
-                                            <th></th>
+                                            <th class="w-1 text-end">{{ __('Actions') }}</th>
                                         </tr>
                                     </thead>
                                 </table>
-                                <div id="nfcOrderCards" class="mobile-cards p-3"></div>
-
-                                <div class="d-flex justify-content-center">
-                                    <div id="nfcOrderPagination" class="pagination-container"></div>
-                                </div>
                             </div>
+
+                            {{-- Custom App-like Mobile Pagination footer --}}
+                            <div id="custom-mobile-pagination"
+                                class="d-flex d-md-none justify-content-between align-items-center px-3 py-3 border-top">
+                                <button id="mobile-prev-btn" class="btn btn-primary btn-sm" type="button">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                        class="icon icon-tabler icon-tabler-chevron-left me-1" width="24" height="24"
+                                        viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                        <path d="M15 6l-6 6l6 6"></path>
+                                    </svg>
+                                    {{ __('Previous') }}
+                                </button>
+
+                                <span id="mobile-page-info" class="text-secondary small font-weight-medium"></span>
+
+                                <button id="mobile-next-btn" class="btn btn-primary btn-sm" type="button">
+                                    {{ __('Next') }}
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                        class="icon icon-tabler icon-tabler-chevron-right ms-1" width="24"
+                                        height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                        fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                        <path d="M9 6l6 6l-6 6"></path>
+                                    </svg>
+                                </button>
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -91,173 +129,191 @@
         <!-- Footer -->
         @include('user.includes.footer')
     </div>
+@endsection
 
-    {{-- Custom scripts --}}
-    @section('scripts')
-        <script type="text/javascript">
-$(document).ready(function() {
+{{-- Custom scripts --}}
+@section('scripts')
+    <script type="text/javascript">
+        "use strict";
 
-    const table = $('#nfc-card-order-table').DataTable({
-        processing: true,
-        serverSide: true,
-        ajax: "{{ route('user.manage.nfc.orders') }}",
-
-        language: {
-            sProcessing: `{{ __('Processing...') }}`,
-            sLengthMenu: `{{ __('Show _MENU_ entries') }}`,
-            sSearch: `{{ __('Search:') }}`,
-            oPaginate: {
-                sNext: `{{ __('Next') }}`,
-                sPrevious: `{{ __('Previous') }}`
-            },
-            sInfo: `{{ __('Showing _START_ to _END_ of _TOTAL_ entries') }}`,
-            sInfoEmpty: `{{ __('Showing 0 to 0 of 0 entries') }}`,
-            sInfoFiltered: `{{ __('(filtered from _MAX_ total entries)') }}`,
-            loadingRecords: `{{ __('Please wait - loading...') }}`,
-            emptyTable: `{{ __('No data available in the table') }}`
-        },
-
-        columns: [
-            { data: 'DT_RowIndex', name: 'DT_RowIndex', searchable: false },
-            { data: 'created_at', name: 'created_at' },
-            { data: 'order_details', name: 'order_details' },
-            { data: 'nfc_card_order_id', name: 'nfc_card_order_id' },
-            { data: 'nfc_card_logo', name: 'nfc_card_logo' },
-            { data: 'nfc_card_name', name: 'nfc_card_name' },
-            { data: 'nfc_card_price', name: 'nfc_card_price' },
-            { data: 'payment_status', name: 'payment_status' },
-            { data: 'delivery_status', name: 'delivery_status' },
-            { data: 'action', name: 'action', searchable: false, orderable: false }
-        ],
-
-        preDrawCallback: function() {
-
-            const width = $(window).width();
-
-            if (width < 768) {
-
-                $('#nfc-card-order-table_wrapper').hide();
-                $('#nfcOrderCards').empty().addClass('placeholder-glow');
-
-                // Horizontal mobile placeholders
-                const placeholderCards = Array(6).fill().map(() => `
-                    <div class="d-flex mb-3 p-3 border rounded-4 shadow-sm">
-
-                        <div class="me-3">
-                            <div class="placeholder mb-2" style="width:60px; height:60px; border-radius:12px;"></div>
-                        </div>
-
-                        <div class="flex-grow-1">
-                            <div class="placeholder col-7 mb-2"></div>
-                            <div class="placeholder col-5 mb-2"></div>
-
-                            <div class="d-flex justify-content-between">
-                                <div class="placeholder col-4"></div>
-                                <div class="placeholder col-3"></div>
-                            </div>
-                        </div>
-
-                    </div>
-                `).join('');
-
-                $('#nfcOrderCards').html(placeholderCards);
-
-            } else {
-
-                $('#nfc-card-order-table_wrapper').addClass('placeholder-glow');
-
-                if ($('#nfc-card-order-table tbody tr').length === 0) {
-                    let rows = '';
-                    for (let i = 0; i < 6; i++) {
-                        rows += '<tr>' +
-                            '<td><div class="placeholder placeholder-xs col-12"></div></td>'.repeat(10) +
-                        '</tr>';
+        $(document).ready(function() {
+            var table = $('#nfc-card-order-table').DataTable({
+                processing: false,
+                serverSide: true,
+                ajax: "{{ route('user.manage.nfc.orders') }}",
+                language: {
+                    "sProcessing": `{{ __('Processing...') }}`,
+                    "sLengthMenu": `{{ __('Show _MENU_ entries') }}`,
+                    "sSearch": ``,
+                    "sSearchPlaceholder": `{{ __('Search') }}`,
+                    "oPaginate": {
+                        "sNext": `{{ __('Next') }}`,
+                        "sPrevious": `{{ __('Previous') }}`
+                    },
+                    "sInfo": `{{ __('Showing _START_ to _END_ of _TOTAL_ entries') }}`,
+                    "sInfoEmpty": `{{ __('Showing 0 to 0 of 0 entries') }}`,
+                    "sInfoFiltered": `{{ __('(filtered from _MAX_ total entries)') }}`,
+                    loadingRecords: `{{ __('Please wait - loading...') }}`,
+                    emptyTable: `{{ __('No data available in the table') }}`
+                },
+                columns: [{
+                        data: 'DT_RowIndex',
+                        name: 'DT_RowIndex',
+                        orderable: false,
+                        searchable: false,
+                        className: 'rc-hide'
+                    },
+                    {
+                        data: 'created_at',
+                        name: 'nfc_card_orders.created_at',
+                        className: 'rc-info-start'
+                    },
+                    {
+                        data: 'order_details',
+                        name: 'nfc_card_orders.order_details',
+                        className: 'rc-info-next'
+                    },
+                    {
+                        data: 'nfc_card_order_id',
+                        name: 'nfc_card_orders.nfc_card_order_id',
+                        className: 'rc-heading'
+                    },
+                    {
+                        data: 'nfc_card_logo',
+                        name: 'nfc_card_orders.nfc_card_logo',
+                        className: 'rc-info-next' // Resolved: Changed from rc-hide to rc-info-next to expose the attachments line on mobile
+                    },
+                    {
+                        data: 'nfc_card_name',
+                        name: 'nfc_card_designs.nfc_card_name',
+                        className: 'rc-heading'
+                    },
+                    {
+                        data: 'nfc_card_price',
+                        name: 'nfc_card_designs.nfc_card_price',
+                        className: 'rc-info-next'
+                    },
+                    {
+                        data: 'payment_status',
+                        name: 'nfc_card_order_transactions.payment_status',
+                        className: 'rc-badge-top-right'
+                    },
+                    {
+                        data: 'delivery_status',
+                        name: 'nfc_card_orders.order_status',
+                        className: 'rc-badge-top-right'
+                    },
+                    {
+                        data: 'action',
+                        name: 'action',
+                        orderable: false,
+                        searchable: false
                     }
-                    $('#nfc-card-order-table tbody').html(rows);
+                ],
+                preDrawCallback: function(settings) {
+                    // Add loading skeleton state to wrapper
+                    $('#nfc-card-order-table_wrapper').addClass('placeholder-glow');
+
+                    // Desktop Placeholder Rows (Adjusted to match 10 columns)
+                    if ($('#nfc-card-order-table tbody tr').length === 0) {
+                        var placeholderRows = '';
+                        for (var i = 0; i < 10; i++) {
+                            placeholderRows += '<tr>' +
+                                '<td class="text-center"><div class="placeholder placeholder-xs col-12"></div></td>'
+                                .repeat(10) + '</tr>';
+                        }
+                        $('#nfc-card-order-table tbody').html(placeholderRows);
+                    }
+                },
+                drawCallback: function(settings) {
+                    // Remove loading placeholder glow indicators
+                    $('#nfc-card-order-table_wrapper').removeClass('placeholder-glow');
+
+                    // Clear desktop dynamic action placeholders
+                    $('#nfc-card-order-table tbody tr').each(function() {
+                        var actionCell = $(this).find('td').eq(
+                            9); // Targeting the 10th column (index 9)
+                        if (actionCell.find('span.placeholder').length > 0) {
+                            actionCell.empty();
+                        }
+                    });
+
+                    // Force empty table message cell to span all 10 columns correctly
+                    $('#nfc-card-order-table tbody tr td.dataTables_empty').attr('colspan', 10);
+
+                    // Generate 'data-label' attributes based on the current <thead> elements
+                    var headers = [];
+                    $('#nfc-card-order-table thead th').each(function() {
+                        headers.push($(this).text().trim());
+                    });
+
+                    $('#nfc-card-order-table tbody tr').each(function() {
+                        $(this).find('td').each(function(index) {
+                            $(this).attr('data-label', headers[index]);
+                        });
+                    });
+
+                    // Update Custom Mobile Pagination Footer State dynamically
+                    const api = this.api();
+                    const pageInfo = api.page.info();
+                    const rowsCount = api.rows({
+                        page: 'current'
+                    }).data().length;
+
+                    // Hide/show dynamic mobile footer based on pages total and active record count
+                    if (pageInfo.pages <= 1 || rowsCount === 0) {
+                        $('#custom-mobile-pagination').addClass('d-none');
+                        $('#custom-mobile-pagination').removeClass('d-flex');
+                    } else {
+                        $('#custom-mobile-pagination').removeClass('d-none');
+                        $('#custom-mobile-pagination').addClass('d-flex');
+                    }
+
+                    const pageInfoText = `{{ __('Page :current of :total') }}`
+                        .replace(':current', pageInfo.page + 1)
+                        .replace(':total', pageInfo.pages || 1);
+                    $('#mobile-page-info').text(pageInfoText);
+
+                    // Toggle disabled state on Previous button
+                    if (pageInfo.page === 0) {
+                        $('#mobile-prev-btn').addClass('disabled').prop('disabled', true);
+                    } else {
+                        $('#mobile-prev-btn').removeClass('disabled').prop('disabled', false);
+                    }
+
+                    // Toggle disabled state on Next button
+                    if (pageInfo.page >= pageInfo.pages - 1) {
+                        $('#mobile-next-btn').addClass('disabled').prop('disabled', true);
+                    } else {
+                        $('#mobile-next-btn').removeClass('disabled').prop('disabled', false);
+                    }
                 }
-            }
-        },
-
-        drawCallback: function() {
-
-            $('#nfc-card-order-table_wrapper').removeClass('placeholder-glow');
-            $('#nfcOrderCards').removeClass('placeholder-glow');
-
-            $('#nfcOrderCards').empty();
-            toggleMobileView();
-        }
-    });
-
-    // Switch to card view on mobile
-    function toggleMobileView() {
-
-        const width = $(window).width();
-
-        if (width < 768) {
-
-            $('#nfc-card-order-table_wrapper').hide();
-            $('#nfcOrderCards').show().empty();
-
-            // ✅ NO DATA CASE
-            if (table.rows({ page: 'current' }).count() === 0) {
-                $('#nfcOrderCards').html(`
-                    <div class="text-center py-6 text-muted">
-                        <h5>{{ __('No orders found') }}</h5>
-                    </div>
-                `);
-                return;
-            }
-
-            table.rows({ page: 'current' }).every(function() {
-                const data = this.data();
-
-                $('#nfcOrderCards').append(`
-                    <div class="d-flex mb-3 p-3 border rounded-4 shadow-sm">
-
-                        <div class="flex-grow-1">
-
-                            <p class="fw-bold mb-1">
-                                ${data.nfc_card_name}
-                            </p>
-
-                            <p class="fw-bold mb-1">
-                                ${data.nfc_card_order_id}
-                            </p>
-
-                            <p class="fw-bold mb-1">
-                                ${data.order_details}
-                            </p>
-
-                            <p class="text-muted fs-5 mb-1">
-                                ${data.created_at}
-                            </p>
-
-                            <div class="d-flex justify-content-between mb-2">
-                                <span>${data.nfc_card_price}</span>
-                                ${data.payment_status}
-                            </div>
-
-                            <div class="d-flex justify-content-between">
-                                ${data.delivery_status}
-                                <div>${data.action}</div>
-                            </div>
-                        </div>
-                    </div>
-                `);
             });
 
-            $('.dataTables_paginate').appendTo('#nfcOrderPagination');
+            // Trigger Skeleton Glow Loader state dynamically when table AJAX transactions are processing (e.g. searching)
+            table.on('processing.dt', function(e, settings, processing) {
+                if (processing) {
+                    $('#nfc-card-order-table_wrapper').addClass('placeholder-glow');
+                    var placeholderRows = '';
+                    for (var i = 0; i < 10; i++) {
+                        placeholderRows += '<tr>' +
+                            '<td class="text-center"><div class="placeholder placeholder-xs col-12"></div></td>'
+                            .repeat(10) + '</tr>';
+                    }
+                    $('#nfc-card-order-table tbody').html(placeholderRows);
+                }
+            });
 
-        } else {
+            // Bind click events on Mobile pagination triggers
+            $('#mobile-prev-btn').on('click', function(e) {
+                e.preventDefault();
+                table.page('previous').draw('page');
+            });
 
-            $('#nfcOrderCards').hide();
-            $('#nfc-card-order-table_wrapper').show();
-        }
-    }
-
-    $(window).resize(toggleMobileView);
-
-});
-</script>
-    @endsection
+            $('#mobile-next-btn').on('click', function(e) {
+                e.preventDefault();
+                table.page('next').draw('page');
+            });
+        });
+    </script>
 @endsection

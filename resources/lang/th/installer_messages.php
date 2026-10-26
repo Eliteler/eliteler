@@ -1,59 +1,7 @@
 <?php
 
 return [
-
-    /*
-     *
-     * Shared translations.
-     *
-     */
-    'title' => 'โปรแกรมติดตั้ง Laravel',
-    'next' => 'ขั้นตอนต่อไป',
     'back' => 'ย้อนกลับ',
-    'finish' => 'ติดตั้ง',
-    'forms' => [
-        'errorTitle' => 'ข้อผิดพลาดต่อไปนี้เกิดขึ้น:',
-    ],
-
-    /*
-     *
-     * Home page translations.
-     *
-     */
-    'welcome' => [
-        'templateTitle' => 'ยินดีต้อนรับ',
-        'title'   => 'โปรแกรมติดตั้ง Laravel',
-        'message' => 'วิซาร์ดการติดตั้งและติดตั้งง่าย',
-        'next'    => 'ตรวจสอบข้อกำหนด',
-    ],
-
-    /*
-     *
-     * Requirements page translations.
-     *
-     */
-    'requirements' => [
-        'templateTitle' => 'ขั้นตอนที่ 1 | ข้อกำหนดของเซิร์ฟเวอร์',
-        'title' => 'ข้อกำหนดของเซิร์ฟเวอร์',
-        'next'    => 'ตรวจสอบการอนุญาต',
-    ],
-
-    /*
-     *
-     * Permissions page translations.
-     *
-     */
-    'permissions' => [
-        'templateTitle' => 'ขั้นตอนที่ 2 | สิทธิ์',
-        'title' => 'สิทธิ์',
-        'next' => 'กำหนดค่าสภาพแวดล้อม',
-    ],
-
-    /*
-     *
-     * Environment page translations.
-     *
-     */
     'environment' => [
         'menu' => [
             'templateTitle' => 'ขั้นตอนที่ 3 | การตั้งค่าสภาพแวดล้อม',
@@ -110,7 +58,6 @@ return [
                 'db_username_placeholder' => 'ชื่อผู้ใช้ฐานข้อมูล',
                 'db_password_label' => 'รหัสผ่านฐานข้อมูล',
                 'db_password_placeholder' => 'รหัสผ่านฐานข้อมูล',
-
                 'app_tabs' => [
                     'more_info' => 'ข้อมูลเพิ่มเติม',
                     'broadcasting_title' => 'Broadcasting, Caching, Session, &amp; Queue',
@@ -126,7 +73,6 @@ return [
                     'redis_host' => 'Redis Host',
                     'redis_password' => 'Redis Password',
                     'redis_port' => 'Redis Port',
-
                     'mail_label' => 'Mail',
                     'mail_driver_label' => 'Mail Driver',
                     'mail_driver_placeholder' => 'Mail Driver',
@@ -140,7 +86,6 @@ return [
                     'mail_password_placeholder' => 'Mail Password',
                     'mail_encryption_label' => 'Mail Encryption',
                     'mail_encryption_placeholder' => 'Mail Encryption',
-
                     'pusher_label' => 'Pusher',
                     'pusher_app_id_label' => 'Pusher App Id',
                     'pusher_app_id_palceholder' => 'Pusher App Id',
@@ -154,6 +99,7 @@ return [
                     'setup_application' => 'แอปพลิเคชันติดตั้ง',
                     'install' => 'ติดตั้ง',
                 ],
+                'db_connection_failed' => 'ไม่สามารถเชื่อมต่อกับฐานข้อมูลได้',
             ],
         ],
         'classic' => [
@@ -166,23 +112,6 @@ return [
         'success' => 'ของคุณ .env บันทึกการตั้งค่าไฟล์แล้ว',
         'errors' => 'ไม่สามารถบันทึก .env ไฟล์, โปรดสร้างด้วยตนเอง',
     ],
-
-    'install' => 'ติดตั้ง',
-
-    /*
-     *
-     * Installed Log translations.
-     *
-     */
-    'installed' => [
-        'success_log_message' => 'ติดตั้ง Laravel สำเร็จติดตั้งแล้ว',
-    ],
-
-    /*
-     *
-     * Final page translations.
-     *
-     */
     'final' => [
         'title' => 'การติดตั้งเสร็จสิ้น',
         'templateTitle' => 'การติดตั้งเสร็จสิ้น',
@@ -193,54 +122,50 @@ return [
         'env' => 'ไฟล์. env สุดท้าย:',
         'exit' => 'คลิกที่นี่เพื่อออก',
     ],
-
-    /*
-     *
-     * Update specific translations
-     *
-     */
+    'finish' => 'ติดตั้ง',
+    'forms' => [
+        'errorTitle' => 'ข้อผิดพลาดต่อไปนี้เกิดขึ้น:',
+    ],
+    'install' => 'ติดตั้ง',
+    'installed' => [
+        'success_log_message' => 'ติดตั้ง Laravel สำเร็จติดตั้งแล้ว',
+    ],
+    'next' => 'ขั้นตอนต่อไป',
+    'permissions' => [
+        'templateTitle' => 'ขั้นตอนที่ 2 | สิทธิ์',
+        'title' => 'สิทธิ์',
+        'next' => 'กำหนดค่าสภาพแวดล้อม',
+    ],
+    'requirements' => [
+        'templateTitle' => 'ขั้นตอนที่ 1 | ข้อกำหนดของเซิร์ฟเวอร์',
+        'title' => 'ข้อกำหนดของเซิร์ฟเวอร์',
+        'next' => 'ตรวจสอบการอนุญาต',
+    ],
+    'title' => 'โปรแกรมติดตั้ง Laravel',
     'updater' => [
-        /*
-         *
-         * Shared translations.
-         *
-         */
         'title' => 'Laravel Updater',
-
-        /*
-         *
-         * Welcome page translations for update feature.
-         *
-         */
         'welcome' => [
-            'title'   => 'ยินดีต้อนรับสู่ The Updater',
+            'title' => 'ยินดีต้อนรับสู่ The Updater',
             'message' => 'ยินดีต้อนรับสู่ตัวช่วยการอัพเดต',
         ],
-
-        /*
-         *
-         * Welcome page translations for update feature.
-         *
-         */
         'overview' => [
-            'title'   => 'ภาพรวม',
+            'title' => 'ภาพรวม',
             'message' => 'มีการอัปเดต 1 รายการ | มี: อัปเดตตัวเลข',
             'install_updates' => 'ติดตั้งการปรับปรุง',
         ],
-
-        /*
-         *
-         * Final page translations.
-         *
-         */
         'final' => [
             'title' => 'เสร็จ',
             'finished' => 'แอพพลิเคชั่น อัปเดตฐานข้อมูลสำเร็จแล้ว',
             'exit' => 'คลิกที่นี่เพื่อออก',
         ],
-
         'log' => [
             'success_message' => 'ติดตั้ง Laravel สำเร็จแล้วอัปเดตเมื่อ',
         ],
+    ],
+    'welcome' => [
+        'templateTitle' => 'ยินดีต้อนรับ',
+        'title' => 'โปรแกรมติดตั้ง Laravel',
+        'message' => 'วิซาร์ดการติดตั้งและติดตั้งง่าย',
+        'next' => 'ตรวจสอบข้อกำหนด',
     ],
 ];

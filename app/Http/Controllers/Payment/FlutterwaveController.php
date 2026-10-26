@@ -12,21 +12,22 @@
 
 namespace App\Http\Controllers\Payment;
 
-use App\Plan;
-use App\User;
-use App\Coupon;
-use App\Referral;
-use Carbon\Carbon;
-use App\Transaction;
-use App\BusinessCard;
 use App\AppliedCoupon;
+use App\BusinessCard;
+use App\Coupon;
+use App\Http\Controllers\Controller;
+use App\Plan;
+use App\Referral;
+use App\Transaction;
+use App\User;
+use Carbon\Carbon;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+use Plugins\Zapier\Helpers\ZapierHelper;
 
 class FlutterwaveController extends Controller
 {
@@ -167,7 +168,7 @@ class FlutterwaveController extends Controller
                             'to_billing_state' => $userData->billing_state,
                             'to_billing_zipcode' => $userData->billing_zipcode,
                             'to_billing_country' => $userData->billing_country,
-                            'to_billing_phone' => $userData->billing_phone,
+                            'to_billing_phone' => $userData->billing_country_code . $userData->billing_phone,
                             'to_billing_email' => $userData->billing_email,
                             'to_vat_number' => $userData->vat_number,
                             'subtotal' => $plan_details->plan_price,
@@ -177,7 +178,7 @@ class FlutterwaveController extends Controller
                             'tax_amount' => $appliedTaxInTotal,
                             'applied_coupon' => $appliedCoupon,
                             'discounted_price' => $discountPrice,
-                            'invoice_amount' => $amountToBePaid,
+                            'invoice_amount' => round($amountToBePaid, 2),
                         ];
 
                         // Create a new transaction entry in the database
@@ -189,7 +190,7 @@ class FlutterwaveController extends Controller
                         $transaction->plan_id = $plan_details->plan_id;
                         $transaction->desciption = $plan_details->plan_name . " Plan";
                         $transaction->payment_gateway_name = "Flutterwave";
-                        $transaction->transaction_amount = $amountToBePaid;
+                        $transaction->transaction_amount = round($amountToBePaid, 2);
                         $transaction->transaction_currency = $config[1]->config_value;
                         $transaction->invoice_details = json_encode($invoice_details);
                         $transaction->payment_status = "PENDING";
@@ -528,6 +529,41 @@ class FlutterwaveController extends Controller
             try {
                 Mail::to($encode['to_billing_email'])->send(new \App\Mail\SendEmailInvoice($details));
             } catch (\Exception $e) {
+            }
+
+            // Decode invoice details safely
+            $encode = json_decode($transaction_details->invoice_details ?? '{}', true);
+
+            // Safely format user billing address
+            $userAddress = $user_details->billing_address ?? '';
+            $userCity = $user_details->billing_city ?? '';
+            $userState = $user_details->billing_state ?? '';
+            $userCountry = $user_details->billing_country ?? '';
+            $userZip = $user_details->billing_zipcode ?? '';
+
+            // Dispatch plan purchase event to Zapier
+            if (function_exists('zapier_dispatch')) {
+                zapier_dispatch('plan_purchase', [
+                    'transaction_id'  => $flwRef ?? ($transaction_details->transaction_id ?? $txRef),
+                    'invoice_id'      => ($config[15]->config_value ?? 'INV-') . $invoice_number,
+                    'user_name'       => $user_details->name ?? ($encode['to_billing_name'] ?? 'Customer'),
+                    'user_address'    => !empty($userAddress) ? $userAddress : ($encode['to_billing_address'] ?? ''),
+                    'user_city'       => !empty($userCity) ? $userCity : ($encode['to_billing_city'] ?? ''),
+                    'user_state'      => !empty($userState) ? $userState : ($encode['to_billing_state'] ?? ''),
+                    'user_country'    => !empty($userCountry) ? $userCountry : ($encode['to_billing_country'] ?? ''),
+                    'user_zip'        => !empty($userZip) ? $userZip : ($encode['to_billing_zipcode'] ?? ''),
+                    'user_email'      => $user_details->email ?? ($encode['to_billing_email'] ?? ''),
+                    'user_phone'      => ($user_details->country_code ?? '') . ($user_details->mobile_number ?? ($encode['to_billing_phone'] ?? '')),
+                    'user_tax_number' => $user_details->vat_number ?? $user_details->tax_number ?? ($encode['to_vat_number'] ?? ''),
+                    'plan_name'       => $plan_data->plan_name ?? $plan_data->name ?? ($transaction_details->desciption ?? ($transaction_details->description ?? 'Subscription Plan')),
+                    'quantity'        => 1,
+                    'currency'        => $transaction_details->transaction_currency ?? ($config[1]->config_value ?? 'USD'),
+                    'amount'          => (float) ($transaction_details->transaction_amount ?? ($encode['invoice_amount'] ?? 0)),
+                    'payment_method'  => 'Flutterwave',
+                    'payment_status'  => 'paid',
+                    'invoice_date'    => now()->toDateString(),
+                    'purchased_at'    => now()->toDateTimeString(),
+                ]);
             }
 
             return [

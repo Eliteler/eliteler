@@ -1,0 +1,240 @@
+/* GoBiz vCard SaaS
+|--------------------------------------------------------------------------
+| Developed by NativeCode © 2021 - https://nativecode.in
+| All rights reserved
+| Unauthorized distribution is prohibited
+|--------------------------------------------------------------------------
+*/
+
+.page-wrapper,
+.card,
+.form-label,
+.form-control,
+.ts-control,
+.modal-title,
+.modal-body {
+    font-family:
+        "Figtree",
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif !important;
+    letter-spacing: -0.01em;
+}
+
+.form-label {
+    font-weight: 600 !important;
+    font-size: 0.875rem !important;
+    color: var(--tblr-body-color, #1e293b) !important;
+    margin-bottom: 0.4rem !important;
+}
+
+.form-label.required:after {
+    content: " *" !important;
+    color: #d63939 !important;
+}
+
+.form-control,
+.ts-control {
+    border: 1px solid var(--tblr-border-color, #d1d5db) !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    line-height: 1.5 !important;
+    padding: 0.55rem 0.85rem !important;
+    min-height: 42px !important;
+    box-shadow: none !important;
+    transition:
+        border-color 0.15s ease-in-out,
+        box-shadow 0.15s ease-in-out !important;
+    border-radius: 8px !important;
+}
+
+.form-control:focus {
+    border-color: var(--tblr-primary, #206bc4) !important;
+    box-shadow: 0 0 0 0.25rem rgba(32, 107, 196, 0.15) !important;
+}
+
+.input-group .form-control {
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+
+.input-group .btn {
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+    border-top-right-radius: 8px !important;
+    border-bottom-right-radius: 8px !important;
+    height: 42px !important;
+    font-weight: 600 !important;
+}
+
+.testimonial-item-row {
+    border: 1px solid var(--tblr-border-color, #e2e8f0);
+    border-radius: 12px;
+    padding: 1.25rem 1rem;
+    margin-bottom: 1.25rem;
+    transition: all 0.2s ease-in-out;
+}
+
+.testimonial-item-row:hover {
+    border-color: var(--tblr-border-color, #cbd5e1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.btn-icon-square {
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 8px !important;
+}
+
+.modal-content {
+    border-radius: 16px !important;
+    border: none !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12) !important;
+    overflow: hidden;
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--tblr-border-color, #e2e8f0) !important;
+    padding: 1.25rem 1.5rem !important;
+}
+
+.modal-body {
+    padding: 1.5rem !important;
+}
+
+.modal-footer {
+    border-top: 1px solid var(--tblr-border-color, #e2e8f0) !important;
+    padding: 1rem 1.5rem !important;
+}
+
+.media-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Modern Card Thumbnails in Media Picker Modal */
+.modal-media-card {
+    background-color: var(--tblr-bg-surface);
+    border: 1px solid var(--tblr-border-color-translucent);
+    border-radius: 14px;
+    overflow: hidden;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 0.5rem;
+}
+
+.modal-media-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+    border-color: var(--tblr-primary);
+}
+
+.modal-media-thumb {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 10px;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: var(--tblr-bg-surface-secondary);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Shimmer Glow Animation */
+.modal-media-thumb::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+        90deg,
+        rgba(var(--tblr-body-color-rgb), 0) 0,
+        rgba(var(--tblr-body-color-rgb), 0.05) 20%,
+        rgba(var(--tblr-body-color-rgb), 0.1) 60%,
+        rgba(var(--tblr-body-color-rgb), 0)
+    );
+    animation: modalImgShimmer 2s infinite ease-in-out;
+}
+
+@keyframes modalImgShimmer {
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+.modal-media-body {
+    padding: 0.65rem 0.25rem 0.25rem 0.25rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    flex-grow: 1;
+    text-align: center;
+}
+
+.modal-media-title {
+    font-size: 0.78rem;
+    font-weight: 600;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 0.5rem;
+    color: var(--tblr-body-color);
+}
+
+/* Perfectly Centered Icon Button */
+.btn-modal-copy-icon {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    border-radius: 8px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    line-height: 1 !important;
+}
+
+.btn-modal-copy-icon svg,
+.btn-modal-copy-icon .icon {
+    margin: 0 !important;
+    padding: 0 !important;
+    display: block !important;
+    width: 18px !important;
+    height: 18px !important;
+}
+
+@media (max-width: 767.98px) {
+    .modal-footer {
+        display: flex !important;
+        flex-direction: column-reverse !important;
+        gap: 10px !important;
+        padding: 1.25rem !important;
+        width: 100% !important;
+    }
+
+    .modal-footer .btn,
+    .modal-footer button {
+        width: 100% !important;
+        margin: 0 !important;
+        text-align: center !important;
+        justify-content: center !important;
+    }
+}

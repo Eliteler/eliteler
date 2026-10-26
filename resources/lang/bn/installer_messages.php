@@ -1,63 +1,173 @@
 <?php
 
 return [
-
-    /*
-     *
-     * Shared translations.
-     *
-     */
-    'title' => 'تنصيب Laravel',
-    'next' => 'متابعة',
-
-    /*
-     *
-     * Home page translations.
-     *
-     */
-    'welcome' => [
-        'title'   => 'تنصيب Laravel',
-        'message' => 'أهلا بك في صفحة تنصيب Laravel',
-    ],
-
-    /*
-     *
-     * Requirements page translations.
-     *
-     */
-    'requirements' => [
-        'title' => 'المتطلبات',
-    ],
-
-    /*
-     *
-     * Permissions page translations.
-     *
-     */
-    'permissions' => [
-        'title' => 'تراخيص المجلدات',
-    ],
-
-    /*
-     *
-     * Environment page translations.
-     *
-     */
+    'back' => 'আগের',
     'environment' => [
         'title' => 'الإعدادات',
         'save' => 'حفظ ملف .env',
         'success' => 'تم حفظ الإعدادات بنجاح',
         'errors' => 'حدث خطأ أثناء إنشاء ملف .env. رجاءا قم بإنشاءه يدويا',
+        'menu' => [
+            'templateTitle' => 'ধাপ 3 | ',
+            'title' => 'ইনস্টলেশন',
+            'desc' => 'আপনি কিভাবে অ্যাপস <code>.env</code> ফাইল কনফিগার করতে চান তা নির্বাচন করুন।',
+            'wizard-button' => 'ফর্ম উইজার্ড সেটআপ',
+            'classic-button' => 'ক্লাসিক টেক্সট এডিটর',
+        ],
+        'wizard' => [
+            'templateTitle' => 'ধাপ 3 | ',
+            'title' => 'নির্দেশিত <code>.env</code> উইজার্ড',
+            'tabs' => [
+                'environment' => 'পরিবেশ',
+                'database' => 'ডাটাবেস',
+                'application' => 'আবেদন',
+            ],
+            'form' => [
+                'name_required' => 'একটি পরিবেশের নাম প্রয়োজন।',
+                'app_name_label' => 'অ্যাপের নাম',
+                'app_name_placeholder' => 'অ্যাপের নাম',
+                'app_environment_label' => 'অ্যাপ এনভায়রনমেন্ট',
+                'app_environment_label_local' => 'স্থানীয়',
+                'app_environment_label_developement' => 'উন্নয়ন',
+                'app_environment_label_qa' => 'ক্বা',
+                'app_environment_label_production' => 'উৎপাদন',
+                'app_environment_label_other' => 'অন্যান্য',
+                'app_environment_placeholder_other' => 'আপনার পরিবেশে প্রবেশ করুন...',
+                'app_debug_label' => 'অ্যাপ ডিবাগ',
+                'app_debug_label_true' => 'সত্য',
+                'app_debug_label_false' => 'মিথ্যা',
+                'app_log_level_label' => 'অ্যাপ লগ লেভেল',
+                'app_log_level_label_debug' => 'ডিবাগ',
+                'app_log_level_label_info' => 'তথ্য',
+                'app_log_level_label_notice' => 'নোটিশ',
+                'app_log_level_label_warning' => 'সতর্কতা',
+                'app_log_level_label_error' => 'ত্রুটি',
+                'app_log_level_label_critical' => 'সমালোচনামূলক',
+                'app_log_level_label_alert' => 'সতর্ক',
+                'app_log_level_label_emergency' => 'জরুরী',
+                'app_url_label' => 'অ্যাপ ইউআরএল',
+                'app_url_placeholder' => 'অ্যাপ ইউআরএল',
+                'db_connection_failed' => 'ডাটাবেসের সাথে সংযোগ করা যায়নি।',
+                'db_connection_label' => 'ডাটাবেস সংযোগ',
+                'db_connection_label_mysql' => 'mysql',
+                'db_connection_label_sqlite' => 'sqlite',
+                'db_connection_label_pgsql' => 'pgsql',
+                'db_connection_label_sqlsrv' => 'sqlsrv',
+                'db_host_label' => 'ডাটাবেস হোস্ট',
+                'db_host_placeholder' => 'ডাটাবেস হোস্ট',
+                'db_port_label' => 'ডাটাবেস পোর্ট',
+                'db_port_placeholder' => 'ডাটাবেস পোর্ট',
+                'db_name_label' => 'ডাটাবেসের নাম',
+                'db_name_placeholder' => 'ডাটাবেসের নাম',
+                'db_username_label' => 'ডাটাবেস ব্যবহারকারীর নাম',
+                'db_username_placeholder' => 'ডাটাবেস ব্যবহারকারীর নাম',
+                'db_password_label' => 'ডাটাবেস পাসওয়ার্ড',
+                'db_password_placeholder' => 'ডাটাবেস পাসওয়ার্ড',
+                'app_tabs' => [
+                    'more_info' => 'আরো তথ্য',
+                    'broadcasting_title' => 'সম্প্রচার, ক্যাশিং, সেশন এবং সারি',
+                    'broadcasting_label' => 'ব্রডকাস্ট ড্রাইভার',
+                    'broadcasting_placeholder' => 'ব্রডকাস্ট ড্রাইভার',
+                    'cache_label' => 'ক্যাশে ড্রাইভার',
+                    'cache_placeholder' => 'ক্যাশে ড্রাইভার',
+                    'session_label' => 'সেশন ড্রাইভার',
+                    'session_placeholder' => 'সেশন ড্রাইভার',
+                    'queue_label' => 'সারির ড্রাইভার',
+                    'queue_placeholder' => 'সারির ড্রাইভার',
+                    'redis_label' => 'রেডিস ড্রাইভার',
+                    'redis_host' => 'রেডিস হোস্ট',
+                    'redis_password' => 'রেডিস পাসওয়ার্ড',
+                    'redis_port' => 'রেডিস পোর্ট',
+                    'mail_label' => 'মেইল',
+                    'mail_driver_label' => 'মেইল ড্রাইভার',
+                    'mail_driver_placeholder' => 'মেইল ড্রাইভার',
+                    'mail_host_label' => 'মেল হোস্ট',
+                    'mail_host_placeholder' => 'মেল হোস্ট',
+                    'mail_port_label' => 'মেইল পোর্ট',
+                    'mail_port_placeholder' => 'মেইল পোর্ট',
+                    'mail_username_label' => 'মেল ব্যবহারকারীর নাম',
+                    'mail_username_placeholder' => 'মেল ব্যবহারকারীর নাম',
+                    'mail_password_label' => 'মেইল পাসওয়ার্ড',
+                    'mail_password_placeholder' => 'মেইল পাসওয়ার্ড',
+                    'mail_encryption_label' => 'মেল এনক্রিপশন',
+                    'mail_encryption_placeholder' => 'মেল এনক্রিপশন',
+                    'pusher_label' => 'পুশার',
+                    'pusher_app_id_label' => 'পুশার অ্যাপ আইডি',
+                    'pusher_app_id_palceholder' => 'পুশার অ্যাপ আইডি',
+                    'pusher_app_key_label' => 'পুশার অ্যাপ কী',
+                    'pusher_app_key_palceholder' => 'পুশার অ্যাপ কী',
+                    'pusher_app_secret_label' => 'পুশার অ্যাপ সিক্রেট',
+                    'pusher_app_secret_palceholder' => 'পুশার অ্যাপ সিক্রেট',
+                ],
+                'buttons' => [
+                    'setup_database' => 'ডাটাবেস সেটআপ করুন',
+                    'setup_application' => 'সেটআপ অ্যাপ্লিকেশন',
+                    'install' => 'ইনস্টল করুন',
+                ],
+            ],
+        ],
+        'classic' => [
+            'templateTitle' => 'ধাপ 3 | ',
+            'title' => 'ক্লাসিক এনভায়রনমেন্ট এডিটর',
+            'save' => 'সংরক্ষণ করুন .env',
+            'back' => 'ফর্ম উইজার্ড ব্যবহার করুন',
+            'install' => 'সংরক্ষণ করুন এবং ইনস্টল করুন',
+        ],
     ],
-
-    /*
-     *
-     * Final page translations.
-     *
-     */
     'final' => [
         'title' => 'النهاية',
         'finished' => 'تم تنصيب البرنامج بنجاح...',
         'exit' => 'إضغط هنا للخروج',
+        'templateTitle' => 'ইনস্টলেশন সমাপ্ত',
+        'migration' => 'মাইগ্রেশন এবং বীজ কনসোল আউটপুট:',
+        'console' => 'অ্যাপ্লিকেশন কনসোল আউটপুট:',
+        'log' => 'ইনস্টলেশন লগ এন্ট্রি:',
+        'env' => 'চূড়ান্ত .env ফাইল:',
+    ],
+    'finish' => 'ইনস্টল করুন',
+    'forms' => [
+        'errorTitle' => 'নিম্নলিখিত ত্রুটি ঘটেছে:',
+    ],
+    'install' => 'ইনস্টল করুন',
+    'installed' => [
+        'success_log_message' => 'নেটিভকোড ইনস্টলার সফলভাবে ইনস্টল করা হয়েছে৷',
+    ],
+    'next' => 'متابعة',
+    'permissions' => [
+        'title' => 'تراخيص المجلدات',
+        'templateTitle' => 'ধাপ 2 | ',
+        'next' => 'পরিবেশ কনফিগার করুন',
+    ],
+    'requirements' => [
+        'title' => 'المتطلبات',
+        'templateTitle' => 'ধাপ 1 | ',
+        'next' => 'অনুমতি পরীক্ষা করুন',
+    ],
+    'title' => 'تنصيب Laravel',
+    'updater' => [
+        'title' => 'লারাভেল আপডেটার',
+        'welcome' => [
+            'title' => 'আপডেটারে স্বাগতম',
+            'message' => 'আপডেট উইজার্ডে স্বাগতম।',
+        ],
+        'overview' => [
+            'title' => 'ওভারভিউ',
+            'message' => '১টি আপডেট আছে।',
+            'install_updates' => 'আপডেট ইনস্টল করুন',
+        ],
+        'final' => [
+            'title' => 'সমাপ্ত',
+            'finished' => 'অ্যাপ্লিকেশনের ডাটাবেস সফলভাবে আপডেট করা হয়েছে।',
+            'exit' => 'প্রস্থান করতে এখানে ক্লিক করুন',
+        ],
+        'log' => [
+            'success_message' => 'নেটিভকোড ইনস্টলার সফলভাবে আপডেট করা হয়েছে৷',
+        ],
+    ],
+    'welcome' => [
+        'title' => 'تنصيب Laravel',
+        'message' => 'أهلا بك في صفحة تنصيب Laravel',
+        'templateTitle' => 'স্বাগতম',
+        'next' => 'প্রয়োজনীয়তা পরীক্ষা করুন',
     ],
 ];

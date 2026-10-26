@@ -1,5 +1,6 @@
 @extends('admin.layouts.index', ['header' => true, 'nav' => true, 'demo' => true])
 
+{{-- Custom CSS --}}
 @section('css')
     <style>
         [data-bs-theme="dark"] .update-message {
@@ -10,7 +11,7 @@
             margin-top: 0.3rem !important;
         }
 
-        @media (min-width: 768px) {
+        @media (min-width: 767px) {
             .w-md-50 {
                 width: 50% !important;
             }
@@ -20,6 +21,40 @@
 
 @section('content')
     <div class="page-wrapper">
+        <!-- Page title header wrapper -->
+        <div class="page-header d-print-none">
+            <div class="container-fluid">
+                <div class="row align-items-center">
+                    <!-- Breadcrumbs -->
+                    <div class="mb-1 ms-0">
+                        <ol class="breadcrumb" aria-label="breadcrumbs">
+                            <li class="breadcrumb-item">
+                                <a href="{{ route('admin.dashboard') }}" class="text-secondary text-decoration-none">
+                                    {{ __('Dashboard') }}
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a href="{{ route('admin.settings') }}" class="text-secondary text-decoration-none">
+                                    {{ __('System Utilities') }}
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">
+                                <a href="#">{{ __('Software Updates') }}</a>
+                            </li>
+                        </ol>
+                    </div>
+                    <div class="col">
+                        <h2 class="page-title">
+                            {{ __('Software Updates') }}
+                        </h2>
+                        <!-- Added helper subtitle under page heading -->
+                        <div class="text-muted mt-1">
+                            {{ __('Verify your Envato license and install the latest platform version upgrades.') }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <div class="page-body">
             <div class="container-fluid">
@@ -30,7 +65,9 @@
                 <div class="row row-cards">
                     <!-- Left: Update Check -->
                     <div class="col-lg-8">
-                        <form action="{{ route('admin.check.update') }}" method="post" class="card card-sm">
+                        <!-- Upgraded to Borderless Shadowed Card Wrapper -->
+                        <form action="{{ route('admin.check.update') }}" method="post"
+                            class="card card-sm border-0 shadow-sm">
                             @csrf
 
                             <div class="card-body">
@@ -84,25 +121,15 @@
                                     </div>
 
                                     <div class="col-12 d-flex">
-                                        <button type="submit" class="btn btn-primary px-5">
+                                        {{-- Feature Request --}}
+                                        <a href="https://gobiz.feednote.io?ref={{ urlencode(config('app.url')) }}&size=source"
+                                            target="_blank" class="btn " title="{{ __('Eliteler Future Request') }}">
+                                            {{ __('Feature Request') }}
+                                        </a>
+
+                                        <button type="submit" class="btn btn-primary px-5 ms-auto">
                                             {{ __('Check for update') }}
                                         </button>
-
-                                        {{-- Feature Request --}}
-                                        <a href="https://eliteler.feednote.io?ref={{ urlencode(config('app.url')) }}&size=source"
-                                            target="_blank" class="btn btn-icon ms-2"
-                                            title="{{ __('Eliteler Future Request') }}">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                                stroke-linecap="round" stroke-linejoin="round"
-                                                class="icon icon-tabler icons-tabler-outline icon-tabler-bulb">
-                                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                                <path d="M3 12h1m8 -9v1m8 8h1m-15.4 -6.4l.7 .7m12.1 -.7l-.7 .7" />
-                                                <path
-                                                    d="M9 16a5 5 0 1 1 6 0a3.5 3.5 0 0 0 -1 3a2 2 0 0 1 -4 0a3.5 3.5 0 0 0 -1 -3" />
-                                                <path d="M9.7 17l4.6 0" />
-                                            </svg>
-                                        </a>
                                     </div>
                                 </div>
                             </div>
@@ -117,7 +144,8 @@
 
                         {{-- Update result --}}
                         @if (isset($response) && $response['message'])
-                            <div class="card mt-4 border-success">
+                            <!-- Upgraded to Borderless Shadowed Card Wrapper -->
+                            <div class="card mt-4 border-success border-0 shadow-sm">
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between align-items-center mb-3">
                                         <div>
@@ -149,64 +177,37 @@
 
                     <!-- Right: Info & Support -->
                     <div class="col-lg-4">
-                        @if (!isset($response))
-                            <!-- Piracy warning -->
-                            <div class="mb-3">
+                        <div class="card shadow-sm mb-3">
+                            @if (!isset($response))
+                                <!-- Piracy warning (Upgraded to borderless with shadowed styles) -->
                                 <div class="card-body text-center">
-                                    <a href="https://codecanyon.net/item/eliteler-digital-business-card-in-laravel-saas-product-/33165916?ref={{ urlencode(config('app.url')) }}"
+                                    <a href="https://nativecode.in/products/gobiz-saas?ref={{ urlencode(config('app.url')) }}"
                                         rel="noopener noreferrer" target="_blank">
-                                        <img src="{{ asset('img/piracy.png') }}" class="img-fluid rounded"
+                                        <img src="{{ asset('img/piracy.png') }}" class="img-fluid rounded mb-3"
                                             alt="Piracy Warning">
                                     </a>
-                                </div>
-                            </div>
-                        @endif
-
-                        <!-- Support renewal -->
-                        <div class="mb-3">
-                            <div class="card-body text-center">
-                                <a href="https://store.nativecode.in/checkout/buy/0f1f87da-5adc-443d-947f-17db72d9f3a2?ref={{ urlencode(config('app.url')) }}"
-                                    target="_blank">
-                                    <img src="{{ asset('img/in-extended-license.png') }}" class="img-fluid rounded mb-3"
-                                        alt="Support">
-                                </a>
-                            </div>
-                        </div>
-
-                        @if (isset($response) && $response['license'] === 'Regular License')
-                            <div class="">
-                                <div class="card-body text-center">
-                                    <img src="{{ asset('img/upgrade-to-extended-license.png') }}"
-                                        class="img-fluid rounded mb-3" alt="Upgrade License">
-
-                                    <a href="https://codecanyon.net/cart/configure_before_adding/33165916?license=extended"
-                                        rel="noopener noreferrer" target="_blank" class="btn btn-sm btn-success">
-                                        {{ __('Upgrade to Extended License') }}
+                                    <!-- Support renewal (Upgraded to borderless with shadowed styles) -->
+                                    <a href="https://store.nativecode.in/checkout/buy/0f1f87da-5adc-443d-947f-17db72d9f3a2?ref={{ urlencode(config('app.url')) }}"
+                                        target="_blank">
+                                        <img src="{{ asset('img/in-extended-license.png') }}"
+                                            class="img-fluid rounded mb-3" alt="Support">
                                     </a>
+
+                                    @if (isset($response) && $response['license'] === 'Regular License')
+                                        <!-- Regular License upgrade (Upgraded to borderless with shadowed styles) -->
+                                        <div class="text-center">
+                                            <img src="{{ asset('img/upgrade-to-extended-license.png') }}"
+                                                class="img-fluid rounded mb-3" alt="Upgrade License">
+
+                                            <a href="https://nativecode.in/products/gobiz-saas?ref={{ urlencode(config('app.url')) }}"
+                                                rel="noopener noreferrer" target="_blank" class="btn btn-sm btn-success">
+                                                {{ __('Upgrade to Extended License') }}
+                                            </a>
+                                        </div>
+                                    @endif
                                 </div>
-                            </div>
-                        @endif
-
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- Email not fillable modal --}}
-        <div class="modal modal-blur fade" id="emailNotFillableModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-body text-center py-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon mb-2 text-danger icon-lg" width="24"
-                            height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
-                            stroke-linecap="round" stroke-linejoin="round">
-                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                            <path d="M12 9v2m0 4v.01" />
-                            <path
-                                d="M5 19h14a2 2 0 0 0 1.84 -2.75l-7.1 -12.25a2 2 0 0 0 -3.5 0l-7.1 12.25a2 2 0 0 0 1.75 2.75" />
-                        </svg>
-                        <h3 class="text-uppercase mb-3">{{ __('Email address required') }}</h3>
-                        <p>{{ __('Please fill the email address.') }}</p>
+                            @endif
+                        </div>
                     </div>
                 </div>
             </div>
@@ -216,8 +217,28 @@
         @include('admin.includes.footer')
     </div>
 
+    <!-- Email not fillable modal -->
+    <div class="modal modal-bg fade" id="emailNotFillableModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body text-center py-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon mb-2 text-danger icon-lg" width="24"
+                        height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                        <path d="M12 9v2m0 4v.01" />
+                        <path
+                            d="M5 19h14a2 2 0 0 0 1.84 -2.75l-7.1 -12.25a2 2 0 0 0 -3.5 0l-7.1 12.25a2 2 0 0 0 1.75 2.75" />
+                    </svg>
+                    <h3 class="text-uppercase mb-3">{{ __('Email address required') }}</h3>
+                    <p>{{ __('Please fill the email address.') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+@endsection
 
-    {{-- Custom JS --}}
+{{-- Custom JS --}}
 @section('scripts')
     {{-- Pass Laravel session messages to JS --}}
     <script>
@@ -273,10 +294,6 @@
 
                 // Validate email and required fields
                 if (!email || !appVersion) {
-                    // showAlert('danger',
-                    //     '{{ __('Please enter your email address and valid purchase code.') }}');
-
-                    // Show modal
                     var modalEl = document.getElementById('emailNotFillableModal');
                     var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
 
@@ -362,5 +379,4 @@
             $('.nativecode-loader').hide(); // hides all loaders with this class
         }
     </script>
-@endsection
 @endsection

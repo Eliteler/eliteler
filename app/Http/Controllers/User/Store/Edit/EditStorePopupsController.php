@@ -12,14 +12,15 @@
 
 namespace App\Http\Controllers\User\Store\Edit;
 
-use App\User;
-use App\Setting;
 use App\BusinessCard;
-use App\InformationPop;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Helpers\StorageHelper;
 use App\Http\Controllers\Controller;
+use App\InformationPop;
+use App\Setting;
+use App\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class EditStorePopupsController extends Controller
@@ -94,21 +95,26 @@ class EditStorePopupsController extends Controller
             }
 
             // Check information popup is "enabled"
-
             if ($is_info_pop_active == 1) {
-                if ($request->hasFile('info_pop_image')) {
+                // Find existing popup record for this card
+                $existingPop = InformationPop::where('card_id', $id)->first();
+                $info_pop_image = $existingPop ? $existingPop->info_pop_image : null;
+
+                // Handle popup image upload
+                if ($request->hasFile('info_pop_image') && $request->file('info_pop_image')->isValid()) {
                     $allowedExtensions = ['jpeg', 'png', 'jpg', 'gif', 'svg', 'webp'];
-                    $extension = $request->file('info_pop_image')->extension();
 
-                    if (in_array($extension, $allowedExtensions)) {
-                        // Generate unique file name
-                        $filename = 'IMG-' . uniqid() . '-' . time() . '.' . $extension;
+                    if (in_array(strtolower($request->file('info_pop_image')->getClientOriginalExtension()), $allowedExtensions)) {
+                        // Delete old popup image from storage if exists
+                        if ($existingPop) {
+                            StorageHelper::deleteFile($existingPop->info_pop_image);
+                        }
 
-                        // Save to storage/app/public/information_pop_images
-                        Storage::disk('public')->putFileAs('information_pop_images', $request->file('info_pop_image'), $filename);
-
-                        // Generate the public URL: /storage/information_pop_images/IMG-...
-                        $info_pop_image = Storage::url('information_pop_images/' . $filename);
+                        // Upload new image and get relative path
+                        $info_pop_image = StorageHelper::uploadImage(
+                            $request->file('info_pop_image'),
+                            'information_pop_images'
+                        );
                     }
                 }
 

@@ -7,33 +7,41 @@
         "laravel"
     ],
     "license": "MIT",
+    "repositories": [
+        {
+            "type": "path",
+            "url": "packages/biscolab/laravel-recaptcha"
+        }
+    ],
     "require": {
         "php": "^8.2",
         "artesaos/seotools": "^1.2.0",
         "astrotomic/laravel-translatable": "^11.12.1",
-        "biscolab/laravel-recaptcha": "^6.0",
+        "biscolab/laravel-recaptcha": "6.2.0",
         "firebase/php-jwt": "^7.0",
         "geoip2/geoip2": "~2.13.0",
         "google/apiclient": "^2.18",
         "guzzlehttp/guzzle": "^7.8.0",
         "inertiajs/inertia-laravel": "^2.0",
-        "intervention/image": "^2.7",
+        "intervention/image": "^4.0",
         "io-developer/php-whois": "^4.1.10",
         "iyzico/iyzipay-php": "^2.0",
         "jenssegers/agent": "^2.6.4",
         "jeroendesloovere/vcard": "^1.7.4",
         "joedixon/laravel-translation": "^1.1.2",
         "jorenvanhocht/laravel-share": "^4.2.0",
-        "laravel/framework": "^11.0",
+        "laravel/framework": "12.65.0",
         "laravel/socialite": "^5.24.3",
         "laravel/tinker": "^2.8.2",
         "laravel/ui": "^4.0",
-        "laravolt/avatar": "^5.0",
+        "laravolt/avatar": "^6.5.1",
+        "league/flysystem-aws-s3-v3": "^3.35",
         "mailgun/mailgun-php": "^4.2",
         "matthiasmullie/minify": "^1.3.71",
         "mews/purifier": "^3.4.1",
         "mollie/laravel-mollie": "^3.0",
         "moneroo/moneroo-laravel": "^0.2.0",
+        "nativecodein/laravel-translation-scanner": "^1.2",
         "openai-php/client": "^0.19.0",
         "paypal/paypal-checkout-sdk": "^1.0",
         "paypal/paypalhttp": "^1.0",
@@ -43,6 +51,7 @@
         "rachidlaasri/laravel-installer": "^4.1.0",
         "razorpay/razorpay": "2.9.2",
         "realrashid/sweet-alert": "^7.1",
+        "sajjadhossainshohag/laravel-paystack": "^1.1",
         "silviolleite/laravelpwa": "^2.0.3",
         "spatie/cpu-load-health-check": "^1.0",
         "spatie/laravel-backup": "^9.1",
@@ -52,14 +61,13 @@
         "srmklive/paypal": "^3.0",
         "stripe/stripe-php": "^7.128.0",
         "tightenco/ziggy": "^2.6",
-        "unicodeveloper/laravel-paystack": "^1.1.0",
         "xendit/xendit-php": "^6.0",
-        "yajra/laravel-datatables-oracle": "*"
+        "yajra/laravel-datatables-oracle": "^12.0"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.15",
         "mockery/mockery": "^1.6.6",
-        "nunomaduro/collision": "^8.1",
+        "nunomaduro/collision": "^8.9.4",
         "spatie/laravel-ignition": "^2.0"
     },
     "config": {
@@ -73,6 +81,15 @@
             "abandoned": "ignore"
         }
     },
+    "policy": {
+        "advisories": {
+            "ignore-id": [
+                "PKSA-m5cs-t1y6-qpcs",
+                "PKSA-3r5d-mb8f-1qw9",
+                "PKSA-mdq4-51ck-6kdq"
+            ]
+        }
+    },
     "extra": {
         "laravel": {
             "dont-discover": []
@@ -82,11 +99,14 @@
         "psr-4": {
             "App\\": "app/",
             "Plugins\\": "plugins/",
-            "Templates\\": "templates/"
+            "Templates\\": "templates/",
+            "Modules\\": "Modules/",
+            "Biscolab\\ReCaptcha\\": "packages/biscolab/laravel-recaptcha/src/"
         },
         "files": [
             "app/helpers.php",
-            "app/Helpers/DateHelper.php"
+            "app/Helpers/DateHelper.php",
+            "packages/biscolab/laravel-recaptcha/src/helpers.php"
         ],
         "classmap": [
             "database/seeds",

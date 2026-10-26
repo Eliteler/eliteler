@@ -11,7 +11,6 @@ module.exports = {
     './resources/views/vendor/**/*.blade.php',
     './resources/views/share/**/*.blade.php',
     './resources/views/templates/**/*.blade.php',
-    './resources/views/templates/*.blade.php',
     './resources/views/*.blade.php',
   ],
   theme: {
