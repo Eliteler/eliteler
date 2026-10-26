@@ -12,25 +12,27 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Plan;
-use App\User;
-use App\Setting;
-use App\Referral;
-use Carbon\Carbon;
-use App\Transaction;
 use App\EmailTemplate;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\URL;
 use App\Http\Controllers\Controller;
-use App\Services\GoBizCommonService;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Cookie;
+use App\NfcCardKey;
+use App\Plan;
 use App\Providers\RouteServiceProvider;
-use Illuminate\Support\Facades\Validator;
+use App\Referral;
+use App\Services\GoBizCommonService;
+use App\Transaction;
+use App\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Auth\RegistersUsers;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
+use Plugins\Zapier\Helpers\ZapierHelper;
 
 class RegisterController extends Controller
 {
@@ -49,19 +51,46 @@ class RegisterController extends Controller
     protected function validator(array $data)
     {
         $rules = [
-            'name'           => ['required', 'string', 'min:2', 'max:100'],
-            'email'          => ['required', 'string', 'email', 'max:191', 'unique:users'],
-            'mobile_number'  => ['nullable', 'string', 'max:15', 'regex:/^\+?[0-9]{7,15}$/'],
-            'password'       => ['required', 'string', 'min:6', 'confirmed'],
-            'terms'          => ['required'],
-            'referral_code'  => ['nullable', 'string', 'max:50', 'exists:users,user_id'],
+            'name'          => ['required', 'string', 'min:2', 'max:100'],
+            'email'         => ['required', 'string', 'email', 'max:191', 'unique:users'],
+            'country_code'  => ['nullable', 'string', 'max:10'],
+            'mobile_number' => ['nullable', 'string', 'max:20'],
+            'password'      => ['required', 'string', 'min:6', 'confirmed'],
+            'terms'         => ['required'],
+            'referral_code' => ['nullable', 'string', 'max:50', 'exists:users,user_id'],
         ];
 
-        if (env('RECAPTCHA_ENABLE') == 'on') {
-            $rules['g-recaptcha-response'] = ['recaptcha', 'required'];
+        // Check if reCAPTCHA is active
+        $recaptchaEnabled = in_array(env('RECAPTCHA_ENABLE'), ['1', 'on', true, 'true'], true);
+
+        if ($recaptchaEnabled) {
+            $rules['g-recaptcha-response'] = ['required'];
         }
 
-        return Validator::make($data, $rules); 
+        $messages = [
+            'g-recaptcha-response.required' => __('Please check the reCAPTCHA box.'),
+        ];
+
+        $validator = Validator::make($data, $rules, $messages);
+
+        // Verify token with Google API if reCAPTCHA is enabled
+        if ($recaptchaEnabled) {
+            $validator->after(function ($validator) use ($data) {
+                if (!empty($data['g-recaptcha-response'])) {
+                    $response = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
+                        'secret'   => env('RECAPTCHA_SECRET_KEY'),
+                        'response' => $data['g-recaptcha-response'],
+                        'remoteip' => request()->ip(),
+                    ]);
+
+                    if (!$response->json('success')) {
+                        $validator->errors()->add('g-recaptcha-response', __('reCAPTCHA verification failed. Please try again.'));
+                    }
+                }
+            });
+        }
+
+        return $validator;
     }
 
     /**
@@ -69,10 +98,10 @@ class RegisterController extends Controller
      */
     public function showRegistrationForm()
     {
-        $config = GoBizCommonService::config();
+        $config   = GoBizCommonService::config();
         $settings = GoBizCommonService::settings();
 
-        $registration_page = $config->where('config_key', 'registration_page')->first();
+        $registration_page         = $config->where('config_key', 'registration_page')->first();
         $registration_page_enabled = $registration_page && $registration_page->config_value == '0';
 
         if ($registration_page_enabled) {
@@ -89,7 +118,7 @@ class RegisterController extends Controller
                 'RECAPTCHA_SECRET_KEY' => env('RECAPTCHA_SECRET_KEY', ''),
             ];
 
-            $settings['google_configuration'] = $google_configuration;
+            $settings['google_configuration']    = $google_configuration;
             $settings['recaptcha_configuration'] = $recaptcha_configuration;
 
             if (isset($_REQUEST['ref'])) {
@@ -110,7 +139,7 @@ class RegisterController extends Controller
     {
         $config = DB::table('config')->pluck('config_value', 'config_key');
 
-        $rawEmail = $data['email'];
+        $rawEmail     = $data['email'];
         $deletedEmail = $rawEmail . 'deleted';
 
         // First check the deleted version in DB
@@ -142,14 +171,30 @@ class RegisterController extends Controller
 
         $userId = uniqid();
 
+        // NFC Card Key
+        $nfc_ref = request()->get('nfc_ref');
+
+        // check nfc card key
+        if ($nfc_ref) {
+            // check nfc card key exists
+            $nfcKey = NfcCardKey::where('unqiue_key', $nfc_ref)->where('status', 1)->where('key_status', 'active')->first();
+
+            // if nfc card key not exists return error
+            if (empty($nfcKey)) {
+                throw ValidationException::withMessages([
+                    'email' => __('Invalid NFC Card Key Reference'),
+                ]);
+            }
+        }
+
         // Referral System
         if ($config['referral_system'] ?? false) {
-            if (!empty($data['referral_code'])) {
+            if (! empty($data['referral_code'])) {
                 $referralCode = User::where('user_id', $data['referral_code'])->first();
 
                 if ($referralCode) {
-                    $referralType  = $config['referral_type'] ?? 0;
-                    $referralValue = $config['referral_value'] ?? 0;
+                    $referralType   = $config['referral_type'] ?? 0;
+                    $referralValue  = $config['referral_value'] ?? 0;
                     $referralAmount = $referralType == '0' ? 0 : $referralValue;
 
                     $referralData = [
@@ -159,12 +204,12 @@ class RegisterController extends Controller
                     ];
 
                     // Save referral
-                    $referral = new Referral();
-                    $referral->user_id = $userId;
+                    $referral                   = new Referral();
+                    $referral->user_id          = $userId;
                     $referral->referred_user_id = $referralCode->user_id;
-                    $referral->is_registered = 1;
-                    $referral->referral_scheme = json_encode($referralData);
-                    $referral->status = 1;
+                    $referral->is_registered    = 1;
+                    $referral->referral_scheme  = json_encode($referralData);
+                    $referral->status           = 1;
                     $referral->save();
                 }
             }
@@ -172,55 +217,78 @@ class RegisterController extends Controller
 
         // Create user data
         $userData = [
-            'user_id'          => $userId,
-            'lang'         => config('app.locale') ?? 'en',
-            'name'             => $data['name'],
-            'email'            => $data['email'],
-            'mobile_number'    => $data['mobile_number'],
+            'user_id'           => $userId,
+            'lang'              => config('app.locale') ?? 'en',
+            'name'              => $data['name'],
+            'email'             => $data['email'],
+            'country_code'      => $data['country_code'] ?? null,
+            'mobile_number'     => $data['mobile_number'],
             'email_verified_at' => data_get($config, 'disable_user_email_verification') == '1' ? null : now(),
-            'auth_type'        => 'Email',
-            'password'         => Hash::make($data['password']),
+            'auth_type'         => 'Email',
+            'password'          => Hash::make($data['password']),
         ];
 
         // Create new user
         $user = User::create($userData);
 
-        // Activate plan during registeration
-        $activate_plan_during_registeration = $config['activate_plan_during_registeration'] ?? '0';
+        // Dispatch new user event to Zapier (Frontend Registration)
+        if (function_exists('zapier_dispatch')) {
+            zapier_dispatch('new_user', [
+                'registered_at'   => now()->toDateTimeString(),
+                'user_id'         => $user->user_id ?? $user->id,
+                'name'            => $user->name,
+                'email'           => $user->email,
+                'mobile_number'   => ($user->country_code ?? '') . ($user->mobile_number ?? ''),
+                'address'         => $user->billing_address ?? '',
+                'city'            => $user->billing_city ?? '',
+                'state'           => $user->billing_state ?? '',
+                'country'         => $user->billing_country ?? '',
+                'zipcode'         => $user->billing_zipcode ?? '',
+                'user_tax_number' => $user->billing_tax_number ?? $user->tax_number ?? '', // Global Tax ID / VAT / GSTIN
+                'registered_by'   => 'Customer (Frontend)',
+            ]);
+        }
 
-        // if activate plan during registeration is enabled
-        if ($activate_plan_during_registeration == '1') {
-            // check free plan available in db
-            $free_plan = Plan::where('plan_price', 0)->where('status', 1)->first();
+        if ($nfc_ref) {
+            session()->put('pending_nfc_ref', $nfc_ref);
+        } else {
+            // Activate plan during registeration
+            $activate_plan_during_registeration = $config['activate_plan_during_registeration'] ?? '0';
 
-            // if free plan available
-            if ($free_plan) {
-                // create one transaction for free plan
-                $transaction = new Transaction();
-                $transaction->gobiz_transaction_id = uniqid();
-                $transaction->transaction_date = now();
-                $transaction->transaction_id = uniqid();
-                $transaction->user_id = $user->id;
-                $transaction->plan_id = $free_plan->plan_id;
-                $transaction->desciption = $free_plan->plan_name . " Plan";
-                $transaction->payment_gateway_name = "FREE";
-                $transaction->transaction_amount = $free_plan->plan_price;
-                $transaction->transaction_currency = $config['currency'];
-                $transaction->invoice_details = json_encode([]);
-                $transaction->payment_status = "SUCCESS";
-                $transaction->save();
+            // if activate plan during registeration is enabled
+            if ($activate_plan_during_registeration == '1') {
+                // check free plan available in db
+                $free_plan = Plan::where('plan_price', 0)->where('status', 1)->first();
 
-                // set plan validity
-                $plan_validity = Carbon::now();
-                $plan_validity->addDays((int) $free_plan->validity);
+                // if free plan available
+                if ($free_plan) {
+                    // create one transaction for free plan
+                    $transaction                       = new Transaction();
+                    $transaction->gobiz_transaction_id = uniqid();
+                    $transaction->transaction_date     = now();
+                    $transaction->transaction_id       = uniqid();
+                    $transaction->user_id              = $user->id;
+                    $transaction->plan_id              = $free_plan->plan_id;
+                    $transaction->desciption           = $free_plan->plan_name . " Plan";
+                    $transaction->payment_gateway_name = "FREE";
+                    $transaction->transaction_amount   = $free_plan->plan_price;
+                    $transaction->transaction_currency = $config['currency'];
+                    $transaction->invoice_details      = json_encode([]);
+                    $transaction->payment_status       = "SUCCESS";
+                    $transaction->save();
 
-                $user = User::where('user_id', $userId)->first();
-                $user->plan_id = $free_plan->plan_id;
-                $user->term = $free_plan->validity;
-                $user->plan_validity = $plan_validity;
-                $user->plan_activation_date = now();
-                $user->plan_details = $free_plan;
-                $user->save();
+                    // set plan validity
+                    $plan_validity = Carbon::now();
+                    $plan_validity->addDays((int) $free_plan->validity);
+
+                    $user                       = User::where('user_id', $userId)->first();
+                    $user->plan_id              = $free_plan->plan_id;
+                    $user->term                 = $free_plan->validity;
+                    $user->plan_validity        = $plan_validity;
+                    $user->plan_activation_date = now();
+                    $user->plan_details         = $free_plan;
+                    $user->save();
+                }
             }
         }
 
@@ -237,10 +305,10 @@ class RegisterController extends Controller
             if ($emailTemplate && $emailTemplate->is_enabled == 1) {
                 try {
                     $message = [
-                        'status'         => '',
-                        'emailSubject'   => $emailTemplate->email_template_subject,
-                        'emailContent'   => $emailTemplate->email_template_content,
-                        'registeredName' => $data['name'],
+                        'status'          => '',
+                        'emailSubject'    => $emailTemplate->email_template_subject,
+                        'emailContent'    => $emailTemplate->email_template_content,
+                        'registeredName'  => $data['name'],
                         'registeredEmail' => $data['email'],
                     ];
 
@@ -260,5 +328,13 @@ class RegisterController extends Controller
     protected function redirectTo()
     {
         return '/user/dashboard';
+    }
+
+    protected function registered(Request $request, $user)
+    {
+        if ($nfcRef = session('pending_nfc_ref')) {
+            session()->put('nfc_ref', $nfcRef);
+            session()->forget('pending_nfc_ref');
+        }
     }
 }

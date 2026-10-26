@@ -12,58 +12,106 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Setting;
 use App\EmailTemplate;
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Mews\Purifier\Facades\Purifier;
 
+/**
+ * System email templates (email_templates). The 25 rows ship with the app
+ * and are only edited here, never created or deleted. Content is HTML
+ * cleaned with Purifier; ":placeholders" are filled in when the email is sent.
+ */
 class EmailTemplateController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
+    /** Placeholder => sample value used in the live preview. */
+    private const SHORTCODES = [
+        'Customer' => [
+            ':customername' => 'Asha Rao', ':customeremail' => 'asha@example.com', ':receivername' => 'Asha Rao',
+            ':receiveremail' => 'asha@example.com', ':receiverphone' => '+1 555 0100', ':receivermessage' => 'Looking forward to it!',
+            ':registeredname' => 'Asha Rao', ':registeredemail' => 'asha@example.com',
+        ],
+        'Appointments' => [
+            ':status' => 'Confirmed', ':appointmentdate' => '12 Oct 2026', ':appointmenttime' => '10:30 AM', ':appointmentpageurl' => '#',
+            ':googlecalendarurl' => '#', ':checkindate' => '12 Oct 2026', ':checkintime' => '2:00 PM', ':checkoutdate' => '14 Oct 2026',
+            ':checkouttime' => '11:00 AM', ':servicebookingpageurl' => '#',
+        ],
+        'Orders' => [
+            ':orderid' => 'OD-10482', ':cardname' => 'Matte black NFC card', ':cardprice' => '$29.00', ':paymentstatus' => 'Paid',
+            ':deliverystatus' => 'Shipped', ':quantity' => '2', ':trackingnumber' => '1Z999AA10123456784', ':courierpartner' => 'UPS',
+            ':orderpageurl' => '#', ':totalprice' => '$58.00',
+        ],
+        'Plans' => [':planname' => 'Business', ':plancode' => 'BIZ-12', ':planprice' => '$99.00', ':expirydate' => '31 Dec 2026'],
+        'System' => [
+            ':hyperlink' => '#', ':vcardname' => 'Asha Rao Design', ':appname' => null, ':previousdomain' => 'old.example.com',
+            ':currentdomain' => 'card.example.com', ':otpnumber' => '482913', ':supportemail' => 'support@example.com',
+            ':supportphone' => '+1 555 0199', ':actionlink' => '#',
+        ],
+    ];
+
     public function __construct()
     {
         $this->middleware('auth');
     }
 
-    // Email Templates
-    public function emailTemplatesIndex(Request $request, $id)
+    public function emailTemplatesIndex($id)
     {
-        // Queries
-        $email_templates = EmailTemplate::where('email_template_id', $id)->first();
+        $template = EmailTemplate::where('email_template_id', $id)->first();
 
-        // Check if the email template is not found
-        if (empty($email_templates)) {
-            return redirect()->route('admin.dashboard')->with('failed', __('Not Found!'));
+        if (! $template) {
+            $first = EmailTemplate::orderBy('id')->value('email_template_id');
+
+            return $first ? redirect()->route('admin.email.templates.index', $first) : redirect()->route('admin.dashboard')->with('failed', __('No email templates found.'));
         }
 
-        $settings = Setting::where('status', 1)->first();
-
-        return view('admin.pages.email-templates.index', compact('email_templates', 'settings'));
+        return Inertia::render('settings/email-templates', [
+            'templates'  => EmailTemplate::orderBy('id')->get(['email_template_id', 'email_template_name', 'is_enabled'])->map(fn ($row) => [
+                'id'      => $row->email_template_id,
+                'name'    => __($row->email_template_name),
+                'enabled' => (bool) $row->is_enabled,
+            ]),
+            'template'   => [
+                'id'      => $template->email_template_id,
+                'name'    => __($template->email_template_name),
+                'subject' => (string) $template->email_template_subject,
+                'content' => (string) $template->email_template_content,
+                'enabled' => (bool) $template->is_enabled,
+            ],
+            'shortcodes' => collect(self::SHORTCODES)->map(fn ($codes, $group) => [
+                'group' => __($group),
+                'codes' => collect($codes)->map(fn ($sample, $code) => ['code' => $code, 'sample' => $sample ?? config('app.name')])->values(),
+            ])->values(),
+            'previewCss' => $this->emailCss(),
+        ]);
     }
 
-    // Update Email Template Content
     public function updateEmailTemplateContent(Request $request)
     {
-        // Queries
-        $email_templates = EmailTemplate::where('email_template_id', $request->email_template_id)->first();
+        $template = EmailTemplate::where('email_template_id', (string) $request->input('email_template_id'))->firstOrFail();
 
-        // Check is_enabled is checked
-        $is_enabled = 0;
-        if ($request->is_enabled != null) {
-            $is_enabled = 1;
-        }
+        $data = $request->validate([
+            'email_template_subject' => 'required|string|max:255',
+            'email_template_content' => 'required|string|max:65000',
+            'is_enabled'             => 'required|boolean',
+        ], [], [
+            'email_template_subject' => __('subject'),
+            'email_template_content' => __('message'),
+        ]);
 
-        // Update Email Template Content
-        $email_templates->email_template_subject = $request->email_template_subject;
-        $email_templates->email_template_content = Purifier::clean($request->email_template_content);
-        $email_templates->is_enabled = $is_enabled;
-        $email_templates->save();
+        $template->email_template_subject = $data['email_template_subject'];
+        $template->email_template_content = Purifier::clean($data['email_template_content']);
+        $template->is_enabled             = $request->boolean('is_enabled');
+        $template->save();
 
-        return redirect()->route('admin.email.templates.index', ['id' => $request->email_template_id])->with('success', __('Updated!'));
+        return back()->with('success', __(':name saved.', ['name' => __($template->email_template_name)]));
+    }
+
+    /** Styles of the email layout, so the preview matches what customers get. */
+    private function emailCss(): string
+    {
+        $layout = @file_get_contents(resource_path('views/emails/appointment.blade.php')) ?: '';
+
+        return preg_match('#<style[^>]*>(.*?)</style>#s', $layout, $match) ? trim($match[1]) : '';
     }
 }

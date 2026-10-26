@@ -6,7 +6,7 @@
         <div class="page-header d-print-none border-bottom pb-3">
             <div class="container d-flex align-items-center justify-content-between gap-2">
                 <div class="d-flex align-item-center gap-2">
-                    <a href="{{ url()->previous() }}" class="border rounded-3 p-2 text-white">
+                    <a href="{{ url()->previous() }}" class="border rounded-3 p-2">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                             class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-left icon-primary">
@@ -24,11 +24,11 @@
                     <a href="{{ route('user.dashboard') }}">
                         @if (file_exists(public_path('img/logo-light.png')))
                             <img src="{{ optional(Auth::user())->choosed_theme == 'light' ? asset($settings->site_logo) : asset('img/logo-light.png') }}"
-                                width="200" height="50" alt="{{ $settings->site_name }}"
+                                width="200" height="50" alt="{{ config('app.name') }}"
                                 class="navbar-brand-image custom-logo">
                         @else
                             <img src="{{ $settings->site_logo }}" width="200" height="50"
-                                alt="{{ $settings->site_name }}" class="navbar-brand-image custom-logo">
+                                alt="{{ config('app.name') }}" class="navbar-brand-image custom-logo">
                         @endif
                     </a>
                 </div>
@@ -76,32 +76,35 @@
                     <a class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
                 </div>
 
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-body">
-                            <h3 class="card-title">
-                                {{ __('Choosed NFC Card') }} : {{ __($nfcDetails->nfc_card_name) }}
-                            </h3>
+                <div class="row justify-content-center">
+                    <div class="col-lg-4 col-md-6 col-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <h3 class="card-title">
+                                    {{ __('Choosed NFC Card') }} : {{ __($nfcDetails->nfc_card_name) }}
+                                </h3>
 
-                            @if (empty($paddleTransactionIdForCheckout))
-                                <div class="alert alert-danger mt-2">
-                                    {{ __('Unable to generate checkout. Please go back and try again.') }}
-                                </div>
-                            @else
-                                <button type="button" class="btn btn-primary" id="paddle-pay-btn">
-                                    <span id="btn-text">{{ __('Pay Now') }}</span>
-                                    <span id="btn-spinner" class="spinner-border spinner-border-sm ms-2 d-none"
-                                        role="status" aria-hidden="true"></span>
-                                </button>
-                            @endif
+                                @if (empty($paddleTransactionIdForCheckout))
+                                    <div class="alert alert-danger mt-2">
+                                        {{ __('Unable to generate checkout. Please go back and try again.') }}
+                                    </div>
+                                @else
+                                    <button type="button" class="btn btn-primary" id="paddle-pay-btn">
+                                        <span id="btn-text">{{ __('Pay Now') }}</span>
+                                        <span id="btn-spinner" class="spinner-border spinner-border-sm ms-2 d-none"
+                                            role="status" aria-hidden="true"></span>
+                                    </button>
+                                @endif
 
+                            </div>
                         </div>
                     </div>
                 </div>
-
-                @include('user.includes.footer')
             </div>
         </div>
+
+        {{-- Footer --}}
+        @include('user.includes.footer')
     </div>
 @endsection
 
@@ -111,13 +114,12 @@
     <script>
         (function() {
 
-            var paddleClientToken = "{{ $config[67]->config_value }}"; // Client-side token (live_xxx / test_xxx)
+            var paddleClientToken = "{{ $config[67]->config_value }}";
             var isSandbox = "{{ $config[64]->config_value }}" === "true";
             var paddleTransactionId = "{{ $paddleTransactionIdForCheckout ?? '' }}";
 
             if (!paddleTransactionId) return;
 
-            // Warn if config[67] is not a valid Paddle Billing client-side token
             if (!paddleClientToken.startsWith('live_') && !paddleClientToken.startsWith('test_')) {
                 console.error(
                     '[Paddle] ❌ config[67] does not look like a Paddle Billing client-side token.\n' +
@@ -127,7 +129,6 @@
                 return;
             }
 
-            // Initialise Paddle Billing
             try {
                 if (isSandbox) {
                     Paddle.Environment.set("sandbox");
@@ -139,13 +140,10 @@
                         console.log('[Paddle Event]', event.name, event);
 
                         switch (event.name) {
-
                             case 'checkout.loaded':
                                 hideBtnSpinner();
                                 break;
 
-                                // Payment completed — manually redirect to status route
-                                // Paddle Billing JS overlay does NOT auto-redirect
                             case 'checkout.completed':
                                 hideBtnSpinner();
                                 var ptxn = (event.data && event.data.transaction && event.data.transaction
@@ -173,7 +171,7 @@
                                 hideBtnSpinner();
                                 showError(
                                     '{{ __('Payment was declined. Please check your card details and try again.') }}'
-                                    );
+                                );
                                 break;
                         }
                     }
@@ -185,7 +183,6 @@
                 return;
             }
 
-            // Open checkout on button click
             var btn = document.getElementById('paddle-pay-btn');
             if (btn) {
                 btn.addEventListener('click', function() {
@@ -201,12 +198,11 @@
                         console.error('[Paddle] Paddle.Checkout.open failed:', openError);
                         showError(
                             '{{ __('Could not open the checkout. Please refresh the page and try again.') }}'
-                            );
+                        );
                     }
                 });
             }
 
-            // Helpers
             function showBtnSpinner() {
                 var spinner = document.getElementById('btn-spinner');
                 var text = document.getElementById('btn-text');

@@ -12,858 +12,162 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Plan;
-use App\User;
-use App\Setting;
-use App\Currency;
-use App\Referral;
-use Carbon\Carbon;
-use App\Transaction;
-use App\BusinessCard;
-use App\AppliedCoupon;
-use Illuminate\Http\Request;
-use Yajra\DataTables\DataTables;
-use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Mail;
+use App\Services\Admin\CustomerPlanService;
+use App\Transaction;
+use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use Inertia\Inertia;
 
+/**
+ * Plan payments (transactions). payment_status: SUCCESS, PENDING, FAILED,
+ * CANCELLED. Gateways FREE and TRIAL are plan activations without payment.
+ */
 class TransactionsController extends Controller
 {
-    // All online paid transactions
-    public function onlinePaidTransactions(Request $request)
+    private const TABS = [
+        'all'     => null,
+        'paid'    => ['SUCCESS'],
+        'pending' => ['PENDING'],
+        'failed'  => ['FAILED', 'CANCELLED'],
+    ];
+
+    public function __construct(private CustomerPlanService $plans)
     {
-        if ($request->ajax()) {
-            $transactions = Transaction::where('payment_gateway_name', '!=', 'Offline')->where('payment_status', 'SUCCESS')->orderBy('id', 'desc')->get();
-
-            return DataTables::of($transactions)
-                ->addIndexColumn()
-                ->addColumn('created_at', function ($row) {
-                    return formatDateForUser($row->created_at);
-                })
-                ->addColumn('gobiz_transaction_id', function ($row) {
-                    return $row->gobiz_transaction_id;
-                })
-                ->addColumn('transaction_id', function ($row) {
-                    return $row->transaction_id;
-                })
-                ->addColumn('user', function ($row) {
-                    $user_details = User::where('id', $row->user_id)->first();
-                    if ($user_details) {
-                        return '<a href="' . route('admin.view.user', $user_details->user_id) . '">' . $user_details->name . '</a>';
-                    } else {
-                        return '<a href="#">' . __("Customer not available") . '</a>';
-                    }
-                })
-                ->addColumn('payment_gateway_name', function ($row) {
-                    return __($row->payment_gateway_name);
-                })
-                ->addColumn('transaction_amount', function ($row) {
-                    $currencies = Currency::where('status', 1)->pluck('symbol', 'iso_code')->toArray();
-                    $symbol = $currencies[$row->transaction_currency] ?? '';
-                    return formatCurrency($row->transaction_amount);
-                })
-                ->addColumn('payment_status', function ($row) {
-                    $status = '';
-                    if ($row->payment_status == 'SUCCESS') {
-                        $status = '<span class="badge bg-green text-white">' . __('Paid') . '</span>';
-                    } elseif ($row->payment_status == 'FAILED') {
-                        $status = '<span class="badge bg-red text-white">' . __('Failed') . '</span>';
-                    } elseif ($row->payment_status == 'PENDING') {
-                        $status = '<span class="badge bg-orange text-white">' . __('Pending') . '</span>';
-                    } elseif ($row->payment_status == 'CANCELLED') {
-                        $status = '<span class="badge bg-red text-white">' . __('Cancelled') . '</span>';
-                    }
-                    return $status;
-                })
-                ->addColumn('action', function ($row) {
-                    $actions = '
-                        <a class="btn-action" href="#" role="button" data-bs-boundary="viewport" data-bs-toggle="dropdown" aria-expanded="false">
-                            <!-- Download SVG icon from http://tabler-icons.io/i/dots-vertical -->
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24"
-                                height="24" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round"
-                                class="icon icon-tabler icons-tabler-outline icon-tabler-dots fw-bold">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                <path d="M4 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                <path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                <path d="M18 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                            </svg>
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-end">';
-                
-                    if ($row->payment_status == "SUCCESS") {
-                        $actions .= '<a class="dropdown-item" target="_blank" href="' . route('admin.view.invoice', ['id' => $row->gobiz_transaction_id]) . '">' . __('Invoice') . '</a>';
-                    }
-                
-                    if ($row->payment_status != "SUCCESS") {
-                        $actions .= '<a class="dropdown-item" href="' . route('admin.trans.status', ['id' => $row->gobiz_transaction_id, 'status' => 'PENDING']) . '">' . __('Pending') . '</a>';
-                        $actions .= '<a class="dropdown-item" href="#" onclick="getTransaction(`' . $row->gobiz_transaction_id . '`); return false;">' . __('Success') . '</a>';
-                        $actions .= '<a class="dropdown-item" href="' . route('admin.trans.status', ['id' => $row->gobiz_transaction_id, 'status' => 'FAILED']) . '">' . __('Failed') . '</a>';
-                    }
-                
-                    $actions .= '</div>';
-                
-                    return $actions;
-                })                
-                ->rawColumns(['user', 'payment_status', 'action'])
-                ->make(true);
-        }
-
-        $settings = Setting::where('status', 1)->first();
-        $currencies = Currency::where('status', 1)->get();
-
-        return view('admin.pages.transactions.online-paid', compact('settings', 'currencies'));
+        $this->middleware('auth');
     }
 
-    // All online unpaid transactions
-    public function onlineUnpaidTransactions(Request $request)
+    public function index(Request $request)
     {
-        if ($request->ajax()) {
-            $transactions = Transaction::where('payment_gateway_name', '!=', 'Offline')->where('payment_status', '!=', 'SUCCESS')->orderBy('id', 'desc')->get();
+        $tab    = array_key_exists($request->query('tab'), self::TABS) ? $request->query('tab') : 'all';
+        $type   = in_array($request->query('type'), ['online', 'offline', 'free'], true) ? $request->query('type') : 'all';
+        $search = trim((string) $request->query('search', ''));
 
-            return DataTables::of($transactions)
-                ->addIndexColumn()
-                ->addColumn('created_at', function ($row) {
-                    return formatDateForUser($row->created_at);
-                })
-                ->addColumn('gobiz_transaction_id', function ($row) {
-                    return $row->gobiz_transaction_id;
-                })
-                ->addColumn('transaction_id', function ($row) {
-                    return $row->transaction_id;
-                })
-                ->addColumn('user', function ($row) {
-                    $user_details = User::where('id', $row->user_id)->first();
-                    if ($user_details) {
-                        return '<a href="' . route('admin.view.user', $user_details->user_id) . '">' . $user_details->name . '</a>';
-                    } else {
-                        return '<a href="#">' . __("Customer not available") . '</a>';
-                    }
-                })
-                ->addColumn('payment_gateway_name', function ($row) {
-                    return __($row->payment_gateway_name);
-                })
-                ->addColumn('transaction_amount', function ($row) {
-                    $currencies = Currency::where('status', 1)->pluck('symbol', 'iso_code')->toArray();
-                    $symbol = $currencies[$row->transaction_currency] ?? '';
-                    return formatCurrency($row->transaction_amount);
-                })
-                ->addColumn('payment_status', function ($row) {
-                    $status = '';
-                    if ($row->payment_status == 'SUCCESS') {
-                        $status = '<span class="badge bg-green text-white">' . __('Paid') . '</span>';
-                    } elseif ($row->payment_status == 'FAILED') {
-                        $status = '<span class="badge bg-red text-white">' . __('Failed') . '</span>';
-                    } elseif ($row->payment_status == 'PENDING') {
-                        $status = '<span class="badge bg-orange text-white">' . __('Pending') . '</span>';
-                    } elseif ($row->payment_status == 'CANCELLED') {
-                        $status = '<span class="badge bg-red text-white">' . __('Cancelled') . '</span>';
-                    }
-                    return $status;
-                })
-                ->addColumn('action', function ($row) {
-                    $actions = '
-                        <a class="btn-action" href="#" role="button" data-bs-boundary="viewport" data-bs-toggle="dropdown" aria-expanded="false">
-                            <!-- Download SVG icon from http://tabler-icons.io/i/dots-vertical -->
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24"
-                                height="24" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round"
-                                class="icon icon-tabler icons-tabler-outline icon-tabler-dots fw-bold">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                <path d="M4 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                <path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                <path d="M18 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                            </svg>
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-end">';
-                
-                    if ($row->payment_status == "SUCCESS") {
-                        $actions .= '<a class="dropdown-item" target="_blank" href="' . route('admin.view.invoice', ['id' => $row->gobiz_transaction_id]) . '">' . __('Invoice') . '</a>';
-                    }
-                
-                    if ($row->payment_status != "SUCCESS") {
-                        $actions .= '<a class="dropdown-item" href="' . route('admin.trans.status', ['id' => $row->gobiz_transaction_id, 'status' => 'PENDING']) . '">' . __('Pending') . '</a>';
-                        $actions .= '<a class="dropdown-item" href="#" onclick="getTransaction(`' . $row->gobiz_transaction_id . '`); return false;">' . __('Success') . '</a>';
-                        $actions .= '<a class="dropdown-item" href="' . route('admin.trans.status', ['id' => $row->gobiz_transaction_id, 'status' => 'FAILED']) . '">' . __('Failed') . '</a>';
-                    }
-                
-                    $actions .= '</div>';
-                
-                    return $actions;
-                })                
-                ->rawColumns(['user', 'payment_status', 'action'])
-                ->make(true);
-        }
+        $base = fn () => Transaction::query()
+            ->leftJoin('users', 'users.id', '=', 'transactions.user_id')
+            ->when($type === 'offline', fn ($q) => $q->where('transactions.payment_gateway_name', 'Offline'))
+            ->when($type === 'free', fn ($q) => $q->whereIn('transactions.payment_gateway_name', ['FREE', 'TRIAL']))
+            ->when($type === 'online', fn ($q) => $q->whereNotIn('transactions.payment_gateway_name', ['Offline', 'FREE', 'TRIAL']))
+            ->when($search !== '', fn ($q) => $q->where(fn ($q) => $q
+                ->where('transactions.gobiz_transaction_id', 'like', "%{$search}%")
+                ->orWhere('transactions.transaction_id', 'like', "%{$search}%")
+                ->orWhere(DB::raw("CONCAT(COALESCE(transactions.invoice_prefix, ''), COALESCE(transactions.invoice_number, ''))"), 'like', "%{$search}%")
+                ->orWhere('transactions.desciption', 'like', "%{$search}%")
+                ->orWhere('transactions.payment_gateway_name', 'like', "%{$search}%")
+                ->orWhere('users.name', 'like', "%{$search}%")
+                ->orWhere('users.email', 'like', "%{$search}%")));
 
-        $settings = Setting::where('status', 1)->first();
-        $currencies = Currency::where('status', 1)->get();
-
-        return view('admin.pages.transactions.online-unpaid', compact('settings', 'currencies'));
-    }
-
-    // Update transaction status
-    public function transactionStatus(Request $request, $id, $status)
-    {
-        // Transaction details
-        $transaction_details = Transaction::where('gobiz_transaction_id', $id)->where('status', 1)->first();
-        $user_details = User::find($transaction_details->user_id);
-
-        // Success to failed or pending
-        if ($transaction_details->payment_status == "SUCCESS" && $status != "SUCCESS") {
-            // Update transaction status
-            Transaction::where('gobiz_transaction_id', $id)->update([
-                'invoice_prefix' => null,
-                'invoice_number' => null,
-                'payment_status' => $status,
-            ]);
-        }
-
-        // If offline status is "SUCCESS"
-        if ($status == "SUCCESS") {
-
-            // Get config details
-            $config = DB::table('config')->get();
-
-            // Get plan validity
-            $plan_data = Plan::where('plan_id', $transaction_details->plan_id)->first();
-            $term_days = (int) $plan_data->validity;
-
-            if ($config[80]->config_value == '1') {
-                // Referral amount details
-                $referralCalculation = [];
-                $referralCalculation['referral_type'] = $config[81]->config_value;
-                $referralCalculation['referral_value'] = $config[82]->config_value;
-
-                // Check referral_type is percentage or amount
-                if ($config[81]->config_value == '0') {
-                    // Plan amount
-                    $base_amount = (float) $transaction_details->transaction_amount;
-                    
-                    $referralCalculation['referral_amount'] = ($base_amount * $referralCalculation['referral_value']) / 100;
-                } else {
-                    $referralCalculation['referral_amount'] = $referralCalculation['referral_value'];
-                }
-
-                // Check user_id is already subscribed or not
-                if (Referral::where('user_id', $user_details->user_id)->where('is_subscribed', 0)->first()) {
-                    // Update referral details
-                    Referral::where('user_id', $user_details->user_id)->update([
-                        'is_subscribed' => 1,
-                        'referral_scheme' => json_encode($referralCalculation),
-                        'updated_at' => now(),
-                    ]);
-                }
-            }
-
-            // Customer plan validity
-            if ($user_details->plan_validity == "") {
-                // Add days
-                if ($term_days == "9999") {
-                    $plan_validity = "2050-12-30 23:23:59";
-                } else {
-                    $plan_validity = Carbon::now();
-                    $plan_validity->addDays($term_days);
-                }
-
-                // Invoice count generate
-                $invoice_count = Transaction::where("invoice_prefix", $config[15]->config_value)->count();
-                $invoice_number = $invoice_count + 1;
-
-                // Update transaction status
-                Transaction::where('gobiz_transaction_id', $id)->update([
-                    'invoice_prefix' => $config[15]->config_value,
-                    'invoice_number' => $invoice_number,
-                    'payment_status' => 'SUCCESS',
-                ]);
-
-                // Update customer plan details
-                if ($user_details) {
-                    $user_details->plan_id              = $transaction_details->plan_id;
-                    $user_details->term                 = $term_days;
-                    $user_details->plan_validity        = $plan_validity;
-                    $user_details->plan_activation_date = now();
-                    $user_details->plan_details         = $plan_data;
-    
-                    $user_details->save();
-                }
-
-                // Save applied coupon
-                AppliedCoupon::where('transaction_id', $transaction_details->transaction_id)->update([
-                    'status' => 1
-                ]);
-
-                // Generate invoice to customer
-                $encode = json_decode($transaction_details['invoice_details'], true);
-                $details = [
-                    'from_billing_name' => $encode['from_billing_name'],
-                    'from_billing_email' => $encode['from_billing_email'],
-                    'from_billing_address' => $encode['from_billing_address'],
-                    'from_billing_city' => $encode['from_billing_city'],
-                    'from_billing_state' => $encode['from_billing_state'],
-                    'from_billing_country' => $encode['from_billing_country'],
-                    'from_billing_zipcode' => $encode['from_billing_zipcode'],
-                    'gobiz_transaction_id' => $transaction_details->gobiz_transaction_id,
-                    'to_billing_name' => $encode['to_billing_name'],
-                    'invoice_currency' => $transaction_details->transaction_currency,
-                    'subtotal' => $encode['subtotal'],
-                    'tax_amount' => (float)($plan_data->plan_price) * (float)($config[25]->config_value) / 100,
-                    'applied_coupon' => $encode['applied_coupon'],
-                    'discounted_price' => $encode['discounted_price'],
-                    'invoice_amount' => $encode['invoice_amount'],
-                    'invoice_id' => $config[15]->config_value . $invoice_number,
-                    'invoice_date' => $transaction_details->created_at,
-                    'description' => $transaction_details->description,
-                    'email_heading' => $config[27]->config_value,
-                    'email_footer' => $config[28]->config_value,
-                ];
-
-                // Send email to customer
-                try {
-                    Mail::to($encode['to_billing_email'])->send(new \App\Mail\SendEmailInvoice($details));
-                } catch (\Exception $e) {
-                }
-
-                // Return and alert
-                return redirect()->back()->with('success', trans('Plan activation success!'));
-            } else {
-                $message = "";
-                if ($user_details->plan_id == $transaction_details->plan_id) {
-
-
-                    // Check if plan validity is expired or not.
-                    $plan_validity = \Carbon\Carbon::createFromFormat('Y-m-d H:s:i', $user_details->plan_validity); 
-                    $current_date = Carbon::now();
-                    $remaining_days = $current_date->diffInDays($plan_validity, false);
-
-                    if ($remaining_days > 0) {
-                        // Add days
-                        if ($term_days == "9999") {
-                            $plan_validity = "2050-12-30 23:23:59";
-                            $message = trans("Plan activated!");
-                        } else {
-                            $plan_validity = Carbon::parse($user_details->plan_validity);
-                            $plan_validity->addDays($term_days);
-                            $message = trans("Plan activated!");
-                        }
-                    } else {
-                        // Add days
-                        if ($term_days == "9999") {
-                            $plan_validity = "2050-12-30 23:23:59";
-                            $message = trans("Plan activated!");
-                        } else {
-                            $plan_validity = Carbon::now();
-                            $plan_validity->addDays($term_days);
-                            $message = trans("Plan activated!");
-                        }
-                    }
-                } else {
-
-                    // Making all cards inactive, For Plan change
-                    BusinessCard::where('user_id', $user_details->user_id)->update([
-                        'card_status' => 'inactive',
-                    ]);
-
-                    // Add days
-                    if ($term_days == "9999") {
-                        $plan_validity = "2050-12-30 23:23:59";
-                        $message = trans("Plan activated!");
-                    } else {
-                        $plan_validity = Carbon::now();
-                        $plan_validity->addDays($term_days);
-                        $message = trans("Plan activated!");
-                    }
-                }
-
-                $invoice_count = Transaction::where("invoice_prefix", $config[15]->config_value)->count();
-                $invoice_number = $invoice_count + 1;
-
-                Transaction::where('gobiz_transaction_id', $id)->update([
-                    'invoice_prefix' => $config[15]->config_value,
-                    'invoice_number' => $invoice_number,
-                    'payment_status' => 'SUCCESS',
-                ]);
-
-                if ($user_details) {
-                    $user_details->plan_id              = $transaction_details->plan_id;
-                    $user_details->term                 = $term_days;
-                    $user_details->plan_validity        = $plan_validity;
-                    $user_details->plan_activation_date = now();
-                    $user_details->plan_details         = $plan_data;
-    
-                    $user_details->save();
-                }
-
-                // Save applied coupon
-                AppliedCoupon::where('transaction_id', $transaction_details->transaction_id)->update([
-                    'status' => 1
-                ]);
-
-                $encode = json_decode($transaction_details['invoice_details'], true);
-                $details = [
-                    'from_billing_name' => $encode['from_billing_name'],
-                    'from_billing_email' => $encode['from_billing_email'],
-                    'from_billing_address' => $encode['from_billing_address'],
-                    'from_billing_city' => $encode['from_billing_city'],
-                    'from_billing_state' => $encode['from_billing_state'],
-                    'from_billing_country' => $encode['from_billing_country'],
-                    'from_billing_zipcode' => $encode['from_billing_zipcode'],
-                    'gobiz_transaction_id' => $transaction_details->gobiz_transaction_id,
-                    'to_billing_name' => $encode['to_billing_name'],
-                    'invoice_currency' => $transaction_details->transaction_currency,
-                    'subtotal' => $encode['subtotal'],
-                    'tax_amount' => (float)($plan_data->plan_price) * (float)($config[25]->config_value) / 100,
-                    'applied_coupon' => $encode['applied_coupon'],
-                    'discounted_price' => $encode['discounted_price'],
-                    'invoice_amount' => $encode['invoice_amount'],
-                    'invoice_id' => $config[15]->config_value . $invoice_number,
-                    'invoice_date' => $transaction_details->created_at,
-                    'description' => $transaction_details->description,
-                    'email_heading' => $config[27]->config_value,
-                    'email_footer' => $config[28]->config_value, 
-                ];
-
-                try {
-                    Mail::to($encode['to_billing_email'])->send(new \App\Mail\SendEmailInvoice($details));
-                } catch (\Exception $e) {
-                }
-
-                return redirect()->back()->with('success', trans($message));
-            }
-        } else {
-            Transaction::where('gobiz_transaction_id', $id)->update([
-                'payment_status' => $status,
+        $transactions = $base()
+            ->when(self::TABS[$tab], fn ($q, $statuses) => $q->whereIn('transactions.payment_status', $statuses))
+            ->select([
+                'transactions.gobiz_transaction_id', 'transactions.transaction_id', 'transactions.desciption',
+                'transactions.payment_gateway_name', 'transactions.transaction_amount', 'transactions.payment_status',
+                'transactions.invoice_prefix', 'transactions.invoice_number', 'transactions.created_at',
+                'users.user_id as customer_id', 'users.name', 'users.email',
+            ])
+            ->orderByDesc('transactions.created_at')
+            ->paginate(25)
+            ->withQueryString()
+            ->through(fn ($row) => [
+                'id'        => $row->gobiz_transaction_id,
+                'reference' => $row->transaction_id ?: null,
+                'invoice'   => $row->invoice_number ? $row->invoice_prefix . $row->invoice_number : null,
+                'plan'      => $row->desciption,
+                'gateway'   => $row->payment_gateway_name,
+                'amount'    => (float) $row->transaction_amount,
+                'status'    => strtolower($row->payment_status),
+                'date'      => $row->created_at ? Carbon::parse($row->created_at)->toIso8601String() : null,
+                'customer'  => $row->customer_id ? ['id' => $row->customer_id, 'name' => $row->name, 'email' => $row->email] : null,
             ]);
 
-            return redirect()->back()->with('success', trans('Updated!'));
-        }
+        $counts = $base()->selectRaw("COUNT(*) as `all`, SUM(transactions.payment_status = 'SUCCESS') as paid, SUM(transactions.payment_status = 'PENDING') as pending, SUM(transactions.payment_status IN ('FAILED','CANCELLED')) as failed")->first();
+
+        return Inertia::render('transactions/index', [
+            'transactions' => $transactions,
+            'filters'      => compact('tab', 'type', 'search'),
+            'counts'       => collect(array_keys(self::TABS))->mapWithKeys(fn ($k) => [$k => (int) $counts->{$k}]),
+        ]);
     }
 
-    // View invoice
     public function viewInvoice($id)
     {
-        // Queries
-        $transaction = Transaction::where('gobiz_transaction_id', $id)->orWhere('transaction_id', $id)->where('payment_status', 'SUCCESS')->first();
+        $row = Transaction::where(fn ($q) => $q->where('gobiz_transaction_id', $id)->orWhere('transaction_id', $id))->first();
 
-        if ($transaction) {
-            $settings = Setting::where('status', 1)->first();
-            $config = DB::table('config')->get();
-            $currencies = Currency::where('status', 1)->get();
-            $transaction['billing_details'] = json_decode($transaction['invoice_details'], true);
-
-            // View
-            return view('admin.pages.transactions.view-invoice', compact('transaction', 'settings', 'config', 'currencies'));
-        } else {
-            return back()->with('failed', trans('Not Found!'));
+        if (! $row || $row->payment_status !== 'SUCCESS') {
+            return redirect()->route('admin.transactions.index')->with('failed', __('Not Found!'));
         }
+
+        $invoice = json_decode($row->invoice_details ?? '', true) ?: [];
+        $party   = fn (string $side) => array_filter([
+            'name'    => $invoice["{$side}_billing_name"] ?? null,
+            'address' => collect([$invoice["{$side}_billing_address"] ?? null, $invoice["{$side}_billing_city"] ?? null, $invoice["{$side}_billing_state"] ?? null, $invoice["{$side}_billing_zipcode"] ?? null, $invoice["{$side}_billing_country"] ?? null])->filter()->implode(', ') ?: null,
+            'phone'   => $invoice["{$side}_billing_phone"] ?? null,
+            'email'   => $invoice["{$side}_billing_email"] ?? null,
+            'taxId'   => $invoice["{$side}_vat_number"] ?? null,
+        ]);
+        $logo = DB::table('settings')->value('site_logo');
+
+        return Inertia::render('shared/invoice', [
+            'invoice' => [
+                'number'    => $row->invoice_number ? $row->invoice_prefix . $row->invoice_number : null,
+                'id'        => $row->gobiz_transaction_id,
+                'reference' => $row->transaction_id ?: $row->gobiz_transaction_id,
+                'date'      => $row->created_at?->toIso8601String(),
+                'status'    => 'success',
+                'method'    => $row->payment_gateway_name,
+                'logo'      => $logo ? asset($logo) : null,
+                'from'      => $party('from'),
+                'to'        => $party('to'),
+                'item'      => ['name' => $row->desciption, 'description' => null, 'price' => (float) ($invoice['subtotal'] ?? 0), 'quantity' => 1],
+                'subtotal'  => (float) ($invoice['subtotal'] ?? 0),
+                'taxName'   => $invoice['tax_name'] ?? null,
+                'taxRate'   => $invoice['tax_value'] ?? null,
+                'tax'       => (float) ($invoice['tax_amount'] ?? 0),
+                'coupon'    => $invoice['applied_coupon'] ?? null,
+                'discount'  => ! empty($invoice['applied_coupon']) ? max(0, (float) ($invoice['discounted_price'] ?? 0) - (float) ($invoice['invoice_amount'] ?? 0)) : 0,
+                'total'     => (float) ($invoice['invoice_amount'] ?? $row->transaction_amount),
+            ],
+            'back' => ['label' => __('Transactions'), 'href' => route('admin.transactions.index')],
+        ]);
     }
 
-    // All offline paid transactions
-    public function offlinePaidTransactions(Request $request)
+    /** Mark as paid (activates the plan) or as pending / failed / cancelled. */
+    public function transactionStatus(Request $request, $id, $status)
     {
-        if ($request->ajax()) {
-            $transactions = Transaction::where('payment_gateway_name', 'Offline')->where('payment_status', 'SUCCESS')->orderBy('id', 'desc')->get();
+        $request->merge(['status' => strtoupper($status)])->validate(['status' => ['required', Rule::in(['SUCCESS', 'PENDING', 'FAILED', 'CANCELLED'])]]);
+        $status      = strtoupper($status);
+        $transaction = Transaction::where('gobiz_transaction_id', $id)->where('status', 1)->firstOrFail();
 
-            return DataTables::of($transactions)
-                ->addIndexColumn()
-                ->addColumn('created_at', function ($row) {
-                    return formatDateForUser($row->created_at);
-                })
-                ->addColumn('gobiz_transaction_id', function ($row) {
-                    return $row->gobiz_transaction_id;
-                })
-                ->addColumn('transaction_id', function ($row) {
-                    return $row->transaction_id != null ? $row->transaction_id : '-';
-                })
-                ->addColumn('user', function ($row) {
-                    $user_details = User::where('id', $row->user_id)->first();
-                    if ($user_details) {
-                        return '<a href="' . route('admin.view.user', $user_details->user_id) . '">' . $user_details->name . '</a>';
-                    } else {
-                        return '<a href="#">' . __("Customer not available") . '</a>';
-                    }
-                })
-                ->addColumn('payment_gateway_name', function ($row) {
-                    return __($row->payment_gateway_name);
-                })
-                ->addColumn('transaction_amount', function ($row) {
-                    $currencies = Currency::where('status', 1)->pluck('symbol', 'iso_code')->toArray();
-                    $symbol = $currencies[$row->transaction_currency] ?? '';
-                    return formatCurrency($row->transaction_amount);
-                })
-                ->addColumn('payment_status', function ($row) {
-                    $status = '';
-                    if ($row->payment_status == 'SUCCESS') {
-                        $status = '<span class="badge bg-green text-white">' . __('Paid') . '</span>';
-                    } elseif ($row->payment_status == 'FAILED') {
-                        $status = '<span class="badge bg-red text-white">' . __('Failed') . '</span>';
-                    } elseif ($row->payment_status == 'PENDING') {
-                        $status = '<span class="badge bg-orange text-white">' . __('Pending') . '</span>';
-                    } elseif ($row->payment_status == 'CANCELLED') {
-                        $status = '<span class="badge bg-red text-white">' . __('Cancelled') . '</span>';
-                    }
-                    return $status;
-                })
-                ->addColumn('action', function ($row) {
-                    $actions = '<div class="dropdown">
-                                    <button class="btn-action" data-bs-boundary="viewport" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <!-- Download SVG icon from http://tabler-icons.io/i/dots-vertical -->
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24"
-                                            height="24" viewBox="0 0 24 24" fill="none"
-                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            class="icon icon-tabler icons-tabler-outline icon-tabler-dots fw-bold">
-                                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                            <path d="M4 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                            <path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                            <path d="M18 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                        </svg>
-                                    </button>
-                                    <div class="actions dropdown-menu dropdown-menu-end">';
-                    if ($row->invoice_number > 0) {
-                        $actions .= '<a class="dropdown-item" target="_blank" href="' . route('admin.view.invoice', ['id' => $row->gobiz_transaction_id]) . '">' . __('Invoice') . '</a>';
-                    }
-                    if ($row->payment_status != "SUCCESS") {
-                        $actions .= '<a class="dropdown-item" href="#" onclick="getOfflineTransaction(\'' . $row->gobiz_transaction_id . '\'); return false;">' . __('Success') . '</a>';
-                        $actions .= '<a class="dropdown-item" href="' . route('admin.offline.trans.status', ['id' => $row->gobiz_transaction_id, 'status' => 'PENDING']) . '">' . __('Pending') . '</a>';
-                        $actions .= '<a class="dropdown-item" href="' . route('admin.offline.trans.status', ['id' => $row->gobiz_transaction_id, 'status' => 'FAILED']) . '">' . __('Failed') . '</a>';
-                    }
-                    $actions .= '</div></div>';
-                    return $actions;
-                })
-                ->rawColumns(['user', 'payment_status', 'action'])
-                ->make(true);
+        if ($status === $transaction->payment_status) {
+            return back();
         }
 
-        $settings = Setting::where('status', 1)->first();
-        $currencies = Currency::where('status', 1)->get();
+        if ($status === 'SUCCESS') {
+            $result = $this->plans->confirmPayment($transaction);
 
-        return view('admin.pages.transactions.offline-paid', compact('settings', 'currencies'));
-    }
+            if (! $result) {
+                return back()->with('failed', __('The plan or customer of this payment no longer exists.'));
+            }
 
-    // All offline unpaid transactions
-    public function offlineUnpaidTransactions(Request $request)
-    {
-        if ($request->ajax()) {
-            $transactions = Transaction::where('payment_gateway_name', 'Offline')->where('payment_status', '!=', 'SUCCESS')->orderBy('id', 'desc')->get();
-
-            return DataTables::of($transactions)
-                ->addIndexColumn()
-                ->addColumn('created_at', function ($row) {
-                    return formatDateForUser($row->created_at);
-                })
-                ->addColumn('gobiz_transaction_id', function ($row) {
-                    return $row->gobiz_transaction_id;
-                })
-                ->addColumn('transaction_id', function ($row) {
-                    return $row->transaction_id != null ? $row->transaction_id : '-';
-                })
-                ->addColumn('user', function ($row) {
-                    $user_details = User::where('id', $row->user_id)->first();
-                    if ($user_details) {
-                        return '<a href="' . route('admin.view.user', $user_details->user_id) . '">' . $user_details->name . '</a>';
-                    } else {
-                        return '<a href="#">' . __("Customer not available") . '</a>';
-                    }
-                })
-                ->addColumn('payment_gateway_name', function ($row) {
-                    return __($row->payment_gateway_name);
-                })
-                ->addColumn('transaction_amount', function ($row) {
-                    $currencies = Currency::where('status', 1)->pluck('symbol', 'iso_code')->toArray();
-                    $symbol = $currencies[$row->transaction_currency] ?? '';
-                    return formatCurrency($row->transaction_amount);
-                })
-                ->addColumn('payment_status', function ($row) {
-                    $status = '';
-                    if ($row->payment_status == 'SUCCESS') {
-                        $status = '<span class="badge bg-green text-white">' . __('Paid') . '</span>';
-                    } elseif ($row->payment_status == 'FAILED') {
-                        $status = '<span class="badge bg-red text-white">' . __('Failed') . '</span>';
-                    } elseif ($row->payment_status == 'PENDING') {
-                        $status = '<span class="badge bg-orange text-white">' . __('Pending') . '</span>';
-                    } elseif ($row->payment_status == 'CANCELLED') {
-                        $status = '<span class="badge bg-red text-white">' . __('Cancelled') . '</span>';
-                    }
-                    return $status;
-                })
-                ->addColumn('action', function ($row) {
-                    $actions = '<div class="dropdown">
-                                    <button class="btn-action" data-bs-boundary="viewport" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <!-- Download SVG icon from http://tabler-icons.io/i/dots-vertical -->
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24"
-                                            height="24" viewBox="0 0 24 24" fill="none"
-                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                            stroke-linejoin="round"
-                                            class="icon icon-tabler icons-tabler-outline icon-tabler-dots fw-bold">
-                                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                            <path d="M4 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                            <path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                            <path d="M18 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                        </svg>
-                                    </button>
-                                    <div class="actions dropdown-menu dropdown-menu-end">';
-                    if ($row->invoice_number > 0) {
-                        $actions .= '<a class="dropdown-item" target="_blank" href="' . route('admin.view.invoice', ['id' => $row->gobiz_transaction_id]) . '">' . __('Invoice') . '</a>';
-                    }
-                    if ($row->payment_status != "SUCCESS") {
-                        $actions .= '<a class="dropdown-item" href="#" onclick="getOfflineTransaction(\'' . $row->gobiz_transaction_id . '\'); return false;">' . __('Success') . '</a>';
-                        $actions .= '<a class="dropdown-item" href="' . route('admin.offline.trans.status', ['id' => $row->gobiz_transaction_id, 'status' => 'PENDING']) . '">' . __('Pending') . '</a>';
-                        $actions .= '<a class="dropdown-item" href="' . route('admin.offline.trans.status', ['id' => $row->gobiz_transaction_id, 'status' => 'FAILED']) . '">' . __('Failed') . '</a>';
-                    }
-                    $actions .= '</div></div>';
-                    return $actions;
-                })
-                ->rawColumns(['user', 'payment_status', 'action'])
-                ->make(true);
+            return back()->with('success', __('Payment confirmed. The plan is active until :date.', ['date' => $result['validUntil']->format('d M Y')])
+                . ($result['cardsDeactivated'] ? ' ' . __('Their business cards were set to inactive.') : ''));
         }
 
-        $settings = Setting::where('status', 1)->first();
-        $currencies = Currency::where('status', 1)->get();
+        // Leaving "paid" removes the invoice number; the customer's plan is not changed.
+        $transaction->forceFill([
+            'payment_status' => $status,
+            'invoice_prefix' => $transaction->payment_status === 'SUCCESS' ? null : $transaction->invoice_prefix,
+            'invoice_number' => $transaction->payment_status === 'SUCCESS' ? null : $transaction->invoice_number,
+        ])->save();
 
-        return view('admin.pages.transactions.offline-unpaid', compact('settings', 'currencies'));
+        return back()->with('success', __('Payment status updated.'));
     }
 
-    // Offline
+    // Same as transactionStatus (kept for old links)
     public function offlineTransactionStatus(Request $request, $id, $status)
     {
-        // Transaction details
-        $transaction_details = Transaction::where('gobiz_transaction_id', $id)->where('status', 1)->first();
-        $user_details = User::find($transaction_details->user_id);
-
-        // Success to failed or pending
-        if ($transaction_details->payment_status == "SUCCESS" && $status != "SUCCESS") {
-            // Update transaction status
-            Transaction::where('gobiz_transaction_id', $id)->update([
-                'invoice_prefix' => null,
-                'invoice_number' => null,
-                'payment_status' => $status,
-            ]);
-        }
-
-        // If offline status is "SUCCESS"
-        if ($status == "SUCCESS") {
-
-            // Get config details
-            $config = DB::table('config')->get();
-
-            // Transaction details
-            $transaction_details = Transaction::where('gobiz_transaction_id', $id)->where('status', 1)->first();
-            $user_details = User::find($transaction_details->user_id);
-
-            // Get plan validity
-            $plan_data = Plan::where('plan_id', $transaction_details->plan_id)->first();
-            $term_days = (int) $plan_data->validity;
-
-            if ($config[80]->config_value == '1') {
-                // Referral amount details
-                $referralCalculation = [];
-                $referralCalculation['referral_type'] = $config[81]->config_value;
-                $referralCalculation['referral_value'] = $config[82]->config_value;
-
-                // Check referral_type is percentage or amount
-                if ($config[81]->config_value == '0') {
-                    // Plan amount
-                    $base_amount = (float) $transaction_details->transaction_amount;
-                    
-                    $referralCalculation['referral_amount'] = ($base_amount * $referralCalculation['referral_value']) / 100;
-                } else {
-                    $referralCalculation['referral_amount'] = $referralCalculation['referral_value'];
-                }
-
-                // Check user_id is already subscribed or not
-                if (Referral::where('user_id', $user_details->user_id)->where('is_subscribed', 0)->first()) {
-                    // Update referral details
-                    Referral::where('user_id', $user_details->user_id)->update([
-                        'is_subscribed' => 1,
-                        'referral_scheme' => json_encode($referralCalculation),
-                        'updated_at' => now(),
-                    ]);
-                }
-            }
-
-            // Customer plan validity
-            if ($user_details->plan_validity == "") {
-                // Add days
-                if ($term_days == "9999") {
-                    $plan_validity = "2050-12-30 23:23:59";
-                } else {
-                    $plan_validity = Carbon::now();
-                    $plan_validity->addDays($term_days);
-                }
-
-                // Invoice count generate
-                $invoice_count = Transaction::where("invoice_prefix", $config[15]->config_value)->count();
-                $invoice_number = $invoice_count + 1;
-
-                // Update transaction status
-                Transaction::where('gobiz_transaction_id', $id)->update([
-                    'invoice_prefix' => $config[15]->config_value,
-                    'invoice_number' => $invoice_number,
-                    'payment_status' => 'SUCCESS',
-                ]);
-
-                // Update customer plan details
-                if ($user_details) {
-                    $user_details->plan_id              = $transaction_details->plan_id;
-                    $user_details->term                 = $term_days;
-                    $user_details->plan_validity        = $plan_validity;
-                    $user_details->plan_activation_date = now();
-                    $user_details->plan_details         = $plan_data;
-    
-                    $user_details->save();
-                }
-
-                // Save applied coupon
-                AppliedCoupon::where('transaction_id', $transaction_details->transaction_id)->update([
-                    'status' => 1
-                ]);
-
-                // Generate invoice to customer
-                $encode = json_decode($transaction_details['invoice_details'], true);
-                $details = [
-                    'from_billing_name' => $encode['from_billing_name'],
-                    'from_billing_email' => $encode['from_billing_email'],
-                    'from_billing_address' => $encode['from_billing_address'],
-                    'from_billing_city' => $encode['from_billing_city'],
-                    'from_billing_state' => $encode['from_billing_state'],
-                    'from_billing_country' => $encode['from_billing_country'],
-                    'from_billing_zipcode' => $encode['from_billing_zipcode'],
-                    'gobiz_transaction_id' => $transaction_details->gobiz_transaction_id,
-                    'to_billing_name' => $encode['to_billing_name'],
-                    'invoice_currency' => $transaction_details->transaction_currency,
-                    'subtotal' => $encode['subtotal'],
-                    'tax_amount' => (float)($plan_data->plan_price) * (float)($config[25]->config_value) / 100,
-                    'applied_coupon' => $encode['applied_coupon'],
-                    'discounted_price' => $encode['discounted_price'],
-                    'invoice_amount' => $encode['invoice_amount'],
-                    'invoice_id' => $config[15]->config_value . $invoice_number,
-                    'invoice_date' => $transaction_details->created_at,
-                    'description' => $transaction_details->description,
-                    'email_heading' => $config[27]->config_value,
-                    'email_footer' => $config[28]->config_value,
-                ];
-
-                // Send email to customer
-                try {
-                    Mail::to($encode['to_billing_email'])->send(new \App\Mail\SendEmailInvoice($details));
-                } catch (\Exception $e) {
-                }
-
-                // Return and alert
-                return redirect()->back()->with('success', trans('Plan activation success!'));
-            } else {
-                $message = "";
-                if ($user_details->plan_id == $transaction_details->plan_id) {
-
-
-                    // Check if plan validity is expired or not.
-                    $plan_validity = \Carbon\Carbon::createFromFormat('Y-m-d H:s:i', $user_details->plan_validity);
-                    $current_date = Carbon::now();
-                    $remaining_days = $current_date->diffInDays($plan_validity, false);
-
-                    if ($remaining_days > 0) {
-                        // Add days
-                        if ($term_days == "9999") {
-                            $plan_validity = "2050-12-30 23:23:59";
-                            $message = trans("Plan activated!");
-                        } else {
-                            $plan_validity = Carbon::parse($user_details->plan_validity);
-                            $plan_validity->addDays($term_days);
-                            $message = trans("Plan activated!");
-                        }
-                    } else {
-                        // Add days
-                        if ($term_days == "9999") {
-                            $plan_validity = "2050-12-30 23:23:59";
-                            $message = trans("Plan activated!");
-                        } else {
-                            $plan_validity = Carbon::now();
-                            $plan_validity->addDays($term_days);
-                            $message = trans("Plan activated!");
-                        }
-                    }
-                } else {
-
-                    // Making all cards inactive, For Plan change
-                    BusinessCard::where('user_id', $user_details->user_id)->update([
-                        'card_status' => 'inactive',
-                    ]);
-
-                    // Add days
-                    if ($term_days == "9999") {
-                        $plan_validity = "2050-12-30 23:23:59";
-                        $message = trans("Plan activated!");
-                    } else {
-                        $plan_validity = Carbon::now();
-                        $plan_validity->addDays($term_days);
-                        $message = trans("Plan activated!");
-                    }
-                }
-
-                $invoice_count = Transaction::where("invoice_prefix", $config[15]->config_value)->count();
-                $invoice_number = $invoice_count + 1;
-
-                Transaction::where('gobiz_transaction_id', $id)->update([
-                    'invoice_prefix' => $config[15]->config_value,
-                    'invoice_number' => $invoice_number,
-                    'payment_status' => 'SUCCESS',
-                ]);
-
-                if ($user_details) {
-                    $user_details->plan_id              = $transaction_details->plan_id;
-                    $user_details->term                 = $term_days;
-                    $user_details->plan_validity        = $plan_validity;
-                    $user_details->plan_activation_date = now();
-                    $user_details->plan_details         = $plan_data;
-    
-                    $user_details->save();
-                }
-
-                // Save applied coupon
-                AppliedCoupon::where('transaction_id', $transaction_details->transaction_id)->update([
-                    'status' => 1
-                ]);
-
-                $encode = json_decode($transaction_details['invoice_details'], true);
-                $details = [
-                    'from_billing_name' => $encode['from_billing_name'],
-                    'from_billing_email' => $encode['from_billing_email'],
-                    'from_billing_address' => $encode['from_billing_address'],
-                    'from_billing_city' => $encode['from_billing_city'],
-                    'from_billing_state' => $encode['from_billing_state'],
-                    'from_billing_country' => $encode['from_billing_country'],
-                    'from_billing_zipcode' => $encode['from_billing_zipcode'],
-                    'gobiz_transaction_id' => $transaction_details->gobiz_transaction_id,
-                    'to_billing_name' => $encode['to_billing_name'],
-                    'invoice_currency' => $transaction_details->transaction_currency,
-                    'subtotal' => $encode['subtotal'],
-                    'tax_amount' => (float)($plan_data->plan_price) * (float)($config[25]->config_value) / 100,
-                    'applied_coupon' => $encode['applied_coupon'],
-                    'discounted_price' => $encode['discounted_price'],
-                    'invoice_amount' => $encode['invoice_amount'],
-                    'invoice_id' => $config[15]->config_value . $invoice_number,
-                    'invoice_date' => $transaction_details->created_at,
-                    'description' => $transaction_details->description,
-                    'email_heading' => $config[27]->config_value,
-                    'email_footer' => $config[28]->config_value,
-                ];
-
-                try {
-                    Mail::to($encode['to_billing_email'])->send(new \App\Mail\SendEmailInvoice($details));
-                } catch (\Exception $e) {
-                }
-
-                return redirect()->back()->with('success', trans($message));
-            }
-        } else {
-            Transaction::where('gobiz_transaction_id', $id)->update([
-                'payment_status' => $status,
-            ]);
-
-            return redirect()->back()->with('success', trans('Updated!'));
-        }
+        return $this->transactionStatus($request, $id, $status);
     }
 }

@@ -53,7 +53,7 @@
 
     @if (isset($setting) && $setting)
         {{-- Check Google Analytics is "enabled" --}}
-        @if (!empty($settings->google_analytics_id) && Cookie::get('laravel_cookie_consent') === '1')
+        @if (!empty($settings->google_analytics_id) && (Cookie::get('laravel_cookie_consent') === '1' || env('COOKIE_CONSENT_ENABLED') == ""))
             <!-- Global site tag (gtag.js) - Google Analytics -->
             <script async src="https://www.googletagmanager.com/gtag/js?id={{ $settings->google_analytics_id }}"></script>
             <script>
@@ -68,7 +68,7 @@
             </script>
         @endif
 
-        @if ($settings->google_adsense_code != 'DISABLE_ADSENSE_ONLY' && Cookie::get('laravel_cookie_consent') === '1')
+        @if ($settings->google_adsense_code != 'DISABLE_ADSENSE_ONLY' && (Cookie::get('laravel_cookie_consent') === '1' || env('COOKIE_CONSENT_ENABLED') == ""))
             {{-- AdSense code --}}
             <script async
                 src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ $settings->google_adsense_code }}"
@@ -77,7 +77,7 @@
     @endif
 
     {{-- Pusher --}}
-    @if (env('PUSHER_BEAMS_ENABLED') == '1' && Cookie::get('laravel_cookie_consent') === '1')
+    @if (env('PUSHER_BEAMS_ENABLED') == '1' && (Cookie::get('laravel_cookie_consent') === '1' || env('COOKIE_CONSENT_ENABLED') == ""))
         <script src="{{ asset('gobiz_original_assets/js/pusher.js') }}"></script>
         <script>
             document.addEventListener('DOMContentLoaded', function() {
@@ -114,21 +114,14 @@
     @if (isset($template_config) && $template_config)
         @php
             $custom_css = $template_config->custom_css;
-            $custom_js = $template_config->custom_js;
 
             // Ensure <style> tags for custom CSS
             if (strpos($custom_css, '<style>') === false && strpos($custom_css, '</style>') === false) {
                 $custom_css = "<style>" . $custom_css . "</style>";
             }
-
-            // Ensure <script> tags for custom JS
-            if (strpos($custom_js, '<script>') === false && strpos($custom_js, '</script>') === false) {
-                $custom_js = "<script>" . $custom_js . "</script>";
-            }
         @endphp
 
         {!! $custom_css !!}
-        {!! $custom_js !!}
     @endif
 </head>
 
@@ -170,7 +163,7 @@
             @include('cookie-consent::index', ['theme_id' => 'GoBizOriginal', 'template_color' => $template_config->template_color])
         @endif
     </div>
-
+ 
     {{-- WhatsApp Chatbot --}}
     @if (isset($config) && $config)
         @if ($config[40]->config_value == '1')
@@ -186,7 +179,7 @@
         @if (
             $settings->tawk_chat_bot_key != null &&
                 $config[40]->config_value != '1' &&
-                Cookie::get('laravel_cookie_consent') === '1')
+                (Cookie::get('laravel_cookie_consent') === '1' || env('COOKIE_CONSENT_ENABLED') == ""))
             <!--Start of Tawk.to Script-->
             <script>
                 (function($) {
@@ -214,6 +207,20 @@
     <!-- Smooth Scroll -->
     <script type="text/javascript" src="{{ asset('gobiz_original_assets/js/smooth-scroll.polyfills.min.js') }}"></script>
     <script type="text/javascript" src="{{ asset('gobiz_original_assets/js/footer.js') }}"></script>
+
+    {{-- CSS/JS from admin settings --}}
+    @if (isset($template_config) && $template_config)
+        @php
+            $custom_js = $template_config->custom_js;
+
+            // Ensure <script> tags for custom JS
+            if (strpos($custom_js, '<script>') === false && strpos($custom_js, '</script>') === false) {
+                $custom_js = "<script>" . $custom_js . "</script>";
+            }
+        @endphp
+
+        {!! $custom_js !!}
+    @endif
 
     {{-- Custom JS --}}
     @yield('custom-js')

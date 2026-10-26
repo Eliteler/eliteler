@@ -12,16 +12,17 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Helpers\StorageHelper;
+use App\Http\Controllers\Controller;
 use App\Page;
 use App\Setting;
-use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use Yajra\DataTables\DataTables;
 use Illuminate\Support\Facades\DB;
-use Mews\Purifier\Facades\Purifier;
-use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
+use Mews\Purifier\Facades\Purifier;
+use Yajra\DataTables\DataTables;
 
 class PageController extends Controller
 {
@@ -59,7 +60,7 @@ class PageController extends Controller
             return DataTables::of($pages)
                 ->addIndexColumn()
                 ->editColumn('page_name', function ($page) {
-                    return match ($page->first()->page_name) {
+                    $name = match ($page->first()->page_name) {
                         'home' => __('Home'),
                         'about' => __('About Us'),
                         'contact' => __('Contact Us'),
@@ -68,23 +69,25 @@ class PageController extends Controller
                         'terms' => __('Terms & Conditions'),
                         default => trans(ucfirst($page->first()->page_name)),
                     };
+                    return '<span class="fw-bold text-dark">' . $name . '</span>';
                 })
                 ->editColumn('url', function ($page) {
                     $baseUrl = env('APP_URL');
                     return match ($page->first()->page_name) {
-                        'home' => '<a href="' . $baseUrl . '" target="_blank">/</a>',
-                        'about' => '<a href="' . $baseUrl . '/about-us" target="_blank">' . trans('/about-us') . '</a>',
-                        'contact' => '<a href="' . $baseUrl . '/contact-us" target="_blank">' . trans('/contact-us') . '</a>',
-                        'privacy' => '<a href="' . $baseUrl . '/privacy-policy" target="_blank">' . trans('/privacy-policy') . '</a>',
-                        'refund' => '<a href="' . $baseUrl . '/refund-policy" target="_blank">' . trans('/refund-policy') . '</a>',
-                        'terms' => '<a href="' . $baseUrl . '/terms-and-conditions" target="_blank">' . trans('/terms-and-conditions') . '</a>',
-                        default => '<a href="' . $baseUrl . '/' . $page->first()->page_name . '" target="_blank">/' . trans($page->first()->page_name) . '</a>',
+                        'home' => '<a href="' . $baseUrl . '" class="fw-bold" target="_blank">/</a>',
+                        'about' => '<a href="' . $baseUrl . '/about-us" class="fw-bold" target="_blank">' . trans('/about-us') . '</a>',
+                        'contact' => '<a href="' . $baseUrl . '/contact-us" class="fw-bold" target="_blank">' . trans('/contact-us') . '</a>',
+                        'privacy' => '<a href="' . $baseUrl . '/privacy-policy" class="fw-bold" target="_blank">' . trans('/privacy-policy') . '</a>',
+                        'refund' => '<a href="' . $baseUrl . '/refund-policy" class="fw-bold" target="_blank">' . trans('/refund-policy') . '</a>',
+                        'terms' => '<a href="' . $baseUrl . '/terms-and-conditions" class="fw-bold" target="_blank">' . trans('/terms-and-conditions') . '</a>',
+                        default => '<a href="' . $baseUrl . '/' . $page->first()->page_name . '" class="fw-bold" target="_blank">/' . trans($page->first()->page_name) . '</a>',
                     };
                 })
                 ->editColumn('status', function ($page) {
+                    // Soft-Muted Badges
                     return $page->first()->status == 'active'
-                        ? '<span class="badge bg-green text-white">' . __('Active') . '</span>'
-                        : '<span class="badge bg-red text-white">' . __('Deactive') . '</span>';
+                        ? '<span class="badge bg-green-600 text-green-50">' . __('Active') . '</span>'
+                        : '<span class="badge bg-slate-100 text-slate-600">' . __('Inactive') . '</span>';
                 })
                 ->addColumn('action', function ($page) {
                     $editUrl = route('admin.edit.page', $page->first()->page_name);
@@ -97,31 +100,29 @@ class PageController extends Controller
                     }
 
                     return '<a class="btn-action" href="#" data-toggle="dropdown" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
-                                <!-- Download SVG icon from http://tabler-icons.io/i/dots-vertical -->
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24"
-                                    height="24" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    class="icon icon-tabler icons-tabler-outline icon-tabler-dots fw-bold">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                    <path d="M4 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                    <path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                    <path d="M18 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                </svg>
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-end" style="">
-                                <div class="nav-item dropdown">
-                                    ' . $actionBtn . '
-                                </div>
-                            </div>';
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24"
+                                height="24" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round"
+                                class="icon icon-tabler icons-tabler-outline icon-tabler-dots fw-bold">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <path d="M4 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+                                <path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+                                <path d="M18 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+                            </svg>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end">
+                            ' . $actionBtn . '
+                        </div>';
                 })
-                ->rawColumns(['url', 'status', 'action'])
+                ->rawColumns(['page_name', 'url', 'status', 'action'])
                 ->make(true);
         }
 
         return view('admin.pages.pages.index', compact('settings', 'config'));
     }
 
+    // Custom Pages
     public function customPagesIndex(Request $request)
     {
         // Queries
@@ -131,21 +132,21 @@ class PageController extends Controller
         if ($request->ajax()) {
             $custom_pages = DB::table('pages')
                 ->where('page_name', 'Custom Page')
-                ->orderBy('created_at', 'desc')
-                ->get();
+                ->orderBy('created_at', 'desc');
 
             return DataTables::of($custom_pages)
                 ->addIndexColumn()
                 ->editColumn('section_name', function ($page) {
-                    return ucwords($page->section_name);
+                    return '<span class="fw-bold text-dark">' . ucwords($page->section_name) . '</span>';
                 })
                 ->editColumn('url', function ($page) {
-                    return '<a href="' . env('APP_URL') . '/p/' . $page->section_title . '" target="_blank">/' . $page->section_title . '</a>';
+                    return '<a href="' . env('APP_URL') . '/p/' . $page->section_title . '" class="fw-bold" target="_blank">/' . $page->section_title . '</a>';
                 })
                 ->editColumn('status', function ($page) {
+                    // Soft-Muted Badges
                     return $page->status == 'active'
-                        ? '<span class="badge bg-green text-white">' . __('Active') . '</span>'
-                        : '<span class="badge bg-red text-white">' . __('Deactive') . '</span>';
+                        ? '<span class="badge bg-green-600 text-green-50">' . __('Active') . '</span>'
+                        : '<span class="badge bg-slate-100 text-slate-600">' . __('Inactive') . '</span>';
                 })
                 ->addColumn('action', function ($page) {
                     $editUrl = route('admin.edit.custom.page', $page->id);
@@ -160,26 +161,23 @@ class PageController extends Controller
                     $actionBtn .= '<a class="dropdown-item" href="#" onclick="deletePage(\'' . $page->id . '\', `delete`); return false;">' . __('Delete') . '</a>';
 
                     return '<a class="btn-action" href="#" data-toggle="dropdown" data-bs-toggle="dropdown"
-                                data-bs-auto-close="outside" aria-expanded="false">
-                                <!-- Download SVG icon from http://tabler-icons.io/i/dots-vertical -->
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24"
-                                    height="24" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    class="icon icon-tabler icons-tabler-outline icon-tabler-dots fw-bold">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                    <path d="M4 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                    <path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                    <path d="M18 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                </svg>
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-end" style="">
-                                <div class="nav-item dropdown">
-                                    ' . $actionBtn . '
-                                </div>
-                            </div>';
+                            data-bs-auto-close="outside" aria-expanded="false">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24"
+                                height="24" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round"
+                                class="icon icon-tabler icons-tabler-outline icon-tabler-dots fw-bold">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <path d="M4 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+                                <path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+                                <path d="M18 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+                            </svg>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end">
+                            ' . $actionBtn . '
+                        </div>';
                 })
-                ->rawColumns(['url', 'status', 'action'])
+                ->rawColumns(['section_name', 'url', 'status', 'action'])
                 ->make(true);
         }
 
@@ -222,12 +220,15 @@ class PageController extends Controller
                 $decodedData = base64_decode($matches[2]);
 
                 if ($decodedData !== false) {
-                    $filename = Str::random(10) . '.' . $extension;
-                    $relativePath = 'uploads/pages/' . $filename;
+                    // Save base64 image using StorageHelper and get relative path
+                    $imagePath = StorageHelper::uploadImage(
+                        $decodedData,
+                        'uploads/pages',
+                        Str::random(10) . '.' . $extension
+                    );
 
-                    Storage::disk('public')->put($relativePath, $decodedData);
-
-                    return '<img src="' . asset('storage/' . $relativePath) . '" />';
+                    // Return updated <img> tag with accessible URL
+                    return '<img src="' . asset($imagePath) . '" />';
                 }
 
                 return $matches[0]; // Return original tag if decoding fails
@@ -359,12 +360,15 @@ class PageController extends Controller
                 $decodedData = base64_decode($matches[2]);
 
                 if ($decodedData !== false) {
-                    $filename = Str::random(10) . '.' . $extension;
-                    $relativePath = 'uploads/pages/' . $filename;
+                    // Save base64 image data using StorageHelper
+                    $imagePath = StorageHelper::uploadImage(
+                        $decodedData,
+                        'uploads/pages',
+                        Str::random(10) . '.' . $extension
+                    );
 
-                    Storage::disk('public')->put($relativePath, $decodedData);
-
-                    return '<img src="' . asset('storage/' . $relativePath) . '" />';
+                    // Return updated <img> tag with accessible URL
+                    return '<img src="' . asset($imagePath) . '" />';
                 }
 
                 return $matches[0]; // Return original tag if decoding fails

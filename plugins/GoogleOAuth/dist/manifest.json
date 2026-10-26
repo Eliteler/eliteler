@@ -1,0 +1,9 @@
+{
+  "plugin": "GoogleOAuth",
+  "version": "1.2.0",
+  "api": "1",
+  "pages": {
+    "settings": "settings.js"
+  },
+  "css": "style.css"
+}

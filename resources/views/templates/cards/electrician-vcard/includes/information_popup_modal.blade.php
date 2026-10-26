@@ -1,0 +1,93 @@
+@php
+    use App\InformationPop;
+    $information_pop = InformationPop::where('card_id', $business_card_details->card_id)->first();
+    if ($information_pop) {
+        $confetti_effect = $information_pop->confetti_effect ?? 0;
+        $info_img = $information_pop->info_pop_image ?? null;
+        $info_title = $information_pop->info_pop_title ?? __('Emergency Protocol');
+        $info_desc =
+            $information_pop->info_pop_desc ??
+            __(
+                'We operate a 24/7 emergency dispatch. Call immediately if you smell burning wire, see sparks, or experience a sudden outage.',
+            );
+        $info_btn_text = $information_pop->info_pop_button_text ?? __('Call Now');
+        $info_btn_url = $information_pop->info_pop_button_url ?? '#';
+    }
+@endphp
+
+@if (isset($information_pop))
+
+    <div id="customInfoOverlay" class="hidden" onclick="closeInfoModal()">
+        <div id="customInfoBox" onclick="event.stopPropagation()">
+
+            {{-- Close Button --}}
+            <button class="custom-info-close" onclick="closeInfoModal()">
+                <i class="fas fa-times"></i>
+            </button>
+
+            {{-- Cover Image (if provided) --}}
+            @if (!empty($info_img))
+                <div class="custom-info-img-wrap">
+                    <img src="{{ url($info_img) }}" alt="{{ $info_title }}" class="custom-info-img">
+                </div>
+            @endif
+
+            {{-- Content Body --}}
+            <div class="custom-info-body {{ !empty($info_img) ? 'custom-info-body--with-img' : '' }}">
+
+                {{-- Icon Badge (only when no image) --}}
+                @if (empty($info_img))
+                    <div class="custom-info-icon-wrap">
+                        <i class="fas fa-exclamation-triangle custom-info-icon anim-flicker"></i>
+                    </div>
+                @endif
+
+                {{-- Title --}}
+                <h3 class="custom-info-title">{{ $info_title }}</h3>
+
+                {{-- Yellow Divider Bar --}}
+                <div class="custom-info-divider"></div>
+
+                {{-- Description --}}
+                <div class="custom-info-desc-wrapper">
+                    <div class="custom-info-desc">{!! $info_desc !!}</div>
+                </div>
+
+                {{-- Action Button --}}
+                <a href="{{ $info_btn_url }}" target="_blank" class="custom-info-btn">
+                    {{ $info_btn_text }}
+                </a>
+
+            </div>
+        </div>
+    </div>
+
+    {{-- Confetti effect (if enabled) --}}
+    @if ($confetti_effect == 1 && $introScreen == null)
+        <script src="{{ asset('js/confetti.browser.min.js') }}"></script>
+        <script>
+            "use strict";
+
+            function getRandomColor() {
+                return '#' + Math.floor(Math.random() * 16777215).toString(16);
+            }
+
+            const randomColors = Array.from({
+                length: 7
+            }, getRandomColor);
+
+            function triggerInfoConfetti() {
+                confetti({
+                    particleCount: window.innerWidth > 768 ? 200 : 100,
+                    spread: window.innerWidth > 768 ? 120 : 100,
+                    colors: randomColors,
+                    origin: {
+                        x: 0.5,
+                        y: window.innerWidth > 768 ? 0.75 : 0.72
+                    }
+                });
+            }
+        </script>
+    @endif
+
+@endif

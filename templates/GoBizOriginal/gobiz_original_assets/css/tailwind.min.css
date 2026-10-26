@@ -703,6 +703,21 @@ video {
 .z-50 {
     z-index: 50;
 }
+.z-60 {
+    z-index: 60;
+}
+.z-70 {
+    z-index: 70;
+}
+.z-80 {
+    z-index: 80;
+}
+.z-90 {
+    z-index: 90;
+}
+.z-100 {
+    z-index: 100;
+}
 .float-right {
     float: right;
 }
@@ -6187,4 +6202,31 @@ video {
         #6b7280 50%,
         #4b5563 100%
     );
+}
+
+.logo-wrapper {
+    width: 180px; /* Adjust as needed */
+    height: 50px;
+    display: flex;
+    align-items: center;
+}
+
+.site-logo {
+    width: 180px;
+    height: 55px;
+    display: block;
+    object-fit: contain;
+    object-position: left center;
+}
+
+@media (max-width: 768px) {
+    .logo-wrapper {
+        width: 140px;
+        height: 40px;
+    }
+
+    .site-logo {
+        width: 140px;
+        height: 55px;
+    }
 }

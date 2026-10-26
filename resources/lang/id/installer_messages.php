@@ -1,63 +1,173 @@
 <?php
 
 return [
-
-    /*
-     *
-     * Shared translations.
-     *
-     */
-    'title' => 'تنصيب Laravel',
-    'next' => 'متابعة',
-
-    /*
-     *
-     * Home page translations.
-     *
-     */
-    'welcome' => [
-        'title'   => 'تنصيب Laravel',
-        'message' => 'أهلا بك في صفحة تنصيب Laravel',
-    ],
-
-    /*
-     *
-     * Requirements page translations.
-     *
-     */
-    'requirements' => [
-        'title' => 'المتطلبات',
-    ],
-
-    /*
-     *
-     * Permissions page translations.
-     *
-     */
-    'permissions' => [
-        'title' => 'تراخيص المجلدات',
-    ],
-
-    /*
-     *
-     * Environment page translations.
-     *
-     */
+    'back' => 'Sebelumnya',
     'environment' => [
         'title' => 'الإعدادات',
         'save' => 'حفظ ملف .env',
         'success' => 'تم حفظ الإعدادات بنجاح',
         'errors' => 'حدث خطأ أثناء إنشاء ملف .env. رجاءا قم بإنشاءه يدويا',
+        'menu' => [
+            'templateTitle' => 'Langkah 3 | ',
+            'title' => 'Instalasi',
+            'desc' => 'Silakan pilih bagaimana Anda ingin mengonfigurasi file <code>.env</code> aplikasi.',
+            'wizard-button' => 'Pengaturan Wizard Formulir',
+            'classic-button' => 'Editor Teks Klasik',
+        ],
+        'wizard' => [
+            'templateTitle' => 'Langkah 3 | ',
+            'title' => 'Panduan <code>.env</code>',
+            'tabs' => [
+                'environment' => 'Lingkungan',
+                'database' => 'Basis data',
+                'application' => 'Aplikasi',
+            ],
+            'form' => [
+                'name_required' => 'Nama lingkungan wajib diisi.',
+                'app_name_label' => 'Nama Aplikasi',
+                'app_name_placeholder' => 'Nama Aplikasi',
+                'app_environment_label' => 'Lingkungan Aplikasi',
+                'app_environment_label_local' => 'Lokal',
+                'app_environment_label_developement' => 'Perkembangan',
+                'app_environment_label_qa' => 'Qa',
+                'app_environment_label_production' => 'Produksi',
+                'app_environment_label_other' => 'Lainnya',
+                'app_environment_placeholder_other' => 'Masuki lingkungan Anda...',
+                'app_debug_label' => 'Debug Aplikasi',
+                'app_debug_label_true' => 'BENAR',
+                'app_debug_label_false' => 'PALSU',
+                'app_log_level_label' => 'Tingkat Log Aplikasi',
+                'app_log_level_label_debug' => 'men-debug',
+                'app_log_level_label_info' => 'info',
+                'app_log_level_label_notice' => 'melihat',
+                'app_log_level_label_warning' => 'peringatan',
+                'app_log_level_label_error' => 'kesalahan',
+                'app_log_level_label_critical' => 'kritis',
+                'app_log_level_label_alert' => 'peringatan',
+                'app_log_level_label_emergency' => 'keadaan darurat',
+                'app_url_label' => 'Url Aplikasi',
+                'app_url_placeholder' => 'Url Aplikasi',
+                'db_connection_failed' => 'Tidak dapat terhubung ke database.',
+                'db_connection_label' => 'Koneksi Basis Data',
+                'db_connection_label_mysql' => 'mysql',
+                'db_connection_label_sqlite' => 'sqlite',
+                'db_connection_label_pgsql' => 'pgsql',
+                'db_connection_label_sqlsrv' => 'sqlsrv',
+                'db_host_label' => 'Tuan Rumah Basis Data',
+                'db_host_placeholder' => 'Tuan Rumah Basis Data',
+                'db_port_label' => 'Pelabuhan Basis Data',
+                'db_port_placeholder' => 'Pelabuhan Basis Data',
+                'db_name_label' => 'Nama Basis Data',
+                'db_name_placeholder' => 'Nama Basis Data',
+                'db_username_label' => 'Nama Pengguna Basis Data',
+                'db_username_placeholder' => 'Nama Pengguna Basis Data',
+                'db_password_label' => 'Kata Sandi Basis Data',
+                'db_password_placeholder' => 'Kata Sandi Basis Data',
+                'app_tabs' => [
+                    'more_info' => 'Info Lebih Lanjut',
+                    'broadcasting_title' => 'Penyiaran, Caching, Sesi, & Antrian',
+                    'broadcasting_label' => 'Pengemudi Siaran',
+                    'broadcasting_placeholder' => 'Pengemudi Siaran',
+                    'cache_label' => 'Pengemudi Tembolok',
+                    'cache_placeholder' => 'Pengemudi Tembolok',
+                    'session_label' => 'Pengemudi Sesi',
+                    'session_placeholder' => 'Pengemudi Sesi',
+                    'queue_label' => 'Pengemudi Antrian',
+                    'queue_placeholder' => 'Pengemudi Antrian',
+                    'redis_label' => 'Pengemudi Redis',
+                    'redis_host' => 'Tuan Rumah Redis',
+                    'redis_password' => 'Kata Sandi Ulang',
+                    'redis_port' => 'Pelabuhan Redis',
+                    'mail_label' => 'Surat',
+                    'mail_driver_label' => 'Pengemudi Surat',
+                    'mail_driver_placeholder' => 'Pengemudi Surat',
+                    'mail_host_label' => 'Tuan Rumah Surat',
+                    'mail_host_placeholder' => 'Tuan Rumah Surat',
+                    'mail_port_label' => 'Pelabuhan Surat',
+                    'mail_port_placeholder' => 'Pelabuhan Surat',
+                    'mail_username_label' => 'Nama Pengguna Email',
+                    'mail_username_placeholder' => 'Nama Pengguna Email',
+                    'mail_password_label' => 'Kata Sandi Surat',
+                    'mail_password_placeholder' => 'Kata Sandi Surat',
+                    'mail_encryption_label' => 'Enkripsi Surat',
+                    'mail_encryption_placeholder' => 'Enkripsi Surat',
+                    'pusher_label' => 'pendorong',
+                    'pusher_app_id_label' => 'Id Aplikasi Pendorong',
+                    'pusher_app_id_palceholder' => 'Id Aplikasi Pendorong',
+                    'pusher_app_key_label' => 'Kunci Aplikasi Pendorong',
+                    'pusher_app_key_palceholder' => 'Kunci Aplikasi Pendorong',
+                    'pusher_app_secret_label' => 'Rahasia Aplikasi Pendorong',
+                    'pusher_app_secret_palceholder' => 'Rahasia Aplikasi Pendorong',
+                ],
+                'buttons' => [
+                    'setup_database' => 'Pengaturan Basis Data',
+                    'setup_application' => 'Pengaturan Aplikasi',
+                    'install' => 'Memasang',
+                ],
+            ],
+        ],
+        'classic' => [
+            'templateTitle' => 'Langkah 3 | ',
+            'title' => 'Editor Lingkungan Klasik',
+            'save' => 'Simpan .env',
+            'back' => 'Gunakan Panduan Formulir',
+            'install' => 'Simpan dan Instal',
+        ],
     ],
-
-    /*
-     *
-     * Final page translations.
-     *
-     */
     'final' => [
         'title' => 'النهاية',
         'finished' => 'تم تنصيب البرنامج بنجاح...',
         'exit' => 'إضغط هنا للخروج',
+        'templateTitle' => 'Instalasi Selesai',
+        'migration' => 'Keluaran Migrasi & Konsol Benih:',
+        'console' => 'Keluaran Konsol Aplikasi:',
+        'log' => 'Entri Log Instalasi:',
+        'env' => 'File .env terakhir:',
+    ],
+    'finish' => 'Memasang',
+    'forms' => [
+        'errorTitle' => 'Terjadi kesalahan berikut:',
+    ],
+    'install' => 'Memasang',
+    'installed' => [
+        'success_log_message' => 'Penginstal NativeCode berhasil DIINSTAL',
+    ],
+    'next' => 'متابعة',
+    'permissions' => [
+        'title' => 'تراخيص المجلدات',
+        'templateTitle' => 'Langkah 2 | ',
+        'next' => 'Konfigurasikan Lingkungan',
+    ],
+    'requirements' => [
+        'title' => 'المتطلبات',
+        'templateTitle' => 'Langkah 1 | ',
+        'next' => 'Periksa Izin',
+    ],
+    'title' => 'تنصيب Laravel',
+    'updater' => [
+        'title' => 'Pembaruan Laravel',
+        'welcome' => [
+            'title' => 'Selamat Datang di Pembaru',
+            'message' => 'Selamat datang di panduan pembaruan.',
+        ],
+        'overview' => [
+            'title' => 'Ringkasan',
+            'message' => 'Ada 1 pembaruan.|Ada :nomor pembaruan.',
+            'install_updates' => 'Instal Pembaruan',
+        ],
+        'final' => [
+            'title' => 'Selesai',
+            'finished' => 'Basis data aplikasi telah berhasil diperbarui.',
+            'exit' => 'Klik di sini untuk keluar',
+        ],
+        'log' => [
+            'success_message' => 'Penginstal NativeCode berhasil DIPERBARUI',
+        ],
+    ],
+    'welcome' => [
+        'title' => 'تنصيب Laravel',
+        'message' => 'أهلا بك في صفحة تنصيب Laravel',
+        'templateTitle' => 'Selamat datang',
+        'next' => 'Periksa Persyaratan',
     ],
 ];

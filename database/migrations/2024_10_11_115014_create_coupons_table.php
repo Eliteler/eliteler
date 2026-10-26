@@ -25,6 +25,7 @@ return new class extends Migration
             $table->increments('id')->uniqid();
             $table->string('coupon_id');
             $table->string('used_for')->default('plan');
+            $table->string('plan_id')->nullable();
             $table->string('coupon_code');
             $table->string('coupon_desc')->nullable();
             $table->string('coupon_type');

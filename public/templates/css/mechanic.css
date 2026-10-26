@@ -623,9 +623,9 @@ body {
     padding-bottom: 110px;
     overflow: visible;
     border: 1px solid var(--border);
-    min-height: 100vh;
-    position: relative;
+    min-height: 100dvh; /* Dynamic viewport height for mobile browser compatibility */
     z-index: 50;
+    box-sizing: border-box;
 }
 
 @media (min-width: 520px) {
@@ -633,11 +633,19 @@ body {
         border-radius: 12px;
         overflow: hidden;
         min-height: auto;
+
+        /* Centers the card horizontally and adds 50px of spacing at the top and bottom */
+        margin: 50px auto;
     }
 }
 
 #smooth-wrapper {
+    width: 100%;
     max-width: 100%;
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+    box-sizing: border-box;
 }
 
 /* ── Cover ── */
@@ -1095,22 +1103,26 @@ body {
 
 /* Description */
 .mechanic-theme .desc {
+    position: relative;
+    width: 100% !important;
+    margin-top: 0 !important;
+
+    /* Typography */
     font-family:
         "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif !important;
     font-size: 12px !important;
-    color: #a4b0be !important;
-    line-height: 1.65 !important;
     font-weight: 300 !important;
+    font-style: normal !important;
+    line-height: 1.65 !important;
+    text-align: left !important;
+    color: #a4b0be !important;
+
+    /* 2-Line Text Clamp */
     display: -webkit-box !important;
     -webkit-box-orient: vertical !important;
     -webkit-line-clamp: 2 !important;
     overflow: hidden !important;
     max-height: none !important;
-    text-align: left !important;
-    font-style: normal !important;
-    margin-top: 0 !important;
-    width: 100% !important;
-    position: relative;
 }
 
 /* ============================================================
@@ -1595,6 +1607,7 @@ body {
 ============================================================ */
 .mechanic-theme .section {
     padding: 10px 20px 28px;
+    margin: 20px 0;
     position: relative;
     z-index: 1;
 }

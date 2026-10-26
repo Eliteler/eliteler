@@ -12,17 +12,19 @@
 
 namespace App\Http\Controllers\User\Vcard\Create;
 
-use App\User;
-use App\Theme;
-use App\Setting;
 use App\BusinessCard;
-use Illuminate\Support\Str;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Helpers\StorageHelper;
 use App\Http\Controllers\Controller;
+use App\Setting;
+use App\Theme;
+use App\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class CreateController extends Controller
 {
@@ -45,11 +47,46 @@ class CreateController extends Controller
     // Create Card
     public function CreateCard(Request $request)
     {
+        // New business card type
+        $new_business_card_type = null;
+
+        if (
+            Schema::hasTable('business_card_types') &&
+            ! in_array($request->query('type'), ['business', 'custom', 'personal'])
+        ) {
+            $new_business_card_type = DB::table('business_card_types')
+                ->where('business_card_type', $request->query('type'))
+                ->where('status', 1)
+                ->select(
+                    'business_card_type',
+                    'business_card_type_name',
+                    'business_card_type_image',
+                    'business_card_themes'
+                )
+                ->first();
+
+            if ($new_business_card_type) {
+                $new_business_card_type->business_card_themes = json_decode(
+                    $new_business_card_type->business_card_themes,
+                    true
+                );
+            }
+        }
+
         // Queries
         if ($request->query('type') == "business") {
             $themes = Theme::where('theme_description', 'vCard')->whereNotIn('theme_id', ["588969111014", "588969111015", "588969111016", "588969111017", "588969111018", "588969111019", "588969111020", "588969111021", "588969111147"])->orderBy('id', 'desc')->where('status', 1)->get();
-        } else {
+        } else if ($request->query('type') == "personal") {
             $themes = Theme::where('theme_description', 'vCard')->whereIn('theme_id', ["588969111014", "588969111015", "588969111016", "588969111017", "588969111018", "588969111019", "588969111020", "588969111021"])->orderBy('id', 'desc')->where('status', 1)->get();
+        } else {
+            // Get themes
+            $themes = $new_business_card_type
+                ? Theme::where('theme_description', 'vCard')
+                ->whereIn('theme_id', $new_business_card_type->business_card_themes ?? [])
+                ->where('status', 1)
+                ->orderByDesc('id')
+                ->get()
+                : collect();
         }
 
         $settings = Setting::where('status', 1)->first();
@@ -68,9 +105,15 @@ class CreateController extends Controller
             $no_cards = $plan_details->no_of_vcards;
         }
 
+        // Generate card ID
+        $cardId = uniqid();
+
+        // Set session
+        session(['cardId' => $cardId]);
+
         // Chech vcard creation limit
         if ($cards < $no_cards) {
-            return view('user.pages.cards.create-card', compact('themes', 'settings', 'plan_details', 'config'));
+            return view('user.pages.cards.create-card', compact('themes', 'settings', 'plan_details', 'config', 'cardId'));
         } else {
             return redirect()->route('user.cards')->with('failed', trans('The maximum limit has been exceeded. Please upgrade your plan.'));
         }
@@ -102,39 +145,63 @@ class CreateController extends Controller
             return back()->with('failed', trans('Invalid Theme'));
         }
 
-        // Unique card ID (personalized_link)
-        $cardId = uniqid();
+        // Get card ID from Laravel session
+        $cardId = session('cardId');
 
-        if ($request->link) {
-            $personalized_link = $request->link;
+        // Get user details and plan details
+        $user_details = User::where('user_id', Auth::user()->user_id)->first();
+        $plan_details = json_decode($user_details->plan_details, true);
+
+        // Get Personalized Link based on subscribed plan
+        if (!empty($plan_details['personalized_link'])) {
+            $personalized_link = $request->link ?: $cardId;
         } else {
             $personalized_link = $cardId;
         }
 
+        // Remove spaces
+        $personalized_link = trim($personalized_link);
+
         // Remove https:// or http://
-        $personalized_link = str_replace('https://', 'http-', $personalized_link);
-        $personalized_link = str_replace('http://', 'http-', $personalized_link);
+        $personalized_link = str_replace(
+            ['https://', 'http://'],
+            '',
+            $personalized_link
+        );
 
         // Remove www.
-        $personalized_link = str_replace('www.', 'www-', $personalized_link);
+        $personalized_link = str_replace('www.', '', $personalized_link);
 
         // Convert accented characters to ASCII
-        $personalized_link = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $personalized_link);
+        $personalized_link = iconv(
+            'UTF-8',
+            'ASCII//TRANSLIT//IGNORE',
+            $personalized_link
+        );
 
         // Remove all characters except letters, numbers, and hyphens
-        $personalized_link = preg_replace('/[^a-zA-Z0-9-]/', '', $personalized_link);
+        $personalized_link = preg_replace(
+            '/[^a-zA-Z0-9-]/',
+            '',
+            $personalized_link
+        );
 
-        // Optionally, convert to lowercase
+        // Convert to lowercase
         $personalized_link = strtolower($personalized_link);
 
-        // Queries
-        $cards        = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_type', 'vcard')->where('card_status', 'activated')->count();
-        $user_details = User::where('user_id', Auth::user()->user_id)->first();
-        $plan_details = json_decode($user_details->plan_details, true);
-
         // Card URL
-        $card_url     = strtolower(preg_replace('/\s+/', '-', $personalized_link));
-        $current_card = BusinessCard::where('card_url', $card_url)->where('card_status', '!=', 'deleted')->count();
+        $card_url = $personalized_link;
+
+        // Queries
+        $cards = BusinessCard::where('user_id', Auth::user()->user_id)
+            ->where('card_type', 'vcard')
+            ->where('card_status', 'activated')
+            ->count();
+
+        $current_card = BusinessCard::where('card_url', $card_url)
+            ->where('card_status', '!=', 'deleted')
+            ->count();
+
 
         // Ger purchased plan details
         if ($plan_details['no_of_vcards'] == 999) {
@@ -269,21 +336,24 @@ class CreateController extends Controller
     // Cropping image
     public function vcardCroppedImage(Request $request)
     {
-        $croppedImage = $request->file('croppedImage');
+        // Check if cropped image file is uploaded
+        if ($request->hasFile('croppedImage') && $request->file('croppedImage')->isValid()) {
+            $croppedImage = $request->file('croppedImage');
 
-        if ($croppedImage && $croppedImage->isValid()) {
-            // Generate a random unique name for the image
-            $imageName = Str::random(20) . '.' . $croppedImage->extension();
+            // Upload cropped image using StorageHelper
+            $imagePath = StorageHelper::uploadImage($croppedImage, 'profile-images', Str::random(20));
 
-            // Store the image in storage/app/public/profile-images
-            Storage::disk('public')->putFileAs('profile-images', $croppedImage, $imageName);
-
-            // Generate the public URL (equivalent to "storage/profile-images/...") after running `php artisan storage:link`
-            $imageUrl = Storage::url('profile-images/' . $imageName);
-
-            return response()->json(['success' => true, 'imageUrl' => $imageUrl]);
+            if ($imagePath) {
+                return response()->json([
+                    'success'  => true,
+                    'imageUrl' => '/' . ltrim($imagePath, '/'), // Result: "/storage/profile-images/random20char.png"
+                ]);
+            }
         }
 
-        return response()->json(['success' => false, 'message' => 'Invalid image uploaded.']);
+        return response()->json([
+            'success' => false,
+            'message' => 'Invalid image uploaded.'
+        ], 422);
     }
 }

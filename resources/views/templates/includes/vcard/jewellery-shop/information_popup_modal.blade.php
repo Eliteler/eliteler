@@ -1,6 +1,8 @@
 @php
     use App\InformationPop;
+
     $information_pop = InformationPop::where('card_id', $business_card_details->card_id)->first();
+    
     if ($information_pop) {
         $confetti_effect = $information_pop->confetti_effect ?? 0;
         $info_img = $information_pop->info_pop_image ?? null;

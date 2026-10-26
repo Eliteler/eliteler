@@ -1,3 +1,18 @@
+@php
+    $currentHost = request()->getHost();
+    $masterHost = parse_url(config('app.url'), PHP_URL_HOST);
+    $isCustomDomainOrSubdomain = $currentHost !== $masterHost;
+
+    // Dynamic store base URL and product URL prefix
+    if ($isCustomDomainOrSubdomain) {
+        $storeUrl = url('/');
+        $productUrlPrefix = url('product');
+    } else {
+        $storeUrl = url($business_card_details->card_url);
+        $productUrlPrefix = url($business_card_details->card_url . '/product');
+    }
+@endphp
+
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
@@ -23,7 +38,7 @@
         <link rel="apple-touch-icon" href="{{ url($seo->favicon) }}">
     @else
         <link rel="icon" href="{{ url($business_card_details->profile) }}" sizes="512x512" type="image/png">
-        <link rel="apple-touch-icon" href="{{ url($business_card_details->profile) }}">
+        <link rel="apple-touch-icon" href="{{ url($business_card_details->profile) }}">
     @endif
 
     <meta name="theme-color" content="red" />
@@ -38,13 +53,13 @@
     <meta name="msapplication-TileColor" content="red">
     <meta name="msapplication-TileImage" content="{{ url($business_card_details->profile) }}">
 
-     {{-- CSS --}}
+    {{-- CSS --}}
     <link href="{{ url('css/tabler.min.css') }}" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
     <link href="{{ url('templates/css/store/gift-shop.css') }}" rel="stylesheet">
     {{-- Swiper CSS --}}
     <link rel="stylesheet" href="{{ url('css/swiper-bundle.min.css') }}">
-    
+
     <!-- Google Fonts: Carattere -->
     <link href="https://fonts.googleapis.com/css2?family=Carattere&display=swap" rel="stylesheet" />
 
@@ -52,7 +67,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
     <style>
-        body, a, button {
+        body,
+        a,
+        button {
             font-family: 'Lora', sans-serif !important;
             letter-spacing: -0.3px;
         }
@@ -66,22 +83,62 @@
     {{-- Check business details --}}
     @if ($business_card_details != null)
         @php
-            $custom_css = $business_card_details->custom_css;
-            $custom_js = $business_card_details->custom_js;
+            $custom_css = trim($business_card_details->custom_css ?? '');
+            $custom_js = trim($business_card_details->custom_js ?? '');
 
-            // Ensure <style> tags for custom CSS
-            if (strpos($custom_css, '<style>') === false && strpos($custom_css, '</style>') === false) {
-                $custom_css = "<style>" . $custom_css . "</style>";
+            /*
+            |--------------------------------------------------------------------------
+            | Custom CSS
+            |--------------------------------------------------------------------------
+            */
+
+            if (!empty($custom_css) && stripos($custom_css, '<style') === false) {
+                $custom_css = "<style>{$custom_css}</style>";
             }
 
-            // Ensure <script> tags for custom JS
-            if (strpos($custom_js, '<script>') === false && strpos($custom_js, '</script>') === false) {
-                $custom_js = "<script>" . $custom_js . "</script>";
+            /*
+            |--------------------------------------------------------------------------
+            | Split HTML tags and plain JS
+            |--------------------------------------------------------------------------
+            */
+
+            $include_custom_js = '';
+
+            if (!empty($custom_js)) {
+                // Extract HTML tags like meta, script, iframe, noscript, etc.
+                preg_match_all(
+                '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/@endphp/is',
+        $custom_js,
+        $matches,
+    );
+
+    $html_tags = implode("\n", $matches[0]);
+
+    // Remove extracted HTML tags from original content
+    $plain_js = trim(
+        preg_replace(
+            '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/?>/is',
+            '',
+            $custom_js,
+        ),
+    );
+
+    // Add HTML tags directly
+    $include_custom_js .= $html_tags;
+
+    // Wrap remaining plain JS inside script tag
+    if (!empty($plain_js)) {
+        $include_custom_js .= "\n<script>
+            {
+                $plain_js
             }
-        @endphp
+        </script>";
+    }
+}
+?>
 
         {!! $custom_css !!}
-        {!! $custom_js !!}
+        {!! $include_custom_js !!}
     @endif
 
     {{-- JS --}}
@@ -121,7 +178,8 @@
                         {{-- Content --}}
                         <div class="page-body">
                             <div class="col-md-12 mb-3 px-lg-2">
-                                <h2 class="head py-4 w-100 fs-custom fw-bold position-relative text-center {{ request('category') ? 'd-none' : '' }}">
+                                <h2
+                                    class="head py-4 w-100 fs-custom fw-bold position-relative text-center {{ request('category') ? 'd-none' : '' }}">
                                     {{ __('Categories') }}
 
                                     <div class="d-flex align-items-center justify-content-center heading-divider">
@@ -129,7 +187,8 @@
                                         <div class="divider-line"></div>
 
                                         <!-- Center image -->
-                                        <img src="{{ asset('img/templates/gift-shop/heading.png') }}" class="divider-img" />
+                                        <img src="{{ asset('img/templates/gift-shop/heading.png') }}"
+                                            class="divider-img" />
 
                                         <!-- Right line -->
                                         <div class="divider-line"></div>
@@ -144,19 +203,20 @@
                                             @foreach ($categories as $category)
                                                 <div class="cursor-pointer col-6 col-md-3">
                                                     <a
-                                                        href="{{ url($business_card_details->card_url) . '?category=' . urlencode(strtolower($category->category_name)) }}">
+                                                        href="{{ $storeUrl . '?category=' . urlencode(strtolower($category->category_name)) }}">
                                                         <div class="card rounded-gift-shop">
-                                                            <div
-                                                                class="card-body d-flex flex-column p-0">
+                                                            <div class="card-body d-flex flex-column p-0">
                                                                 <!-- Thumbnail -->
-                                                                <div class="d-flex align-items-center justify-content-center">
+                                                                <div
+                                                                    class="d-flex align-items-center justify-content-center">
                                                                     <img src="{{ url($category->thumbnail) }}"
                                                                         class="category-thumbnail rounded-top-gift-shop"
                                                                         alt="{{ $category->category_name }}" />
                                                                 </div>
                                                                 <!-- Category Name -->
                                                                 <div class="">
-                                                                    <h3 class="responsive-title p-2 text-center fs-3 m-0">
+                                                                    <h3
+                                                                        class="responsive-title p-2 text-center fs-3 m-0">
                                                                         {{ __($category->category_name) }}
                                                                     </h3>
                                                                 </div>
@@ -179,7 +239,9 @@
                     <!-- Footer -->
                     <div class="footer-wave">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" preserveAspectRatio="none">
-                            <path fill="#d82b2a" fill-opacity="1" d="M0,32L48,58.7C96,85,192,139,288,133.3C384,128,480,64,576,69.3C672,75,768,149,864,181.3C960,213,1056,203,1152,165.3C1248,128,1344,64,1392,32L1440,0L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+                            <path fill="#d82b2a" fill-opacity="1"
+                                d="M0,32L48,58.7C96,85,192,139,288,133.3C384,128,480,64,576,69.3C672,75,768,149,864,181.3C960,213,1056,203,1152,165.3C1248,128,1344,64,1392,32L1440,0L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z">
+                            </path>
                         </svg>
                     </div>
                     <footer class="footer footer-transparent mb-7 mb-lg-0">
@@ -190,8 +252,7 @@
                                     <span class="text-white">
                                         {{ __('Copyright') }} &copy;
                                         <span id="year"></span>
-                                        <a href="{{ url($business_card_details->card_url) }}"
-                                            class="text-white fw-semibold">
+                                        <a href="{{ $storeUrl }}" class="text-white fw-semibold">
                                             {{ $plan_details['hide_branding'] == 1 ? $card_details->title : config('app.name') }}
                                         </a>.
                                         {{ __('All rights reserved.') }}
@@ -206,7 +267,8 @@
                                             </a>
                                         </li>
                                         <li class="list-inline-item">
-                                            <a href="{{ $shareComponent['twitter'] }}" target="_blank" class="link-light">
+                                            <a href="{{ $shareComponent['twitter'] }}" target="_blank"
+                                                class="link-light">
                                                 <i class="ti ti-brand-twitter-filled text-white"></i>
                                             </a>
                                         </li>
@@ -231,7 +293,7 @@
                                     </ul>
                                 </div>
                             </div>
-        
+
                             <!-- Second Row: Policy Links -->
                             <div class="row mt-3">
                                 <div class="col">
@@ -244,7 +306,7 @@
                                                     class="text-white">{{ __('Privacy Policy') }}</a>
                                             </li>
                                         @endif
-        
+
                                         {{-- Terms and Conditions --}}
                                         @if ($business_card_details->terms_and_conditions)
                                             <li class="list-inline-item">
@@ -252,7 +314,7 @@
                                                     class="text-white">{{ __('Terms & Conditions') }}</a>
                                             </li>
                                         @endif
-        
+
                                         {{-- Return/Refund Policy --}}
                                         @if ($business_card_details->refund_policy)
                                             <li class="list-inline-item">
@@ -260,7 +322,7 @@
                                                     class="text-white">{{ __('Return/Refund Policy') }}</a>
                                             </li>
                                         @endif
-        
+
                                         {{-- Shipping Policy --}}
                                         @if ($business_card_details->shipping_policy)
                                             <li class="list-inline-item">
@@ -268,7 +330,7 @@
                                                     class="text-white">{{ __('Shipping Policy') }}</a>
                                             </li>
                                         @endif
-        
+
                                         {{-- Cookie Policy --}}
                                         @if ($business_card_details->cookie_policy)
                                             <li class="list-inline-item">
@@ -276,7 +338,7 @@
                                                     class="text-white">{{ __('Cookie Policy') }}</a>
                                             </li>
                                         @endif
-        
+
                                         {{-- Contact Information / Customer Support Policy --}}
                                         @if ($business_card_details->customer_support_policy)
                                             <li class="list-inline-item">
@@ -329,7 +391,7 @@
     </div>
 
     {{-- Place order --}}
-    <div class="modal modal-blur fade" id="orderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal modal-bg fade" id="orderModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-md modal-dialog-centered" role="document">
             <div class="modal-content">
                 <!-- Modal Header -->
@@ -576,7 +638,7 @@
                 // LEFT: Image
                 cart_items += `
                 <div class="me-3 flex-shrink-0" style="width: 100px; height: 100px;">
-                    <img src="${item.product_image}" class="img-fluid rounded-gift-shop object-fit-cover h-100 w-100" alt="${item.product_name}" />
+                    <img src="${item.product_image}" class="img-fluid rounded-gift-shop object-fit-contain h-100 w-100" alt="${item.product_name}" />
                 </div>`;
 
                 // RIGHT: Product Info
@@ -748,9 +810,8 @@
                 });
 
                 // Place order ajax
-                // Place order ajax
                 $.ajax({
-                    url: "{{ route('store.order.place') }}",
+                    url: "{{ url('order/place') }}",
                     method: "POST",
                     data: {
                         _token: '{{ csrf_token() }}',

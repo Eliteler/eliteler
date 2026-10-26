@@ -114,7 +114,7 @@ return [
     | Defines the 'locale' field name, which is used by the
     | translation model.
     |
-    */
+    */ 
     'locale_key' => 'locale',
 
     /*

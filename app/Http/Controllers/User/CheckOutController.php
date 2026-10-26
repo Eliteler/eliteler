@@ -53,7 +53,7 @@ class CheckOutController extends Controller
     {
         // Selected plan
         $selected_plan = Plan::where('plan_id', $id)->where('status', 1)->first();
-        $applied = false; 
+        $applied = false;
         $coupon_code = '';
 
         // check recurring payment gateways
@@ -85,6 +85,19 @@ class CheckOutController extends Controller
                             }
                         }
                     }
+                }
+            }
+        }
+
+        // check in-app subscription
+        if (Schema::hasTable(('in_app_purchases'))) {
+            // check in-app subscription
+            $in_app_purchase = DB::table('in_app_purchases')->where('user_id', Auth::user()->user_id)->latest()->first();
+
+            // check if in-app subscription is active
+            if ($in_app_purchase) {
+                if ($in_app_purchase->transaction_status == 'ACTIVE') {
+                    return redirect()->route('user.plans')->with('failed', trans('An active subscription already exists in the mobile app. Please cancel it before starting a new subscription.'));
                 }
             }
         }
@@ -135,7 +148,7 @@ class CheckOutController extends Controller
                         $invoice_details['to_billing_state'] = $request->billing_state;
                         $invoice_details['to_billing_zipcode'] = $request->billing_zipcode;
                         $invoice_details['to_billing_country'] = $request->billing_country;
-                        $invoice_details['to_billing_phone'] = $request->billing_phone;
+                        $invoice_details['to_billing_phone'] = $request->billing_country_code . $request->billing_phone;
                         $invoice_details['to_billing_email'] = $request->billing_email;
                         $invoice_details['to_vat_number'] = $request->vat_number;
                         $invoice_details['tax_name'] = $config[24]->config_value;
@@ -154,10 +167,10 @@ class CheckOutController extends Controller
                         $transaction->plan_id = $selected_plan->plan_id;
                         $transaction->desciption = $selected_plan->plan_name . " Plan";
                         $transaction->payment_gateway_name = "FREE";
-                        $transaction->transaction_amount = $selected_plan->plan_price;
+                        $transaction->transaction_amount = 0;
                         $transaction->transaction_currency = $config[1]->config_value;
                         $transaction->invoice_details = json_encode($invoice_details);
-                        $transaction->payment_status = "SUCCESS"; 
+                        $transaction->payment_status = "SUCCESS";
                         $transaction->save();
 
                         // Update user plan
@@ -202,7 +215,7 @@ class CheckOutController extends Controller
                     $invoice_details['to_billing_state'] = $request->billing_state;
                     $invoice_details['to_billing_zipcode'] = $request->billing_zipcode;
                     $invoice_details['to_billing_country'] = $request->billing_country;
-                    $invoice_details['to_billing_phone'] = $request->billing_phone;
+                    $invoice_details['to_billing_phone'] = $request->billing_country_code . $request->billing_phone;
                     $invoice_details['to_billing_email'] = $request->billing_email;
                     $invoice_details['to_vat_number'] = $request->vat_number;
                     $invoice_details['tax_name'] = $config[24]->config_value;
@@ -221,7 +234,7 @@ class CheckOutController extends Controller
                     $transaction->plan_id = $selected_plan->plan_id;
                     $transaction->desciption = $selected_plan->plan_name . " Plan";
                     $transaction->payment_gateway_name = "TRIAL";
-                    $transaction->transaction_amount = $selected_plan->plan_price;
+                    $transaction->transaction_amount = 0;
                     $transaction->transaction_currency = $config[1]->config_value;
                     $transaction->invoice_details = json_encode($invoice_details);
                     $transaction->payment_status = "SUCCESS";
@@ -301,52 +314,108 @@ class CheckOutController extends Controller
 
         // Check plan exists
         if ($selected_plan == null) {
-            return response()->json(['success' => false, 'message' => trans('Plan not found!')]);
+            return response()->json([
+                'success' => false,
+                'message' => trans('Plan not found!')
+            ]);
         }
 
         // Get coupon details
-        $couponDetails = Coupon::where('used_for', 'plan')->where('coupon_code', $coupon_code)->where('status', 1)->first();
+        $couponDetails = Coupon::where('used_for', 'plan')
+            ->where('coupon_code', $coupon_code)
+            ->where('status', 1)
+            ->first();
 
         // Check coupon exists
         if ($couponDetails == null) {
-            return response()->json(['success' => false, 'message' => trans('Coupon not vaild!')]);
+            return response()->json([
+                'success' => false,
+                'message' => trans('Coupon not vaild!')
+            ]);
         }
 
-        // Check coupon validity
+        // Check coupon validity (expiration date)
         if ($couponDetails->coupon_expired_on < Carbon::now()) {
-            return response()->json(['success' => false, 'message' => trans('Coupon not vaild!')]);
+            return response()->json([
+                'success' => false,
+                'message' => trans('Coupon not vaild!')
+            ]);
+        }
+
+        // Check if coupon is applicable for this specific plan or all plans
+        $allowedPlans = json_decode($couponDetails->plan_id, true);
+        if (!is_array($allowedPlans)) {
+            $allowedPlans = $couponDetails->plan_id ? [$couponDetails->plan_id] : ['all'];
+        }
+
+        if (!in_array('all', $allowedPlans) && !in_array($selected_plan->plan_id, $allowedPlans)) {
+            return response()->json([
+                'success' => false,
+                'message' => trans('This coupon is not applicable for the selected plan!')
+            ]);
         }
 
         // Check user already has this coupon
-        $userCouponCount = AppliedCoupon::where('user_id', Auth::user()->id)->where('coupon_id', $couponDetails->coupon_id)->where('status', 1)->count();
+        $userCouponCount = AppliedCoupon::where('user_id', Auth::user()->id)
+            ->where('coupon_id', $couponDetails->coupon_id)
+            ->where('status', 1)
+            ->count();
+
         if ($userCouponCount >= $couponDetails->coupon_user_usage_limit) {
-            return response()->json(['success' => false, 'message' => trans('Coupon already used.')]);
+            return response()->json([
+                'success' => false,
+                'message' => trans('Coupon already used.')
+            ]);
         }
 
         // Check total already has this coupon
-        $totalCouponCount = AppliedCoupon::where('coupon_id', $couponDetails->coupon_id)->where('status', 1)->count();
+        $totalCouponCount = AppliedCoupon::where('coupon_id', $couponDetails->coupon_id)
+            ->where('status', 1)
+            ->count();
+
         if ($totalCouponCount >= $couponDetails->coupon_total_usage_limit) {
-            return response()->json(['success' => false, 'message' => trans('Total number of users already reached.')]);
+            return response()->json([
+                'success' => false,
+                'message' => trans('Total number of users already reached.')
+            ]);
         }
 
-        // Check coupon type
+        // Plan price
+        $planPrice = (float) $selected_plan->plan_price;
+
+        // Calculate GST
+        $appliedTaxInTotal = ($planPrice * $tax) / 100;
+
+        // Price including GST
+        $priceWithTax = $planPrice + $appliedTaxInTotal;
+
+        // Calculate coupon discount
         if ($couponDetails->coupon_type == 'fixed') {
-            $appliedTaxInTotal = ($selected_plan->plan_price * $tax) / 100;
-            $discountPrice = $couponDetails->coupon_amount;
-            $total = ($selected_plan->plan_price + $appliedTaxInTotal) - $discountPrice;
+            $discountPrice = (float) $couponDetails->coupon_amount;
         } else {
-            // Applied tax in total
-            $appliedTaxInTotal = ($selected_plan->plan_price * $tax) / 100;
-            // Get discount in plan price
-            $discountPrice = ($selected_plan->plan_price * $couponDetails->coupon_amount) / 100;
-
-            // Total
-            $total = ($selected_plan->plan_price + $appliedTaxInTotal) - $discountPrice;
+            $discountPrice = ($priceWithTax * (float) $couponDetails->coupon_amount) / 100;
         }
+
+        // Prevent discount from exceeding total including GST
+        $discountPrice = min($discountPrice, $priceWithTax);
+
+        // Calculate final total
+        $total = $priceWithTax - $discountPrice;
+
+        // Prevent negative total
+        $total = max($total, 0);
 
         // Change applied status
         $applied = true;
 
-        return response()->json(['success' => true, 'applied' => $applied, 'coupon_code' => $coupon_code, 'coupon_id' => $couponDetails->coupon_id, 'discountPrice' => $discountPrice, 'total' => $total]);
+        return response()->json([
+            'success' => true,
+            'applied' => $applied,
+            'coupon_code' => $coupon_code,
+            'coupon_id' => $couponDetails->coupon_id,
+            'discountPrice' => round($discountPrice, 2),
+            'tax' => round($appliedTaxInTotal, 2),
+            'total' => round($total, 2)
+        ]);
     }
 }

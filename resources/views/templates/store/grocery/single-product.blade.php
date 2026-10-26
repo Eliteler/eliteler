@@ -1,3 +1,18 @@
+@php
+    $currentHost = request()->getHost();
+    $masterHost = parse_url(config('app.url'), PHP_URL_HOST);
+    $isCustomDomainOrSubdomain = $currentHost !== $masterHost;
+
+    // Dynamic store base URL and product URL prefix
+    if ($isCustomDomainOrSubdomain) {
+        $storeUrl = url('/');
+        $productUrlPrefix = url('product');
+    } else {
+        $storeUrl = url($business_card_details->card_url);
+        $productUrlPrefix = url($business_card_details->card_url . '/product');
+    }
+@endphp
+
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
@@ -91,32 +106,72 @@
     {{-- Check business details --}}
     @if ($business_card_details != null)
         @php
-            $custom_css = $business_card_details->custom_css;
-            $custom_js = $business_card_details->custom_js;
+            $custom_css = trim($business_card_details->custom_css ?? '');
+            $custom_js = trim($business_card_details->custom_js ?? '');
 
-            // Ensure <style> tags for custom CSS
-            if (strpos($custom_css, '<style>') === false && strpos($custom_css, '</style>') === false) {
-                $custom_css = "<style>" . $custom_css . "</style>";
+            /*
+            |--------------------------------------------------------------------------
+            | Custom CSS
+            |--------------------------------------------------------------------------
+            */
+
+            if (!empty($custom_css) && stripos($custom_css, '<style') === false) {
+                $custom_css = "<style>{$custom_css}</style>";
             }
 
-            // Ensure <script> tags for custom JS
-            if (strpos($custom_js, '<script>') === false && strpos($custom_js, '</script>') === false) {
-                $custom_js = "<script>" . $custom_js . "</script>";
+            /*
+            |--------------------------------------------------------------------------
+            | Split HTML tags and plain JS
+            |--------------------------------------------------------------------------
+            */
+
+            $include_custom_js = '';
+
+            if (!empty($custom_js)) {
+                // Extract HTML tags like meta, script, iframe, noscript, etc.
+                preg_match_all(
+                '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/@endphp/is',
+        $custom_js,
+        $matches,
+    );
+
+    $html_tags = implode("\n", $matches[0]);
+
+    // Remove extracted HTML tags from original content
+    $plain_js = trim(
+        preg_replace(
+            '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/?>/is',
+            '',
+            $custom_js,
+        ),
+    );
+
+    // Add HTML tags directly
+    $include_custom_js .= $html_tags;
+
+    // Wrap remaining plain JS inside script tag
+    if (!empty($plain_js)) {
+        $include_custom_js .= "\n<script>
+            {
+                $plain_js
             }
-        @endphp
+        </script>";
+    }
+}
+?>
 
         {!! $custom_css !!}
-        {!! $custom_js !!}
+        {!! $include_custom_js !!}
 
         {{-- Theme CSS --}}
-        @if(!empty($business_card_details->theme_css))
+        @if (!empty($business_card_details->theme_css))
             <style>
                 {!! $business_card_details->theme_css !!}
             </style>
         @endif
 
         {{-- Theme JS --}}
-        @if(!empty($business_card_details->theme_js))
+        @if (!empty($business_card_details->theme_js))
             <script>
                 {!! $business_card_details->theme_js !!}
             </script>
@@ -169,7 +224,7 @@
                                         <div class="ratio ratio-16x9 mb-2">
                                             <img src="{{ url($productImages[0]) }}" id="product_image"
                                                 alt="{{ $product_details->product_name }}"
-                                                style="object-fit: cover; object-position: center;"
+                                                style="object-fit: contain; object-position: center;"
                                                 class="w-100 rounded-grocery bg-opacity-gray">
                                         </div>
                                     </a>
@@ -185,7 +240,7 @@
                                                 <a href="{{ url($productImage) }}" data-fslightbox="gallery">
                                                     <div class="product-image-wrapper">
                                                         <img class="img-fluid w-100 h-100 bg-opacity-gray rounded-grocery"
-                                                            style="object-fit: cover; object-position: center;"
+                                                            style="object-fit: contain; object-position: center;"
                                                             onclick="updateSrc(this)"
                                                             alt="{{ $product_details->product_name }}"
                                                             src="{{ url($productImage) }}">
@@ -238,7 +293,12 @@
                                     <!-- Cart Button -->
                                     @if ($product_details->product_status == 'instock')
                                         <div class="col-12 col-md-6">
-                                            <a onclick="addToCart('{{ $product_details->product_id }}')"
+                                            <a onclick="addToCart('{{ $product_details->product_id }}', this)"
+                                                data-id="{{ $product_details->product_id }}"
+                                                data-name="{{ $product_details->product_name }}"
+                                                data-price="{{ $product_details->sales_price }}"
+                                                data-image="{{ url(explode(',', $product_details->product_image)[0] ?? '') }}"
+                                                data-subtitle="{{ $product_details->product_short_description }}"
                                                 class="cursor-pointer btn btn-grocery-green btn-lg w-100 rounded-grocery fs-2 fw-bold btn-effect">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -263,7 +323,7 @@
                                     {{-- Share --}}
                                     @include('templates.includes.store.share', [
                                         'productName' => $product_details->product_name,
-                                        'productUrl'  => url()->current()
+                                        'productUrl' => url()->current(),
                                     ])
                                 </div>
                             </div>
@@ -305,8 +365,7 @@
                                                         @php
                                                             $productImages = explode(',', $product->product_image);
                                                         @endphp
-                                                        <a
-                                                            href="{{ url($business_card_details->card_url . '/product/' . $product->id) }}">
+                                                        <a href="{{ $productUrlPrefix . '/' . $product->id }}">
                                                             <!-- Carousel Images -->
                                                             <div id="carousel-controls" class="carousel slide mb-3"
                                                                 data-bs-ride="carousel">
@@ -316,7 +375,7 @@
                                                                             class="carousel-item {{ $loop->index == 0 ? 'active' : '' }} ratio ratio-4x3">
                                                                             <img class="d-block img-fluid w-100 rounded-grocery"
                                                                                 id="{{ $product->product_id }}_product_image"
-                                                                                style="object-fit: cover; object-position: center;"
+                                                                                style="object-fit: contain; object-position: center;"
                                                                                 alt="{{ $product->product_name }}"
                                                                                 src="{{ url($productImage) }}">
                                                                         </div>
@@ -372,7 +431,12 @@
 
                                                             <!-- Icon Button -->
                                                             @if ($product->product_status == 'instock')
-                                                                <a onclick="addToCart('{{ $product->product_id }}')"
+                                                                <a onclick="addToCart('{{ $product->product_id }}', this)"
+                                                                    data-id="{{ $product->product_id }}"
+                                                                    data-name="{{ $product->product_name }}"
+                                                                    data-price="{{ $product->sales_price }}"
+                                                                    data-image="{{ url(explode(',', $product->product_image)[0] ?? '') }}"
+                                                                    data-subtitle="{{ $product->product_short_description }}"
                                                                     class="cursor-pointer btn-effect">
                                                                     <i
                                                                         class="ti ti-shopping-bag-plus bg-grocery-green text-white p-custom fs-1 rounded-grocery"></i>
@@ -398,12 +462,13 @@
                                     <span class="text-muted">
                                         {{ __('Copyright') }} &copy;
                                         <span id="year"></span>
-                                        <a href="{{ url($business_card_details->card_url) }}" class="text-dark fw-semibold">
+                                        <a href="{{ $storeUrl }}" class="text-dark fw-semibold">
                                             {{ $card_details->title }}
                                         </a>.
                                         {{ __('All rights reserved.') }} <br>
                                         @if (!isset($plan_details['hide_branding']) || $plan_details['hide_branding'] != 1)
-                                            {{ __('Made with') }} <i class="ti ti-heart text-danger"></i> <a href="{{ config('app.url') }}">{{ config('app.name') }}</a>.
+                                            {{ __('Made with') }} <i class="ti ti-heart text-danger"></i> <a
+                                                href="{{ config('app.url') }}">{{ config('app.name') }}</a>.
                                         @endif
                                     </span>
                                 </div>
@@ -416,7 +481,8 @@
                                             </a>
                                         </li>
                                         <li class="list-inline-item">
-                                            <a href="{{ $shareComponent['twitter'] }}" target="_blank" class="link-light">
+                                            <a href="{{ $shareComponent['twitter'] }}" target="_blank"
+                                                class="link-light">
                                                 <i class="ti ti-brand-twitter-filled text-grocery-green"></i>
                                             </a>
                                         </li>
@@ -541,7 +607,7 @@
     </div>
 
     {{-- Place order --}}
-    <div class="modal modal-blur fade" id="orderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal modal-bg fade" id="orderModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-md modal-dialog-centered" role="document">
             <div class="modal-content">
                 <!-- Modal Header -->
@@ -558,7 +624,9 @@
                     <!-- Mobile -->
                     <div class="mb-3">
                         <label class="form-label required" for="cus_mobile">{{ __('Mobile') }}</label>
-                        <input type="number" class="form-control" placeholder="{{ __('Mobile number with country code, excluding +') }}" id="cus_mobile" required />
+                        <input type="number" class="form-control"
+                            placeholder="{{ __('Mobile number with country code, excluding +') }}" id="cus_mobile"
+                            required />
                     </div>
                     <!-- Address -->
                     <div class="mb-3">
@@ -618,7 +686,8 @@
                 <!-- Modal Footer -->
                 <div class="modal-footer">
                     <!-- Close -->
-                    <button type="button" class="btn btn-dark" data-bs-dismiss="modal">{{ __('Close') }}</button>
+                    <button type="button" class="btn btn-dark"
+                        data-bs-dismiss="modal">{{ __('Close') }}</button>
                     <!-- Confirm -->
                     <button type="button" class="btn btn-grocery-green"
                         onclick="confirmOrder()">{{ __('Confirm') }}</button>
@@ -671,9 +740,7 @@
         };
 
         // Currencies
-        const currencies = {!! json_encode(App\Currency::where('status', 1)
-        ->select('iso_code', 'symbol', 'symbol_first')
-        ->get()) !!};
+        const currencies = {!! json_encode(App\Currency::where('status', 1)->select('iso_code', 'symbol', 'symbol_first')->get()) !!};
 
         // Determine currency symbol and position
         let currencySymbol = '';
@@ -780,19 +847,21 @@
         }
 
         // Add to cart function
-        function addToCart(pid) {
-            var productName = $("#product_name").text();
-            var price = $("#price").text();
-            var product_image = $("#product_image").attr("src");
-            var subtitle = $("#subtitle").text();
+        function addToCart(pid, btn) {
+
+            var productName = $(btn).data('name');
+            var price = $(btn).data('price');
+            var product_image = $(btn).data('image');
+            var subtitle = $(btn).data('subtitle');
 
             var found = cart.findIndex(item => item.product_id == pid);
+
             if (found !== -1) {
                 cart[found].qty++;
                 successAlert('{{ __('Cart updated') }}');
             } else {
                 cart.push({
-                    product_name: $.trim(productName),
+                    product_name: productName,
                     price: price,
                     product_id: pid,
                     currency: currency,
@@ -800,8 +869,10 @@
                     product_image: product_image,
                     subtitle: subtitle
                 });
-                successAlert("{{ __('Item added to cart') }}");
+
+                successAlert('{{ __('Item added to cart') }}');
             }
+
             updateList();
             updateBadge();
             updateStorage();
@@ -827,7 +898,7 @@
                 // LEFT: Image
                 cart_items += `
                 <div class="me-3 flex-shrink-0" style="width: 100px; height: 100px;">
-                    <img src="${item.product_image}" class="img-fluid rounded-grocery object-fit-cover h-100 w-100" alt="${item.product_name}" />
+                    <img src="${item.product_image}" class="img-fluid rounded-grocery object-fit-contain h-100 w-100" alt="${item.product_name}" />
                 </div>`;
 
                 // RIGHT: Product Info
@@ -1000,9 +1071,8 @@
                 });
 
                 // Place order ajax
-                // Place order ajax
                 $.ajax({
-                    url: "{{ config('app.url') }}/order/place",
+                    url: "{{ url('order/place') }}",
                     method: "POST",
                     data: {
                         _token: '{{ csrf_token() }}',

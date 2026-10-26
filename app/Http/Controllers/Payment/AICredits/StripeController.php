@@ -17,14 +17,15 @@ use App\AiCreditsPlan;
 use App\AiCreditsTransaction;
 use App\AppliedCoupon;
 use App\Coupon;
+use App\Http\Controllers\Controller;
 use App\Setting;
 use App\User;
-use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
+use Plugins\Zapier\Helpers\ZapierHelper;
 
 class StripeController extends Controller
 {
@@ -104,7 +105,7 @@ class StripeController extends Controller
                 $amountToBePaid = ($plan_details->plan_price + $appliedTaxInTotal);
             }
 
-            $amountToBePaidPaise = (int) ($amountToBePaid * 100);
+            $amountToBePaidPaise = round($amountToBePaid * 100);
 
             \Stripe\Stripe::setApiKey($config[10]->config_value);
 
@@ -162,7 +163,7 @@ class StripeController extends Controller
             $invoice_details['to_billing_state'] = $userData->billing_state;
             $invoice_details['to_billing_zipcode'] = $userData->billing_zipcode;
             $invoice_details['to_billing_country'] = $userData->billing_country;
-            $invoice_details['to_billing_phone'] = $userData->billing_phone;
+            $invoice_details['to_billing_phone'] = $userData->billing_country_code . $userData->billing_phone;
             $invoice_details['to_billing_email'] = $userData->billing_email;
             $invoice_details['to_vat_number'] = $userData->vat_number;
 
@@ -335,8 +336,45 @@ class StripeController extends Controller
             } catch (\Exception $e) {
             }
 
-            return redirect()->route('user.ai.credits.plans')
-                ->with('success', trans('Payment successful!'));
+            // Fetch customer details safely
+            $user_details = \App\User::find($transactionDetails->user_id) ?? Auth::user();
+
+            // Decode invoice details safely
+            $encode = json_decode($transactionDetails->invoice_details ?? '{}', true);
+
+            // Safely format user billing address
+            $userAddress = $user_details->billing_address ?? '';
+            $userCity = $user_details->billing_city ?? '';
+            $userState = $user_details->billing_state ?? '';
+            $userCountry = $user_details->billing_country ?? '';
+            $userZip = $user_details->billing_zipcode ?? '';
+
+            // Dispatch AI credits purchase event to Zapier
+            if (function_exists('zapier_dispatch')) {
+                zapier_dispatch('ai_credits', [
+                    'transaction_id'  => $paymentId ?? ($transactionDetails->ai_credits_transaction_id ?? 'TX_' . rand(100000, 999999)),
+                    'invoice_id'      => ($config[15]->config_value ?? 'INV-') . $invoiceNumber,
+                    'user_name'       => $user_details->name ?? ($encode['to_billing_name'] ?? 'Customer'),
+                    'user_address'    => !empty($userAddress) ? $userAddress : ($encode['to_billing_address'] ?? ''),
+                    'user_city'       => !empty($userCity) ? $userCity : ($encode['to_billing_city'] ?? ''),
+                    'user_state'      => !empty($userState) ? $userState : ($encode['to_billing_state'] ?? ''),
+                    'user_country'    => !empty($userCountry) ? $userCountry : ($encode['to_billing_country'] ?? ''),
+                    'user_zip'        => !empty($userZip) ? $userZip : ($encode['to_billing_zipcode'] ?? ''),
+                    'user_email'      => $user_details->email ?? ($encode['to_billing_email'] ?? ''),
+                    'user_phone'      => ($user_details->country_code ?? '') . ($user_details->mobile_number ?? ($encode['to_billing_phone'] ?? '')),
+                    'user_tax_number' => $user_details->vat_number ?? $user_details->tax_number ?? ($encode['to_vat_number'] ?? ''),
+                    'plan_name'       => $transactionDetails->purchase_details ?? ($planDetails->plan_name ?? 'AI Credits Plan'),
+                    'quantity'        => 1,
+                    'currency'        => $transactionDetails->currency ?? ($config[1]->config_value ?? 'USD'),
+                    'amount'          => (float) ($transactionDetails->amount ?? ($encode['invoice_amount'] ?? 0)),
+                    'payment_method'  => 'Stripe',
+                    'payment_status'  => 'paid',
+                    'invoice_date'    => now()->toDateString(),
+                    'purchased_at'    => now()->toDateTimeString(),
+                ]);
+            }
+
+            return redirect()->route('user.ai.credits.plans')->with('success', trans('Payment successful!'));
         }
 
         AiCreditsTransaction::where('payment_transaction_id', $orderId)

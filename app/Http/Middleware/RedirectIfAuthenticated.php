@@ -38,7 +38,7 @@ class RedirectIfAuthenticated
                 $is_modern_dashboard_enabled = DB::table('modern_dashboard_settings')->first()->modern_dashboard_enabled;
 
                 // if enabled redirect to react dashboard
-                if (is_dir(base_path('plugins/ModernDashboard')) && $is_modern_dashboard_enabled == 1) {
+                if (plugin_active('ModernDashboard') && $is_modern_dashboard_enabled == 1) {
                     return redirect()->route('user.dashboard.overview');
                 } else {
                     // if disabled redirect to default dashboard

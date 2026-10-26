@@ -818,6 +818,7 @@ body {
 }
 
 /* ── Container ── */
+/* Container Layout */
 .vcard-container {
     width: 100%;
     max-width: 500px;
@@ -826,20 +827,28 @@ body {
     position: relative;
     padding-bottom: 110px;
     overflow: visible;
-    min-height: 100vh;
+    min-height: 100dvh; /* Prevents mobile dynamic browser address bar height bugs */
     z-index: 50;
+    box-sizing: border-box; /* Ensures padding/borders do not cause horizontal overflow */
 }
 
+/* Desktop Styles (Screens wider than 520px) */
 @media (min-width: 520px) {
     .vcard-container {
         border-radius: 8px;
         overflow: hidden;
         min-height: auto;
+        margin: 50px auto; /* Centers the card horizontally on desktop screens */
     }
 }
 
 #smooth-wrapper {
+    width: 100%;
     max-width: 100%;
+    display: flex;
+    justify-content: center;
+    min-height: 100dvh; /* Changed from 100vh to 100dvh for consistent mobile rendering */
+    box-sizing: border-box;
 }
 
 /* ── Cover ── */
@@ -1061,12 +1070,12 @@ body {
 }
 
 .desc {
+    font-family: "Roboto", sans-serif;
     font-size: 14px;
+    font-weight: 400;
+    line-height: 1.6;
     color: var(--text-light);
     margin-top: 0.8rem;
-    line-height: 1.6;
-    font-family: "Roboto", sans-serif;
-    font-weight: 400;
 }
 
 /* ── Quick Actions — inside profile section in original ── */

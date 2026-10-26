@@ -179,10 +179,10 @@
                                         <div class="list-group list-group-flush mb-n3">
                                             <div class="list-group-item px-0">
                                                 <div class="row align-items-center text-muted">
-                                                    <div class="col-12 col-lg-2 text-truncate"><strong>{{ __('Type') }}</strong></div>
+                                                    <div class="col-12 col-lg-4 text-truncate"><strong>{{ __('Type') }}</strong></div>
                                                     <div class="col-12 col-lg-4 text-truncate"><strong>{{ __('Hostname') }}</strong></div>
                                                     <div class="col-12 col-lg-4 text-truncate"><strong>{{ __('IP') }}</strong></div>
-                                                    <div class="col-12 col-lg-2 text-truncate"><strong>{{ __('TTL') }}</strong></div>
+                                                    <div class="col-12 col-lg-4 text-truncate"><strong>{{ __('TTL') }}</strong></div>
                                                 </div>
                                             </div>
 
@@ -190,10 +190,10 @@
                                             @if(strtolower($result['type']) == 'a')
                                             <div class="list-group-item px-0">
                                                 <div class="row align-items-center text-muted">
-                                                    <div class="col-12 col-lg-2 text-break"><strong>{{ $result['type'] }}</strong></div>
+                                                    <div class="col-12 col-lg-4 text-break"><strong>{{ $result['type'] }}</strong></div>
                                                     <div class="col-12 col-lg-4 text-break"><strong>{{ $result['host'] }}</strong></div>
                                                     <div class="col-12 col-lg-4 text-break"><strong>{{ $result['ip'] }}</strong></div>
-                                                    <div class="col-12 col-lg-2 text-break"><strong>{{ $result['ttl'] }}</strong></div>
+                                                    <div class="col-12 col-lg-4 text-break"><strong>{{ $result['ttl'] }}</strong></div>
                                                 </div>
                                             </div>
                                             @endif
@@ -206,10 +206,10 @@
                                         <div class="list-group list-group-flush mb-n3">
                                             <div class="list-group-item px-0">
                                                 <div class="row align-items-center text-muted">
-                                                    <div class="col-12 col-lg-2 text-truncate"><strong>{{ __('Type') }}</strong></div>
+                                                    <div class="col-12 col-lg-4 text-truncate"><strong>{{ __('Type') }}</strong></div>
                                                     <div class="col-12 col-lg-4 text-truncate"><strong>{{ __('Hostname') }}</strong></div>
                                                     <div class="col-12 col-lg-4 text-truncate"><strong>{{ __('IPv6') }}</strong></div>
-                                                    <div class="col-12 col-lg-2 text-truncate"><strong>{{ __('TTL') }}</strong></div>
+                                                    <div class="col-12 col-lg-4 text-truncate"><strong>{{ __('TTL') }}</strong></div>
                                                 </div>
                                             </div>
 
@@ -217,10 +217,10 @@
                                             @if(strtolower($result['type']) == 'aaaa')
                                             <div class="list-group-item px-0">
                                                 <div class="row align-items-center text-muted">
-                                                    <div class="col-12 col-lg-2 text-break"><strong>{{ $result['type'] }}</strong></div>
+                                                    <div class="col-12 col-lg-4 text-break"><strong>{{ $result['type'] }}</strong></div>
                                                     <div class="col-12 col-lg-4 text-break"><strong>{{ $result['host'] }}</strong></div>
                                                     <div class="col-12 col-lg-4 text-break"><strong>{{ $result['ipv6'] }}</strong></div>
-                                                    <div class="col-12 col-lg-2 text-break"><strong>{{ $result['ttl'] }}</strong></div>
+                                                    <div class="col-12 col-lg-4 text-break"><strong>{{ $result['ttl'] }}</strong></div>
                                                 </div>
                                             </div>
                                             @endif
@@ -233,10 +233,10 @@
                                         <div class="list-group list-group-flush mb-n3">
                                             <div class="list-group-item px-0">
                                                 <div class="row align-items-center text-muted">
-                                                    <div class="col-12 col-lg-2 text-truncate"><strong>{{ __('Type') }}</strong></div>
+                                                    <div class="col-12 col-lg-4 text-truncate"><strong>{{ __('Type') }}</strong></div>
                                                     <div class="col-12 col-lg-4 text-truncate"><strong>{{ __('Hostname') }}</strong></div>
                                                     <div class="col-12 col-lg-4 text-truncate"><strong>{{ __('Target') }}</strong></div>
-                                                    <div class="col-12 col-lg-2 text-truncate"><strong>{{ __('TTL') }}</strong></div>
+                                                    <div class="col-12 col-lg-4 text-truncate"><strong>{{ __('TTL') }}</strong></div>
                                                 </div>
                                             </div>
 
@@ -244,10 +244,10 @@
                                             @if(strtolower($result['type']) == 'cname')
                                             <div class="list-group-item px-0">
                                                 <div class="row align-items-center text-muted">
-                                                    <div class="col-12 col-lg-2 text-break"><strong>{{ $result['type'] }}</strong></div>
+                                                    <div class="col-12 col-lg-4 text-break"><strong>{{ $result['type'] }}</strong></div>
                                                     <div class="col-12 col-lg-4 text-break"><strong>{{ $result['host'] }}</strong></div>
                                                     <div class="col-12 col-lg-4 text-break"><strong>{{ $result['target'] }}</strong></div>
-                                                    <div class="col-12 col-lg-2 text-break"><strong>{{ $result['ttl'] }}</strong></div>
+                                                    <div class="col-12 col-lg-4 text-break"><strong>{{ $result['ttl'] }}</strong></div>
                                                 </div>
                                             </div>
                                             @endif
@@ -260,11 +260,11 @@
                                         <div class="list-group list-group-flush mb-n3">
                                             <div class="list-group-item px-0">
                                                 <div class="row align-items-center text-muted">
-                                                    <div class="col-12 col-lg-2 text-truncate"><strong>{{ __('Type') }}</strong></div>
+                                                    <div class="col-12 col-lg-4 text-truncate"><strong>{{ __('Type') }}</strong></div>
                                                     <div class="col-12 col-lg-3 text-truncate"><strong>{{ __('Hostname') }}</strong></div>
                                                     <div class="col-12 col-lg-3 text-truncate"><strong>{{ __('Target') }}</strong></div>
-                                                    <div class="col-12 col-lg-2 text-truncate"><strong>{{ __('Priority') }}</strong></div>
-                                                    <div class="col-12 col-lg-2 text-truncate"><strong>{{ __('TTL') }}</strong></div>
+                                                    <div class="col-12 col-lg-4 text-truncate"><strong>{{ __('Priority') }}</strong></div>
+                                                    <div class="col-12 col-lg-4 text-truncate"><strong>{{ __('TTL') }}</strong></div>
                                                 </div>
                                             </div>
 
@@ -272,11 +272,11 @@
                                             @if(strtolower($result['type']) == 'mx')
                                             <div class="list-group-item px-0">
                                                 <div class="row align-items-center text-muted">
-                                                    <div class="col-12 col-lg-2 text-break"><strong>{{ $result['type'] }}</strong></div>
+                                                    <div class="col-12 col-lg-4 text-break"><strong>{{ $result['type'] }}</strong></div>
                                                     <div class="col-12 col-lg-3 text-break"><strong>{{ $result['host'] }}</strong></div>
                                                     <div class="col-12 col-lg-3 text-break"><strong>{{ $result['target'] }}</strong></div>
-                                                    <div class="col-12 col-lg-2 text-break"><strong>{{ $result['pri'] }}</strong></div>
-                                                    <div class="col-12 col-lg-2 text-break"><strong>{{ $result['ttl'] }}</strong></div>
+                                                    <div class="col-12 col-lg-4 text-break"><strong>{{ $result['pri'] }}</strong></div>
+                                                    <div class="col-12 col-lg-4 text-break"><strong>{{ $result['ttl'] }}</strong></div>
                                                 </div>
                                             </div>
                                             @endif
@@ -289,10 +289,10 @@
                                         <div class="list-group list-group-flush mb-n3">
                                             <div class="list-group-item px-0">
                                                 <div class="row align-items-center text-muted">
-                                                    <div class="col-12 col-lg-2 text-truncate"><strong>{{ __('Type') }}</strong></div>
+                                                    <div class="col-12 col-lg-4 text-truncate"><strong>{{ __('Type') }}</strong></div>
                                                     <div class="col-12 col-lg-4 text-truncate"><strong>{{ __('Hostname') }}</strong></div>
                                                     <div class="col-12 col-lg-4 text-truncate"><strong>{{ __('Entries') }}</strong></div>
-                                                    <div class="col-12 col-lg-2 text-truncate"><strong>{{ __('TTL') }}</strong></div>
+                                                    <div class="col-12 col-lg-4 text-truncate"><strong>{{ __('TTL') }}</strong></div>
                                                 </div>
                                             </div>
 
@@ -300,14 +300,14 @@
                                             @if(strtolower($result['type']) == 'txt')
                                             <div class="list-group-item px-0">
                                                 <div class="row align-items-center text-muted">
-                                                    <div class="col-12 col-lg-2 text-break"><strong>{{ $result['type'] }}</strong></div>
+                                                    <div class="col-12 col-lg-4 text-break"><strong>{{ $result['type'] }}</strong></div>
                                                     <div class="col-12 col-lg-4 text-break"><strong>{{ $result['host'] }}</strong></div>
                                                     <div class="col-12 col-lg-4 text-break">
                                                         @foreach($result['entries'] as $entry)
                                                         <div class="text-break {{ !$loop->first ? 'mt-1' : '' }}"><strong>{{ $entry}}</strong></div>
                                                         @endforeach
                                                     </div>
-                                                    <div class="col-12 col-lg-2 text-break"><strong>{{ $result['ttl'] }}</strong></div>
+                                                    <div class="col-12 col-lg-4 text-break"><strong>{{ $result['ttl'] }}</strong></div>
                                                 </div>
                                             </div>
                                             @endif
@@ -320,10 +320,10 @@
                                         <div class="list-group list-group-flush mb-n3">
                                             <div class="list-group-item px-0">
                                                 <div class="row align-items-center text-muted">
-                                                    <div class="col-12 col-lg-2 text-truncate"><strong>{{ __('Type') }}</strong></div>
+                                                    <div class="col-12 col-lg-4 text-truncate"><strong>{{ __('Type') }}</strong></div>
                                                     <div class="col-12 col-lg-4 text-truncate"><strong>{{ __('Hostname') }}</strong></div>
                                                     <div class="col-12 col-lg-4 text-truncate"><strong>{{ __('Target') }}</strong></div>
-                                                    <div class="col-12 col-lg-2 text-truncate"><strong>{{ __('TTL') }}</strong></div>
+                                                    <div class="col-12 col-lg-4 text-truncate"><strong>{{ __('TTL') }}</strong></div>
                                                 </div>
                                             </div>
 
@@ -331,10 +331,10 @@
                                             @if(strtolower($result['type']) == 'ns')
                                             <div class="list-group-item px-0">
                                                 <div class="row align-items-center text-muted">
-                                                    <div class="col-12 col-lg-2 text-break"><strong>{{ $result['type'] }}</strong></div>
+                                                    <div class="col-12 col-lg-4 text-break"><strong>{{ $result['type'] }}</strong></div>
                                                     <div class="col-12 col-lg-4 text-break"><strong>{{ $result['host'] }}</strong></div>
                                                     <div class="col-12 col-lg-4 text-break"><strong>{{ $result['target'] }}</strong></div>
-                                                    <div class="col-12 col-lg-2 text-break"><strong>{{ $result['ttl'] }}</strong></div>
+                                                    <div class="col-12 col-lg-4 text-break"><strong>{{ $result['ttl'] }}</strong></div>
                                                 </div>
                                             </div>
                                             @endif

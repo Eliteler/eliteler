@@ -12,19 +12,21 @@
 
 namespace App\Http\Controllers\User\Store\Edit;
 
-use App\User;
+use App\BusinessCard;
+use App\Helpers\StorageHelper;
+use App\Http\Controllers\Controller;
 use App\Medias;
 use App\Setting;
-use App\BusinessCard;
-use App\StoreProduct;
 use App\StoreCategory;
-use Illuminate\Support\Str;
+use App\StoreProduct;
+use App\User;
 use Illuminate\Http\Request;
-use Yajra\DataTables\DataTables;
-use Mews\Purifier\Facades\Purifier;
-use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Mews\Purifier\Facades\Purifier;
+use Yajra\DataTables\DataTables;
 
 class ProductController extends Controller
 {
@@ -44,7 +46,7 @@ class ProductController extends Controller
      * @return \Illuminate\Contracts\Support\Renderable
      */
 
-    // Products
+    // Products datatable and management view
     public function editProducts(Request $request, $id)
     {
         // Get plan details
@@ -60,7 +62,9 @@ class ProductController extends Controller
         } else {
             // Queries
             if ($request->ajax()) {
-                $products = StoreProduct::where('card_id', $id)->orderBy('id', 'desc')->get();
+                $products = StoreProduct::with('product_category')
+                    ->where('card_id', $id)
+                    ->orderBy('id', 'desc');
 
                 return DataTables::of($products)
                     ->addIndexColumn()
@@ -69,71 +73,97 @@ class ProductController extends Controller
                             ? __($product->product_category->category_name)
                             : __('Category not found');
 
-                        return '<span class="badge bg-primary text-white text-capitalize">' . $categoryName . '</span>';
+                        return '<span class="badge bg-slate-100 text-slate-700 text-capitalize fw-semibold">' . $categoryName . '</span>';
                     })
                     ->addColumn('product_image', function ($product) {
-                        $productImage = explode(',', $product->product_image);
+                        if (empty($product->product_image)) {
+                            return '<span class="avatar avatar-md rounded bg-primary-lt">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-photo" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><line x1="15" y1="8" x2="15.01" y2="8" /><rect x="4" y="4" width="16" height="16" rx="3" /><path d="M4 15l4 -4a3 5 0 0 1 3 0l5 5" /><path d="M14 14l1 -1a3 5 0 0 1 3 0l2 2" /></svg>
+                </span>';
+                        }
 
-                        return __(asset($productImage[0]));
+                        $productImages = array_filter(array_map('trim', explode(',', $product->product_image)));
+                        $firstImage = asset($productImages[0] ?? '');
+                        $totalCount = count($productImages);
+
+                        // Position badge on top-right floating corner without covering the picture
+                        $badgeHtml = '';
+                        if ($totalCount > 1) {
+                            $extraCount = $totalCount - 1;
+                            $badgeHtml = '<span class="badge bg-primary text-white position-absolute top-0 start-100 translate-middle shadow-sm fw-bold" style="font-size: 0.65rem; border-radius: 10px; padding: 2px 5px; z-index: 2; border: 1.5px solid #ffffff;" title="' . $totalCount . ' images">+' . $extraCount . '</span>';
+                        }
+
+                        return '<div class="position-relative d-inline-block my-1" style="width: 44px; height: 44px;">
+                <img src="' . $firstImage . '" class="rounded border" alt="' . e($product->product_name ?? 'Product') . '" style="width: 44px; height: 44px; object-fit: cover; display: block;" onerror="this.src=\'' . asset('img/default-cover.png') . '\';"/>
+                ' . $badgeHtml . '
+            </div>';
                     })
                     ->addColumn('product_name', function ($product) {
                         $raw = $product->product_name ?? '';
                         $clean = strip_tags($raw);
-                        $utf8 = mb_convert_encoding($clean, 'UTF-8', 'UTF-8'); // fix malformed utf-8
+                        $utf8 = mb_convert_encoding($clean, 'UTF-8', 'UTF-8');
 
                         $short = Str::limit(e($utf8), 30);
 
                         if (Str::length($utf8) > 30) {
-                            return '<p data-bs-toggle="tooltip" data-bs-placement="top" title="' . e($utf8) . '">' . $short . '</p>';
+                            return '<span class="fw-bold text-dark" data-bs-toggle="tooltip" data-bs-placement="top" title="' . e($utf8) . '">' . $short . '</span>';
                         } else {
-                            return '<p>' . $short . '</p>';
+                            return '<span class="fw-bold text-dark">' . $short . '</span>';
                         }
                     })
                     ->addColumn('product_description', function ($product) {
                         $raw = $product->product_description ?? '';
                         $clean = strip_tags($raw);
-                        $utf8 = mb_convert_encoding($clean, 'UTF-8', 'UTF-8'); // fix malformed utf-8
+                        $utf8 = mb_convert_encoding($clean, 'UTF-8', 'UTF-8');
 
                         $short = Str::limit(e($utf8), 30);
 
                         if (Str::length($utf8) > 30) {
-                            return '<p data-bs-toggle="tooltip" data-bs-placement="top" title="' . e($utf8) . '">' . $short . '</p>';
+                            return '<span class="text-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="' . e($utf8) . '">' . $short . '</span>';
                         } else {
-                            return '<p>' . $short . '</p>';
+                            return '<span class="text-secondary">' . $short . '</span>';
                         }
                     })
                     ->addColumn('product_status', function ($product) {
                         if ($product->product_status == 'instock') {
-                            return '<span class="badge bg-success text-white text-capitalize">' . __("In Stock") . '</span>';
+                            return '<span class="badge bg-green-100 text-green-700 text-capitalize fw-semibold">' . __("In Stock") . '</span>';
                         } else if ($product->product_status == 'outstock') {
-                            return '<span class="badge bg-danger text-white text-capitalize">' . __("Out of Stock") . '</span>';
+                            return '<span class="badge bg-red-100 text-red-700 text-capitalize fw-semibold">' . __("Out of Stock") . '</span>';
                         }
                     })
                     ->addColumn('actions', function ($product) {
-                        return '<button type="button" class="btn btn-success btn-icon mb-1" onclick="editProduct(' . $product->id . ')">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icon-tabler-edit">
-                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                        <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"/>
-                                        <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z"/>
-                                        <path d="M16 5l3 3"/>
-                                    </svg>
-                                </button>
-                                <button type="button" class="btn btn-danger btn-icon mb-1 ml-2" onclick="deleteProduct(' . $product->id . ')">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icon-tabler-trash">
-                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                        <path d="M4 7l16 0"/>
-                                        <path d="M10 11l0 6"/>
-                                        <path d="M14 11l0 6"/>
-                                        <path d="M5 7l1 12.07c0 .518 .387 .929 .9 .99l.1 .01h10c.552 0 1 -.448 1 -1l1 -12.07"/>
-                                        <path d="M9 7l1 -3h4l1 3"/>
-                                    </svg>
-                                </button>';
+                        return '<button type="button" class="btn btn-icon-only btn-primary btn-icon mb-1 me-1" onclick="editProduct(' . $product->id . ')">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icon-tabler-edit">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                    <path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"/>
+                                    <path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z"/>
+                                    <path d="M16 5l3 3"/>
+                                </svg>
+                            </button>
+                            <button type="button" class="btn btn-icon-only btn-danger btn-icon mb-1" onclick="deleteProduct(' . $product->id . ')">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icon-tabler-trash">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                    <path d="M4 7l16 0"/>
+                                    <path d="M10 11l0 6"/>
+                                    <path d="M14 11l0 6"/>
+                                    <path d="M5 7l1 12.07c0 .518 .387 .929 .9 .99l.1 .01h10c.552 0 1 -.448 1 -1l1 -12.07"/>
+                                    <path d="M9 7l1 -3h4l1 3"/>
+                                </svg>
+                            </button>';
                     })
-                    ->rawColumns(['product_category', 'product_name', 'product_description', 'product_status', 'actions'])
+                    ->filterColumn('product_category', function ($query, $keyword) {
+                        $query->whereHas('product_category', function ($q) use ($keyword) {
+                            $q->where('category_name', 'like', "%{$keyword}%");
+                        });
+                    })
+                    ->filterColumn('product_image', function ($query, $keyword) {
+                        return;
+                    })
+                    ->rawColumns(['product_category', 'product_image', 'product_name', 'product_description', 'product_status', 'actions'])
                     ->make(true);
             }
 
-            // Queries
+            // Fetch related categories, media, and settings
             $categories = StoreCategory::where('store_id', $id)->where('user_id', Auth::user()->user_id)->where('status', 1)->get();
             $media = Medias::where('user_id', Auth::user()->user_id)->orderBy('id', 'desc')->get();
             $settings = Setting::where('status', 1)->first();
@@ -142,48 +172,45 @@ class ProductController extends Controller
         }
     }
 
-    // Save new service
+    // Save new product and variants
     public function saveProduct(Request $request)
     {
-        // Validate the request data
+        // Validate incoming request data
         $validatedData = $request->validate([
-            'product_category' => 'required|string', // Add appropriate validation rules
-            'product_image' => 'required|string', // Add appropriate validation rules
-            'product_name' => 'required|string', // Add appropriate validation rules
-            'product_short_description' => 'required|string', // Add appropriate validation rules
-            'product_description' => 'required|string', // Add appropriate validation rules
-            'product_sales_price' => 'required', // Add appropriate validation rules
+            'product_category' => 'required|string',
+            'product_image' => 'required|string',
+            'product_name' => 'required|string',
+            'product_short_description' => 'required|string',
+            'product_description' => 'required|string',
+            'product_sales_price' => 'required',
             'product_status' => 'required'
         ]);
 
-        // Queries
+        // Get plan constraints
         $plan = User::where('user_id', Auth::user()->user_id)->where('status', 1)->first();
         $plan_details = json_decode($plan->plan_details);
 
-        // Already created count
-        $countedProducts = StoreProduct::where('card_id', $request->card_id)->count();
+        // Product count check
+        $countedProducts = DB::table('store_products')->where('card_id', $request->card_id)->count();
 
-
-        // Check product limit
         if ($countedProducts < $plan_details->no_of_store_products) {
 
-            // Step 1: Process base64 <img> tags
+            // Step 1: Process base64 <img> tags inside description
             $productDescription = preg_replace_callback(
                 '/<img[^>]+src=["\']data:image\/([^;\']+);base64,([^"\']+)["\'][^>]*>/i',
                 function ($matches) {
-                    $extension = $matches[1]; // e.g., png, jpeg
+                    $extension = $matches[1];
                     $decodedData = base64_decode($matches[2]);
 
                     if ($decodedData !== false) {
-                        $filename = Str::random(10) . '.' . $extension;
-                        $relativePath = 'uploads/store_products/' . $filename;
-
-                        Storage::disk('public')->put($relativePath, $decodedData);
-
-                        return '<img src="' . asset('storage/' . $relativePath) . '" />';
+                        $imagePath = StorageHelper::uploadImage(
+                            $decodedData,
+                            'uploads/store_products',
+                            Str::random(10) . '.' . $extension
+                        );
+                        return '<img src="' . asset($imagePath) . '" />';
                     }
-
-                    return $matches[0]; // Return original tag if decoding fails
+                    return $matches[0];
                 },
                 $request->product_description
             );
@@ -198,12 +225,9 @@ class ProductController extends Controller
 
                     $tag = "<a{$beforeHref}href=\"{$href}\"{$afterHref}>";
 
-                    // If target already exists, don't add again
                     if (!preg_match('/\btarget=["\']?[_a-zA-Z]+["\']?/i', $tag)) {
                         $tag = rtrim($tag, '>') . ' target="_blank">';
                     }
-
-                    // If rel already exists, don't add again
                     if (!preg_match('/\brel=["\']?[^"\']*["\']?/i', $tag)) {
                         $tag = rtrim($tag, '>') . ' rel="noopener noreferrer">';
                     }
@@ -216,28 +240,59 @@ class ProductController extends Controller
             // Step 3: Clean HTML before saving
             $productDescription = Purifier::clean($productDescription);
 
+            DB::beginTransaction();
             try {
-                // Create a new product with the provided data
-                $product = new StoreProduct();
-                $product->card_id = $request->card_id;
-                $product->product_id = uniqid();
-                $product->category_id = $request->product_category;
-                $product->badge = $request->product_badge;
-                $product->product_image = $request->product_image;
-                $product->product_name = $request->product_name;
-                $product->product_short_description = $request->product_short_description;
-                $product->product_description = $productDescription; // Clean and save HTML
-                $product->regular_price = $request->product_regular_price;
-                $product->sales_price = $request->product_sales_price;
-                $product->product_status = $request->product_status;
+                $generatedProductId = uniqid();
+                $hasVariants = $request->has_variants == 1 ? 1 : 0;
 
-                // Save the new product
-                $product->save();
+                // Insert product into store_products table
+                DB::table('store_products')->insert([
+                    'card_id' => $request->card_id,
+                    'product_id' => $generatedProductId,
+                    'category_id' => $request->product_category,
+                    'badge' => $request->product_badge,
+                    'product_image' => $request->product_image,
+                    'product_name' => $request->product_name,
+                    'product_short_description' => $request->product_short_description,
+                    'product_description' => $productDescription,
+                    'regular_price' => $request->product_regular_price,
+                    'sales_price' => $request->product_sales_price,
+                    'product_status' => $request->product_status,
+                    'has_variants' => $hasVariants,
+                    'status' => '1',
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
 
-                // Return success response
+                // Insert variants if enabled
+                if ($hasVariants && !empty($request->variants)) {
+                    $variantsData = json_decode($request->variants, true);
+                    if (is_array($variantsData)) {
+                        $variantsToInsert = [];
+                        foreach ($variantsData as $variant) {
+                            if (!empty($variant['name']) && !empty($variant['sales_price'])) {
+                                $variantsToInsert[] = [
+                                    'product_id' => $generatedProductId,
+                                    'variant_name' => $variant['name'],
+                                    'regular_price' => !empty($variant['regular_price']) ? $variant['regular_price'] : null,
+                                    'sales_price' => $variant['sales_price'],
+                                    'status' => $variant['status'] ?? 'instock',
+                                    'created_at' => now(),
+                                    'updated_at' => now()
+                                ];
+                            }
+                        }
+
+                        if (!empty($variantsToInsert)) {
+                            DB::table('store_product_variants')->insert($variantsToInsert);
+                        }
+                    }
+                }
+
+                DB::commit();
                 return response()->json(['success' => true]);
             } catch (\Exception $e) {
-                // Return error response if any error occurs
+                DB::rollBack();
                 return response()->json(['success' => false, 'error' => trans('Product save failed.')], 500);
             }
         } else {
@@ -245,22 +300,21 @@ class ProductController extends Controller
         }
     }
 
-    // Update product
+    // Update product and variants
     public function updateProduct(Request $request)
     {
-        // Validate the request data
+        // Validate request data
         $validatedData = $request->validate([
-            'product_category' => 'required|string', // Add appropriate validation rules
-            'product_image' => 'required|string', // Add appropriate validation rules
-            'product_name' => 'required|string', // Add appropriate validation rules
-            'product_short_description' => 'required|string', // Add appropriate validation rules
-            'product_description' => 'required|string', // Add appropriate validation rules
-            'product_sales_price' => 'required', // Add appropriate validation rules
+            'product_category' => 'required|string',
+            'product_image' => 'required|string',
+            'product_name' => 'required|string',
+            'product_short_description' => 'required|string',
+            'product_description' => 'required|string',
+            'product_sales_price' => 'required',
             'product_status' => 'required'
         ]);
-        
-        // Validate the request data as per your requirements
-        $product = StoreProduct::find($request->input('product_id'));
+
+        $product = DB::table('store_products')->where('id', $request->input('product_id'))->first();
 
         if (!$product) {
             return response()->json([
@@ -269,28 +323,27 @@ class ProductController extends Controller
             ], 404);
         }
 
-        // Step 1: Process base64 <img> tags
+        // Process base64 <img> tags
         $productDescription = preg_replace_callback(
             '/<img[^>]+src=["\']data:image\/([^;\']+);base64,([^"\']+)["\'][^>]*>/i',
             function ($matches) {
-                $extension = $matches[1]; // e.g., png, jpeg
+                $extension = $matches[1];
                 $decodedData = base64_decode($matches[2]);
 
                 if ($decodedData !== false) {
-                    $filename = Str::random(10) . '.' . $extension;
-                    $relativePath = 'uploads/store_products/' . $filename;
-
-                    Storage::disk('public')->put($relativePath, $decodedData);
-
-                    return '<img src="' . asset('storage/' . $relativePath) . '" />';
+                    $imagePath = StorageHelper::uploadImage(
+                        $decodedData,
+                        'uploads/store_products',
+                        Str::random(10) . '.' . $extension
+                    );
+                    return '<img src="' . asset($imagePath) . '" />';
                 }
-
-                return $matches[0]; // Return original tag if decoding fails
+                return $matches[0];
             },
             $request->input('product_description')
         );
 
-        // Step 2: Ensure <a> tags have target="_blank" and rel="noopener noreferrer"
+        // Ensure <a> tags have target="_blank" and rel="noopener noreferrer"
         $productDescription = preg_replace_callback(
             '/<a\b([^>]*)href=["\'](.*?)["\']([^>]*)>/i',
             function ($matches) {
@@ -300,12 +353,9 @@ class ProductController extends Controller
 
                 $tag = "<a{$beforeHref}href=\"{$href}\"{$afterHref}>";
 
-                // If target already exists, don't add again
                 if (!preg_match('/\btarget=["\']?[_a-zA-Z]+["\']?/i', $tag)) {
                     $tag = rtrim($tag, '>') . ' target="_blank">';
                 }
-
-                // If rel already exists, don't add again
                 if (!preg_match('/\brel=["\']?[^"\']*["\']?/i', $tag)) {
                     $tag = rtrim($tag, '>') . ' rel="noopener noreferrer">';
                 }
@@ -315,42 +365,116 @@ class ProductController extends Controller
             $productDescription
         );
 
-        // Step 3: Clean HTML before saving
         $productDescription = Purifier::clean($productDescription);
+        $hasVariants = $request->input('has_variants') == 1 ? 1 : 0;
 
-        // Update product data
-        $product->update([
-            'badge' => $request->input('product_badge'),
-            'category_id' => $request->input('product_category'),
-            'product_image' => $request->input('product_image'),
-            'product_name' => $request->input('product_name'),
-            'product_short_description' => $request->input('product_short_description'),
-            'product_description' => $productDescription,
-            'regular_price' => $request->input('product_regular_price'),
-            'sales_price' => $request->input('product_sales_price'),
-            'product_status' => $request->input('product_status')
-        ]);
+        DB::beginTransaction();
+        try {
+            // Update store_products table
+            DB::table('store_products')->where('id', $product->id)->update([
+                'badge' => $request->input('product_badge'),
+                'category_id' => $request->input('product_category'),
+                'product_image' => $request->input('product_image'),
+                'product_name' => $request->input('product_name'),
+                'product_short_description' => $request->input('product_short_description'),
+                'product_description' => $productDescription,
+                'regular_price' => $request->input('product_regular_price'),
+                'sales_price' => $request->input('product_sales_price'),
+                'product_status' => $request->input('product_status'),
+                'has_variants' => $hasVariants,
+                'updated_at' => now()
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => trans('Product updated successfully.')
-        ]);
+            // Clear existing variants for this product
+            DB::table('store_product_variants')->where('product_id', $product->product_id)->delete();
+
+            // Insert updated variants if enabled
+            if ($hasVariants && !empty($request->input('variants'))) {
+                $variantsData = json_decode($request->input('variants'), true);
+                if (is_array($variantsData)) {
+                    $variantsToInsert = [];
+                    foreach ($variantsData as $variant) {
+                        if (!empty($variant['name']) && !empty($variant['sales_price'])) {
+                            $variantsToInsert[] = [
+                                'product_id' => $product->product_id,
+                                'variant_name' => $variant['name'],
+                                'regular_price' => !empty($variant['regular_price']) ? $variant['regular_price'] : null,
+                                'sales_price' => $variant['sales_price'],
+                                'status' => $variant['status'] ?? 'instock',
+                                'created_at' => now(),
+                                'updated_at' => now()
+                            ];
+                        }
+                    }
+
+                    if (!empty($variantsToInsert)) {
+                        DB::table('store_product_variants')->insert($variantsToInsert);
+                    }
+                }
+            }
+
+            DB::commit();
+            return response()->json([
+                'success' => true,
+                'message' => trans('Product updated successfully.')
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => trans('Product update failed.')
+            ], 500);
+        }
     }
 
-    // Get single product ajax call
+    // Get single product and its variants using LEFT JOIN
     public function getProducts($id)
     {
         try {
-            // Retrieve the product from the database
-            $product = StoreProduct::findOrFail($id);
+            // Join store_products with store_product_variants
+            $results = DB::table('store_products')
+                ->leftJoin('store_product_variants', 'store_products.product_id', '=', 'store_product_variants.product_id')
+                ->where('store_products.id', $id)
+                ->select(
+                    'store_products.*',
+                    'store_product_variants.id as variant_table_id',
+                    'store_product_variants.variant_name',
+                    'store_product_variants.regular_price as variant_regular_price',
+                    'store_product_variants.sales_price as variant_sales_price',
+                    'store_product_variants.status as variant_status'
+                )
+                ->get();
 
-            // Return a JSON response with the product data
+            if ($results->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => trans('Product not found.')
+                ], 404);
+            }
+
+            // Base product attributes
+            $firstRow = $results->first();
+            $product = (array) $firstRow;
+            $product['variants'] = [];
+
+            // Aggregate joined variants
+            foreach ($results as $row) {
+                if (!empty($row->variant_table_id)) {
+                    $product['variants'][] = [
+                        'id' => $row->variant_table_id,
+                        'variant_name' => $row->variant_name,
+                        'regular_price' => $row->variant_regular_price,
+                        'sales_price' => $row->variant_sales_price,
+                        'status' => $row->variant_status,
+                    ];
+                }
+            }
+
             return response()->json([
                 'success' => true,
                 'data' => $product
             ], 200);
         } catch (\Exception $e) {
-            // Handle errors (e.g., product not found)
             return response()->json([
                 'success' => false,
                 'message' => trans('Product not found.')
@@ -358,14 +482,16 @@ class ProductController extends Controller
         }
     }
 
-    // Delete product
+    // Delete product and its variants
     public function deleteProduct($id)
     {
-        // Queries
-        $product = StoreProduct::find($id);
+        $product = DB::table('store_products')->where('id', $id)->first();
 
         if ($product) {
-            $product->delete();
+            // Remove associated variants first, then the product
+            DB::table('store_product_variants')->where('product_id', $product->product_id)->delete();
+            DB::table('store_products')->where('id', $id)->delete();
+
             return response()->json(['message' => trans('Product deleted successfully')], 200);
         } else {
             return response()->json(['message' => trans('Product not found.')], 404);

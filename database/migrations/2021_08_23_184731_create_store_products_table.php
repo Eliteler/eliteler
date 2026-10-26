@@ -33,8 +33,8 @@ class CreateStoreProductsTable extends Migration
             $table->longText('product_name');
             $table->text('product_short_description')->nullable();
             $table->text('product_description')->nullable();
-            $table->decimal('regular_price', 15,2)->nullable();
-            $table->decimal('sales_price', 15,2);
+            $table->string('regular_price')->nullable();
+            $table->string('sales_price');
             $table->string('product_status');
             $table->string('status')->default(1);
             $table->timestamp('created_at')->useCurrent();

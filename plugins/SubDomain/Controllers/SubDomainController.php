@@ -12,31 +12,32 @@
 
 namespace Plugins\SubDomain\Controllers;
 
-use App\Setting;
+use App\Support\Admin\PluginPage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 
+/**
+ * Subdomains for cards and stores on/off (config enable_subdomain).
+ * Page: plugins/SubDomain/resources/js/settings.tsx.
+ */
 class SubDomainController extends Controller
 {
     // Index
     public function index()
     {
-        // Queries
-        $settings = Setting::active()->first();
-        $config   = DB::table('config')->get();
-
-        // return view
-        return view()->file(base_path('plugins/SubDomain/Views/index.blade.php'), compact('settings', 'config'));
+        return PluginPage::render('SubDomain', 'settings', [
+            'enabled' => (string) DB::table('config')->where('config_key', 'enable_subdomain')->value('config_value') === '1',
+            'example' => 'yourname.' . parse_url(url('/'), PHP_URL_HOST),
+        ]);
     }
 
-    // Update sub domain settings
     public function update(Request $request)
     {
-        // update to config
-        DB::table('config')->where('config_key', 'enable_subdomain')->update(['config_value' => $request->enable_subdomain == '1' ? 1 : 0]);
+        $request->validate(['enable_subdomain' => 'required|boolean']);
 
-        // return redirect to index
-        return redirect()->route('admin.plugin.sub-domain')->with('success', trans('Sub Domain Settings Updated Successfully!'));
+        DB::table('config')->where('config_key', 'enable_subdomain')->update(['config_value' => $request->boolean('enable_subdomain') ? 1 : 0]);
+
+        return back()->with('success', $request->boolean('enable_subdomain') ? __('Subdomains are on.') : __('Subdomains are off.'));
     }
 }

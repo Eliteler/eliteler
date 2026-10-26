@@ -12,33 +12,39 @@
 
 namespace Plugins\MaintenanceMode\Controllers;
 
-use App\Setting;
+use App\Support\Admin\PluginPage;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Str;
 
+/**
+ * Maintenance mode (php artisan down/up with a secret bypass URL in
+ * MAINTENANCE_SECRET_CODE). Page: plugins/MaintenanceMode/resources/js/settings.tsx.
+ */
 class MaintenanceModeController extends Controller
 {
     // Index
     public function index()
     {
-        // Queries
-        $settings = Setting::active()->first();
-        $config   = DB::table('config')->get();
+        $secret = (string) env('MAINTENANCE_SECRET_CODE', '');
 
-        // return view
-        return view()->file(base_path('plugins/MaintenanceMode/Views/index.blade.php'), compact('settings', 'config'));
+        return PluginPage::render('MaintenanceMode', 'settings', [
+            'enabled'   => app()->isDownForMaintenance(),
+            // Opening this link lets you use the site while it's in maintenance
+            'bypassUrl' => app()->isDownForMaintenance() && $secret !== '' ? url('/' . $secret) : null,
+        ]);
     }
 
-    // Update Maintenance Mode Settings
     public function update(Request $request)
     {
         // === Maintenance Mode ===
+        $request->validate(['maintenance_mode' => 'required|boolean']);
+
         $envFile = base_path('.env');
 
-        if ($request->maintenance_mode == "0" || $request->maintenance_mode == null) {
+        if (! $request->boolean('maintenance_mode')) {
             // The app is in maintenance mode
             try {
                 // Clear the MAINTENANCE_SECRET_CODE in the .env file
@@ -59,14 +65,14 @@ class MaintenanceModeController extends Controller
 
                 // Success message
                 $status = 'success';
-                $message = trans('Maintenance Mode Disabled');
+                $message = __('Maintenance mode is off. Your website is live.');
             } catch (\Exception $e) {
                 // Error message
                 $status = 'failed';
-                $message = trans('Failed to Disable Maintenance Mode');
+                $message = __('Couldn’t turn off maintenance mode.');
             }
 
-            return redirect()->route('admin.plugin.maintenance-mode')->with($status, trans($message));
+            return back()->with($status, $message);
         } else {
             // Generate a new secret key
             $secret = Str::uuid();
@@ -99,11 +105,12 @@ class MaintenanceModeController extends Controller
                 Artisan::call('view:clear');
                 Artisan::call('route:clear');
             } catch (\Exception $e) {
-                return redirect()->route('admin.plugin.maintenance-mode')->with('failed', trans('Failed to Enable Maintenance Mode'));
+                return back()->with('failed', __('Couldn’t turn on maintenance mode.'));
             }
 
             // Redirect to the home page with the secret key
-            return redirect()->to('/' . $secret);
+            // Full page load: the secret URL sets your bypass cookie, then you're sent to the site
+            return Inertia::location(url('/' . $secret));
         }
     }
 }

@@ -1,63 +1,173 @@
 <?php
 
 return [
-
-    /*
-     *
-     * Shared translations.
-     *
-     */
-    'title' => 'تنصيب Laravel',
-    'next' => 'متابعة',
-
-    /*
-     *
-     * Home page translations.
-     *
-     */
-    'welcome' => [
-        'title'   => 'تنصيب Laravel',
-        'message' => 'أهلا بك في صفحة تنصيب Laravel',
-    ],
-
-    /*
-     *
-     * Requirements page translations.
-     *
-     */
-    'requirements' => [
-        'title' => 'المتطلبات',
-    ],
-
-    /*
-     *
-     * Permissions page translations.
-     *
-     */
-    'permissions' => [
-        'title' => 'تراخيص المجلدات',
-    ],
-
-    /*
-     *
-     * Environment page translations.
-     *
-     */
+    'back' => 'پچھلا',
     'environment' => [
         'title' => 'الإعدادات',
         'save' => 'حفظ ملف .env',
         'success' => 'تم حفظ الإعدادات بنجاح',
         'errors' => 'حدث خطأ أثناء إنشاء ملف .env. رجاءا قم بإنشاءه يدويا',
+        'menu' => [
+            'templateTitle' => 'مرحلہ 3 | ',
+            'title' => 'تنصیب',
+            'desc' => 'براہ کرم منتخب کریں کہ آپ ایپس <code>.env</code> فائل کو کس طرح ترتیب دینا چاہتے ہیں۔',
+            'wizard-button' => 'فارم وزرڈ سیٹ اپ',
+            'classic-button' => 'کلاسک ٹیکسٹ ایڈیٹر',
+        ],
+        'wizard' => [
+            'templateTitle' => 'مرحلہ 3 | ',
+            'title' => 'گائیڈڈ <code>.env</code> وزرڈ',
+            'tabs' => [
+                'environment' => 'ماحولیات',
+                'database' => 'ڈیٹا بیس',
+                'application' => 'درخواست',
+            ],
+            'form' => [
+                'name_required' => 'ماحول کا نام درکار ہے۔',
+                'app_name_label' => 'ایپ کا نام',
+                'app_name_placeholder' => 'ایپ کا نام',
+                'app_environment_label' => 'ایپ ماحولیات',
+                'app_environment_label_local' => 'مقامی',
+                'app_environment_label_developement' => 'ترقی',
+                'app_environment_label_qa' => 'قا',
+                'app_environment_label_production' => 'پیداوار',
+                'app_environment_label_other' => 'دیگر',
+                'app_environment_placeholder_other' => 'اپنے ماحول میں داخل ہوں...',
+                'app_debug_label' => 'ایپ ڈیبگ',
+                'app_debug_label_true' => 'سچ ہے۔',
+                'app_debug_label_false' => 'جھوٹا۔',
+                'app_log_level_label' => 'ایپ لاگ لیول',
+                'app_log_level_label_debug' => 'ڈیبگ',
+                'app_log_level_label_info' => 'معلومات',
+                'app_log_level_label_notice' => 'نوٹس',
+                'app_log_level_label_warning' => 'انتباہ',
+                'app_log_level_label_error' => 'غلطی',
+                'app_log_level_label_critical' => 'تنقیدی',
+                'app_log_level_label_alert' => 'الرٹ',
+                'app_log_level_label_emergency' => 'ہنگامی',
+                'app_url_label' => 'ایپ یو آر ایل',
+                'app_url_placeholder' => 'ایپ یو آر ایل',
+                'db_connection_failed' => 'ڈیٹا بیس سے منسلک نہیں ہو سکا۔',
+                'db_connection_label' => 'ڈیٹا بیس کنکشن',
+                'db_connection_label_mysql' => 'mysql',
+                'db_connection_label_sqlite' => 'sqlite',
+                'db_connection_label_pgsql' => 'pgsql',
+                'db_connection_label_sqlsrv' => 'sqlsrv',
+                'db_host_label' => 'ڈیٹا بیس ہوسٹ',
+                'db_host_placeholder' => 'ڈیٹا بیس ہوسٹ',
+                'db_port_label' => 'ڈیٹا بیس پورٹ',
+                'db_port_placeholder' => 'ڈیٹا بیس پورٹ',
+                'db_name_label' => 'ڈیٹا بیس کا نام',
+                'db_name_placeholder' => 'ڈیٹا بیس کا نام',
+                'db_username_label' => 'ڈیٹا بیس صارف کا نام',
+                'db_username_placeholder' => 'ڈیٹا بیس صارف کا نام',
+                'db_password_label' => 'ڈیٹا بیس پاس ورڈ',
+                'db_password_placeholder' => 'ڈیٹا بیس پاس ورڈ',
+                'app_tabs' => [
+                    'more_info' => 'مزید معلومات',
+                    'broadcasting_title' => 'براڈکاسٹنگ، کیشنگ، سیشن، اور قطار',
+                    'broadcasting_label' => 'براڈکاسٹ ڈرائیور',
+                    'broadcasting_placeholder' => 'براڈکاسٹ ڈرائیور',
+                    'cache_label' => 'کیشے ڈرائیور',
+                    'cache_placeholder' => 'کیشے ڈرائیور',
+                    'session_label' => 'سیشن ڈرائیور',
+                    'session_placeholder' => 'سیشن ڈرائیور',
+                    'queue_label' => 'قطار ڈرائیور',
+                    'queue_placeholder' => 'قطار ڈرائیور',
+                    'redis_label' => 'ریڈیس ڈرائیور',
+                    'redis_host' => 'ریڈیس ہوسٹ',
+                    'redis_password' => 'ریڈیس پاس ورڈ',
+                    'redis_port' => 'ریڈیس پورٹ',
+                    'mail_label' => 'میل',
+                    'mail_driver_label' => 'میل ڈرائیور',
+                    'mail_driver_placeholder' => 'میل ڈرائیور',
+                    'mail_host_label' => 'میل میزبان',
+                    'mail_host_placeholder' => 'میل میزبان',
+                    'mail_port_label' => 'میل پورٹ',
+                    'mail_port_placeholder' => 'میل پورٹ',
+                    'mail_username_label' => 'میل صارف نام',
+                    'mail_username_placeholder' => 'میل صارف نام',
+                    'mail_password_label' => 'میل پاس ورڈ',
+                    'mail_password_placeholder' => 'میل پاس ورڈ',
+                    'mail_encryption_label' => 'میل کی خفیہ کاری',
+                    'mail_encryption_placeholder' => 'میل کی خفیہ کاری',
+                    'pusher_label' => 'دھکیلنے والا',
+                    'pusher_app_id_label' => 'پشر ایپ آئی ڈی',
+                    'pusher_app_id_palceholder' => 'پشر ایپ آئی ڈی',
+                    'pusher_app_key_label' => 'پشر ایپ کلید',
+                    'pusher_app_key_palceholder' => 'پشر ایپ کلید',
+                    'pusher_app_secret_label' => 'پشر ایپ سیکرٹ',
+                    'pusher_app_secret_palceholder' => 'پشر ایپ سیکرٹ',
+                ],
+                'buttons' => [
+                    'setup_database' => 'سیٹ اپ ڈیٹا بیس',
+                    'setup_application' => 'سیٹ اپ ایپلی کیشن',
+                    'install' => 'انسٹال کریں۔',
+                ],
+            ],
+        ],
+        'classic' => [
+            'templateTitle' => 'مرحلہ 3 | ',
+            'title' => 'کلاسیکی ماحولیات ایڈیٹر',
+            'save' => 'محفوظ کریں .env',
+            'back' => 'فارم وزرڈ استعمال کریں۔',
+            'install' => 'محفوظ کریں اور انسٹال کریں۔',
+        ],
     ],
-
-    /*
-     *
-     * Final page translations.
-     *
-     */
     'final' => [
         'title' => 'النهاية',
         'finished' => 'تم تنصيب البرنامج بنجاح...',
         'exit' => 'إضغط هنا للخروج',
+        'templateTitle' => 'تنصیب ختم',
+        'migration' => 'منتقلی اور بیج کنسول آؤٹ پٹ:',
+        'console' => 'ایپلیکیشن کنسول آؤٹ پٹ:',
+        'log' => 'انسٹالیشن لاگ انٹری:',
+        'env' => 'فائنل .env فائل:',
+    ],
+    'finish' => 'انسٹال کریں۔',
+    'forms' => [
+        'errorTitle' => 'درج ذیل خرابیاں پیش آئیں:',
+    ],
+    'install' => 'انسٹال کریں۔',
+    'installed' => [
+        'success_log_message' => 'NativeCode انسٹالر کامیابی کے ساتھ انسٹال ہو گیا۔',
+    ],
+    'next' => 'متابعة',
+    'permissions' => [
+        'title' => 'تراخيص المجلدات',
+        'templateTitle' => 'مرحلہ 2 | ',
+        'next' => 'ماحول کو ترتیب دیں۔',
+    ],
+    'requirements' => [
+        'title' => 'المتطلبات',
+        'templateTitle' => 'مرحلہ 1 | ',
+        'next' => 'اجازتیں چیک کریں۔',
+    ],
+    'title' => 'تنصيب Laravel',
+    'updater' => [
+        'title' => 'لاریول اپڈیٹر',
+        'welcome' => [
+            'title' => 'اپڈیٹر میں خوش آمدید',
+            'message' => 'اپ ڈیٹ وزرڈ میں خوش آمدید۔',
+        ],
+        'overview' => [
+            'title' => 'جائزہ',
+            'message' => '1 اپ ڈیٹ ہے۔',
+            'install_updates' => 'اپ ڈیٹس انسٹال کریں۔',
+        ],
+        'final' => [
+            'title' => 'ختم',
+            'finished' => 'ایپلیکیشن کا ڈیٹا بیس کامیابی سے اپ ڈیٹ ہو گیا ہے۔',
+            'exit' => 'باہر نکلنے کے لیے یہاں کلک کریں۔',
+        ],
+        'log' => [
+            'success_message' => 'NativeCode انسٹالر کو کامیابی کے ساتھ اپ ڈیٹ کر دیا گیا۔',
+        ],
+    ],
+    'welcome' => [
+        'title' => 'تنصيب Laravel',
+        'message' => 'أهلا بك في صفحة تنصيب Laravel',
+        'templateTitle' => 'خوش آمدید',
+        'next' => 'تقاضے چیک کریں۔',
     ],
 ];

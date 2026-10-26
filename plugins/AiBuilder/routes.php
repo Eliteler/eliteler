@@ -7,7 +7,8 @@ use Plugins\AiBuilder\Controllers\User\AiBuilderController as UserAiBuilderContr
 Route::middleware(['web', 'auth', 'admin'])->group(function () {
     // Admin routes (working)
     Route::get('admin/plugin/aibuilder', [AiBuilderController::class, 'index'])->name('admin.plugin.aibuilder');
-    Route::post('admin/plugin/update-aibuilder', [AiBuilderController::class, 'update'])->name('admin.plugin.update.aibuilder');
+    Route::post('admin/plugin/update-aibuilder', [AiBuilderController::class, 'update'])->name('admin.plugin.update.aibuilder')->middleware('demo.mode');
+    Route::post('admin/plugin/aibuilder/remove-backup-key', [AiBuilderController::class, 'removeBackupKey'])->name('admin.plugin.aibuilder.remove-backup-key')->middleware('demo.mode');
 });
 
 Route::group(['as' => 'user.', 'prefix' => 'user', 'namespace' => 'User', 'middleware' => ['auth', 'user', 'frame.destroyer', 'twofactor', 'scriptsanitizer'], 'where' => ['locale' => '[a-zA-Z]{2}']], function () {

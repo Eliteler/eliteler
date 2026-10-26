@@ -1,0 +1,2254 @@
+/* GoBiz vCard SaaS - Beauty VCard
+ |--------------------------------------------------------------------------
+ | Designed by NativeCode - https://nativecode.in
+ | All rights reserved
+ |--------------------------------------------------------------------------
+*/
+ 
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Outfit:wght@300;400;500;600;700&display=swap");
+ 
+:root {
+    --ws-bg: #fbf9f5;
+    --ws-silk: #f4efe6;
+    --ws-silk-dark: #eae3d5;
+    --ws-panel: rgba(255, 255, 255, 0.95);
+    --ws-card-bg: #ffffff;
+    --ws-ink: #231d1a;
+    --ws-muted: #7a6f68;
+    --ws-muted-light: #a3978f;
+    --ws-gold: #c59b6a;
+    --ws-gold-light: #e8cfae;
+    --ws-gold-soft: rgba(197, 155, 106, 0.12);
+    --ws-plum: #d89584;
+    --ws-plum-deep: #b36e61;
+    --ws-line: rgba(197, 155, 106, 0.22);
+    --ws-line-bright: rgba(216, 149, 132, 0.45);
+    --ws-shadow-sm: 0 8px 25px rgba(160, 130, 100, 0.08);
+    --ws-shadow-lg: 0 22px 55px rgba(160, 130, 100, 0.12);
+    --ws-font-display: "Cormorant Garamond", Georgia, serif;
+    --ws-font-body: "Outfit", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ---------------------------------------------------------------------- */
+/* 1. Base Resets & Desktop Centering Container                           */
+/* ---------------------------------------------------------------------- */
+
+*,
+::before,
+::after {
+    box-sizing: border-box;
+    border-width: 0;
+    border-style: solid;
+    border-color: rgba(197, 155, 106, 0.2);
+}
+
+html,
+body {
+    width: 100%;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden !important; /* Clip horizontal scroll */
+    overflow-y: auto !important; /* Enable vertical scroll for intro swipe */
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+    font-family: var(--ws-font-body);
+    background-color: var(--ws-bg);
+    color: var(--ws-ink);
+    -webkit-text-size-adjust: 100%;
+}
+
+body.sl-body {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    position: relative;
+    isolation: isolate;
+    background: radial-gradient(
+        circle at 50% 0%,
+        #ffffff 0%,
+        #f4efe6 75%
+    ) !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+}
+
+/* Intro Screen & Smooth Scroll Container Rules */
+#index,
+#content-screen,
+.intro-screen,
+#smooth-wrapper,
+#smooth-content,
+.container,
+.max-w-2xl {
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    touch-action: pan-y !important;
+    -webkit-overflow-scrolling: touch !important;
+    pointer-events: auto !important;
+}
+
+.container,
+#smooth-wrapper,
+#smooth-content,
+.max-w-2xl {
+    width: 100% !important;
+    max-width: 42rem !important; /* Centered desktop view */
+    margin-left: auto !important;
+    margin-right: auto !important;
+    box-sizing: border-box !important;
+}
+
+img,
+svg,
+iframe,
+video {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+a {
+    color: inherit;
+    text-decoration: none !important;
+}
+
+button,
+input,
+select,
+textarea {
+    font-family: inherit;
+    font-size: 100%;
+    margin: 0;
+    padding: 0;
+    color: inherit;
+}
+
+button {
+    background-color: transparent;
+    cursor: pointer;
+}
+
+textarea {
+    resize: vertical;
+}
+
+/* ---------------------------------------------------------------------- */
+/* 2. Loader Spinner Fix                                                  */
+/* ---------------------------------------------------------------------- */
+
+#loader,
+.sl-loader {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 9999999 !important;
+    background: var(--ws-bg) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: opacity 0.3s ease !important;
+}
+
+#loader.hidden,
+.sl-loader.hidden {
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+}
+
+.spinner {
+    width: 2.25rem !important;
+    height: 2.25rem !important;
+    border: 3px solid rgba(197, 155, 106, 0.2) !important;
+    border-top-color: var(--ws-gold) !important;
+    border-bottom-color: var(--ws-plum) !important;
+    border-radius: 50% !important;
+    animation: spin 0.8s linear infinite !important;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+.animate-spin {
+    animation: spin 1s linear infinite !important;
+}
+
+/* ---------------------------------------------------------------------- */
+/* 3. Hidden & Alert Rules                                                */
+/* ---------------------------------------------------------------------- */
+
+#errorMessage:empty,
+#successMessage:empty,
+#errorMessage1:empty,
+#successMessage1:empty,
+#whatsappError:empty,
+#newsletterAlert:empty,
+.hidden {
+    display: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    height: 0 !important;
+    opacity: 0 !important;
+}
+
+.bg-red-100 {
+    background-color: #fcf0ed !important;
+}
+.bg-red-600 {
+    background-color: #b74a3f !important;
+}
+.border-red-300 {
+    border-color: #f3c7c2 !important;
+}
+.text-red-500,
+.text-red-600 {
+    color: #b74a3f !important;
+}
+.text-red-700 {
+    color: #96382f !important;
+}
+.text-red-800 {
+    color: #72261e !important;
+}
+
+.bg-green-100 {
+    background-color: #f7f3ec !important;
+}
+.bg-green-600 {
+    background-color: var(--ws-gold) !important;
+}
+.border-green-300 {
+    border-color: rgba(197, 155, 106, 0.3) !important;
+}
+.text-green-600,
+.text-green-700,
+.text-green-800 {
+    color: var(--ws-gold) !important;
+}
+
+/* ---------------------------------------------------------------------- */
+/* 4. Layout, Container & Display Utilities                               */
+/* ---------------------------------------------------------------------- */
+
+.max-w-md {
+    max-width: 28rem !important;
+}
+.max-w-lg {
+    max-width: 32rem !important;
+}
+.max-w-full {
+    max-width: 100% !important;
+}
+.w-full {
+    width: 100% !important;
+}
+
+.block {
+    display: block !important;
+}
+.inline-block {
+    display: inline-block !important;
+}
+.inline {
+    display: inline !important;
+}
+.flex {
+    display: flex !important;
+}
+.inline-flex {
+    display: inline-flex !important;
+}
+.grid {
+    display: grid !important;
+}
+
+.flex-col {
+    flex-direction: column !important;
+}
+.flex-row {
+    flex-direction: row !important;
+}
+.flex-wrap {
+    flex-wrap: wrap !important;
+}
+.items-center {
+    align-items: center !important;
+}
+.items-start {
+    align-items: flex-start !important;
+}
+.items-stretch {
+    align-items: stretch !important;
+}
+.justify-center {
+    justify-content: center !important;
+}
+.justify-between {
+    justify-content: space-between !important;
+}
+.justify-around {
+    justify-content: space-around !important;
+}
+.justify-end {
+    justify-content: flex-end !important;
+}
+
+.flex-1 {
+    flex: 1 1 0% !important;
+}
+.flex-shrink-0 {
+    flex-shrink: 0 !important;
+}
+.min-w-0 {
+    min-width: 0 !important;
+}
+
+.grid-cols-1 {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+}
+.grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+.grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+.grid-cols-5 {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+}
+
+.gap-1 {
+    gap: 0.25rem !important;
+}
+.gap-2 {
+    gap: 0.5rem !important;
+}
+.gap-2\.5 {
+    gap: 0.625rem !important;
+}
+.gap-3 {
+    gap: 0.75rem !important;
+}
+.gap-3\.5 {
+    gap: 0.875rem !important;
+}
+.gap-4 {
+    gap: 1rem !important;
+}
+.gap-5 {
+    gap: 1.25rem !important;
+}
+.gap-6 {
+    gap: 1.5rem !important;
+}
+
+/* ---------------------------------------------------------------------- */
+/* 5. Positioning & Dimensions                                           */
+/* ---------------------------------------------------------------------- */
+
+.relative {
+    position: relative !important;
+}
+.absolute {
+    position: absolute !important;
+}
+.fixed {
+    position: fixed !important;
+}
+
+.inset-0 {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+}
+.top-0 {
+    top: 0 !important;
+}
+.left-0 {
+    left: 0 !important;
+}
+.right-0 {
+    right: 0 !important;
+}
+.bottom-0 {
+    bottom: 0 !important;
+}
+.bottom-1 {
+    bottom: 0.25rem !important;
+}
+.bottom-2 {
+    bottom: 0.5rem !important;
+}
+.bottom-3 {
+    bottom: 0.75rem !important;
+}
+.bottom-4 {
+    bottom: 1rem !important;
+}
+.right-1 {
+    right: 0.25rem !important;
+}
+.right-2 {
+    right: 0.5rem !important;
+}
+.right-3 {
+    right: 0.75rem !important;
+}
+.left-1\/2 {
+    left: 50% !important;
+}
+.top-1\/2 {
+    top: 50% !important;
+}
+
+.z-0 {
+    z-index: 0 !important;
+}
+.z-10 {
+    z-index: 10 !important;
+}
+.z-20 {
+    z-index: 20 !important;
+}
+.z-50 {
+    z-index: 50 !important;
+}
+.z-100 {
+    z-index: 100 !important;
+}
+.z-9999 {
+    z-index: 9999 !important;
+}
+
+.w-0 {
+    width: 0 !important;
+}
+.h-0 {
+    height: 0 !important;
+}
+.w-4 {
+    width: 1rem !important;
+}
+.h-4 {
+    height: 1rem !important;
+}
+.w-5 {
+    width: 1.25rem !important;
+}
+.h-5 {
+    height: 1.25rem !important;
+}
+.w-6 {
+    width: 1.5rem !important;
+}
+.h-6 {
+    height: 1.5rem !important;
+}
+.w-8 {
+    width: 2rem !important;
+}
+.h-8 {
+    height: 2rem !important;
+}
+.w-9 {
+    width: 2.25rem !important;
+}
+.h-9 {
+    height: 2.25rem !important;
+}
+.w-10 {
+    width: 2.5rem !important;
+}
+.h-10 {
+    height: 2.5rem !important;
+}
+.w-11 {
+    width: 2.75rem !important;
+}
+.h-11 {
+    height: 2.75rem !important;
+}
+.w-12 {
+    width: 3rem !important;
+}
+.h-12 {
+    height: 3rem !important;
+}
+.w-14 {
+    width: 3.5rem !important;
+}
+.h-14 {
+    height: 3.5rem !important;
+}
+.w-36 {
+    width: 9rem !important;
+    max-width: 9rem !important;
+}
+.h-36 {
+    height: 9rem !important;
+    max-height: 9rem !important;
+}
+.h-\[1px\] {
+    height: 1px !important;
+}
+.h-44 {
+    height: 11rem !important;
+}
+.h-48 {
+    height: 12rem !important;
+}
+.h-52 {
+    height: 13rem !important;
+}
+.h-60 {
+    height: 15rem !important;
+}
+.h-64 {
+    height: 16rem !important;
+}
+.h-72 {
+    height: 18rem !important;
+}
+.h-80 {
+    height: 20rem !important;
+}
+.w-96 {
+    width: 24rem !important;
+}
+.w-screen {
+    width: 100vw !important;
+}
+.h-screen {
+    height: 100vh !important;
+}
+.h-full {
+    height: 100% !important;
+}
+.min-h-screen {
+    min-height: 100vh !important;
+}
+.pointer-events-none {
+    pointer-events: none !important;
+}
+
+/* ---------------------------------------------------------------------- */
+/* 5. Margins & Padding                                                   */
+/* ---------------------------------------------------------------------- */
+
+.m-auto {
+    margin: auto !important;
+}
+.mx-auto {
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+.my-1 {
+    margin-top: 0.25rem !important;
+    margin-bottom: 0.25rem !important;
+}
+.my-2 {
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+}
+.my-3 {
+    margin-top: 0.75rem !important;
+    margin-bottom: 0.75rem !important;
+}
+.my-3\.5 {
+    margin-top: 0.875rem !important;
+    margin-bottom: 0.875rem !important;
+}
+.my-4 {
+    margin-top: 1rem !important;
+    margin-bottom: 1rem !important;
+}
+.my-5 {
+    margin-top: 1.25rem !important;
+    margin-bottom: 1.25rem !important;
+}
+.my-6 {
+    margin-top: 1.5rem !important;
+    margin-bottom: 1.5rem !important;
+}
+
+.mt-0 {
+    margin-top: 0 !important;
+}
+.mt-0\.5 {
+    margin-top: 0.125rem !important;
+}
+.mt-1 {
+    margin-top: 0.25rem !important;
+}
+.mt-1\.5 {
+    margin-top: 0.375rem !important;
+}
+.mt-2 {
+    margin-top: 0.5rem !important;
+}
+.mt-3 {
+    margin-top: 0.75rem !important;
+}
+.mt-3\.5 {
+    margin-top: 0.875rem !important;
+}
+.mt-4 {
+    margin-top: 1rem !important;
+}
+.mt-5 {
+    margin-top: 1.25rem !important;
+}
+.mt-6 {
+    margin-top: 1.5rem !important;
+}
+.mt-8 {
+    margin-top: 2rem !important;
+}
+.mt-auto {
+    margin-top: auto !important;
+}
+
+.-mt-0\.5 {
+    margin-top: -0.125rem !important;
+}
+.-mt-1 {
+    margin-top: -0.25rem !important;
+}
+.-mt-2 {
+    margin-top: -0.5rem !important;
+}
+.-mt-16 {
+    margin-top: -4rem !important;
+}
+.-mt-20 {
+    margin-top: -5rem !important;
+}
+
+.mb-1 {
+    margin-bottom: 0.25rem !important;
+}
+.mb-1\.5 {
+    margin-bottom: 0.375rem !important;
+}
+.mb-2 {
+    margin-bottom: 0.5rem !important;
+}
+.mb-2\.5 {
+    margin-bottom: 0.625rem !important;
+}
+.mb-3 {
+    margin-bottom: 0.75rem !important;
+}
+.mb-4 {
+    margin-bottom: 1rem !important;
+}
+
+.mr-1 {
+    margin-right: 0.25rem !important;
+}
+.mr-1\.5 {
+    margin-right: 0.375rem !important;
+}
+.mr-2 {
+    margin-right: 0.5rem !important;
+}
+.ml-1 {
+    margin-left: 0.25rem !important;
+}
+
+.p-2 {
+    padding: 0.5rem !important;
+}
+.p-2\.5 {
+    padding: 0.625rem !important;
+}
+.p-3 {
+    padding: 0.75rem !important;
+}
+.p-3\.5 {
+    padding: 0.875rem !important;
+}
+.p-4 {
+    padding: 1rem !important;
+}
+.p-5 {
+    padding: 1.25rem !important;
+}
+.p-6 {
+    padding: 1.5rem !important;
+}
+
+.px-2 {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+}
+.px-2\.5 {
+    padding-left: 0.625rem !important;
+    padding-right: 0.625rem !important;
+}
+.px-3 {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+}
+.px-3\.5 {
+    padding-left: 0.875rem !important;
+    padding-right: 0.875rem !important;
+}
+.px-4 {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+}
+.px-5 {
+    padding-left: 1.25rem !important;
+    padding-right: 1.25rem !important;
+}
+.px-6 {
+    padding-left: 1.5rem !important;
+    padding-right: 1.5rem !important;
+}
+
+.py-0\.5 {
+    padding-top: 0.125rem !important;
+    padding-bottom: 0.125rem !important;
+}
+.py-1 {
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
+}
+.py-1\.5 {
+    padding-top: 0.375rem !important;
+    padding-bottom: 0.375rem !important;
+}
+.py-2 {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+}
+.py-2\.5 {
+    padding-top: 0.625rem !important;
+    padding-bottom: 0.625rem !important;
+}
+.py-3 {
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+}
+.py-3\.5 {
+    padding-top: 0.875rem !important;
+    padding-bottom: 0.875rem !important;
+}
+.py-4 {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+}
+.py-6 {
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
+}
+
+.pb-2 {
+    padding-bottom: 0.5rem !important;
+}
+.pb-24 {
+    padding-bottom: 6rem !important;
+}
+.pt-2 {
+    padding-top: 0.5rem !important;
+}
+.pt-3 {
+    padding-top: 0.75rem !important;
+}
+.pt-6 {
+    padding-top: 1.5rem !important;
+}
+
+/* ---------------------------------------------------------------------- */
+/* 6. Typography & Clean Light Mode Color Mappings                       */
+/* ---------------------------------------------------------------------- */
+
+.text-center {
+    text-align: center !important;
+}
+.text-left {
+    text-align: left !important;
+}
+
+.text-\[10px\] {
+    font-size: 10px !important;
+    line-height: 14px !important;
+}
+.text-\[11px\] {
+    font-size: 11px !important;
+    line-height: 15px !important;
+}
+.text-xs {
+    font-size: 0.75rem !important;
+    line-height: 1rem !important;
+}
+.text-sm {
+    font-size: 0.875rem !important;
+    line-height: 1.25rem !important;
+}
+.text-base {
+    font-size: 1rem !important;
+    line-height: 1.5rem !important;
+}
+.text-lg {
+    font-size: 1.125rem !important;
+    line-height: 1.75rem !important;
+}
+.text-xl {
+    font-size: 1.25rem !important;
+    line-height: 1.75rem !important;
+}
+.text-2xl {
+    font-size: 1.5rem !important;
+    line-height: 2rem !important;
+}
+.text-3xl {
+    font-size: 1.875rem !important;
+    line-height: 2.25rem !important;
+}
+.text-4xl {
+    font-size: 2.25rem !important;
+    line-height: 2.5rem !important;
+}
+.text-5xl {
+    font-size: 3rem !important;
+    line-height: 1 !important;
+}
+
+.font-normal {
+    font-weight: 400 !important;
+}
+.font-medium {
+    font-weight: 500 !important;
+}
+.font-semibold {
+    font-weight: 600 !important;
+}
+.font-bold {
+    font-weight: 700 !important;
+}
+.font-serif {
+    font-family: var(--ws-font-display) !important;
+}
+
+.uppercase {
+    text-transform: uppercase !important;
+}
+.italic {
+    font-style: italic !important;
+}
+.tracking-tight {
+    letter-spacing: -0.025em !important;
+}
+.tracking-wide {
+    letter-spacing: 0.025em !important;
+}
+.tracking-wider {
+    letter-spacing: 0.05em !important;
+}
+.tracking-widest {
+    letter-spacing: 0.1em !important;
+}
+.tracking-\[0\.2em\] {
+    letter-spacing: 0.2em !important;
+}
+.leading-relaxed {
+    line-height: 1.625 !important;
+}
+.line-through {
+    text-decoration: line-through !important;
+}
+
+.truncate {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+.whitespace-nowrap {
+    white-space: nowrap !important;
+}
+
+.sl-clamp-3 {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 3 !important;
+    line-clamp: 3 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    word-break: break-word !important;
+}
+
+h1,
+h2,
+h3,
+.sl-display,
+.sl-card p,
+.sl-card h2,
+.sl-card h3,
+.sl-card a {
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+}
+
+.text-white {
+    color: #ffffff !important;
+}
+.text-\[\#1A1617\],
+.text-\[\#2B2523\] {
+    color: var(--ws-ink) !important;
+}
+.text-\[\#C59B78\],
+.text-\[\#C59B27\],
+.text-\[\#E29A88\],
+.text-\[\#D87076\] {
+    color: var(--ws-gold) !important;
+}
+.text-\[\#361E2B\],
+.text-\[\#721B29\] {
+    color: var(--ws-plum) !important;
+}
+.text-\[\#685E5A\],
+.text-\[\#6E6662\],
+.text-\[\#735D61\],
+.text-\[\#786F6A\] {
+    color: var(--ws-muted) !important;
+}
+.text-\[\#887D78\],
+.text-\[\#947A7F\] {
+    color: var(--ws-muted-light) !important;
+}
+
+.bg-white {
+    background-color: #ffffff !important;
+}
+.bg-\[\#F7F3ED\],
+.bg-\[\#FAF7F2\],
+.bg-\[\#FDF7F4\] {
+    background-color: var(--ws-silk) !important;
+}
+.bg-\[\#361E2B\],
+.bg-\[\#721B29\],
+.bg-\[\#C59B78\],
+.bg-\[\#C59B27\],
+.bg-\[\#E29A88\] {
+    background-color: var(--ws-gold) !important;
+}
+
+.bg-\[\#361E2B\]\/5 {
+    background-color: rgba(197, 155, 106, 0.05) !important;
+}
+.bg-\[\#361E2B\]\/10 {
+    background-color: rgba(197, 155, 106, 0.1) !important;
+}
+.bg-\[\#361E2B\]\/20 {
+    background-color: rgba(197, 155, 106, 0.2) !important;
+}
+.bg-\[\#F7F3ED\]\/50 {
+    background-color: rgba(244, 239, 230, 0.5) !important;
+}
+
+.border {
+    border-width: 1px !important;
+}
+.border-2 {
+    border-width: 2px !important;
+}
+.border-4 {
+    border-width: 4px !important;
+}
+.border-t {
+    border-top-width: 1px !important;
+}
+.border-white {
+    border-color: #ffffff !important;
+}
+
+.border-\[\#C59B78\]\/15,
+.border-\[\#E29A88\]\/15 {
+    border-color: rgba(197, 155, 106, 0.15) !important;
+}
+.border-\[\#C59B78\]\/20,
+.border-\[\#E29A88\]\/20 {
+    border-color: rgba(197, 155, 106, 0.2) !important;
+}
+.border-\[\#C59B78\]\/25,
+.border-\[\#E29A88\]\/25 {
+    border-color: rgba(197, 155, 106, 0.25) !important;
+}
+.border-\[\#C59B78\]\/30,
+.border-\[\#E29A88\]\/30 {
+    border-color: rgba(197, 155, 106, 0.3) !important;
+}
+.border-\[\#C59B78\]\/40,
+.border-\[\#E29A88\]\/40 {
+    border-color: rgba(197, 155, 106, 0.4) !important;
+}
+
+.rounded-lg {
+    border-radius: 0.5rem !important;
+}
+.rounded-xl {
+    border-radius: 0.75rem !important;
+}
+.rounded-2xl {
+    border-radius: 1rem !important;
+}
+.rounded-3xl {
+    border-radius: 1.25rem !important;
+}
+.rounded-full {
+    border-radius: 9999px !important;
+}
+
+.shadow-sm {
+    box-shadow: 0 4px 15px rgba(160, 130, 100, 0.05) !important;
+}
+.shadow-md {
+    box-shadow: 0 8px 25px rgba(160, 130, 100, 0.08) !important;
+}
+.shadow-xl {
+    box-shadow: var(--ws-shadow-sm) !important;
+}
+.shadow-2xl {
+    box-shadow: var(--ws-shadow-lg) !important;
+}
+
+.object-cover {
+    object-fit: cover !important;
+}
+.opacity-60 {
+    opacity: 0.6 !important;
+}
+.opacity-75 {
+    opacity: 0.75 !important;
+}
+.opacity-90 {
+    opacity: 0.9 !important;
+}
+
+.scale-105 {
+    transform: scale(1.05) !important;
+}
+.-translate-x-1\/2 {
+    transform: translateX(-50%) !important;
+}
+.-translate-y-1\/2 {
+    transform: translateY(-50%) !important;
+}
+
+.transition-all {
+    transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.transition-transform {
+    transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.duration-500 {
+    transition-duration: 500ms !important;
+}
+
+/* ---------------------------------------------------------------------- */
+/* 7. Profile Section (Arch Frame with Halo Pulse Animation)             */
+/* ---------------------------------------------------------------------- */
+
+.sl-avatar-frame {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    position: relative !important;
+    width: 100% !important;
+    margin-top: -5.5rem !important;
+    margin-bottom: 1.25rem !important;
+    z-index: 20 !important;
+}
+
+.sl-avatar-frame > div,
+.sl-avatar-frame .relative {
+    position: relative !important;
+    display: inline-flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: transparent !important;
+    padding: 6px !important;
+    border-radius: 2.25rem 2.25rem 0.5rem 2.25rem !important;
+    background-image: linear-gradient(
+        135deg,
+        var(--ws-gold) 0%,
+        var(--ws-plum) 100%
+    ) !important;
+    box-shadow: 0 15px 35px rgba(197, 155, 106, 0.25) !important;
+    animation: haloPulse 4s ease-in-out infinite alternate !important;
+}
+
+@keyframes haloPulse {
+    0% {
+        box-shadow: 0 10px 25px rgba(197, 155, 106, 0.22);
+    }
+    100% {
+        box-shadow: 0 18px 42px rgba(216, 149, 132, 0.38);
+    }
+}
+
+.sl-avatar-frame img {
+    margin-top: 0 !important;
+    width: 8.75rem !important;
+    height: 8.75rem !important;
+    max-width: 8.75rem !important;
+    max-height: 8.75rem !important;
+    border-radius: 2rem 2rem 0.4rem 2rem !important;
+    object-fit: cover !important;
+    border: 3.5px solid #ffffff !important;
+    position: relative !important;
+    z-index: 10 !important;
+}
+
+.sl-avatar-frame span {
+    position: absolute !important;
+    bottom: -0.6rem !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    right: auto !important;
+    top: auto !important;
+    z-index: 25 !important;
+    white-space: nowrap !important;
+    background: linear-gradient(
+        135deg,
+        var(--ws-gold) 0%,
+        var(--ws-plum) 100%
+    ) !important;
+    color: #ffffff !important;
+    font-weight: 800 !important;
+    font-size: 0.68rem !important;
+    letter-spacing: 0.12em !important;
+    text-transform: uppercase !important;
+    padding: 0.38rem 1.15rem !important;
+    border-radius: 9999px !important;
+    box-shadow: 0 6px 18px rgba(197, 155, 106, 0.35) !important;
+    border: 2px solid #ffffff !important;
+}
+
+#sl-name-block {
+    margin-top: 2rem !important;
+    margin-bottom: 1.5rem !important;
+    text-align: center !important;
+    position: relative !important;
+    clear: both !important;
+}
+
+#sl-name-block h1,
+#pName {
+    font-family: var(--ws-font-display) !important;
+    font-size: 2.35rem !important;
+    line-height: 1.08 !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.01em !important;
+    color: var(--ws-ink) !important;
+    margin-top: 0.35rem !important;
+    margin-bottom: 0.25rem !important;
+    word-break: break-word !important;
+}
+
+@media (min-width: 640px) {
+    #sl-name-block h1,
+    #pName {
+        font-size: 2.95rem !important;
+    }
+}
+
+/* ---------------------------------------------------------------------- */
+/* 8. Swiper Slider Boundaries                                            */
+/* ---------------------------------------------------------------------- */
+
+.swiper-container,
+.mySwiper,
+.testimonialSwiper {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    position: relative !important;
+    border-radius: 1rem !important;
+    box-sizing: border-box !important;
+}
+
+.swiper-wrapper {
+    display: flex !important;
+    box-sizing: border-box !important;
+}
+.swiper-slide {
+    height: auto !important;
+    flex-shrink: 0 !important;
+    box-sizing: border-box !important;
+}
+
+.swiper-pagination-bullet {
+    background: var(--ws-gold) !important;
+    opacity: 0.35 !important;
+}
+.swiper-pagination-bullet-active {
+    opacity: 1 !important;
+    background: var(--ws-plum) !important;
+}
+
+/* ---------------------------------------------------------------------- */
+/* 9. Language Switcher & Intro Screen Hide Rule                         */
+/* ---------------------------------------------------------------------- */
+
+.custom-lang-switcher {
+    position: absolute !important;
+    z-index: 500 !important;
+    top: 1rem !important;
+    right: 1rem !important;
+    font-family: var(--ws-font-body) !important;
+    pointer-events: auto !important;
+}
+[dir="rtl"] .custom-lang-switcher {
+    right: auto !important;
+    left: 1rem !important;
+}
+
+.lang-switcher-btn {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.4rem !important;
+    padding: 0.45rem 0.85rem !important;
+    color: var(--ws-ink) !important;
+    background: rgba(255, 255, 255, 0.92) !important;
+    border: 1px solid var(--ws-line) !important;
+    border-radius: 9999px !important;
+    cursor: pointer !important;
+    box-shadow: 0 4px 15px rgba(160, 130, 100, 0.08) !important;
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    transition: all 0.25s ease !important;
+    position: relative !important;
+    z-index: 501 !important;
+    pointer-events: auto !important;
+}
+
+.lang-switcher-btn:hover,
+.lang-switcher-btn.open {
+    color: #ffffff !important;
+    background: linear-gradient(
+        135deg,
+        var(--ws-gold),
+        var(--ws-plum)
+    ) !important;
+    border-color: transparent !important;
+    transform: translateY(-1px) !important;
+}
+
+.lang-dropdown-menu {
+    display: none;
+    position: absolute !important;
+    right: 0 !important;
+    width: min(16rem, calc(100vw - 2rem)) !important;
+    margin-top: 0.5rem !important;
+    padding: 0.5rem !important;
+    list-style: none !important;
+    background: #ffffff !important;
+    border: 1px solid var(--ws-line) !important;
+    border-radius: 0.75rem !important;
+    box-shadow: var(--ws-shadow-lg) !important;
+    z-index: 502 !important;
+    pointer-events: auto !important;
+}
+[dir="rtl"] .lang-dropdown-menu {
+    right: auto !important;
+    left: 0 !important;
+}
+
+.lang-search-li {
+    padding: 0.2rem !important;
+    margin-bottom: 0.4rem !important;
+}
+
+.lang-search-wrap {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    padding: 0.5rem 0.75rem !important;
+    background: var(--ws-silk) !important;
+    border: 1px solid var(--ws-line) !important;
+    border-radius: 0.4rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+.lang-search-wrap i {
+    color: var(--ws-gold) !important;
+    font-size: 0.8rem !important;
+    flex-shrink: 0 !important;
+}
+
+.lang-search-input,
+input.lang-search-input[type="text"] {
+    flex: 1 !important;
+    width: 100% !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+    font-size: 0.75rem !important;
+    color: var(--ws-ink) !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    line-height: 1.2 !important;
+}
+
+.lang-search-wrap:focus-within {
+    border-color: var(--ws-gold) !important;
+    box-shadow: 0 0 0 3px rgba(197, 155, 106, 0.12) !important;
+    background-color: #ffffff !important;
+}
+
+.lang-list-inner {
+    max-height: 12rem !important;
+    overflow-y: auto !important;
+}
+
+.lang-list-inner li,
+.lang-list-inner .lang-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    padding: 0.5rem 0.65rem !important;
+    border-radius: 0.4rem !important;
+    cursor: pointer !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    color: var(--ws-ink) !important;
+    transition: all 0.15s ease !important;
+    position: relative !important;
+    z-index: 503 !important;
+    pointer-events: auto !important;
+    margin-bottom: 0.2rem !important;
+}
+
+.lang-list-inner li:hover,
+.lang-list-inner li.active {
+    background: var(--ws-gold) !important;
+    color: #ffffff !important;
+}
+
+.lang-item-code {
+    font-weight: 800 !important;
+    min-width: 1.8rem !important;
+}
+
+.lang-empty {
+    padding: 0.5rem !important;
+    text-align: center !important;
+    font-size: 0.75rem !important;
+    color: var(--ws-muted) !important;
+}
+
+body:has(#index:not(.hidden)) .custom-lang-switcher,
+body:has(#intro-screen:not(.hidden)) .custom-lang-switcher,
+body:has(.intro-screen:not(.hidden)) .custom-lang-switcher,
+body:has([id*="intro"]:not(.hidden)) .custom-lang-switcher {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+}
+
+/* ---------------------------------------------------------------------- */
+/* 10. Section & Card Layouts                                             */
+/* ---------------------------------------------------------------------- */
+
+.sl-display {
+    font-family: var(--ws-font-display);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.sl-panel {
+    background-color: var(--ws-panel);
+    border: 1px solid var(--ws-line);
+    /* backdrop-filter: blur(20px); */
+    box-shadow: var(--ws-shadow-lg);
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 42rem !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    overflow: hidden !important;
+    border-radius: 1.5rem !important;
+}
+
+.sl-card {
+    background-color: var(--ws-card-bg);
+    border: 1px solid rgba(197, 155, 106, 0.22) !important;
+    box-shadow: 0 8px 24px rgba(160, 130, 100, 0.06) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+    border-radius: 1.15rem !important;
+}
+.sl-card:hover {
+    transform: translateY(-3px) !important;
+    border-color: rgba(197, 155, 106, 0.45) !important;
+    box-shadow: 0 14px 32px rgba(197, 155, 106, 0.15) !important;
+}
+
+.sl-btn-outline {
+    border: 1.5px solid var(--ws-gold) !important;
+    color: var(--ws-gold) !important;
+    background: transparent !important;
+    transition: all 0.25s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 9999px !important;
+}
+.sl-btn-outline:hover {
+    background-color: var(--ws-gold) !important;
+    color: #ffffff !important;
+    border-color: var(--ws-gold) !important;
+    box-shadow: 0 6px 18px rgba(197, 155, 106, 0.2) !important;
+}
+
+.sl-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin: 2rem 0 1rem 0;
+    position: relative;
+}
+.sl-divider::before,
+.sl-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        var(--ws-gold),
+        transparent
+    );
+    opacity: 0.65;
+}
+.sl-divider-mark {
+    width: 7px;
+    height: 7px;
+    transform: rotate(45deg);
+    background: var(--ws-plum);
+    box-shadow: 0 0 0 4px rgba(216, 149, 132, 0.18);
+    animation: sparkleRotate 6s linear infinite !important;
+}
+
+@keyframes sparkleRotate {
+    0% {
+        transform: rotate(45deg) scale(1);
+    }
+    50% {
+        transform: rotate(225deg) scale(1.2);
+    }
+    100% {
+        transform: rotate(405deg) scale(1);
+    }
+}
+
+.sl-float-bar {
+    position: fixed !important;
+    bottom: 1.25rem !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 90% !important;
+    max-width: 26rem !important;
+    z-index: 40 !important;
+    background-color: rgba(255, 255, 255, 0.92) !important;
+    border: 1px solid var(--ws-line) !important;
+    backdrop-filter: blur(20px) !important;
+    border-radius: 9999px !important;
+    box-shadow: var(--ws-shadow-lg) !important;
+    padding: 0.65rem 1rem !important;
+}
+
+/* ---------------------------------------------------------------------- */
+/* 10b. REDESIGNED: POPUP MODAL OVERFLOW & CONTAINMENT FIX               */
+/* ---------------------------------------------------------------------- */
+
+#shareModal:not(.hidden),
+#whatsappModal:not(.hidden),
+#scanModal:not(.hidden),
+#appointmentModal:not(.hidden),
+#customInfoOverlay:not(.hidden),
+#newsletterModal:not(.hidden),
+#pwaModal:not(.hidden) {
+    display: flex !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 999999 !important; /* Sit above floating bar */
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 1rem !important;
+    background: rgba(35, 29, 26, 0.72) !important;
+    backdrop-filter: blur(14px) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+}
+
+/* Modal Content Card Internal Scroll Containment */
+#shareModal .sl-panel,
+#whatsappModal .sl-panel,
+#scanModal .sl-panel,
+#appointmentModal .sl-panel,
+#customInfoOverlay .sl-panel,
+#newsletterModal .sl-newsletter-card,
+#newsletterModal .sl-panel,
+#pwaModal .sl-panel {
+    max-height: calc(100vh - 2.5rem) !important;
+    max-height: 88vh !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 28rem !important;
+    margin: auto !important;
+    position: relative !important;
+    border-radius: 1.25rem !important;
+    background-color: #ffffff !important;
+    border: 1px solid var(--ws-line) !important;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25) !important;
+}
+
+#pwaModal:not(.hidden) {
+    align-items: flex-end !important;
+}
+
+@media (min-width: 640px) {
+    #pwaModal:not(.hidden) {
+        align-items: center !important;
+    }
+}
+
+#pwaModal .grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.75rem !important;
+    align-items: center !important;
+}
+
+#pwaModal .sl-btn-outline,
+#pwaModal .sl-btn-primary,
+#pwaModal #closePwaBtn,
+#pwaModal #addToHomeScreenButton {
+    height: 2.75rem !important;
+    min-height: 2.75rem !important;
+    max-height: 2.75rem !important;
+    padding: 0 0.5rem !important;
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    margin-top: 0 !important;
+    white-space: nowrap !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    border-radius: 0.5rem !important;
+}
+
+#pwaModal .sl-btn-primary i {
+    font-size: 0.8rem !important;
+    margin-right: 0.35rem !important;
+}
+
+.modal-close-btn,
+.sl-modal-close {
+    position: absolute !important;
+    z-index: 20 !important;
+    top: 0.85rem !important;
+    right: 0.85rem !important;
+    width: 2.25rem !important;
+    height: 2.25rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: var(--ws-gold) !important;
+    background: var(--ws-silk) !important;
+    border: 1px solid var(--ws-line) !important;
+    border-radius: 50% !important;
+    cursor: pointer !important;
+    transition: all 0.25s ease !important;
+}
+.modal-close-btn:hover,
+.sl-modal-close:hover {
+    color: #ffffff !important;
+    background: var(--ws-gold) !important;
+    border-color: var(--ws-gold) !important;
+}
+
+/* ---------------------------------------------------------------------- */
+/* 11. Form Controls & Buttons                                            */
+/* ---------------------------------------------------------------------- */
+
+.sl-input:not(.lang-search-input),
+input[type="text"]:not(.lang-search-input),
+input[type="email"],
+input[type="tel"],
+input[type="number"],
+input[type="password"],
+input[type="time"],
+textarea,
+select {
+    background-color: rgba(244, 239, 230, 0.45) !important;
+    border: 1px solid rgba(197, 155, 106, 0.25) !important;
+    border-bottom: 2.5px solid var(--ws-gold) !important;
+    color: var(--ws-ink) !important;
+    font-size: 0.875rem !important;
+    line-height: 1.4 !important;
+    padding: 0.9rem 1.2rem !important;
+    border-radius: 0.85rem !important;
+    box-shadow: inset 0 1px 2px rgba(160, 130, 100, 0.02) !important;
+    transition: all 0.25s ease !important;
+    outline: none !important;
+    width: 100% !important;
+    margin-bottom: 0.85rem !important;
+}
+
+.sl-input:-webkit-autofill,
+.sl-input:-webkit-autofill:hover,
+.sl-input:-webkit-autofill:focus,
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0px 1000px #f8f5ee inset !important;
+    -webkit-text-fill-color: var(--ws-ink) !important;
+}
+
+.sl-input::placeholder,
+input::placeholder,
+textarea::placeholder {
+    color: var(--ws-muted-light) !important;
+    opacity: 0.8 !important;
+    font-size: 0.85rem !important;
+}
+
+.sl-input:not(.lang-search-input):focus,
+input:not(.lang-search-input):focus,
+textarea:focus,
+select:focus {
+    background-color: #ffffff !important;
+    border-color: var(--ws-plum) !important;
+    border-bottom-color: var(--ws-plum) !important;
+    box-shadow: 0 0 20px rgba(216, 149, 132, 0.2) !important;
+}
+
+.sl-btn-primary,
+#btn-subscribe-newsletter,
+#btn-submit-service-booking,
+#btn-submit-contact,
+#bookAppointmentButton,
+button[type="submit"] {
+    background: linear-gradient(
+        135deg,
+        #c59b6a 0%,
+        #e8b0a2 50%,
+        #d89584 100%
+    ) !important;
+    background-size: 200% auto !important;
+    color: #ffffff !important;
+    border: none !important;
+    font-family: var(--ws-font-body) !important;
+    font-weight: 700 !important;
+    font-size: 0.85rem !important;
+    letter-spacing: 0.1em !important;
+    text-transform: uppercase !important;
+    padding: 0.95rem 1.85rem !important;
+    border-radius: 9999px !important;
+    margin-top: 0.75rem !important;
+    width: 100% !important;
+    box-shadow: 0 10px 28px rgba(197, 155, 106, 0.28) !important;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+}
+
+.sl-btn-primary:hover,
+#btn-subscribe-newsletter:hover,
+#btn-submit-service-booking:hover,
+#btn-submit-contact:hover,
+#bookAppointmentButton:hover,
+button[type="submit"]:hover {
+    background-position: right center !important;
+    transform: translateY(-2px) scale(1.01) !important;
+    box-shadow: 0 16px 36px rgba(216, 149, 132, 0.38) !important;
+}
+
+/* ---------------------------------------------------------------------- */
+/* 12. Quick Actions Section (Silk Gradient Tiles & Spring Bounce)       */
+/* ---------------------------------------------------------------------- */
+
+.salon-qa-wrapper {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+}
+
+.salon-qa-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(72px, 1fr)) !important;
+    gap: 0.75rem !important;
+    width: 100% !important;
+    margin-bottom: 1.75rem !important;
+    justify-content: center !important;
+}
+
+.salon-qa-card {
+    background: linear-gradient(180deg, #ffffff 0%, #f9f5ef 100%) !important;
+    border: 1px solid rgba(197, 155, 106, 0.22) !important;
+    padding: 0.85rem 0.25rem !important;
+    border-radius: 1rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-decoration: none !important;
+    transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    box-shadow: 0 6px 18px rgba(160, 130, 100, 0.06) !important;
+    min-height: 5.5rem !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.salon-qa-card:hover {
+    transform: translateY(-4px) !important;
+    border-color: var(--ws-gold) !important;
+    border-bottom: 3px solid var(--ws-gold) !important;
+    background: #ffffff !important;
+    box-shadow: 0 12px 28px rgba(197, 155, 106, 0.22) !important;
+}
+
+.salon-qa-icon-wrap {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-bottom: 0.45rem !important;
+    transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    will-change: transform;
+}
+
+.salon-qa-card:hover .salon-qa-icon-wrap {
+    transform: scale(1.15) rotate(6deg) !important;
+    box-shadow: 0 0 20px rgba(197, 155, 106, 0.35) !important;
+}
+
+.salon-icon-rose {
+    background: linear-gradient(
+        135deg,
+        rgba(197, 155, 106, 0.12),
+        rgba(216, 149, 132, 0.18)
+    ) !important;
+    color: var(--ws-gold) !important;
+}
+
+.salon-icon-gold {
+    background: linear-gradient(
+        135deg,
+        rgba(216, 149, 132, 0.15),
+        rgba(197, 155, 106, 0.18)
+    ) !important;
+    color: var(--ws-plum) !important;
+}
+
+.salon-icon-green {
+    background: rgba(34, 197, 94, 0.1) !important;
+    border: 1px solid rgba(34, 197, 94, 0.35) !important;
+    color: #16a34a !important;
+}
+
+.salon-qa-label {
+    font-size: 0.68rem !important;
+    font-weight: 700 !important;
+    color: var(--ws-ink) !important;
+    line-height: 1.15 !important;
+    text-align: center;
+    letter-spacing: 0.02em !important;
+    text-transform: uppercase !important;
+}
+
+.salon-social-row {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 0.75rem !important;
+}
+
+.salon-social-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 2.85rem !important;
+    height: 2.85rem !important;
+    border-radius: 50% !important;
+    background: #ffffff !important;
+    border: 1px solid rgba(197, 155, 106, 0.25) !important;
+    color: var(--ws-gold) !important;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    box-shadow: 0 4px 12px rgba(160, 130, 100, 0.06) !important;
+    will-change: transform;
+}
+
+.salon-social-btn:hover {
+    border-color: var(--ws-plum) !important;
+    color: var(--ws-plum) !important;
+    transform: translateY(-4px) scale(1.12) rotate(-6deg) !important;
+    box-shadow: 0 10px 25px rgba(216, 149, 132, 0.3) !important;
+}
+
+/* ---------------------------------------------------------------------- */
+/* 13. Atmospheric Animated 3D Floating Background Icons                 */
+/* ---------------------------------------------------------------------- */
+
+.botanical-3d-bg {
+    perspective: 1200px;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none !important;
+}
+
+.botanical-light-aura {
+    position: absolute;
+    inset: 0;
+    opacity: 0.65;
+    background:
+        radial-gradient(
+            circle at 15% 15%,
+            rgba(226, 154, 138, 0.14),
+            transparent 45%
+        ),
+        radial-gradient(
+            circle at 85% 80%,
+            rgba(156, 175, 136, 0.16),
+            transparent 50%
+        ) !important;
+    animation: botanicalAuraMorph 20s ease-in-out infinite alternate !important;
+}
+
+@keyframes botanicalAuraMorph {
+    0% {
+        transform: scale(1) rotate(0deg);
+        opacity: 0.6;
+    }
+    50% {
+        transform: scale(1.08) rotate(4deg);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(1.15) rotate(-3deg);
+        opacity: 0.65;
+    }
+}
+
+.botanical-3d-item {
+    position: absolute;
+    transform-style: preserve-3d;
+    will-change: transform;
+    opacity: 0.42;
+    backface-visibility: hidden;
+    filter: drop-shadow(0 10px 18px rgba(95, 111, 82, 0.15));
+    transition: opacity 0.5s ease;
+}
+
+.botanical-3d-item svg,
+.botanical-3d-svg {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.botanical-pos-1 {
+    top: 4%;
+    left: 3%;
+    width: 10rem;
+    height: 10rem;
+    animation: botanicalDrift3D_A 20s ease-in-out infinite alternate !important;
+}
+.botanical-pos-2 {
+    top: 6%;
+    right: 3%;
+    width: 8.5rem;
+    height: 8.5rem;
+    animation: botanicalSpin3D 26s linear infinite !important;
+}
+.botanical-pos-3 {
+    top: 38%;
+    left: 2%;
+    width: 9.5rem;
+    height: 9.5rem;
+    animation: botanicalDrift3D_B 22s ease-in-out infinite alternate !important;
+}
+.botanical-pos-4 {
+    top: 42%;
+    right: 2.5%;
+    width: 7.5rem;
+    height: 7.5rem;
+    animation: botanicalSway3D 18s ease-in-out infinite alternate !important;
+}
+.botanical-pos-5 {
+    bottom: 5%;
+    left: 2.5%;
+    width: 11rem;
+    height: 11rem;
+    animation: botanicalDrift3D_A 24s ease-in-out infinite alternate-reverse !important;
+}
+.botanical-pos-6 {
+    bottom: 4%;
+    right: 3%;
+    width: 10.5rem;
+    height: 10.5rem;
+    animation: botanicalSpin3D 22s linear infinite reverse !important;
+}
+.botanical-pos-7 {
+    top: 22%;
+    left: 6%;
+    width: 8rem;
+    height: 8rem;
+    animation: botanicalPulse3D 19s ease-in-out infinite alternate !important;
+}
+.botanical-pos-8 {
+    top: 24%;
+    right: 6%;
+    width: 7.5rem;
+    height: 7.5rem;
+    animation: botanicalDrift3D_B 21s ease-in-out infinite alternate !important;
+}
+.botanical-pos-9 {
+    bottom: 26%;
+    left: 5%;
+    width: 8.5rem;
+    height: 8.5rem;
+    animation: botanicalSway3D 23s ease-in-out infinite alternate-reverse !important;
+}
+.botanical-pos-10 {
+    bottom: 28%;
+    right: 5%;
+    width: 7.5rem;
+    height: 7.5rem;
+    animation: botanicalDrift3D_A 19s ease-in-out infinite alternate !important;
+}
+.botanical-pos-11 {
+    top: 2%;
+    left: 48%;
+    transform: translateX(-50%);
+    width: 7rem;
+    height: 7rem;
+    animation: botanicalPulse3D 16s ease-in-out infinite alternate !important;
+}
+.botanical-pos-12 {
+    bottom: 2%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 7.5rem;
+    height: 7.5rem;
+    animation: botanicalSway3D 25s ease-in-out infinite alternate !important;
+}
+
+@keyframes botanicalDrift3D_A {
+    0% {
+        transform: translate3d(0, 0, 0) rotateX(0deg) rotateY(0deg)
+            rotateZ(0deg) scale(1);
+        opacity: 0.38;
+    }
+    50% {
+        transform: translate3d(-28px, 38px, 50px) rotateX(14deg) rotateY(-18deg)
+            rotateZ(12deg) scale(1.08);
+        opacity: 0.55;
+    }
+    100% {
+        transform: translate3d(22px, -22px, -20px) rotateX(-12deg)
+            rotateY(15deg) rotateZ(-10deg) scale(0.94);
+        opacity: 0.38;
+    }
+}
+
+@keyframes botanicalDrift3D_B {
+    0% {
+        transform: translate3d(0, 0, 0) rotateX(0deg) rotateY(0deg) scale(1);
+        opacity: 0.35;
+    }
+    50% {
+        transform: translate3d(32px, -32px, 55px) rotateX(-16deg) rotateY(20deg)
+            scale(1.12);
+        opacity: 0.6;
+    }
+    100% {
+        transform: translate3d(-18px, 22px, -15px) rotateX(12deg)
+            rotateY(-12deg) scale(0.92);
+        opacity: 0.35;
+    }
+}
+
+@keyframes botanicalSpin3D {
+    0% {
+        transform: translate3d(0, 0, 0) rotateZ(0deg) scale(1);
+    }
+    50% {
+        transform: translate3d(18px, -22px, 35px) rotateZ(180deg) scale(1.06);
+    }
+    100% {
+        transform: translate3d(0, 0, 0) rotateZ(360deg) scale(1);
+    }
+}
+
+@keyframes botanicalSway3D {
+    0% {
+        transform: translate3d(0, 0, 0) rotateZ(-8deg) scale(1);
+    }
+    50% {
+        transform: translate3d(15px, -28px, 40px) rotateZ(10deg) scale(1.08);
+    }
+    100% {
+        transform: translate3d(-12px, 15px, -20px) rotateZ(-6deg) scale(0.95);
+    }
+}
+
+@keyframes botanicalPulse3D {
+    0% {
+        transform: translate3d(0, 0, 0) scale(0.95);
+        opacity: 0.3;
+    }
+    50% {
+        transform: translate3d(0, -18px, 30px) scale(1.12);
+        opacity: 0.58;
+    }
+    100% {
+        transform: translate3d(0, 10px, -10px) scale(0.95);
+        opacity: 0.3;
+    }
+}
+
+@media (max-width: 640px) {
+    .botanical-pos-1,
+    .botanical-pos-2,
+    .botanical-pos-3,
+    .botanical-pos-4,
+    .botanical-pos-5,
+    .botanical-pos-6,
+    .botanical-pos-7,
+    .botanical-pos-8,
+    .botanical-pos-9,
+    .botanical-pos-10,
+    .botanical-pos-11,
+    .botanical-pos-12 {
+        width: 5.5rem !important;
+        height: 5.5rem !important;
+        opacity: 0.25 !important;
+    }
+}
+
+/* ---------------------------------------------------------------------- */
+/* 14. Responsive Breakpoints                                             */
+/* ---------------------------------------------------------------------- */
+
+@media (min-width: 640px) {
+    .sm\:px-0 {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    .sm\:px-10 {
+        padding-left: 2.5rem !important;
+        padding-right: 2.5rem !important;
+    }
+    .sm\:text-sm {
+        font-size: 0.875rem !important;
+    }
+    .sm\:text-3xl {
+        font-size: 1.875rem !important;
+    }
+    .sm\:text-5xl {
+        font-size: 3rem !important;
+    }
+    .sm\:grid-cols-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+}
+
+@media (min-width: 1024px) {
+    .lg\:my-8 {
+        margin-top: 2rem !important;
+        margin-bottom: 2rem !important;
+    }
+    .lg\:h-72 {
+        height: 18rem !important;
+    }
+    .lg\:pb-8 {
+        padding-bottom: 2rem !important;
+    }
+    .lg\:grid-cols-1 {
+        grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+    }
+    .lg\:grid-cols-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+    .lg\:grid-cols-3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+    .lg\:hidden {
+        display: none !important;
+    }
+}
+
+/* ---------------------------------------------------------------------- */
+/* 15. Flatpickr Calendar Styling Refinements                            */
+/* ---------------------------------------------------------------------- */
+
+.flatpickr-calendar {
+    background: #ffffff !important;
+    border: 1px solid var(--ws-line) !important;
+    box-shadow: var(--ws-shadow-lg) !important;
+    border-radius: 1rem !important;
+    font-family: var(--ws-font-body) !important;
+    color: var(--ws-ink) !important;
+}
+
+.flatpickr-months {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 0.5rem 0.75rem 0.25rem 0.75rem !important;
+    background: var(--ws-silk) !important;
+    border-top-left-radius: 1rem !important;
+    border-top-right-radius: 1rem !important;
+}
+
+.flatpickr-current-month {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.25rem !important;
+    position: relative !important;
+    width: auto !important;
+    height: auto !important;
+    padding: 0 !important;
+    font-size: 0.95rem !important;
+    font-weight: 700 !important;
+    color: var(--ws-gold) !important;
+}
+
+.flatpickr-monthDropdown-months {
+    background: transparent !important;
+    color: var(--ws-gold) !important;
+    font-weight: 700 !important;
+    font-size: 0.9rem !important;
+    border: none !important;
+    padding: 0 1.25rem 0 0.25rem !important;
+    margin: 0 !important;
+    cursor: pointer !important;
+    outline: none !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+}
+
+.flatpickr-calendar .numInputWrapper {
+    width: 4rem !important;
+    display: inline-block !important;
+    position: relative !important;
+}
+
+.flatpickr-calendar .numInputWrapper input.cur-year {
+    color: var(--ws-gold) !important;
+    font-weight: 700 !important;
+    font-size: 0.9rem !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    width: 100% !important;
+}
+
+.flatpickr-calendar .arrowUp,
+.flatpickr-calendar .arrowDown {
+    display: none !important;
+}
+
+.flatpickr-day {
+    color: var(--ws-ink) !important;
+    border-radius: 0.5rem !important;
+}
+
+.flatpickr-day.selected,
+.flatpickr-day.selected:hover {
+    background: var(--ws-gold) !important;
+    border-color: var(--ws-gold) !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+}
+
+.flatpickr-day:hover {
+    background: var(--ws-gold-soft) !important;
+    color: var(--ws-gold) !important;
+}
+
+/* ---------------------------------------------------------------------- */
+/* 16. Google Wallet Integration Section                                  */
+/* ---------------------------------------------------------------------- */
+
+.bb-scroll-reveal {
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+.bb-scroll-reveal .sl-card {
+    background-color: var(--ws-card-bg) !important;
+    border: 1px solid var(--ws-line) !important;
+    box-shadow: 0 4px 15px rgba(160, 130, 100, 0.05) !important;
+    border-radius: 0.75rem !important;
+}
+
+.bb-scroll-reveal a.group {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-decoration: none !important;
+    outline: none !important;
+}
+
+.bb-scroll-reveal img {
+    border-radius: 0.4rem !important;
+    border: 1px solid var(--ws-line) !important;
+    box-shadow: 0 8px 25px rgba(160, 130, 100, 0.08) !important;
+}
+
+/* ---------------------------------------------------------------------- */
+/* shrink oversized swipe chevron back to original small arrow       */
+/* ---------------------------------------------------------------------- */
+
+#index-icon {
+    width: 20px !important;
+    height: 20px !important;
+    max-width: 20px !important;
+    display: block !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+#index-text::before {
+    content: none !important;
+}
+
+.flatpickr-months .flatpickr-month {
+    height: 57px !important;
+}

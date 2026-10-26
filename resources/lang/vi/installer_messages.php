@@ -1,63 +1,173 @@
 <?php
 
 return [
-
-    /*
-     *
-     * Shared translations.
-     *
-     */
-    'title' => 'تنصيب Laravel',
-    'next' => 'متابعة',
-
-    /*
-     *
-     * Home page translations.
-     *
-     */
-    'welcome' => [
-        'title'   => 'تنصيب Laravel',
-        'message' => 'أهلا بك في صفحة تنصيب Laravel',
-    ],
-
-    /*
-     *
-     * Requirements page translations.
-     *
-     */
-    'requirements' => [
-        'title' => 'المتطلبات',
-    ],
-
-    /*
-     *
-     * Permissions page translations.
-     *
-     */
-    'permissions' => [
-        'title' => 'تراخيص المجلدات',
-    ],
-
-    /*
-     *
-     * Environment page translations.
-     *
-     */
+    'back' => 'Trước',
     'environment' => [
         'title' => 'الإعدادات',
         'save' => 'حفظ ملف .env',
         'success' => 'تم حفظ الإعدادات بنجاح',
         'errors' => 'حدث خطأ أثناء إنشاء ملف .env. رجاءا قم بإنشاءه يدويا',
+        'menu' => [
+            'templateTitle' => 'Bước 3 | ',
+            'title' => 'Cài đặt',
+            'desc' => 'Vui lòng chọn cách bạn muốn định cấu hình tệp <code>.env</code> ứng dụng.',
+            'wizard-button' => 'Thiết lập trình hướng dẫn biểu mẫu',
+            'classic-button' => 'Trình soạn thảo văn bản cổ điển',
+        ],
+        'wizard' => [
+            'templateTitle' => 'Bước 3 | ',
+            'title' => 'Trình hướng dẫn <code>.env</code> có hướng dẫn',
+            'tabs' => [
+                'environment' => 'Môi trường',
+                'database' => 'Cơ sở dữ liệu',
+                'application' => 'Ứng dụng',
+            ],
+            'form' => [
+                'name_required' => 'Tên môi trường là bắt buộc.',
+                'app_name_label' => 'Tên ứng dụng',
+                'app_name_placeholder' => 'Tên ứng dụng',
+                'app_environment_label' => 'Môi trường ứng dụng',
+                'app_environment_label_local' => 'Địa phương',
+                'app_environment_label_developement' => 'Phát triển',
+                'app_environment_label_qa' => 'Qa',
+                'app_environment_label_production' => 'Sản xuất',
+                'app_environment_label_other' => 'Khác',
+                'app_environment_placeholder_other' => 'Nhập môi trường của bạn...',
+                'app_debug_label' => 'Gỡ lỗi ứng dụng',
+                'app_debug_label_true' => 'ĐÚNG VẬY',
+                'app_debug_label_false' => 'SAI',
+                'app_log_level_label' => 'Cấp nhật ký ứng dụng',
+                'app_log_level_label_debug' => 'gỡ lỗi',
+                'app_log_level_label_info' => 'thông tin',
+                'app_log_level_label_notice' => 'để ý',
+                'app_log_level_label_warning' => 'cảnh báo',
+                'app_log_level_label_error' => 'lỗi',
+                'app_log_level_label_critical' => 'phê bình',
+                'app_log_level_label_alert' => 'báo động',
+                'app_log_level_label_emergency' => 'khẩn cấp',
+                'app_url_label' => 'Url ứng dụng',
+                'app_url_placeholder' => 'Url ứng dụng',
+                'db_connection_failed' => 'Không thể kết nối với cơ sở dữ liệu.',
+                'db_connection_label' => 'Kết nối cơ sở dữ liệu',
+                'db_connection_label_mysql' => 'mysql',
+                'db_connection_label_sqlite' => 'sqlit',
+                'db_connection_label_pgsql' => 'pssql',
+                'db_connection_label_sqlsrv' => 'sqlsrv',
+                'db_host_label' => 'Máy chủ cơ sở dữ liệu',
+                'db_host_placeholder' => 'Máy chủ cơ sở dữ liệu',
+                'db_port_label' => 'Cổng cơ sở dữ liệu',
+                'db_port_placeholder' => 'Cổng cơ sở dữ liệu',
+                'db_name_label' => 'Tên cơ sở dữ liệu',
+                'db_name_placeholder' => 'Tên cơ sở dữ liệu',
+                'db_username_label' => 'Tên người dùng cơ sở dữ liệu',
+                'db_username_placeholder' => 'Tên người dùng cơ sở dữ liệu',
+                'db_password_label' => 'Mật khẩu cơ sở dữ liệu',
+                'db_password_placeholder' => 'Mật khẩu cơ sở dữ liệu',
+                'app_tabs' => [
+                    'more_info' => 'Thêm thông tin',
+                    'broadcasting_title' => 'Phát sóng, bộ nhớ đệm, phiên và hàng đợi',
+                    'broadcasting_label' => 'Trình điều khiển phát sóng',
+                    'broadcasting_placeholder' => 'Trình điều khiển phát sóng',
+                    'cache_label' => 'Trình điều khiển bộ đệm',
+                    'cache_placeholder' => 'Trình điều khiển bộ đệm',
+                    'session_label' => 'Trình điều khiển phiên',
+                    'session_placeholder' => 'Trình điều khiển phiên',
+                    'queue_label' => 'Trình điều khiển xếp hàng',
+                    'queue_placeholder' => 'Trình điều khiển xếp hàng',
+                    'redis_label' => 'Trình điều khiển Redis',
+                    'redis_host' => 'Máy chủ Redis',
+                    'redis_password' => 'Làm lại mật khẩu',
+                    'redis_port' => 'Cổng Redis',
+                    'mail_label' => 'Thư',
+                    'mail_driver_label' => 'Trình điều khiển thư',
+                    'mail_driver_placeholder' => 'Trình điều khiển thư',
+                    'mail_host_label' => 'Máy chủ thư',
+                    'mail_host_placeholder' => 'Máy chủ thư',
+                    'mail_port_label' => 'Cổng thư',
+                    'mail_port_placeholder' => 'Cổng thư',
+                    'mail_username_label' => 'Tên người dùng thư',
+                    'mail_username_placeholder' => 'Tên người dùng thư',
+                    'mail_password_label' => 'Mật khẩu thư',
+                    'mail_password_placeholder' => 'Mật khẩu thư',
+                    'mail_encryption_label' => 'Mã hóa thư',
+                    'mail_encryption_placeholder' => 'Mã hóa thư',
+                    'pusher_label' => 'Máy đẩy',
+                    'pusher_app_id_label' => 'Id ứng dụng đẩy',
+                    'pusher_app_id_palceholder' => 'Id ứng dụng đẩy',
+                    'pusher_app_key_label' => 'Khóa ứng dụng Pusher',
+                    'pusher_app_key_palceholder' => 'Khóa ứng dụng Pusher',
+                    'pusher_app_secret_label' => 'Bí mật ứng dụng Pusher',
+                    'pusher_app_secret_palceholder' => 'Bí mật ứng dụng Pusher',
+                ],
+                'buttons' => [
+                    'setup_database' => 'Thiết lập cơ sở dữ liệu',
+                    'setup_application' => 'Ứng dụng cài đặt',
+                    'install' => 'Cài đặt',
+                ],
+            ],
+        ],
+        'classic' => [
+            'templateTitle' => 'Bước 3 | ',
+            'title' => 'Trình chỉnh sửa môi trường cổ điển',
+            'save' => 'Lưu .env',
+            'back' => 'Sử dụng Trình hướng dẫn biểu mẫu',
+            'install' => 'Lưu và cài đặt',
+        ],
     ],
-
-    /*
-     *
-     * Final page translations.
-     *
-     */
     'final' => [
         'title' => 'النهاية',
         'finished' => 'تم تنصيب البرنامج بنجاح...',
         'exit' => 'إضغط هنا للخروج',
+        'templateTitle' => 'Cài đặt hoàn tất',
+        'migration' => 'Đầu ra của bảng điều khiển di chuyển và hạt giống:',
+        'console' => 'Đầu ra của bảng điều khiển ứng dụng:',
+        'log' => 'Mục nhật ký cài đặt:',
+        'env' => 'Tệp .env cuối cùng:',
+    ],
+    'finish' => 'Cài đặt',
+    'forms' => [
+        'errorTitle' => 'Đã xảy ra các lỗi sau:',
+    ],
+    'install' => 'Cài đặt',
+    'installed' => [
+        'success_log_message' => 'Trình cài đặt NativeCode ĐƯỢC CÀI ĐẶT thành công trên',
+    ],
+    'next' => 'متابعة',
+    'permissions' => [
+        'title' => 'تراخيص المجلدات',
+        'templateTitle' => 'Bước 2 | ',
+        'next' => 'Cấu hình môi trường',
+    ],
+    'requirements' => [
+        'title' => 'المتطلبات',
+        'templateTitle' => 'Bước 1 | ',
+        'next' => 'Kiểm tra quyền',
+    ],
+    'title' => 'تنصيب Laravel',
+    'updater' => [
+        'title' => 'Trình cập nhật Laravel',
+        'welcome' => [
+            'title' => 'Chào mừng đến với Trình cập nhật',
+            'message' => 'Chào mừng đến với trình hướng dẫn cập nhật.',
+        ],
+        'overview' => [
+            'title' => 'Tổng quan',
+            'message' => 'Có 1 bản cập nhật.|Có :number bản cập nhật.',
+            'install_updates' => 'Cài đặt bản cập nhật',
+        ],
+        'final' => [
+            'title' => 'Hoàn thành',
+            'finished' => 'Cơ sở dữ liệu của ứng dụng đã được cập nhật thành công.',
+            'exit' => 'Bấm vào đây để thoát',
+        ],
+        'log' => [
+            'success_message' => 'Trình cài đặt NativeCode đã được CẬP NHẬT thành công vào ngày',
+        ],
+    ],
+    'welcome' => [
+        'title' => 'تنصيب Laravel',
+        'message' => 'أهلا بك في صفحة تنصيب Laravel',
+        'templateTitle' => 'Chào mừng',
+        'next' => 'Kiểm tra yêu cầu',
     ],
 ];

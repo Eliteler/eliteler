@@ -1,63 +1,173 @@
 <?php
 
 return [
-
-    /*
-     *
-     * Shared translations.
-     *
-     */
-    'title' => 'تنصيب Laravel',
-    'next' => 'متابعة',
-
-    /*
-     *
-     * Home page translations.
-     *
-     */
-    'welcome' => [
-        'title'   => 'تنصيب Laravel',
-        'message' => 'أهلا بك في صفحة تنصيب Laravel',
-    ],
-
-    /*
-     *
-     * Requirements page translations.
-     *
-     */
-    'requirements' => [
-        'title' => 'المتطلبات',
-    ],
-
-    /*
-     *
-     * Permissions page translations.
-     *
-     */
-    'permissions' => [
-        'title' => 'تراخيص المجلدات',
-    ],
-
-    /*
-     *
-     * Environment page translations.
-     *
-     */
+    'back' => 'පෙර',
     'environment' => [
         'title' => 'الإعدادات',
         'save' => 'حفظ ملف .env',
         'success' => 'تم حفظ الإعدادات بنجاح',
         'errors' => 'حدث خطأ أثناء إنشاء ملف .env. رجاءا قم بإنشاءه يدويا',
+        'menu' => [
+            'templateTitle' => 'පියවර 3 | ',
+            'title' => 'ස්ථාපනය',
+            'desc' => 'කරුණාකර ඔබට යෙදුම් <code>.env</code> ගොනුව වින්‍යාස කිරීමට අවශ්‍ය ආකාරය තෝරන්න.',
+            'wizard-button' => 'ආකෘති විශාරද සැකසුම',
+            'classic-button' => 'සම්භාව්‍ය පෙළ සංස්කාරකය',
+        ],
+        'wizard' => [
+            'templateTitle' => 'පියවර 3 | ',
+            'title' => 'මාර්ගෝපදේශ <code>.env</code> විශාරද',
+            'tabs' => [
+                'environment' => 'පරිසරය',
+                'database' => 'දත්ත සමුදාය',
+                'application' => 'යෙදුම',
+            ],
+            'form' => [
+                'name_required' => 'පරිසරයේ නමක් අවශ්‍යයි.',
+                'app_name_label' => 'යෙදුමේ නම',
+                'app_name_placeholder' => 'යෙදුමේ නම',
+                'app_environment_label' => 'යෙදුම් පරිසරය',
+                'app_environment_label_local' => 'දේශීය',
+                'app_environment_label_developement' => 'සංවර්ධනය',
+                'app_environment_label_qa' => 'Qa',
+                'app_environment_label_production' => 'නිෂ්පාදනය',
+                'app_environment_label_other' => 'වෙනත්',
+                'app_environment_placeholder_other' => 'ඔබේ පරිසරය ඇතුළු කරන්න...',
+                'app_debug_label' => 'යෙදුම් නිදොස්කරණය',
+                'app_debug_label_true' => 'ඇත්ත',
+                'app_debug_label_false' => 'බොරු',
+                'app_log_level_label' => 'යෙදුම් ලොග් මට්ටම',
+                'app_log_level_label_debug' => 'දෝශ නිරාකරණය',
+                'app_log_level_label_info' => 'තොරතුරු',
+                'app_log_level_label_notice' => 'දැනුම්දීම',
+                'app_log_level_label_warning' => 'අනතුරු ඇඟවීම',
+                'app_log_level_label_error' => 'දෝෂය',
+                'app_log_level_label_critical' => 'විවේචනාත්මක',
+                'app_log_level_label_alert' => 'සීරුවෙන්',
+                'app_log_level_label_emergency' => 'හදිසි',
+                'app_url_label' => 'යෙදුම් Url',
+                'app_url_placeholder' => 'යෙදුම් Url',
+                'db_connection_failed' => 'දත්ත සමුදායට සම්බන්ධ වීමට නොහැකි විය.',
+                'db_connection_label' => 'දත්ත සමුදා සම්බන්ධතාවය',
+                'db_connection_label_mysql' => 'mysql',
+                'db_connection_label_sqlite' => 'sqlite',
+                'db_connection_label_pgsql' => 'pgsql',
+                'db_connection_label_sqlsrv' => 'sqlsrv',
+                'db_host_label' => 'දත්ත සමුදා ධාරකය',
+                'db_host_placeholder' => 'දත්ත සමුදා ධාරකය',
+                'db_port_label' => 'දත්ත සමුදා වරාය',
+                'db_port_placeholder' => 'දත්ත සමුදා වරාය',
+                'db_name_label' => 'දත්ත සමුදායේ නම',
+                'db_name_placeholder' => 'දත්ත සමුදායේ නම',
+                'db_username_label' => 'දත්ත සමුදාය පරිශීලක නාමය',
+                'db_username_placeholder' => 'දත්ත සමුදාය පරිශීලක නාමය',
+                'db_password_label' => 'දත්ත සමුදා මුරපදය',
+                'db_password_placeholder' => 'දත්ත සමුදා මුරපදය',
+                'app_tabs' => [
+                    'more_info' => 'වැඩි විස්තර',
+                    'broadcasting_title' => 'විකාශනය, හැඹිලිගත කිරීම, සැසිය, සහ පෝලිම',
+                    'broadcasting_label' => 'විකාශන ධාවකය',
+                    'broadcasting_placeholder' => 'විකාශන ධාවකය',
+                    'cache_label' => 'හැඹිලි ධාවකය',
+                    'cache_placeholder' => 'හැඹිලි ධාවකය',
+                    'session_label' => 'සැසි රියදුරු',
+                    'session_placeholder' => 'සැසි රියදුරු',
+                    'queue_label' => 'පෝලිම් රියදුරු',
+                    'queue_placeholder' => 'පෝලිම් රියදුරු',
+                    'redis_label' => 'රෙඩිස් රියදුරු',
+                    'redis_host' => 'රෙඩිස් සත්කාරක',
+                    'redis_password' => 'රෙඩිස් මුරපදය',
+                    'redis_port' => 'රෙඩිස් වරාය',
+                    'mail_label' => 'තැපෑල',
+                    'mail_driver_label' => 'තැපැල් රියදුරු',
+                    'mail_driver_placeholder' => 'තැපැල් රියදුරු',
+                    'mail_host_label' => 'තැපැල් සත්කාරක',
+                    'mail_host_placeholder' => 'තැපැල් සත්කාරක',
+                    'mail_port_label' => 'තැපැල් වරාය',
+                    'mail_port_placeholder' => 'තැපැල් වරාය',
+                    'mail_username_label' => 'තැපැල් පරිශීලක නාමය',
+                    'mail_username_placeholder' => 'තැපැල් පරිශීලක නාමය',
+                    'mail_password_label' => 'තැපැල් මුරපදය',
+                    'mail_password_placeholder' => 'තැපැල් මුරපදය',
+                    'mail_encryption_label' => 'තැපැල් සංකේතනය',
+                    'mail_encryption_placeholder' => 'තැපැල් සංකේතනය',
+                    'pusher_label' => 'තල්ලු කරන්නා',
+                    'pusher_app_id_label' => 'Pusher යෙදුම් හැඳුනුම්පත',
+                    'pusher_app_id_palceholder' => 'Pusher යෙදුම් හැඳුනුම්පත',
+                    'pusher_app_key_label' => 'Pusher යෙදුම් යතුර',
+                    'pusher_app_key_palceholder' => 'Pusher යෙදුම් යතුර',
+                    'pusher_app_secret_label' => 'Pusher යෙදුම් රහස',
+                    'pusher_app_secret_palceholder' => 'Pusher යෙදුම් රහස',
+                ],
+                'buttons' => [
+                    'setup_database' => 'දත්ත සමුදාය සැකසීම',
+                    'setup_application' => 'ස්ථාපන යෙදුම',
+                    'install' => 'ස්ථාපනය කරන්න',
+                ],
+            ],
+        ],
+        'classic' => [
+            'templateTitle' => 'පියවර 3 | ',
+            'title' => 'සම්භාව්‍ය පරිසර සංස්කාරකය',
+            'save' => 'සුරකින්න .env',
+            'back' => 'Form Wizard භාවිතා කරන්න',
+            'install' => 'සුරකින්න සහ ස්ථාපනය කරන්න',
+        ],
     ],
-
-    /*
-     *
-     * Final page translations.
-     *
-     */
     'final' => [
         'title' => 'النهاية',
         'finished' => 'تم تنصيب البرنامج بنجاح...',
         'exit' => 'إضغط هنا للخروج',
+        'templateTitle' => 'ස්ථාපනය අවසන්',
+        'migration' => 'සංක්‍රමණ සහ බීජ කොන්සෝල ප්‍රතිදානය:',
+        'console' => 'යෙදුම් කොන්සෝල ප්‍රතිදානය:',
+        'log' => 'ස්ථාපන ලොග් ප්‍රවේශය:',
+        'env' => 'අවසාන .env ගොනුව:',
+    ],
+    'finish' => 'ස්ථාපනය කරන්න',
+    'forms' => [
+        'errorTitle' => 'පහත දෝෂ සිදු විය:',
+    ],
+    'install' => 'ස්ථාපනය කරන්න',
+    'installed' => [
+        'success_log_message' => 'NativeCode Installer සාර්ථකව ස්ථාපනය කර ඇත',
+    ],
+    'next' => 'متابعة',
+    'permissions' => [
+        'title' => 'تراخيص المجلدات',
+        'templateTitle' => 'පියවර 2 | ',
+        'next' => 'පරිසරය වින්‍යාස කරන්න',
+    ],
+    'requirements' => [
+        'title' => 'المتطلبات',
+        'templateTitle' => 'පියවර 1 | ',
+        'next' => 'අවසර පරීක්ෂා කරන්න',
+    ],
+    'title' => 'تنصيب Laravel',
+    'updater' => [
+        'title' => 'Laravel යාවත්කාලීන කරන්නා',
+        'welcome' => [
+            'title' => 'යාවත්කාලීන කරන්නා වෙත සාදරයෙන් පිළිගනිමු',
+            'message' => 'යාවත්කාලීන විශාරද වෙත සාදරයෙන් පිළිගනිමු.',
+        ],
+        'overview' => [
+            'title' => 'දළ විශ්ලේෂණය',
+            'message' => 'යාවත්කාලීන 1 ක් ඇත.',
+            'install_updates' => 'යාවත්කාලීන ස්ථාපනය කරන්න',
+        ],
+        'final' => [
+            'title' => 'අවසන්',
+            'finished' => 'යෙදුමේ දත්ත සමුදාය සාර්ථකව යාවත්කාලීන කර ඇත.',
+            'exit' => 'පිටවීමට මෙතන ක්ලික් කරන්න',
+        ],
+        'log' => [
+            'success_message' => 'NativeCode ස්ථාපකය සාර්ථකව යාවත්කාලීන කරන ලදී',
+        ],
+    ],
+    'welcome' => [
+        'title' => 'تنصيب Laravel',
+        'message' => 'أهلا بك في صفحة تنصيب Laravel',
+        'templateTitle' => 'සාදරයෙන් පිළිගනිමු',
+        'next' => 'අවශ්යතා පරීක්ෂා කරන්න',
     ],
 ];

@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Plugins\Zapier\Helpers\ZapierHelper;
 
 class CashfreeController extends Controller
 {
@@ -173,7 +174,7 @@ class CashfreeController extends Controller
                 'customer_id' => Auth::user()->user_id,
                 'customer_name' => Auth::user()->name,
                 'customer_email' => Auth::user()->email,
-                'customer_phone' => Auth::user()->billing_phone,
+                'customer_phone' => Auth::user()->billing_country_code . Auth::user()->billing_phone,
             ],
 
             'order_meta' => [
@@ -221,7 +222,7 @@ class CashfreeController extends Controller
                     'to_billing_state' => $userData->billing_state,
                     'to_billing_zipcode' => $userData->billing_zipcode,
                     'to_billing_country' => $userData->billing_country,
-                    'to_billing_phone' => $userData->billing_phone,
+                    'to_billing_phone' => $userData->billing_country_code . $userData->billing_phone,
                     'to_billing_email' => $userData->billing_email,
                     'to_vat_number' => $userData->vat_number,
                     'subtotal' => $plan_details->plan_price,
@@ -488,6 +489,44 @@ class CashfreeController extends Controller
                     Mail::to($encode['to_billing_email'])
                         ->send(new \App\Mail\SendEmailInvoice($details));
                 } catch (\Exception $e) {
+                }
+
+                // Fetch customer details safely
+                $user_details = \App\User::find($transactionDetails->user_id) ?? Auth::user();
+
+                // Decode invoice details safely
+                $encode = json_decode($transactionDetails->invoice_details ?? '{}', true);
+
+                // Safely format user billing address
+                $userAddress = $user_details->billing_address ?? '';
+                $userCity = $user_details->billing_city ?? '';
+                $userState = $user_details->billing_state ?? '';
+                $userCountry = $user_details->billing_country ?? '';
+                $userZip = $user_details->billing_zipcode ?? '';
+
+                // Dispatch AI credits purchase event to Zapier
+                if (function_exists('zapier_dispatch')) {
+                    zapier_dispatch('ai_credits', [
+                        'transaction_id'  => $transactionDetails->ai_credits_transaction_id ?? $order_id,
+                        'invoice_id'      => ($config[15]->config_value ?? 'INV-') . $invoice_number,
+                        'user_name'       => $user_details->name ?? ($encode['to_billing_name'] ?? 'Customer'),
+                        'user_address'    => !empty($userAddress) ? $userAddress : ($encode['to_billing_address'] ?? ''),
+                        'user_city'       => !empty($userCity) ? $userCity : ($encode['to_billing_city'] ?? ''),
+                        'user_state'      => !empty($userState) ? $userState : ($encode['to_billing_state'] ?? ''),
+                        'user_country'    => !empty($userCountry) ? $userCountry : ($encode['to_billing_country'] ?? ''),
+                        'user_zip'        => !empty($userZip) ? $userZip : ($encode['to_billing_zipcode'] ?? ''),
+                        'user_email'      => $user_details->email ?? ($encode['to_billing_email'] ?? ''),
+                        'user_phone'      => ($user_details->country_code ?? '') . ($user_details->mobile_number ?? ($encode['to_billing_phone'] ?? '')),
+                        'user_tax_number' => $user_details->vat_number ?? $user_details->tax_number ?? ($encode['to_vat_number'] ?? ''),
+                        'plan_name'       => $transactionDetails->purchase_details ?? ($planDetails->plan_name ?? 'AI Credits Plan'),
+                        'quantity'        => 1,
+                        'currency'        => $transactionDetails->currency ?? ($config[1]->config_value ?? 'INR'),
+                        'amount'          => (float) ($transactionDetails->amount ?? ($encode['invoice_amount'] ?? 0)),
+                        'payment_method'  => 'Cashfree',
+                        'payment_status'  => 'paid',
+                        'invoice_date'    => now()->toDateString(),
+                        'purchased_at'    => now()->toDateTimeString(),
+                    ]);
                 }
 
                 // Update Coupon

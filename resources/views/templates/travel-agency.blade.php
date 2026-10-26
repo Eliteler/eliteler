@@ -89,22 +89,60 @@
     {{-- Check business details --}}
     @if ($business_card_details != null)
         @php
-            $custom_css = $business_card_details->custom_css;
-            $custom_js = $business_card_details->custom_js;
+            $custom_css = trim($business_card_details->custom_css ?? '');
+            $custom_js  = trim($business_card_details->custom_js ?? '');
 
-            // Ensure <style> tags for custom CSS
-            if (strpos($custom_css, '<style>') === false && strpos($custom_css, '</style>') === false) {
-                $custom_css = "<style>" . $custom_css . "</style>";
+            /*
+            |--------------------------------------------------------------------------
+            | Custom CSS
+            |--------------------------------------------------------------------------
+            */
+
+            if (
+                !empty($custom_css) &&
+                stripos($custom_css, '<style') === false
+            ) {
+                $custom_css = "<style>{$custom_css}</style>";
             }
 
-            // Ensure <script> tags for custom JS
-            if (strpos($custom_js, '<script>') === false && strpos($custom_js, '</script>') === false) {
-                $custom_js = "<script>" . $custom_js . "</script>";
+            /*
+            |--------------------------------------------------------------------------
+            | Split HTML tags and plain JS
+            |--------------------------------------------------------------------------
+            */
+
+            $include_custom_js = '';
+
+            if (!empty($custom_js)) {
+
+                // Extract HTML tags like meta, script, iframe, noscript, etc.
+                preg_match_all(
+                    '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/?>/is',
+                    $custom_js,
+                    $matches
+                );
+
+                $html_tags = implode("\n", $matches[0]);
+
+                // Remove extracted HTML tags from original content
+                $plain_js = trim(preg_replace(
+                    '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/?>/is',
+                    '',
+                    $custom_js
+                ));
+
+                // Add HTML tags directly
+                $include_custom_js .= $html_tags;
+
+                // Wrap remaining plain JS inside script tag
+                if (!empty($plain_js)) {
+                    $include_custom_js .= "\n<script>{$plain_js}</script>";
+                }
             }
         @endphp
 
         {!! $custom_css !!}
-        {!! $custom_js !!}
+        {!! $include_custom_js !!}
 
         {{-- Theme CSS --}}
         @if(!empty($business_card_details->theme_css))
@@ -589,6 +627,15 @@
                                     </div>
                                 @endif
                                 <!-- End Gallery Section -->
+
+                                <!-- Start Instagram Section -->
+                                @include('templates.includes.instagram-embed', [
+                                    'sectionClass' => 'relative',
+                                    'customHeader' => '<img src="' . asset('img/templates/travel-agency/8.png') . '" alt="" class="w-28 lg:w-32 absolute -top-4 -right-6 lg:-right-6 opacity-80" /><img src="' . asset('img/templates/travel-agency/9.png') . '" alt="" class="w-24 lg:w-28 absolute top-4 -left-6 lg:-left-6 opacity-80" /><h2 class="text-3xl lg:text-4xl font-medium text-black py-12 text-center relative"><div class="absolute bottom-10 left-1/2 h-1.5 w-16 bg-blue-600 -translate-x-1/2 rounded-full"></div>' . __('Instagram') . '</h2>',
+                                    'cardClass'    => 'p-3 sm:p-4 rounded-2xl bg-blue-200 shadow-inner w-full border border-blue-400 overflow-hidden',
+                                    'labelClass'   => 'text-center px-4 pt-3 text-lg font-medium text-gray-800'
+                                ])
+                                <!-- End Instagram Section -->
 
                                 <!-- Start Youtube Video Section -->
                                 @if ($feature_details->where('type', 'youtube')->count() > 0)
@@ -1625,7 +1672,37 @@
     @yield('custom-js')
 
     {{-- Flatpickr JS --}}
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/{{ app()->getLocale() }}.js"></script>
+    @php
+        $flatpickrLocales = [
+            'pt_BR' => 'pt',
+            'zh' => 'zh',
+            'ar' => 'ar',
+            'bg' => 'bg',
+            'hr' => 'hr',
+            'nl' => 'nl',
+            'fr' => 'fr',
+            'de' => 'de',
+            'he' => 'he',
+            'hu' => 'hu',
+            'id' => 'id',
+            'it' => 'it',
+            'ja' => 'ja',
+            'lt' => 'lt',
+            'ms' => 'ms',
+            'pl' => 'pl',
+            'ro' => 'ro',
+            'ru' => 'ru',
+            'es' => 'es',
+            'sv' => 'sv',
+            'th' => 'th',
+            'tr' => 'tr',
+            'vi' => 'vn',
+        ];
+
+        $locale = $flatpickrLocales[app()->getLocale()] ?? 'en';
+    @endphp
+    
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/{{ $locale }}.js"></script>
     <script>
         // Assuming $appointment_slots contains data like: {"monday": [...], "tuesday": [...], ...}
         const disableSlots = {!! $appointment_slots !!}; // Outputting the time slots
@@ -1652,7 +1729,7 @@
             flatpickr("#appointment-date", {
                 dateFormat: "Y-m-d",
                 minDate: "today",
-                locale: "{{ app()->getLocale() }}",
+                locale: "{{ $locale }}",
                 disable: [
                     function(date) {
                         const day = date.toLocaleString("en-us", {
@@ -1674,7 +1751,7 @@
             flatpickr("#service_start_date", {
                 dateFormat: "Y-m-d",
                 minDate: "today",
-                locale: "{{ app()->getLocale() }}",
+                locale: "{{ $locale }}",
                 disable: [
                     function(date) {
                         return !allowedDays.includes(date.getDay());
@@ -1685,7 +1762,7 @@
             flatpickr("#service_end_date", {
                 dateFormat: "Y-m-d",
                 minDate: "today",
-                locale: "{{ app()->getLocale() }}",
+                locale: "{{ $locale }}",
                 disable: [
                     function(date) {
                         return !allowedDays.includes(date.getDay());

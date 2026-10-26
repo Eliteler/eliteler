@@ -11,7 +11,7 @@
     {{-- <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests"> --}}
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ $settings->site_name }}</title>
+    <title>{{ config('app.name') }}</title>
 
     <link rel="icon" href="{{ asset($settings->favicon) }}" sizes="96x96" type="image/png" />
 
@@ -30,18 +30,19 @@
         })();
     </script>
 
-    <title inertia>{{ $settings->site_name }}</title>
+    <title inertia>{{ config('app.name') }}</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
-        rel="stylesheet">
+    {{-- Same font as the admin panel --}}
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300..700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/all.css') }}" />
 
     @if (isset($settings) && $settings)
         {{-- Check Google Analytics is "enabled" --}}
-        @if (!empty($settings->google_analytics_id) && Cookie::get('laravel_cookie_consent') === '1')
+        @if (
+            !empty($settings->google_analytics_id) &&
+                (Cookie::get('laravel_cookie_consent') === '1' || env('COOKIE_CONSENT_ENABLED') == ''))
             <!-- Global site tag (gtag.js) - Google Analytics -->
             <script async src="https://www.googletagmanager.com/gtag/js?id={{ $settings->google_analytics_id }}"></script>
             <script>
@@ -56,7 +57,9 @@
             </script>
         @endif
 
-        @if ($settings->google_adsense_code != 'DISABLE_ADSENSE_ONLY' && Cookie::get('laravel_cookie_consent') === '1')
+        @if (
+            $settings->google_adsense_code != 'DISABLE_ADSENSE_ONLY' &&
+                (Cookie::get('laravel_cookie_consent') === '1' || env('COOKIE_CONSENT_ENABLED') == ''))
             {{-- AdSense code --}}
             <script async
                 src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ $settings->google_adsense_code }}"

@@ -1,3 +1,16 @@
+@php
+    $currentHost = request()->getHost();
+    $masterHost = parse_url(config('app.url'), PHP_URL_HOST);
+    $isCustomDomainOrSubdomain = ($currentHost !== $masterHost);
+
+    // Dynamic store base URL
+    if ($isCustomDomainOrSubdomain) {
+        $storeUrl = url('/');
+    } else {
+        $storeUrl = url($business_card_details->card_url);
+    }
+@endphp
+
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
@@ -6,7 +19,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
 
-    {{-- CSRF Token --}}
+    {{-- CSRF Token --}} 
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     {{-- Store icon and color --}}
@@ -44,9 +57,11 @@
     <link href="{{ url('templates/css/store/toy-store.css') }}" rel="stylesheet">
     {{-- Swiper CSS --}}
     <link rel="stylesheet" href="{{ url('css/swiper-bundle.min.css') }}">
-    
+
     <!-- Baloo and Poppins -->
-    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;700&family=Poppins:wght@400;500;600&display=swap"
+        rel="stylesheet">
 
     <style>
         body {
@@ -63,22 +78,62 @@
     {{-- Check business details --}}
     @if ($business_card_details != null)
         @php
-            $custom_css = $business_card_details->custom_css;
-            $custom_js = $business_card_details->custom_js;
+            $custom_css = trim($business_card_details->custom_css ?? '');
+            $custom_js = trim($business_card_details->custom_js ?? '');
 
-            // Ensure <style> tags for custom CSS
-            if (strpos($custom_css, '<style>') === false && strpos($custom_css, '</style>') === false) {
-                $custom_css = "<style>" . $custom_css . "</style>";
+            /*
+            |--------------------------------------------------------------------------
+            | Custom CSS
+            |--------------------------------------------------------------------------
+            */
+
+            if (!empty($custom_css) && stripos($custom_css, '<style') === false) {
+                $custom_css = "<style>{$custom_css}</style>";
             }
 
-            // Ensure <script> tags for custom JS
-            if (strpos($custom_js, '<script>') === false && strpos($custom_js, '</script>') === false) {
-                $custom_js = "<script>" . $custom_js . "</script>";
+            /*
+            |--------------------------------------------------------------------------
+            | Split HTML tags and plain JS
+            |--------------------------------------------------------------------------
+            */
+
+            $include_custom_js = '';
+
+            if (!empty($custom_js)) {
+                // Extract HTML tags like meta, script, iframe, noscript, etc.
+                preg_match_all(
+                '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/@endphp/is',
+        $custom_js,
+        $matches,
+    );
+
+    $html_tags = implode("\n", $matches[0]);
+
+    // Remove extracted HTML tags from original content
+    $plain_js = trim(
+        preg_replace(
+            '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/?>/is',
+            '',
+            $custom_js,
+        ),
+    );
+
+    // Add HTML tags directly
+    $include_custom_js .= $html_tags;
+
+    // Wrap remaining plain JS inside script tag
+    if (!empty($plain_js)) {
+        $include_custom_js .= "\n<script>
+            {
+                $plain_js
             }
-        @endphp
+        </script>";
+    }
+}
+?>
 
         {!! $custom_css !!}
-        {!! $custom_js !!}
+        {!! $include_custom_js !!}
     @endif
 
     {{-- JS --}}
@@ -120,14 +175,15 @@
                         <div class="page-body">
                             <div class="container-xl">
                                 <div class="py-2">
-                                    <h1 class="fs-1 border-bottom mb-4 fw-bold contact-information-title">{{ __($pageTitle) }}</h1>
-                                    
+                                    <h1 class="fs-1 border-bottom mb-4 fw-bold contact-information-title">
+                                        {{ __($pageTitle) }}</h1>
+
                                     <div class="col-lg-12 col-md-12 col-sm-12 px-2">
                                         {!! $pageContent ?? '' !!}
                                     </div>
                                 </div>
                             </div>
-                        </div>                        
+                        </div>
                     </div>
 
                     <!-- Footer -->
@@ -144,7 +200,7 @@
                                     <span class="text-white">
                                         {{ __('Copyright') }} &copy;
                                         <span id="year"></span>
-                                        <a href="{{ url($business_card_details->card_url) }}"
+                                        <a href="{{ $storeUrl }}"
                                             class="text-white fw-semibold">
                                             {{ $plan_details['hide_branding'] == 1 ? $card_details->title : config('app.name') }}
                                         </a>.
@@ -160,7 +216,8 @@
                                             </a>
                                         </li>
                                         <li class="list-inline-item">
-                                            <a href="{{ $shareComponent['twitter'] }}" target="_blank" class="link-light">
+                                            <a href="{{ $shareComponent['twitter'] }}" target="_blank"
+                                                class="link-light">
                                                 <i class="ti ti-brand-twitter-filled text-white"></i>
                                             </a>
                                         </li>
@@ -185,7 +242,7 @@
                                     </ul>
                                 </div>
                             </div>
-        
+
                             <!-- Second Row: Policy Links -->
                             <div class="row mt-3">
                                 <div class="col">
@@ -198,7 +255,7 @@
                                                     class="text-white">{{ __('Privacy Policy') }}</a>
                                             </li>
                                         @endif
-        
+
                                         {{-- Terms and Conditions --}}
                                         @if ($business_card_details->terms_and_conditions)
                                             <li class="list-inline-item">
@@ -206,7 +263,7 @@
                                                     class="text-white">{{ __('Terms & Conditions') }}</a>
                                             </li>
                                         @endif
-        
+
                                         {{-- Return/Refund Policy --}}
                                         @if ($business_card_details->refund_policy)
                                             <li class="list-inline-item">
@@ -214,7 +271,7 @@
                                                     class="text-white">{{ __('Return/Refund Policy') }}</a>
                                             </li>
                                         @endif
-        
+
                                         {{-- Shipping Policy --}}
                                         @if ($business_card_details->shipping_policy)
                                             <li class="list-inline-item">
@@ -222,7 +279,7 @@
                                                     class="text-white">{{ __('Shipping Policy') }}</a>
                                             </li>
                                         @endif
-        
+
                                         {{-- Cookie Policy --}}
                                         @if ($business_card_details->cookie_policy)
                                             <li class="list-inline-item">
@@ -230,7 +287,7 @@
                                                     class="text-white">{{ __('Cookie Policy') }}</a>
                                             </li>
                                         @endif
-        
+
                                         {{-- Contact Information / Customer Support Policy --}}
                                         @if ($business_card_details->customer_support_policy)
                                             <li class="list-inline-item">
@@ -245,7 +302,7 @@
                     </footer>
 
                     <!-- Bottom Navbar -->
-                    @include('templates.includes.bottom-bar', ['color' => 'red','bg' => 'light'])
+                    @include('templates.includes.bottom-bar', ['color' => 'red', 'bg' => 'light'])
                     <!-- End Bottom Navbar -->
                 </div>
             </div>
@@ -283,7 +340,7 @@
     </div>
 
     {{-- Place order --}}
-    <div class="modal modal-blur fade" id="orderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal modal-bg fade" id="orderModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-md modal-dialog-centered" role="document">
             <div class="modal-content">
                 <!-- Modal Header -->
@@ -307,7 +364,7 @@
                         <label class="form-label required" for="cus_address">{{ __('Address') }}</label>
                         <input type="text" class="form-control" id="cus_address" required />
                     </div>
-                    
+
                     {{-- Check delivery options --}}
                     @if ($deliveryOptions != null)
                         <!-- Delivery Type -->
@@ -334,16 +391,16 @@
 
                                 {{-- Dine In --}}
                                 @if (isset($deliveryOptions->dine_in) && $deliveryOptions->dine_in == 1)
-                                <label class="form-check">
-                                    <input class="form-check-input" type="radio" name="cus_delivery_type"
-                                        id="dine_in" value="Dine In">
-                                    <span class="form-check-label">{{ __('Dine In') }}</span>
-                                </label>
+                                    <label class="form-check">
+                                        <input class="form-check-input" type="radio" name="cus_delivery_type"
+                                            id="dine_in" value="Dine In">
+                                        <span class="form-check-label">{{ __('Dine In') }}</span>
+                                    </label>
                                 @endif
                             </div>
                         </div>
                     @endif
-                    
+
                     {{-- Notes --}}
                     <div class="mb-3">
                         <label class="form-label" for="cus_notes">{{ __('Notes') }}</label>
@@ -352,8 +409,9 @@
 
                     {{-- Customer Notes --}}
                     <div class="mb-3">
-                        <small>{{ __("Customer Notes") }}: </small>
-                        <small class="text-muted">{{ __("After you click the Confirm button, WhatsApp will open. Tap 'Send' in WhatsApp to send your order to the shop owner.") }}</small>
+                        <small>{{ __('Customer Notes') }}: </small>
+                        <small
+                            class="text-muted">{{ __("After you click the Confirm button, WhatsApp will open. Tap 'Send' in WhatsApp to send your order to the shop owner.") }}</small>
                     </div>
                 </div>
                 <!-- Modal Footer -->
@@ -361,8 +419,7 @@
                     <!-- Close -->
                     <button type="button" class="btn btn-dark" data-bs-dismiss="modal">{{ __('Close') }}</button>
                     <!-- Confirm -->
-                    <button type="button" class="btn btn-red"
-                        onclick="confirmOrder()">{{ __('Confirm') }}</button>
+                    <button type="button" class="btn btn-red" onclick="confirmOrder()">{{ __('Confirm') }}</button>
                 </div>
             </div>
         </div>
@@ -379,7 +436,11 @@
     </div>
 
     {{-- WharApp Chat --}}
-    @include('templates.includes.whatsapp-float', ['businessImage' => $business_card_details->profile, 'businessName' => $card_details->title, 'whatsappNumber' => $enquiry_button])
+    @include('templates.includes.whatsapp-float', [
+        'businessImage' => $business_card_details->profile,
+        'businessName' => $card_details->title,
+        'whatsappNumber' => $enquiry_button,
+    ])
 
     <!-- Core -->
     <script type="text/javascript" src="{{ url('js/tabler.min.js') }}"></script>
@@ -518,13 +579,13 @@
                 var setDecimalsPlaces = {{ $config[56]->config_value ?? 2 }};
 
                 cart_items += `<div class="col-12 mb-3">`;
-                cart_items += `<div class="card border-red p-3">`;
+                cart_items += `<div class="card border-green p-3">`;
                 cart_items += `<div class="d-flex align-items-center">`;
 
                 // LEFT: Image
                 cart_items += `
                 <div class="me-3 flex-shrink-0" style="width: 100px; height: 100px;">
-                    <img src="${item.product_image}" class="img-fluid rounded-toy-store object-fit-cover h-100 w-100" alt="${item.product_name}" />
+                    <img src="${item.product_image}" class="img-fluid rounded-toy-store object-fit-contain h-100 w-100" alt="${item.product_name}" />
                 </div>`;
 
                 // RIGHT: Product Info
@@ -628,7 +689,7 @@
             const day = days[now.getDay()];
 
             const currentTime = now.getHours().toString().padStart(2, '0') + ':' +
-                                now.getMinutes().toString().padStart(2, '0');
+                now.getMinutes().toString().padStart(2, '0');
 
             const hours = businessHours[day];
 
@@ -697,7 +758,7 @@
 
                 // Place order ajax
                 $.ajax({
-                    url: "{{ config('app.url') }}/order/place",
+                    url: "{{ url('order/place') }}",
                     method: "POST",
                     data: {
                         _token: '{{ csrf_token() }}',
@@ -710,7 +771,7 @@
                         order_items: cart,
                         total_price: grandTotal,
                     },
-                    success: function (data) {
+                    success: function(data) {
                         // Check if order was placed successfully
                         if (data.status == "success") {
                             // Map of dynamic delivery type values to translated strings
@@ -744,7 +805,8 @@
                             waShareContent += productsList + `*${whatsAppMessage}*`;
 
                             // Construct WhatsApp link and open in new tab
-                            const link = `https://api.whatsapp.com/send/?phone=${whatsAppNumber}&text=${encodeURI(waShareContent)}`;
+                            const link =
+                                `https://api.whatsapp.com/send/?phone=${whatsAppNumber}&text=${encodeURI(waShareContent)}`;
                             // Confirm before opening
                             const opened = window.open(link, '_blank');
 
@@ -764,7 +826,7 @@
                             errorAlert(data.message);
                         }
                     },
-                    error: function (error) {
+                    error: function(error) {
                         // Show error message
                         errorAlert(error.responseJSON.message);
                     }

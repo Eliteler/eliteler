@@ -15,17 +15,28 @@ var filesToCache = [
 ];
 
 if ('serviceWorker' in navigator) {
-    fetch('/generate-service-worker')
-    .then(response => response.json())
-    .then(data => {
-        navigator.serviceWorker.register(data.serviceWorkerUrl)
-            .then((registration) => {
-                console.log('Service Worker registered with scope:', registration.scope);
-            })
-            .catch((error) => {
-                console.log('Service Worker registration failed:', error);
-            });
-    });
+    fetch('/generate-service-worker/{{ $id }}?url={{ $url }}')
+        .then(response => response.json())
+        .then(data => {
+            return navigator.serviceWorker.register(
+                data.serviceWorkerUrl,
+                {
+                    scope: '/'
+                }
+            );
+        })
+        .then(registration => {
+            console.log(
+                'Service Worker registered with scope:',
+                registration.scope
+            );
+        })
+        .catch(error => {
+            console.error(
+                'Service Worker registration failed:',
+                error
+            );
+        });
 }
 
 // Cache on install

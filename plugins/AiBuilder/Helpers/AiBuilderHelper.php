@@ -1,9 +1,10 @@
 <?php
 
 // Extract business card data using AI
+use App\BusinessField;
+use App\Helpers\StorageHelper;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use App\BusinessField;
 
 function extractBusinessCardData($image, $aibuilder_settings)
 {
@@ -174,24 +175,26 @@ function detectTheme($companyName, $subTitle)
 // Generate Gravatar Letter Avatar
 function generateLetterAvatar($companyName, $size = 500)
 {
-    // get first letter of company name
+    // Get first letter of company name
     $letter = strtoupper(substr(trim($companyName), 0, 1));
-    // generate hash
+
+    // Generate hash and file name
     $hash = md5($companyName);
-    // generate file path
-    $filePath = "avatars/profile_{$hash}.png";
+    $fileName = "profile_{$hash}.png";
+    $relativePath = "avatars/{$fileName}";
 
-    // avoid duplicates
-    if (Storage::disk('public')->exists($filePath)) {
-        return "/storage/" . $filePath;
+    // Avoid duplicate creation if avatar already exists
+    if (Storage::disk('public')->exists($relativePath)) {
+        return 'storage/' . $relativePath;
     }
 
-    // Ensure folder exists
-    if (!Storage::disk('public')->exists('avatars')) {
-        Storage::disk('public')->makeDirectory('avatars');
+    // Font path
+    $fontFile = public_path('webfonts/Inter-Bold.ttf');
+    if (!file_exists($fontFile)) {
+        return null;
     }
 
-    // create image
+    // Create true color image
     $image = imagecreatetruecolor($size, $size);
 
     // Background color (dynamic based on hash)
@@ -199,25 +202,15 @@ function generateLetterAvatar($companyName, $size = 500)
     $g = hexdec(substr($hash, 2, 2));
     $b = hexdec(substr($hash, 4, 2));
 
-    // fill image with color
+    // Fill image with dynamic background color
     $bgColor = imagecolorallocate($image, $r, $g, $b);
     imagefill($image, 0, 0, $bgColor);
 
-    // text color
+    // Text color (White)
     $textColor = imagecolorallocate($image, 255, 255, 255);
 
-    // font path
-    $fontFile = public_path('webfonts/Inter-Bold.ttf');
-
-    // if font not found return null
-    if (!file_exists($fontFile)) {
-        return null;
-    }
-
-    // assign font size
+    // Calculate font size and center coordinates
     $fontSize = $size * 0.5;
-
-    // Get text box size
     $bbox = imagettfbbox($fontSize, 0, $fontFile, $letter);
     $textWidth = $bbox[2] - $bbox[0];
     $textHeight = $bbox[1] - $bbox[7];
@@ -225,68 +218,59 @@ function generateLetterAvatar($companyName, $size = 500)
     $x = ($size - $textWidth) / 2;
     $y = ($size + $textHeight) / 2;
 
-    // write letter to image
+    // Write letter to image
     imagettftext($image, $fontSize, 0, $x, $y, $textColor, $fontFile, $letter);
+
+    // Capture image buffer data
     ob_start();
     imagepng($image);
     $imageData = ob_get_clean();
     imagedestroy($image);
 
-    // save image
-    Storage::disk('public')->put($filePath, $imageData);
-
-    // return image path
-    return "/storage/" . $filePath;
+    // Save generated avatar using StorageHelper and return relative path
+    return StorageHelper::uploadImage($imageData, 'avatars', $fileName);
 }
 
 // Generate Cover Image
 function generateCoverImage($companyName)
 {
-    // generate hash
+    // Generate hash and file name
     $hash = md5($companyName);
+    $fileName = "cover_{$hash}.jpg";
+    $relativePath = "avatars/{$fileName}";
 
-    // generate file path
-    $filePath = "avatars/cover_{$hash}.jpg";
-
-    // get disk
-    $disk = Storage::disk('public');
-
-    // check if file exists
-    if ($disk->exists($filePath)) {
-        return "/storage/" . $filePath;
+    // Avoid duplicate creation if cover image already exists
+    if (Storage::disk('public')->exists($relativePath)) {
+        return 'storage/' . $relativePath;
     }
 
-    // set image size
-    $width = 850;
-    $height = 430;
-
-    // create image
-    $image = imagecreatetruecolor($width, $height);
-
-    // Background color
-    $r = rand(30, 150);
-    $g = rand(60, 180);
-    $b = rand(90, 200);
-
-    // fill image with color
-    $bgColor = imagecolorallocate($image, $r, $g, $b);
-    imagefill($image, 0, 0, $bgColor);
-
-    // get text
-    $text = strtoupper($companyName);
-
-    // Text color
-    $textColor = imagecolorallocate($image, 255, 255, 255);
-
-    // Font path (make sure this file exists)
+    // Font path
     $fontPath = public_path('webfonts/Inter-Bold.ttf');
-
-    // if font not found return null
     if (!file_exists($fontPath)) {
         return null;
     }
 
-    // Dynamic font size based on length
+    // Set dimensions
+    $width = 850;
+    $height = 430;
+
+    // Create true color image
+    $image = imagecreatetruecolor($width, $height);
+
+    // Dynamic random background color
+    $r = rand(30, 150);
+    $g = rand(60, 180);
+    $b = rand(90, 200);
+
+    // Fill image with background color
+    $bgColor = imagecolorallocate($image, $r, $g, $b);
+    imagefill($image, 0, 0, $bgColor);
+
+    // Prepare text and white color
+    $text = strtoupper($companyName);
+    $textColor = imagecolorallocate($image, 255, 255, 255);
+
+    // Dynamic font size based on text length
     $length = strlen($text);
     if ($length > 30) {
         $fontSize = 28;
@@ -296,7 +280,7 @@ function generateCoverImage($companyName)
         $fontSize = 48;
     }
 
-    // Calculate text box
+    // Calculate text box centered coordinates
     $bbox = imagettfbbox($fontSize, 0, $fontPath, $text);
     $textWidth  = $bbox[2] - $bbox[0];
     $textHeight = $bbox[1] - $bbox[7];
@@ -304,23 +288,17 @@ function generateCoverImage($companyName)
     $x = ($width - $textWidth) / 2;
     $y = ($height + $textHeight) / 2;
 
-    // write text to image
+    // Write text to image
     imagettftext($image, $fontSize, 0, $x, $y, $textColor, $fontPath, $text);
+
+    // Capture image buffer data
     ob_start();
     imagejpeg($image, null, 90);
     $imageData = ob_get_clean();
     imagedestroy($image);
 
-    // check if avatars folder exists
-    if (!$disk->exists('avatars')) {
-        $disk->makeDirectory('avatars');
-    }
-
-    // save image
-    $disk->put($filePath, $imageData);
-
-    // return image path
-    return "/storage/" . $filePath;
+    // Save generated cover image using StorageHelper and return relative path
+    return StorageHelper::uploadImage($imageData, 'avatars', $fileName);
 }
 
 // Format platform label
@@ -336,7 +314,7 @@ function formatPlatformLabel($label)
         'youtube'    => 'YouTube',
         'url'        => 'Website',
         'email'      => 'Email',
-        'phone'      => 'Phone',
+        'tel'        => 'Phone',
         'mobile'     => 'Mobile',
         'address'    => 'Location',
         'pinterest'  => 'Pinterest',
@@ -411,7 +389,7 @@ function saveSocialLinks($cardId, $business_card_data, $plan_details)
         foreach (array_filter($business_card_data['contacts'] ?? []) as $contact) {
             BusinessField::create([
                 'card_id'  => $cardId,
-                'type'     => 'phone',
+                'type'     => 'tel',
                 'icon'     => 'fas fa-phone fa-md',
                 'label'    => 'Phone',
                 'content'  => $contact,

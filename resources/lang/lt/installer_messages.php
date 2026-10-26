@@ -1,63 +1,173 @@
 <?php
 
 return [
-
-    /*
-     *
-     * Shared translations.
-     *
-     */
-    'title' => 'تنصيب Laravel',
-    'next' => 'متابعة',
-
-    /*
-     *
-     * Home page translations.
-     *
-     */
-    'welcome' => [
-        'title'   => 'تنصيب Laravel',
-        'message' => 'أهلا بك في صفحة تنصيب Laravel',
-    ],
-
-    /*
-     *
-     * Requirements page translations.
-     *
-     */
-    'requirements' => [
-        'title' => 'المتطلبات',
-    ],
-
-    /*
-     *
-     * Permissions page translations.
-     *
-     */
-    'permissions' => [
-        'title' => 'تراخيص المجلدات',
-    ],
-
-    /*
-     *
-     * Environment page translations.
-     *
-     */
+    'back' => 'Ankstesnis',
     'environment' => [
         'title' => 'الإعدادات',
         'save' => 'حفظ ملف .env',
         'success' => 'تم حفظ الإعدادات بنجاح',
         'errors' => 'حدث خطأ أثناء إنشاء ملف .env. رجاءا قم بإنشاءه يدويا',
+        'menu' => [
+            'templateTitle' => '3 žingsnis | ',
+            'title' => 'Montavimas',
+            'desc' => 'Pasirinkite, kaip norite konfigūruoti programų failą <code>.env</code>.',
+            'wizard-button' => 'Formos vedlio sąranka',
+            'classic-button' => 'Klasikinis teksto redaktorius',
+        ],
+        'wizard' => [
+            'templateTitle' => '3 žingsnis | ',
+            'title' => 'Vadovaujamas <code>.env</code> vedlys',
+            'tabs' => [
+                'environment' => 'Aplinka',
+                'database' => 'Duomenų bazė',
+                'application' => 'Taikymas',
+            ],
+            'form' => [
+                'name_required' => 'Būtinas aplinkos pavadinimas.',
+                'app_name_label' => 'Programos pavadinimas',
+                'app_name_placeholder' => 'Programos pavadinimas',
+                'app_environment_label' => 'Programėlės aplinka',
+                'app_environment_label_local' => 'Vietinis',
+                'app_environment_label_developement' => 'Plėtra',
+                'app_environment_label_qa' => 'Qa',
+                'app_environment_label_production' => 'Gamyba',
+                'app_environment_label_other' => 'Kita',
+                'app_environment_placeholder_other' => 'Įeikite į savo aplinką...',
+                'app_debug_label' => 'Programos derinimas',
+                'app_debug_label_true' => 'Tiesa',
+                'app_debug_label_false' => 'Netiesa',
+                'app_log_level_label' => 'Programų žurnalo lygis',
+                'app_log_level_label_debug' => 'derinti',
+                'app_log_level_label_info' => 'informacija',
+                'app_log_level_label_notice' => 'pastebėti',
+                'app_log_level_label_warning' => 'įspėjimas',
+                'app_log_level_label_error' => 'klaida',
+                'app_log_level_label_critical' => 'kritiškas',
+                'app_log_level_label_alert' => 'budrus',
+                'app_log_level_label_emergency' => 'skubios pagalbos',
+                'app_url_label' => 'Programos URL',
+                'app_url_placeholder' => 'Programos URL',
+                'db_connection_failed' => 'Nepavyko prisijungti prie duomenų bazės.',
+                'db_connection_label' => 'Duomenų bazės ryšys',
+                'db_connection_label_mysql' => 'mysql',
+                'db_connection_label_sqlite' => 'sqlite',
+                'db_connection_label_pgsql' => 'pgsql',
+                'db_connection_label_sqlsrv' => 'sqlsrv',
+                'db_host_label' => 'Duomenų bazės priegloba',
+                'db_host_placeholder' => 'Duomenų bazės priegloba',
+                'db_port_label' => 'Duomenų bazės prievadas',
+                'db_port_placeholder' => 'Duomenų bazės prievadas',
+                'db_name_label' => 'Duomenų bazės pavadinimas',
+                'db_name_placeholder' => 'Duomenų bazės pavadinimas',
+                'db_username_label' => 'Duomenų bazės vartotojo vardas',
+                'db_username_placeholder' => 'Duomenų bazės vartotojo vardas',
+                'db_password_label' => 'Duomenų bazės slaptažodis',
+                'db_password_placeholder' => 'Duomenų bazės slaptažodis',
+                'app_tabs' => [
+                    'more_info' => 'Daugiau informacijos',
+                    'broadcasting_title' => 'Transliavimas, kaupimas talpykloje, seansas ir eilė',
+                    'broadcasting_label' => 'Transliacijos tvarkyklė',
+                    'broadcasting_placeholder' => 'Transliacijos tvarkyklė',
+                    'cache_label' => 'Talpyklos tvarkyklė',
+                    'cache_placeholder' => 'Talpyklos tvarkyklė',
+                    'session_label' => 'Sesijos vairuotojas',
+                    'session_placeholder' => 'Sesijos vairuotojas',
+                    'queue_label' => 'Eilės vairuotojas',
+                    'queue_placeholder' => 'Eilės vairuotojas',
+                    'redis_label' => 'Redis vairuotojas',
+                    'redis_host' => 'Redis šeimininkas',
+                    'redis_password' => 'Redis slaptažodis',
+                    'redis_port' => 'Redis uostas',
+                    'mail_label' => 'paštas',
+                    'mail_driver_label' => 'Pašto tvarkyklė',
+                    'mail_driver_placeholder' => 'Pašto tvarkyklė',
+                    'mail_host_label' => 'Pašto priegloba',
+                    'mail_host_placeholder' => 'Pašto priegloba',
+                    'mail_port_label' => 'Pašto prievadas',
+                    'mail_port_placeholder' => 'Pašto prievadas',
+                    'mail_username_label' => 'Pašto vartotojo vardas',
+                    'mail_username_placeholder' => 'Pašto vartotojo vardas',
+                    'mail_password_label' => 'Pašto slaptažodis',
+                    'mail_password_placeholder' => 'Pašto slaptažodis',
+                    'mail_encryption_label' => 'Pašto šifravimas',
+                    'mail_encryption_placeholder' => 'Pašto šifravimas',
+                    'pusher_label' => 'Stūmiklis',
+                    'pusher_app_id_label' => '„Pusher“ programos ID',
+                    'pusher_app_id_palceholder' => '„Pusher“ programos ID',
+                    'pusher_app_key_label' => '„Pusher“ programos raktas',
+                    'pusher_app_key_palceholder' => '„Pusher“ programos raktas',
+                    'pusher_app_secret_label' => 'Pusher App Secret',
+                    'pusher_app_secret_palceholder' => 'Pusher App Secret',
+                ],
+                'buttons' => [
+                    'setup_database' => 'Nustatyti duomenų bazę',
+                    'setup_application' => 'Sąrankos programa',
+                    'install' => 'Įdiegti',
+                ],
+            ],
+        ],
+        'classic' => [
+            'templateTitle' => '3 žingsnis | ',
+            'title' => 'Klasikinės aplinkos redaktorius',
+            'save' => 'Išsaugoti .env',
+            'back' => 'Naudokite formų vedlį',
+            'install' => 'Išsaugoti ir įdiegti',
+        ],
     ],
-
-    /*
-     *
-     * Final page translations.
-     *
-     */
     'final' => [
         'title' => 'النهاية',
         'finished' => 'تم تنصيب البرنامج بنجاح...',
         'exit' => 'إضغط هنا للخروج',
+        'templateTitle' => 'Diegimas baigtas',
+        'migration' => 'Perkėlimo ir sėklų konsolės išvestis:',
+        'console' => 'Programos konsolės išvestis:',
+        'log' => 'Diegimo žurnalo įrašas:',
+        'env' => 'Galutinis .env failas:',
+    ],
+    'finish' => 'Įdiegti',
+    'forms' => [
+        'errorTitle' => 'Įvyko šios klaidos:',
+    ],
+    'install' => 'Įdiegti',
+    'installed' => [
+        'success_log_message' => '„NativeCode Installer“ sėkmingai ĮDIEGTA',
+    ],
+    'next' => 'متابعة',
+    'permissions' => [
+        'title' => 'تراخيص المجلدات',
+        'templateTitle' => '2 žingsnis | ',
+        'next' => 'Konfigūruoti aplinką',
+    ],
+    'requirements' => [
+        'title' => 'المتطلبات',
+        'templateTitle' => '1 žingsnis | ',
+        'next' => 'Patikrinkite leidimus',
+    ],
+    'title' => 'تنصيب Laravel',
+    'updater' => [
+        'title' => 'Laravel atnaujinimas',
+        'welcome' => [
+            'title' => 'Sveiki atvykę į „The Updater“.',
+            'message' => 'Sveiki atvykę į atnaujinimo vedlį.',
+        ],
+        'overview' => [
+            'title' => 'Apžvalga',
+            'message' => 'Yra 1 naujinimas.|Yra :number atnaujinimų.',
+            'install_updates' => 'Įdiekite naujinimus',
+        ],
+        'final' => [
+            'title' => 'Baigta',
+            'finished' => 'Programos duomenų bazė sėkmingai atnaujinta.',
+            'exit' => 'Spustelėkite čia, kad išeitumėte',
+        ],
+        'log' => [
+            'success_message' => 'NativeCode diegimo programa sėkmingai ATNAUJINTA',
+        ],
+    ],
+    'welcome' => [
+        'title' => 'تنصيب Laravel',
+        'message' => 'أهلا بك في صفحة تنصيب Laravel',
+        'templateTitle' => 'Sveiki atvykę',
+        'next' => 'Patikrinkite reikalavimus',
     ],
 ];

@@ -12,119 +12,82 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Setting;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
 
+/**
+ * Pusher Beams settings. Stored in .env (PUSHER_BEAMS_*), which the website
+ * templates read to show the subscribe prompt.
+ */
 class PusherController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
     public function __construct()
     {
         $this->middleware('auth');
     }
 
-    /**
-     * Show the application dashboard.
-     *
-     * @return \Illuminate\Contracts\Support\Renderable
-     */
+    public static function configured(): bool
+    {
+        return ! empty(env('PUSHER_BEAMS_INSTANCE_ID')) && ! empty(env('PUSHER_BEAMS_SECRET_KEY'));
+    }
 
-    // Pusher Configuration
     public function index()
     {
-        // Queries
-        $settings = Setting::where('status', 1)->first();
-        $config = DB::table('config')->get();
-
-        return view('admin.pages.marketing.pusher-notification.configuration.index', compact('settings', 'config'));
+        return Inertia::render('marketing/push-settings', [
+            'settings' => [
+                'enabled'    => env('PUSHER_BEAMS_ENABLED') === '1',
+                'instanceId' => (string) env('PUSHER_BEAMS_INSTANCE_ID', ''),
+                // The secret key is never sent to the browser
+                'hasSecret'  => ! empty(env('PUSHER_BEAMS_SECRET_KEY')),
+            ],
+        ]);
     }
 
-    // Update Pusher Configuration
     public function update(Request $request)
     {
-        // Validate
-        $validator = Validator::make($request->all(), [
-            'enable_beams' => 'required|string|max:255',
-            'beams_instance_id' => 'required|string|max:255',
-            'beams_secret_key' => 'required|string|max:255'
+        $data = $request->validate([
+            'enable_beams'      => 'required|boolean',
+            'beams_instance_id' => ['required', 'string', 'max:255', 'regex:/^[A-Za-z0-9-]+$/'],
+            'beams_secret_key'  => ['nullable', 'string', 'max:255', 'regex:/^[A-Za-z0-9-]+$/'],
+        ], ['regex' => __('Use only letters, numbers and dashes.')], [
+            'beams_instance_id' => __('instance ID'),
+            'beams_secret_key'  => __('secret key'),
         ]);
 
-        // Check if the required keys are missing
-        if ($validator->fails()) {
-            return back()->with('failed', $validator->messages()->all()[0])->withInput();
+        if (empty($data['beams_secret_key']) && empty(env('PUSHER_BEAMS_SECRET_KEY'))) {
+            return back()->withErrors(['beams_secret_key' => __('Enter the secret key.')]);
         }
 
-        // Check if "PUSHER_BEAMS_ENABLED", "PUSHER_BEAMS_INSTANCE_ID" and "PUSHER_BEAMS_SECRET_KEY" are set in the .env file
-        if (!env('PUSHER_BEAMS_ENABLED') || !env('PUSHER_BEAMS_INSTANCE_ID') || !env('PUSHER_BEAMS_SECRET_KEY')) {
-            // Insert Pusher Configuration into the .env file
-            $envFile = base_path('.env');
-
-            // Read the current .env file
-            $env = file_get_contents($envFile);
-
-            // Check if each key exists and set default values if missing
-            if (!env('PUSHER_BEAMS_ENABLED')) {
-                $env .= "\n\nPUSHER_BEAMS_ENABLED=" . $request->enable_beams;
-            }
-
-            if (!env('PUSHER_BEAMS_INSTANCE_ID')) {
-                $env .= "\nPUSHER_BEAMS_INSTANCE_ID=" . $request->beams_instance_id;
-            }
-
-            if (!env('PUSHER_BEAMS_SECRET_KEY')) {
-                $env .= "\nPUSHER_BEAMS_SECRET_KEY=" . $request->beams_secret_key;
-            }
-
-            // Save the updated .env file
-            file_put_contents($envFile, $env);
+        $this->updateEnvFile('PUSHER_BEAMS_ENABLED', $request->boolean('enable_beams') ? '1' : '0');
+        $this->updateEnvFile('PUSHER_BEAMS_INSTANCE_ID', $data['beams_instance_id']);
+        if (! empty($data['beams_secret_key'])) {
+            $this->updateEnvFile('PUSHER_BEAMS_SECRET_KEY', $data['beams_secret_key']);
         }
 
-        // Update Pusher Configuration from .env file
-        $this->updateEnvFile('PUSHER_BEAMS_ENABLED', '"' . str_replace('"', "'", $request->enable_beams) . '"');
-        $this->updateEnvFile('PUSHER_BEAMS_INSTANCE_ID', '"' . str_replace('"', "'", $request->beams_instance_id) . '"');
-        $this->updateEnvFile('PUSHER_BEAMS_SECRET_KEY', '"' . str_replace('"', "'", $request->beams_secret_key) . '"');
-
-        return redirect()->route('admin.marketing.pusher')->with('success', trans('Updated!'));
+        return back()->with('success', __('Web notification settings saved.'));
     }
 
-    // Update .env file
-    public function updateEnvFile($key, $value)
+    /** Write KEY="value" to .env (values are validated: no quotes or line breaks). */
+    public function updateEnvFile(string $key, string $value): void
     {
         $envPath = base_path('.env');
-
-        // Check if the .env file exists
-        if (file_exists($envPath)) {
-
-            // Read the .env file
-            $contentArray = file($envPath);
-
-            // Loop through each line to find the key and update its value
-            foreach ($contentArray as &$line) {
-
-                // Split the line by '=' to get key and value
-                $parts = explode('=', $line, 2);
-
-                // Check if the key matches and update its value
-                if (isset($parts[0]) && $parts[0] === $key) {
-                    $line = $key . '=' . $value . PHP_EOL;
-                }
-            }
-
-            // Implode the array back to a string and write it to the .env file
-            $newContent = implode('', $contentArray);
-            file_put_contents($envPath, $newContent);
-
-            // Reload the environment variables
-            putenv($key . '=' . $value);
-            $_ENV[$key] = $value;
-            $_SERVER[$key] = $value;
+        if (! file_exists($envPath)) {
+            return;
         }
+
+        $value   = '"' . str_replace(['"', "\r", "\n"], '', $value) . '"';
+        $content = file_get_contents($envPath);
+        $pattern = '/^' . preg_quote($key, '/') . '=.*$/m';
+
+        $content = preg_match($pattern, $content)
+            ? preg_replace($pattern, $key . '=' . str_replace(['\\', '$'], ['\\\\', '\$'], $value), $content)
+            : rtrim($content, "\r\n") . PHP_EOL . "{$key}={$value}" . PHP_EOL;
+
+        file_put_contents($envPath, $content);
+
+        $plain = trim($value, '"');
+        putenv("{$key}={$plain}");
+        $_ENV[$key] = $_SERVER[$key] = $plain;
     }
 }

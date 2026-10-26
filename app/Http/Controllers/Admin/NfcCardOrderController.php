@@ -12,465 +12,278 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Setting;
-use App\Currency;
+use App\Http\Controllers\Controller;
 use App\NfcCardKey;
 use App\NfcCardOrder;
-use App\EmailTemplate;
-use Illuminate\Support\Str;
+use App\NfcCardOrderTransaction;
+use App\Services\Admin\Nfc\NfcKeyService;
+use App\Services\Admin\Nfc\NfcOrderService;
+use App\Support\Admin\AdminPermissions;
+use App\Support\Admin\AdminSharedProps;
 use Illuminate\Http\Request;
-use Laravel\Ui\Presets\React;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Mews\Purifier\Facades\Purifier;
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Mail;
-use Yajra\DataTables\Facades\DataTables;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
+use Inertia\Inertia;
 
 class NfcCardOrderController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     * 
-     * @return void
-     */
-    public function __construct()
+    /** Order list tabs => order_status values */
+    private const TABS = [
+        'all'         => null,
+        'new'         => ['processing'],
+        'in_progress' => ['printing process begun', 'shipped', 'out for delivery'],
+        'hold'        => ['hold'],
+        'delivered'   => ['delivered'],
+        'unpaid'      => ['pending'],
+        'cancelled'   => ['cancelled'],
+    ];
+
+    public function __construct(private NfcOrderService $orders, private NfcKeyService $keys)
     {
         $this->middleware('auth');
+        $this->middleware(function ($request, $next) {
+            abort_unless(AdminSharedProps::features()['nfc'], 404);
+
+            return $next($request);
+        });
     }
 
-    /**
-     * Show the orders.
-     *
-     * @return \Illuminate\Contracts\Support\Renderable
-     */
     public function index(Request $request)
     {
-        // Queries
-        $settings = Setting::where('status', 1)->first();
-        $config = DB::table('config')->get();
+        $tab    = array_key_exists($request->query('tab'), self::TABS) ? $request->query('tab') : 'all';
+        $search = trim((string) $request->query('search', ''));
 
-        // Check enable nfc card order system
-        if ($config[76]->config_value == '0') {
-            return abort(404);
-        }
-
-        // Currency symbol
-        $currencies = Currency::where('status', 1)->pluck('symbol', 'iso_code')->toArray();
-        $symbol = $currencies[$config[1]->config_value] ?? '';
-
-        if ($request->ajax()) {
-            // Joins "nfc_card_orders", "nfc_card_order_transactions" and "nfc_card_designs" tables
-            $orders = NfcCardOrder::join('nfc_card_order_transactions', 'nfc_card_orders.nfc_card_order_id', '=', 'nfc_card_order_transactions.nfc_card_order_id')
-                ->join('nfc_card_designs', 'nfc_card_orders.nfc_card_id', '=', 'nfc_card_designs.nfc_card_id')
-                ->select('nfc_card_order_transactions.*', 'nfc_card_orders.nfc_card_order_id', 'nfc_card_orders.nfc_card_id', 'nfc_card_orders.nfc_card_logo', 'nfc_card_designs.nfc_card_name', 'nfc_card_designs.nfc_card_price', 'nfc_card_orders.order_status', 'nfc_card_orders.status', 'nfc_card_orders.created_at', 'nfc_card_orders.updated_at')
-                ->where('nfc_card_order_transactions.status', '!=', 2)
-                ->orderBy('nfc_card_order_transactions.created_at', 'desc')
-                ->get();
-
-            return DataTables::of($orders)
-                ->addIndexColumn()
-                ->editColumn('created_at', function ($order) {
-                    return formatDateForUser($order->created_at);
-                })
-                ->editColumn('nfc_card_order_id', function ($order) {
-                    return '<a href="' . route('admin.order.show', $order->nfc_card_order_id) . '">' . $order->nfc_card_order_id . '</a>';
-                })
-                ->editColumn('nfc_card_logo', function ($order) {
-                    if (!empty($order->nfc_card_logo)) {
-                        return '<a href="' . asset($order->nfc_card_logo) . '" class="fw-bold" data-bs-toggle="tooltip" data-bs-placement="top" title="'. trans('Download NFC Card Logo') .'" download>
-                                    <img src="' . asset($order->nfc_card_logo) . '" class="img-fluid rounded" width="50" height="50" alt="NFC Card Logo">
-                                </a>';
-                    } else {
-                        return '-';
-                    }
-                })
-                ->editColumn('nfc_card_name', function ($order) {
-                    return '<a href="' . route('admin.edit.design', $order->nfc_card_id) . '">' . trans($order->nfc_card_name) . '</a>';
-                })
-                ->editColumn('nfc_card_price', function ($order) {
-                    // Get config
-                    $data = DB::table('config')->get();
-                    $currencies = Currency::where('status', 1)->pluck('symbol', 'iso_code')->toArray();
-                    $symbol = $currencies[$data[1]->config_value] ?? '';
-
-                    return '<span class="fw-bold">' . formatCurrency($order->amount) . '</span>';
-                })
-                ->editColumn('payment_status', function ($order) {
-                    if ($order->payment_status == 'success') {
-                        return '<span class="badge bg-success text-white">' . __('Paid') . '</span>';
-                    } elseif ($order->payment_status == 'failed') {
-                        return '<span class="badge bg-danger text-white">' . __('Failed') . '</span>';
-                    } elseif ($order->payment_status == 'pending') {
-                        return '<span class="badge bg-orange text-white">' . __('Pending') . '</span>';
-                    } elseif ($order->payment_status == 'cancelled') {
-                        return '<span class="badge bg-red text-white">' . __('Cancelled') . '</span>';
-                    }
-                })
-                ->editColumn('delivery_status', function ($order) {
-                    if ($order->order_status == 'pending') {
-                        return '<span class="badge bg-warning text-white">' . __('Pending') . '</span>';
-                    } elseif ($order->order_status == 'processing') {
-                        return '<span class="badge bg-primary text-white">' . __('Processing') . '</span>';
-                    } elseif ($order->order_status == 'out for delivery') {
-                        return '<span class="badge bg-dark text-white">' . __('Out for delivery') . '</span>';
-                    } elseif ($order->order_status == 'delivered') {
-                        return '<span class="badge bg-success text-white">' . __('Delivered') . '</span>';
-                    } elseif ($order->order_status == 'cancelled') {
-                        return '<span class="badge bg-danger text-white">' . __('Cancelled') . '</span>';
-                    } elseif ($order->order_status == 'hold') {
-                        return '<span class="badge bg-warning text-white">' . __('Hold') . '</span>';
-                    } elseif ($order->order_status == 'shipped') {
-                        return '<span class="badge bg-success text-white">' . __('Shipped') . '</span>';
-                    }
-                })
-                ->editColumn('action', function ($order) {
-                    // View
-                    $actionBtn = '<a href="' . route('admin.order.show', $order->nfc_card_order_id) . '" class="dropdown-item">' . __('View') . '</a>';
-
-                    if($order->payment_status != 'pending' && $order->payment_status != 'failed') {
-                        // Write in NFC Card
-                        $actionBtn .= '<a href="' . route('admin.write.to.nfc.card', $order->nfc_card_order_id) . '" class="dropdown-item">' . __('Write NFC') . '</a>';
-
-                        // Greeting Letter
-                        $actionBtn .= '<a href="' . route('admin.greeting.letter', $order->nfc_card_order_id) . '" class="dropdown-item">' . __('Greeting Letter') . '</a>';
-
-                        // Update status
-                        $actionBtn .= '<a href="' . route('admin.update.order', $order->nfc_card_order_id) . '" class="dropdown-item">' . __('Add Tracking Info') . '</a>';
-                    }
-                    return '<a class="btn-action" href="#" data-toggle="dropdown" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
-                                <!-- Download SVG icon from http://tabler-icons.io/i/dots-vertical -->
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24"
-                                    height="24" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    class="icon icon-tabler icons-tabler-outline icon-tabler-dots fw-bold">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                    <path d="M4 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                    <path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                    <path d="M18 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                </svg>
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-end" style="">
-                                <div class="nav-item dropdown">
-                                    ' . $actionBtn . '
-                                </div>
-                            </div>';
-                })
-                ->rawColumns(['created_at', 'nfc_card_order_id', 'nfc_card_logo', 'nfc_card_id', 'nfc_card_name', 'nfc_card_price', 'payment_status', 'delivery_status', 'action'])
-                ->make(true);
-        }
-
-        return view('admin.pages.nfc-card-order.index', compact('settings', 'config'));
-    }
-
-    /**
-     * Show the order.
-     *
-     * @return \Illuminate\Contracts\Support\Renderable
-     */
-    public function show($orderId)
-    {
-        // Queries
-        $settings = Setting::where('status', 1)->first();
-        $config = DB::table('config')->get();
-
-        // Check enable nfc card order system
-        if ($config[76]->config_value == '0') {
-            return abort(404);
-        }
-
-        $currencies = Currency::where('status', 1)->pluck('symbol', 'iso_code')->toArray();
-        $symbol = $currencies[$config[1]->config_value] ?? '';
-
-        // Get the order and transaction and user tables (joins)
-        $order = NfcCardOrder::join('nfc_card_order_transactions', 'nfc_card_orders.nfc_card_order_id', '=', 'nfc_card_order_transactions.nfc_card_order_id')
-            ->join('nfc_card_designs', 'nfc_card_orders.nfc_card_id', '=', 'nfc_card_designs.nfc_card_id')
-            ->join('users', 'nfc_card_orders.user_id', '=', 'users.id')
-            ->select('nfc_card_order_transactions.*', 'users.*', 'nfc_card_orders.order_details', 'nfc_card_orders.nfc_card_order_id', 'nfc_card_orders.nfc_card_id', 'nfc_card_designs.nfc_card_name', 'nfc_card_designs.nfc_card_price', 'nfc_card_orders.delivery_address', 'nfc_card_orders.order_status', 'nfc_card_orders.status', 'nfc_card_orders.created_at', 'nfc_card_orders.updated_at')
+        $base = fn () => NfcCardOrder::query()
+            ->join('nfc_card_order_transactions', 'nfc_card_order_transactions.nfc_card_order_id', '=', 'nfc_card_orders.nfc_card_order_id')
+            ->leftJoin('nfc_card_designs', 'nfc_card_designs.nfc_card_id', '=', 'nfc_card_orders.nfc_card_id')
+            ->leftJoin('users', 'users.id', '=', 'nfc_card_orders.user_id')
             ->where('nfc_card_order_transactions.status', '!=', 2)
-            ->where('nfc_card_orders.nfc_card_order_id', $orderId)
-            ->first();
+            ->when($search !== '', fn ($q) => $q->where(function ($q) use ($search) {
+                $q->where('nfc_card_orders.nfc_card_order_id', 'like', "%{$search}%")
+                    ->orWhere('users.name', 'like', "%{$search}%")
+                    ->orWhere('users.email', 'like', "%{$search}%")
+                    ->orWhere('nfc_card_designs.nfc_card_name', 'like', "%{$search}%");
+            }));
 
-        // Check if the order exists
-        if (!$order) {
-            return redirect()->route('admin.orders')->with('failed', __('Not Found!'));
-        }
+        $orders = $base()
+            ->when(self::TABS[$tab], fn ($q, $statuses) => $q->whereIn('nfc_card_orders.order_status', $statuses))
+            ->select([
+                'nfc_card_orders.nfc_card_order_id', 'nfc_card_orders.order_details', 'nfc_card_orders.order_status',
+                'nfc_card_orders.nfc_card_logo', 'nfc_card_orders.created_at',
+                'nfc_card_order_transactions.amount', 'nfc_card_order_transactions.payment_status', 'nfc_card_order_transactions.payment_method',
+                'nfc_card_designs.nfc_card_name', 'nfc_card_designs.nfc_card_front_image',
+                'users.user_id as customer_id', 'users.name as customer_name', 'users.email as customer_email',
+            ])
+            ->orderByDesc('nfc_card_orders.created_at')
+            ->paginate(20)
+            ->withQueryString()
+            ->through(function ($row) {
+                $details = json_decode($row->order_details ?? '', true) ?: [];
 
-        return view('admin.pages.nfc-card-order.show', compact('order', 'settings', 'config', 'symbol'));
-    }
+                return [
+                    'id'       => $row->nfc_card_order_id,
+                    'date'     => $row->created_at ? Carbon::parse($row->created_at)->toIso8601String() : null,
+                    'item'     => $details['order_item'] ?? $row->nfc_card_name,
+                    'image'    => $row->nfc_card_front_image ? asset($row->nfc_card_front_image) : null,
+                    'quantity' => max((int) ($details['order_quantity'] ?? 1), 1),
+                    'amount'   => AdminPermissions::amount((float) $row->amount),
+                    'payment'  => $row->payment_status,
+                    'method'   => $row->payment_method,
+                    'delivery' => $row->order_status,
+                    'hasLogo'  => ! empty($row->nfc_card_logo),
+                    'customer' => $row->customer_id ? ['id' => $row->customer_id, 'name' => $row->customer_name, 'email' => $row->customer_email] : null,
+                ];
+            });
 
-    /**
-     * Update the order status.
-     *
-     * @return \Illuminate\Contracts\Support\Renderable
-     */
-    public function updateOrder($orderId)
-    {
-        // Queries
-        $settings = Setting::where('status', 1)->first();
-        $config = DB::table('config')->get();
-
-        // Check enable nfc card order system
-        if ($config[76]->config_value == '0') {
-            return abort(404);
-        }
-
-        // Check if the order exists
-        $order = NfcCardOrder::where('nfc_card_order_id', $orderId)
-            ->first();
-
-        // Check if the order exists
-        if (!$order) {
-            return redirect()->route('admin.orders')->with('failed', __('Not Found!'));
-        }
-
-        return view('admin.pages.nfc-card-order.update-status', compact('order', 'settings', 'config'));
-    }
-
-
-    //* Write to NFC Card.
-    public function writeToNfcCard(Request $request, $orderId)
-    {
-        // Queries
-        $settings = Setting::where('status', 1)->first();
-        $config = DB::table('config')->get();
-
-        // Check enable nfc card order system
-        if ($config[76]->config_value == '0') {
-            return abort(404);
-        }
-
-        // Get the order details
-        if($request->has('type') && $request->type == 'key') {
-            $orderDetails = NfcCardOrder::join('nfc_card_keys', 'nfc_card_orders.order_details->unique_key', '=', 'nfc_card_keys.unqiue_key')
-                ->whereJsonContains('nfc_card_orders.order_details->unique_key', $orderId)
-                ->where('nfc_card_orders.order_status', '!=', 'pending')
-                ->first();
-        } else {
-            $orderDetails = NfcCardOrder::where('nfc_card_order_id', $orderId)->where('order_status', '!=', 'pending')->first();
-        }
-
-        // NFC Card Logo
-        $nfcCardLogo = $orderDetails->nfc_card_logo ?? '';
-
-        // Check order details
-        if(!$orderDetails) {
-            return redirect()->back()->with('failed', trans('Payment not completed!'));
-        }
-
-        // Check unique key is exist in order details
-        $orderDetails = json_decode($orderDetails->order_details, true);
-        $uniqueKey = $orderDetails['unique_key'] ?? '';
-
-        if (!$uniqueKey) {
-            // Generate NFC card key
-            $characterLimit = (int) $config[92]->config_value;
-            $unqiueKey = Str::random($characterLimit);
-
-            // Generate NFC card key
-            $nfcCardKey = new NfcCardKey();
-            $nfcCardKey->nfc_card_key_id = uniqid();
-            $nfcCardKey->key_type = 'online';
-            $nfcCardKey->unqiue_key = $unqiueKey;
-            $nfcCardKey->save();
-
-            $orderDetails['unique_key'] = $unqiueKey;
-            $orderDetails = json_encode($orderDetails);
-
-            NfcCardOrder::where('nfc_card_order_id', $orderId)->update([
-                'order_details' => $orderDetails,
-                'updated_at' => now(), 
-            ]);
-        }
-
-        // Check if the order exists
-        if (!$orderDetails) {
-            return redirect()->route('admin.orders')->with('failed', __('Not Found!'));
-        }
-
-        return view('admin.pages.nfc-card-order.print', compact('orderDetails', 'nfcCardLogo', 'settings', 'config'));
-    }
-
-
-    /**
-     * Update the order.
-     *
-     * @return \Illuminate\Contracts\Support\Renderable
-     */
-    public function updatedOrder(Request $request)
-    {
-        // Queries
-        $config = DB::table('config')->get();
-
-        // Validation
-        $validated = Validator::make($request->all(), [
-            'status' => 'required'
-        ]);
-
-        // Check validation
-        if ($validated->fails()) {
-            return redirect()->route('admin.orders')->with('failed', $validated->errors()->first());
-        }
-
-        // Update order
-        $order = NfcCardOrder::where('nfc_card_order_id', $request->order_id)->first();
-
-        if ($order) {
-            // Update order details
-            $orderDetails = json_decode($order->order_details, true) ?? []; // Ensure it's an array
-            $orderDetails['tracking_number'] = $request->tracking_number ?? '';
-            $orderDetails['courier_partner'] = $request->courier_partner ?? '';
-            $orderDetails['delivery_message'] = $request->delivery_message ?? '';
-
-            $orderDetails = json_encode($orderDetails);
-
-            // Update order details
-            $order->order_details = $orderDetails;
-            $order->order_status = $request->status;
-            $order->updated_at = now();
-            $order->save();
-
-            // Get NFC card order details
-            $nfcCardOrderDetails = NfcCardOrder::join('nfc_card_order_transactions', 'nfc_card_orders.nfc_card_order_id', '=', 'nfc_card_order_transactions.nfc_card_order_id')
-                ->join('nfc_card_designs', 'nfc_card_orders.nfc_card_id', '=', 'nfc_card_designs.nfc_card_id')
-                ->join('users', 'nfc_card_orders.user_id', '=', 'users.id')
-                ->join('nfc_card_keys', 'nfc_card_orders.order_details->unique_key', '=', 'nfc_card_keys.unqiue_key')
-                ->select('nfc_card_order_transactions.*', 'users.*', 'nfc_card_orders.order_details', 'nfc_card_orders.nfc_card_order_id', 'nfc_card_orders.nfc_card_id', 'nfc_card_designs.nfc_card_name', 'nfc_card_designs.nfc_card_price', 'nfc_card_orders.delivery_address', 'nfc_card_orders.order_status', 'nfc_card_orders.status', 'nfc_card_orders.created_at', 'nfc_card_orders.updated_at', 'nfc_card_order_transactions.invoice_details')
-                ->where('nfc_card_orders.nfc_card_order_id', $request->order_id)
-                ->first();
-
-            // Email Message details
-            $encode = json_decode($nfcCardOrderDetails['invoice_details'], true);
-            $itemDetails = json_decode($nfcCardOrderDetails['order_details'], true);
-
-            // Email Message details
-            $MailTemplateDetails = EmailTemplate::where('email_template_id', '584922675210')->first();
-
-            // Currency symbol
-            $currencies = Currency::where('status', 1)->pluck('symbol', 'iso_code')->toArray();
-            $symbol = $currencies[$config[1]->config_value] ?? '';
-
-            $details = [
-                'emailSubject' => $MailTemplateDetails->email_template_subject,
-                'emailContent' => $MailTemplateDetails->email_template_content,
-                'orderid' => $nfcCardOrderDetails->nfc_card_order_id,
-                'cardname' => $itemDetails['order_item'],
-                'cardprice' => $itemDetails['price'],
-                'paymentstatus' => $nfcCardOrderDetails->payment_status,
-                'deliverystatus' => 'processing',
-                'quantity' => 1,
-                'trackingnumber' => $itemDetails['tracking_number'] ?? '-',
-                'courierpartner' => $itemDetails['courier_partner'] ?? '-',
-                'orderpageurl' => route('user.order.nfc.card.view', $nfcCardOrderDetails->nfc_card_order_id),
-                'totalprice' => formatCurrency($encode['invoice_amount']),
-                'supportemail' => $encode['from_billing_email'],
-                'supportphone' => $encode['from_billing_phone'],
-            ];
-
-            try {
-                Mail::to($encode['to_billing_email'])->send(new \App\Mail\AppointmentMail($details)); 
-            } catch (\Exception $e) {
-                Log::info($e);
+        $countSql = collect(self::TABS)->map(function ($statuses, $key) {
+            if ($statuses === null) {
+                return 'COUNT(*) as `all`';
             }
 
-            return redirect()->route('admin.update.order', $request->order_id)->with('success', trans('Updated!'));
-        } else {
-            return redirect()->route('admin.orders')->with('failed', trans('Not Found!'));
-        }
-    }
- 
-    // Greeting Letter
-    public function greetingLetter(Request $request, $orderId)
-    {
-        // Queries
-        $settings = Setting::where('status', 1)->first();
-        $config = DB::table('config')->get();
+            $list = implode(',', array_map(fn ($s) => DB::getPdo()->quote($s), $statuses));
 
-        // Check enable nfc card order system
-        if ($config[76]->config_value == '0') {
-            return abort(404);
-        }
+            return "SUM(nfc_card_orders.order_status IN ({$list})) as `{$key}`";
+        })->implode(', ');
 
-        // Get the order details
-        if($request->has('type') && $request->type == 'key') {
-            $orderDetails = NfcCardOrder::join('nfc_card_order_transactions', 'nfc_card_orders.nfc_card_order_id', '=', 'nfc_card_order_transactions.nfc_card_order_id')
-                    ->join('nfc_card_designs', 'nfc_card_orders.nfc_card_id', '=', 'nfc_card_designs.nfc_card_id')
-                    ->join('users', 'nfc_card_orders.user_id', '=', 'users.id')
-                    ->join('nfc_card_keys', 'nfc_card_orders.order_details->unique_key', '=', 'nfc_card_keys.unqiue_key')
-                    ->select('nfc_card_order_transactions.*', 'users.*', 'nfc_card_orders.order_details', 'nfc_card_orders.nfc_card_order_id', 'nfc_card_orders.nfc_card_id', 'nfc_card_designs.nfc_card_name', 'nfc_card_designs.nfc_card_price', 'nfc_card_orders.delivery_address', 'nfc_card_orders.order_status', 'nfc_card_orders.status', 'nfc_card_orders.created_at', 'nfc_card_orders.updated_at', 'nfc_card_order_transactions.invoice_details')
-                    ->whereJsonContains('nfc_card_orders.order_details->unique_key', $orderId)->where('nfc_card_orders.order_status', '!=', 'pending')
-                    ->first();
-        } else {
-            $orderDetails = NfcCardOrder::join('nfc_card_order_transactions', 'nfc_card_orders.nfc_card_order_id', '=', 'nfc_card_order_transactions.nfc_card_order_id')
-                    ->join('nfc_card_designs', 'nfc_card_orders.nfc_card_id', '=', 'nfc_card_designs.nfc_card_id')
-                    ->join('users', 'nfc_card_orders.user_id', '=', 'users.id')
-                    ->select('nfc_card_order_transactions.*', 'users.*', 'nfc_card_orders.order_details', 'nfc_card_orders.nfc_card_order_id', 'nfc_card_orders.nfc_card_id', 'nfc_card_designs.nfc_card_name', 'nfc_card_designs.nfc_card_price', 'nfc_card_orders.delivery_address', 'nfc_card_orders.order_status', 'nfc_card_orders.status', 'nfc_card_orders.created_at', 'nfc_card_orders.updated_at', 'nfc_card_order_transactions.invoice_details')
-                    ->where('nfc_card_orders.nfc_card_order_id', $orderId)
-                    ->first();
-        }
+        $counts = $base()->selectRaw($countSql)->first();
 
-        if(!$orderDetails) {
-            return redirect()->route('admin.orders')->with('failed', trans('Not Found!'));
-        }
-
-        $template = "
-        <div class='logo'>
-            <img src=':logo' alt=':websitename'>
-        </div>
-        <h2 class='d-print-none'>Welcome to :websitename! 🎉</h2>
-        <div class='content'>
-            <h4>Dear <strong>:customername</strong>,</h4>
-            <p>Your NFC Card is ready to help you share your contact details effortlessly. Activate your card and start networking with just a tap!</p>
-            <h3>🔑 Your Activation Code</h3>
-            <p class='activation-code'>:activationcode</p>
-            <h3 class='mt-3'>📌 How to Activate Your NFC Card?</h3>
-            <ol style='text-align: left;'>
-                <li><strong>Log in</strong> to your account.</li>
-                <li><strong>Go to</strong> the <strong>'Activate NFC Card'</strong> section.</li>
-                <li><strong>Enter the activation code</strong> and submit.</li>
-                <li>Your NFC card is now ready to use!</li>
-            </ol>
-            <div class='qr-code'>
-                <h3>📲 Scan to Activate</h3>
-                <canvas id='activateQrCode'></canvas>
-            </div>
-        </div>
-        <div class='mt-3'>
-            <span>Thank you for choosing <strong>:websitename</strong>!</span>
-            <p>If you need any assistance, feel free to contact us at 
-                <strong><a href='mailto::supportemail'>:supportemail</a></strong> 
-                or call us at <strong>:supportphone</strong>.
-            </p>
-        </div>
-        <div class='content'>
-            <p>Best regards,</p>
-            <h4>:websitename</h4>
-        </div>
-        ";
-
-        return view('admin.pages.nfc-card-order.greeting-letter', compact('orderDetails', 'template', 'settings', 'config'));
+        return Inertia::render('nfc/orders', [
+            'orders' => $orders,
+            'tab'    => $tab,
+            'search' => $search,
+            'counts' => collect(array_keys(self::TABS))->mapWithKeys(fn ($key) => [$key => (int) $counts->{$key}]),
+        ]);
     }
 
-    // Update greeting letter
-    public function updateGreetingLetter(Request $request, $orderId)
+    public function show(Request $request, $orderId)
     {
-        // Validation
-        $validator = Validator::make($request->all(), [
-            'greeting_letter' => 'required'
-        ]);
+        $order = NfcCardOrder::where('nfc_card_order_id', $orderId)->first();
 
-        if ($validator->fails()) {
-            return redirect()->route('admin.greeting.letter')->with('failed', $validator->errors()->first());
+        if (! $order) {
+            return redirect()->route('admin.orders')->with('failed', __('Not Found!'));
         }
 
-        // Update the greeting letter
-        DB::table('config')->where('config_key', 'nfc_greetings')->update([
-            'config_value' => $request->greeting_letter,
+        $transaction = NfcCardOrderTransaction::where('nfc_card_order_id', $order->nfc_card_order_id)->first();
+        $design      = DB::table('nfc_card_designs')->where('nfc_card_id', $order->nfc_card_id)->first();
+        $customer    = DB::table('users')->where('id', $order->user_id)->first(['user_id', 'name', 'email']);
+        $details     = NfcOrderService::details($order);
+        $address     = json_decode($order->delivery_address ?? '', true) ?: [];
+        $paid        = $transaction?->payment_status === 'success';
+        $permissions = \App\Support\Admin\AdminPermissions::for($request->user());
+
+        $keyRows = NfcCardKey::whereIn('unqiue_key', NfcOrderService::orderKeys($order))
+            ->leftJoin('business_cards', 'business_cards.card_id', '=', 'nfc_card_keys.card_id')
+            ->get(['nfc_card_keys.unqiue_key', 'nfc_card_keys.link_status', 'business_cards.title', 'business_cards.card_url'])
+            ->keyBy('unqiue_key');
+
+        $pick = fn (string $prefix) => array_filter([
+            'name'    => $address["{$prefix}_name"] ?? null,
+            'address' => collect([$address["{$prefix}_address"] ?? null, $address["{$prefix}_city"] ?? null, $address["{$prefix}_state"] ?? null, $address["{$prefix}_zipcode"] ?? null, $address["{$prefix}_country"] ?? null])->filter()->implode(', ') ?: null,
+            'phone'   => $address["{$prefix}_phone"] ?? null,
+            'email'   => $address["{$prefix}_email"] ?? null,
         ]);
 
-        // Page redirect
-        return redirect()->route('admin.greeting.letter', $orderId)->with('success', trans('Updated!'));
+        $beforeCoupon = (float) ($details['discounted_price'] ?? 0);
+        $total        = (float) ($details['invoice_amount'] ?? $transaction?->amount ?? 0);
+
+        return Inertia::render('nfc/order', [
+            'order' => [
+                'id'        => $order->nfc_card_order_id,
+                'date'      => $order->created_at?->toIso8601String(),
+                'updated'   => $order->updated_at?->toIso8601String(),
+                'delivery'  => $order->order_status,
+                'note'      => in_array($order->delivery_note, [null, '', '-'], true) ? null : $order->delivery_note,
+                'logo'      => $order->nfc_card_logo ? asset($order->nfc_card_logo) : null,
+                'tracking'  => array_filter([
+                    'number'  => $details['tracking_number'] ?? null,
+                    'courier' => $details['courier_partner'] ?? null,
+                    'message' => $details['delivery_message'] ?? null,
+                ]),
+                'item' => [
+                    'name'        => $details['order_item'] ?? $design?->nfc_card_name,
+                    'description' => $details['order_description'] ?? null,
+                    'image'       => $design?->nfc_card_front_image ? asset($design->nfc_card_front_image) : null,
+                    'price'       => AdminPermissions::amount((float) ($details['price'] ?? $design?->nfc_card_price ?? 0)),
+                    'quantity'    => NfcOrderService::quantity($order),
+                ],
+                // No pricing at all when revenue is hidden
+                'pricing' => AdminPermissions::hidesRevenue($request->user()) ? null : [
+                    'subtotal'  => (float) ($details['subtotal'] ?? 0),
+                    'taxName'   => $details['tax_name'] ?? null,
+                    'taxRate'   => $details['tax_value'] ?? null,
+                    'tax'       => (float) ($details['tax_amount'] ?? 0),
+                    'coupon'    => $details['applied_coupon'] ?? null,
+                    'discount'  => ! empty($details['applied_coupon']) ? max(0, $beforeCoupon - $total) : 0,
+                    'total'     => $total,
+                ],
+                'payment' => $transaction ? [
+                    'id'        => $transaction->nfc_card_order_transaction_id,
+                    'reference' => $transaction->payment_transaction_id,
+                    'method'    => $transaction->payment_method,
+                    'status'    => $transaction->payment_status,
+                    'currency'  => $transaction->currency,
+                    'invoice'   => $paid && ($permissions['nfc_card_order_transactions'] ?? false)
+                        ? route('admin.transaction.show', $transaction->nfc_card_order_transaction_id) : null,
+                ] : null,
+                'billing'  => $pick('billing'),
+                'shipping' => $pick('shipping'),
+                'taxId'    => $address['vat_number'] ?? null,
+                'customer' => $customer ? ['id' => $customer->user_id, 'name' => $customer->name, 'email' => $customer->email] : null,
+                'keys'     => collect(NfcOrderService::orderKeys($order))->map(fn ($key) => [
+                    'key'      => $key,
+                    'url'      => $this->keys->readUrl($key),
+                    'linked'   => ($keyRows[$key]->link_status ?? null) === 'linked',
+                    'card'     => isset($keyRows[$key]) && $keyRows[$key]->card_url ? ['title' => $keyRows[$key]->title, 'url' => url($keyRows[$key]->card_url)] : null,
+                    'greeting' => route('admin.key.greeting.letter', $key),
+                ])->values(),
+                'missingKeys' => $paid ? max(0, NfcOrderService::quantity($order) - count(NfcOrderService::orderKeys($order))) : 0,
+                'paid'        => $paid,
+            ],
+            'statuses'   => NfcOrderService::DELIVERY_STATUSES,
+            'openDialog' => $request->query('dialog') === 'delivery' ? 'delivery' : null,
+        ]);
+    }
+
+    // Old tracking page: open the delivery dialog on the order page
+    public function updateOrder($orderId)
+    {
+        return redirect()->route('admin.order.show', ['order' => $orderId, 'dialog' => 'delivery']);
+    }
+
+    public function updatedOrder(Request $request)
+    {
+        $data = $request->validate([
+            'order_id'         => 'required|string',
+            'status'           => ['required', Rule::in(NfcOrderService::DELIVERY_STATUSES)],
+            'tracking_number'  => 'nullable|string|max:191',
+            'courier_partner'  => 'nullable|string|max:191',
+            'delivery_message' => 'nullable|string|max:1000',
+            'notify'           => 'boolean',
+        ]);
+
+        $order = NfcCardOrder::where('nfc_card_order_id', $data['order_id'])->first();
+
+        if (! $order) {
+            return back()->with('failed', __('Not Found!'));
+        }
+
+        $emailed = $this->orders->updateDelivery($order, $data + ['notify' => $request->boolean('notify', true)]);
+
+        return back()->with(
+            $emailed ? 'success' : 'failed',
+            $emailed ? __('Delivery details updated.') : __('Delivery details updated, but the email to the customer could not be sent.')
+        );
+    }
+
+    // Old "Write NFC" page: the links are on the order page
+    public function writeToNfcCard($orderId)
+    {
+        return redirect()->route('admin.order.show', $orderId);
+    }
+
+    // Create the missing activation keys of a paid order
+    public function generateKeys($orderId)
+    {
+        $order       = NfcCardOrder::where('nfc_card_order_id', $orderId)->firstOrFail();
+        $transaction = NfcCardOrderTransaction::where('nfc_card_order_id', $orderId)->first();
+
+        if ($transaction?->payment_status !== 'success') {
+            return back()->with('failed', __('NFC links can only be created for paid orders.'));
+        }
+
+        $created = $this->orders->ensureKeys($order);
+
+        return back()->with('success', trans_choice(':count NFC link created.|:count NFC links created.', $created, ['count' => $created]));
+    }
+
+    // Old order greeting letter: open the letter of the order's first key
+    public function greetingLetter($orderId)
+    {
+        $order = NfcCardOrder::where('nfc_card_order_id', $orderId)->first();
+        $key   = $order ? (NfcOrderService::orderKeys($order)[0] ?? null) : null;
+
+        return $key
+            ? redirect()->route('admin.key.greeting.letter', $key)
+            : redirect()->route('admin.orders')->with('failed', __('This order has no activation key yet.'));
+    }
+
+    // Email the greeting letter for a key
+    public function sendGreetingLetter(Request $request, $key)
+    {
+        $data = $request->validate([
+            'email'         => 'required|email',
+            'customer_name' => 'nullable|string|max:191',
+            'qr_code'       => 'nullable|string',
+        ]);
+
+        $nfcKey = NfcCardKey::where('unqiue_key', $key)->firstOrFail();
+        $name   = $data['customer_name'] ?? $this->keys->customerNameFor($data['email']) ?? $this->keys->ownerName($nfcKey);
+        $sent   = $this->keys->sendGreeting($nfcKey, $data['email'], $name, $data['qr_code'] ?? null);
+
+        return back()->with(
+            $sent ? 'success' : 'failed',
+            $sent ? __('Greeting letter sent to :email.', ['email' => $data['email']]) : __('The greeting letter could not be sent. Check the mail settings.')
+        );
     }
 }

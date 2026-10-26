@@ -2,47 +2,44 @@
 
 {{-- Custom CSS --}}
 @section('css')
-    <script type="text/javascript" src="{{ asset('js/tom-select.base.min.js') }}"></script>
+    <style>
+        .ts-control>input {
+            display: contents !important;
+        }
+    </style>
 @endsection
 
 @section('content')
     <div class="page-wrapper">
-        <!-- Page title -->
+        <!-- Page Title Header Wrapper (Wraps the inner container-fluid) -->
         <div class="page-header d-print-none">
             <div class="container-fluid">
                 <div class="row g-2 align-items-center">
                     <div class="col">
-                        <div class="page-pretitle">
-                            {{ __('Overview') }}
-                        </div>
-                        <h2 class="page-title mb-2">
-                            {{ __('Update NFC Card Order System') }}
+                        {{-- Breadcrumbs --}}
+                        <x-breadcrumb :items="[
+                            ['title' => 'Dashboard', 'route' => 'admin.dashboard'],
+                            ['title' => 'Plugins', 'route' => 'admin.plugins'],
+                            ['title' => 'NFC Card Orders'],
+                        ]" />
+
+                        <h2 class="page-title">
+                            {{ __('NFC Card Orders') }}
                         </h2>
-                    </div>
-                    <div class="col-auto ms-auto d-print-none">
-                        <div class="btn-list">
-                            <a href="{{ route('admin.plugins') }}" class="btn btn-primary text-white">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-left">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                    <path d="M5 12l14 0" />
-                                    <path d="M5 12l6 6" />
-                                    <path d="M5 12l6 -6" />
-                                </svg>
-                                {{ __('Back') }}
-                            </a>
+
+                        <!-- Helper Subtitle -->
+                        <div class="text-muted mt-1">
+                            {{ __('Manage NFC card purchase visibility parameters, public ordering capabilities, and engraving validation limits.') }}
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Page body -->
+        <!-- Page Body -->
         <div class="page-body">
             <div class="container-fluid">
-                {{-- Failed --}}
+                {{-- Failed Alert --}}
                 @if (Session::has('failed'))
                     <div class="alert alert-important alert-danger alert-dismissible mb-2" role="alert">
                         <div class="d-flex">
@@ -54,7 +51,7 @@
                     </div>
                 @endif
 
-                {{-- Success --}}
+                {{-- Success Alert --}}
                 @if (Session::has('success'))
                     <div class="alert alert-important alert-success alert-dismissible mb-2" role="alert">
                         <div class="d-flex">
@@ -66,58 +63,87 @@
                     </div>
                 @endif
 
-                <div class="alert alert-important alert-info alert-dismissible" role="alert">
+                {{-- Dynamic Status Callout Alert --}}
+                <div class="alert alert-important alert-info alert-dismissible mb-3 shadow-sm border-0" role="alert">
                     <div class="d-flex">
                         <div>
-                            {{ __('Note: This will turn off the NFC Card Order System, making it invisible to both the admin and customers.') }}
+                            {{ __('Note: Disabling these features will turn off the NFC Card Order System, hiding corresponding options from both the administrator panel and customer dashboards.') }}
                         </div>
                     </div>
                     <a class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="close"></a>
                 </div>
 
                 <div class="row">
-                    <div class="col-12">
-                        <div class="card">
+                    <div class="col-12 col-md-4">
+                        <!-- Upgraded to Borderless Shadowed Card Wrapper -->
+                        <div class="card border-0 shadow-sm">
                             <form action="{{ route('admin.plugin.update.status.nfc.cards.order') }}" method="post">
                                 @csrf
                                 <div class="card-body">
-                                    <div class="row g-3">
+                                    <div class="row g-4 pb-2">
                                         {{-- Enable/Disable NFC Card Order System --}}
-                                        <div class="col-md-6 col-xl-3">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <label class="mb-0">{{ __('Enable NFC Card Order System') }}</label>
-                                                <div class="form-check form-switch m-0">
+                                        <div class="col-12">
+                                            <div class="form-label d-flex justify-content-between align-items-center mb-1">
+                                                <p class="fw-bold fs-4">{{ __('NFC Card Order System') }}</p>
+                                                <label class="form-check form-switch m-0">
                                                     <input class="form-check-input" type="checkbox"
                                                         name="enable_disable_nfc_card_order" value="1"
                                                         {{ isset($config[76]->config_value) && $config[76]->config_value == '1' ? 'checked' : '' }}>
-                                                </div>
+                                                </label>
                                             </div>
+                                            <small class="text-muted d-block">
+                                                {{ __('Globally controls visibility of the ordering module for admins and customers.') }}
+                                            </small>
                                         </div>
 
                                         {{-- Enable/Disable NFC Card Order System in Website --}}
-                                        <div class="col-md-6 col-xl-3">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <label class="mb-0">{{ __('Enable NFC Card Order System in Website') }}</label>
-                                                <div class="form-check form-switch m-0">
+                                        <div class="col-12">
+                                            <div class="form-label d-flex justify-content-between align-items-center mb-1">
+                                                <p class="fw-bold fs-4">{{ __('Website Ordering') }}</p>
+                                                <label class="form-check form-switch m-0">
                                                     <input class="form-check-input" type="checkbox"
                                                         name="enable_disable_nfc_card_order_website" value="1"
                                                         {{ isset($config[97]->config_value) && $config[97]->config_value == '1' ? 'checked' : '' }}>
-                                                </div>
+                                                </label>
                                             </div>
+                                            <small class="text-muted d-block">
+                                                {{ __('Allow public-facing site visitors to browse and purchase physical cards from landing pages.') }}
+                                            </small>
                                         </div>
 
-                                        {{-- Character limit --}}
-                                        <div class="col-md-6 col-xl-3">
-                                            <label for="nfc_character_limit" class="form-label">{{ __('Character limit') }}</label>
-                                            <input type="number" id="nfc_character_limit" name="nfc_character_limit"
-                                                class="form-control"
-                                                value="{{ isset($config[92]->config_value) ? $config[92]->config_value : 6 }}"
-                                                step="1" min="3" max="25">
+                                        {{-- Engraving Character Limit --}}
+                                        <div class="col-12">
+                                            <div class="mb-1">
+                                                <label for="nfc_character_limit"
+                                                    class="form-label fw-bold mb-1">{{ __('NFC Text Character Limit') }}</label>
+                                                <input type="number" id="nfc_character_limit" name="nfc_character_limit"
+                                                    class="form-control" placeholder="{{ __('Enter limit (e.g., 6)') }}"
+                                                    value="{{ isset($config[92]->config_value) ? $config[92]->config_value : 6 }}"
+                                                    step="1" min="3" max="25" required>
+                                            </div>
+                                            <small class="text-muted d-block">
+                                                {{ __('Defines the length constraints for the customized generated key (between 3 and 25 characters).') }}
+                                            </small>
                                         </div>
                                     </div>
                                 </div>
+
+                                <!-- Standardized Right-Aligned Form Footer (Omitted Cancel Button) -->
                                 <div class="card-footer text-end">
-                                    <button type="submit" class="btn btn-primary">{{ __('Update') }}</button>
+                                    <button type="submit" class="btn btn-primary btn-md d-inline-flex align-items-center">
+                                        <!-- Device Floppy Icon -->
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                            class="icon icon-tabler icon-tabler-device-floppy me-2" width="24"
+                                            height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                            fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                            <path
+                                                d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2" />
+                                            <path d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+                                            <path d="M14 4l0 4h-6l0 -4" />
+                                        </svg>
+                                        {{ __('Save') }}
+                                    </button>
                                 </div>
                             </form>
                         </div>
@@ -126,7 +152,12 @@
             </div>
         </div>
 
-        {{-- Footer --}}
         @include('admin.includes.footer')
     </div>
+@endsection
+
+{{-- Custom JS --}}
+@section('scripts')
+    <!-- Script assets loaded inside the correct scripts section -->
+    <script type="text/javascript" src="{{ asset('js/tom-select.base.min.js') }}"></script>
 @endsection

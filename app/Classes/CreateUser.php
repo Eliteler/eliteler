@@ -34,11 +34,37 @@ class CreateUser
 
         // List of permissions to check
         $fields = [
-            'themes', 'plans', 'customers', 'payment_methods', 'coupons', 'currencies', 'transactions',
-            'web_templates', 'blogs', 'users', 'custom_domain', 'backup', 'general_settings', 'translations',
-            'marketing', 'sitemap', 'invoice_tax', 'maintenance_mode', 'demo_mode', 'software_update',
-            'nfc_card_design', 'nfc_card_orders', 'nfc_card_order_transactions', 'nfc_card_key_generations', 'referral_system', 'email_templates', 'plugins', 'in_app_purchases', 'vcard_store',
-            'business_card_intros', 'ai_credits'
+            'themes',
+            'plans',
+            'customers',
+            'payment_methods',
+            'coupons',
+            'currencies',
+            'transactions',
+            'web_templates',
+            'blogs',
+            'users',
+            'custom_domain',
+            'backup',
+            'general_settings',
+            'translations',
+            'marketing',
+            'sitemap',
+            'invoice_tax',
+            'maintenance_mode',
+            'demo_mode',
+            'software_update',
+            'nfc_card_design',
+            'nfc_card_orders',
+            'nfc_card_order_transactions',
+            'nfc_card_key_generations',
+            'referral_system',
+            'email_templates',
+            'plugins',
+            'in_app_purchases',
+            'vcard_store',
+            'business_card_intros',
+            'ai_credits'
         ];
 
         // Initialize an empty array for permissions
@@ -46,8 +72,8 @@ class CreateUser
 
         // Loop through each field and set the corresponding value in the permissions array
         foreach ($fields as $field) {
-            // Check if the field exists in the request and handle its value
-            $permissions[$field] = $request->has($field) && $request->$field === 'on' ? 1 : 0;
+            // Robust verification supporting different switch payload schemas (on, 1, true, or yes)
+            $permissions[$field] = ($request->has($field) && in_array($request->$field, ['on', '1', 1, true, 'yes'], true)) ? 1 : 0;
         }
 
         // Convert the permissions array to a JSON string

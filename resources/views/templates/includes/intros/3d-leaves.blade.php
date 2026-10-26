@@ -17,7 +17,7 @@
             <span class="shine-text">{{ __('Swipe to Continue') }}</span>
         </a>
     </div>
-</div>
+</div> 
 
 <!-- Audio Icon -->
 <div id="audio-toggle" class="fixed flex items-end justify-center top-4 right-4 z-[9999] lg:hidden cursor-pointer">

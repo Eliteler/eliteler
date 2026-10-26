@@ -1,9 +1,15 @@
 {
     "plugin_id": "AiBuilder",
-    "name": "AI Builder",
-    "description": "Generate a digital vCard instantly by scanning your paper business card with AI.",
-    "version": "1.0.0",
+    "name": "AI Business Card Builder",
+    "description": "Create digital business cards instantly by scanning a paper business card with AI.",
+    "version": "1.3.0",
     "img": "aibuilder.png",
     "main_route": "admin.plugin.aibuilder",
-    "platform": "gobiz"
+    "platform": "gobiz-saas",
+    "min_version": "28.0.0",
+    "requires_admin": "1",
+    "admin_pages": {
+        "settings": "dist/settings.js"
+    },
+    "documentation_url": "https://gobizsaas.com/docs/gobiz/plugins/ai-builder.html"
 }

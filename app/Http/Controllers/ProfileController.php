@@ -12,48 +12,51 @@
 
 namespace App\Http\Controllers;
 
-use Exception;
-use App\Setting;
-use App\Visitor;
-use App\Currency;
-use Carbon\Carbon;
-use App\ContactForm;
-use App\Testimonial;
 use App\BusinessCard;
-use App\StoreProduct;
 use App\BusinessField;
-use App\EmailTemplate;
-use App\StoreCategory;
-use App\ServiceBooking;
-use App\StoreBusinessHour;
-use Jenssegers\Agent\Agent;
 use App\CardAppointmentTime;
-use Illuminate\Http\Request;
-use App\Mail\AppointmentMail;
 use App\Classes\ServiceWorker;
-use JeroenDesloovere\VCard\VCard;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\URL;
+use App\ContactForm;
+use App\Currency;
+use App\EmailTemplate;
+use App\Helpers\StorageHelper;
+use App\Mail\AppointmentMail;
+use App\ServiceBooking;
 use App\Services\GoBizCommonService;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Mail;
+use App\Setting;
+use App\StoreBusinessHour;
+use App\StoreCategory;
+use App\StoreProduct;
+use App\Support\Store\ProductOptions;
+use App\Testimonial;
+use App\Visitor;
 use Artesaos\SEOTools\Facades\JsonLd;
-use Illuminate\Support\Facades\Cache;
+use Artesaos\SEOTools\Facades\OpenGraph;
 use Artesaos\SEOTools\Facades\SEOMeta;
 use Artesaos\SEOTools\Facades\SEOTools;
+use Carbon\Carbon;
+use Exception;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Storage;
-use Artesaos\SEOTools\Facades\OpenGraph;
-use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
+use Jenssegers\Agent\Agent;
+use JeroenDesloovere\VCard\VCard;
+use App\Support\Store\StoreTheme;
 
 class ProfileController extends Controller
 {
     // View Card Profile
     public function profile(Request $request, $id)
     {
-        $card_details = DB::table('business_cards')->where('card_url', $id)->where('card_status', 'activated')->first();
+        $card_details = DB::table('business_cards')->where('card_url', $id)->where('card_status', 'activated')->where('status', '1')->first();
 
         if (!$card_details) {
             return abort(404);
@@ -153,10 +156,12 @@ class ProfileController extends Controller
                                 'store_products.sales_price',
                                 'store_products.badge',
                                 'store_products.product_status',
+                                'store_products.has_variants', // <-- Added has_variants
                                 'store_categories.category_name',
                                 'store_categories.thumbnail',
                                 'store_categories.category_id'
                             )
+                            ->selectSub(StoreProduct::minVariantPriceQuery(), 'min_variant_price') // lowest in-stock option, for "Starts from"
                             ->groupBy(
                                 'store_products.id',
                                 'store_products.product_id',
@@ -167,6 +172,7 @@ class ProfileController extends Controller
                                 'store_products.sales_price',
                                 'store_products.badge',
                                 'store_products.product_status',
+                                'store_products.has_variants', // <-- Added has_variants
                                 'store_categories.category_name',
                                 'store_categories.thumbnail',
                                 'store_categories.category_id'
@@ -312,9 +318,12 @@ class ProfileController extends Controller
 
                         $out = $this->generateNew($fill);
 
-                        Storage::disk('public')->put("manifest/" . $business_card_details->card_id . '.json', json_encode($out));
-
-                        $manifest = url("storage/manifest/" . $business_card_details->card_id . '.json');
+                        // Store manifest JSON file and get relative path (e.g., 'storage/manifest/123.json')
+                        $manifest = StorageHelper::uploadImage(
+                            json_encode($out),
+                            'manifest',
+                            $business_card_details->card_id . '.json'
+                        );
 
                         // Generate service worker
                         $generateServiceWorker = new ServiceWorker();
@@ -356,7 +365,7 @@ class ProfileController extends Controller
                         // Set locale if not same as business card locale.
                         $locale = Session::get('locale') ?? $business_card_details->card_lang ?? config('app.locale');
                         App::setLocale($locale);
-
+ 
                         $qr_url = "https://chart.googleapis.com/chart?chs=250x250&cht=qr&chl=" . $url;
 
                         $shareComponent['facebook'] = "https://www.facebook.com/sharer/sharer.php?u=$url&quote=$shareContent";
@@ -375,7 +384,8 @@ class ProfileController extends Controller
                         }
 
                         $datas = compact('card_details', 'plan_details', 'store_details', 'categories', 'business_card_details', 'products', 'settings', 'shareComponent', 'shareContent', 'config', 'enquiry_button', 'whatsapp_msg', 'currency', 'manifest', 'whatsAppNumberExists', 'deliveryOptions', 'businessHours');
-                        return view('templates.store.' . $business_card_details->theme_code . '.index', $datas);
+
+                        return view('templates.stores.' . StoreTheme::resolve($business_card_details->theme_code)->view . '.index', $datas);
                     } else {
                         return redirect()->route('user.edit.card', $id)->with('failed', trans('Please fill out the basic business details.'));
                     }
@@ -535,9 +545,8 @@ class ProfileController extends Controller
 
                         $out = $this->generateNew($fill);
 
-                        Storage::disk('public')->put("manifest/" . $business_card_details->card_id . '.json', json_encode($out));
-
-                        $manifest = url("storage/manifest/" . $business_card_details->card_id . '.json');
+                        // Store JSON file in public storage and get relative path
+                        $manifest = StorageHelper::uploadImage(json_encode($out), 'manifest', $business_card_details->card_id . '.json');
 
                         // Generate service worker
                         $generateServiceWorker = new ServiceWorker();
@@ -600,7 +609,7 @@ class ProfileController extends Controller
                             Session::get('password_protected') == false;
                         }
 
-                        return view('templates.' . $business_card_details->theme_code, $datas);
+                        return view('templates.cards.' . $business_card_details->theme_code . '.index', $datas);
                     } else {
                         return redirect()->route('user.edit.card', $id)->with('failed', trans('Please fill out the basic business details.'));
                     }
@@ -614,18 +623,16 @@ class ProfileController extends Controller
         }
     }
 
-    // single product view
+    // Single product view with variant support
     public function profileSingleProduct(Request $request, $id, $product_id)
     {
-        $card_details = DB::table('business_cards')->where('card_url', $id)->where('card_status', 'activated')->first();
+        $card_details = DB::table('business_cards')->where('card_url', $id)->where('card_status', 'activated')->where('status', '1')->first();
 
-        // Check if card is activated
         if (!$card_details) {
             return view('errors.404');
         }
 
         $whatsAppNumberExists = BusinessField::where('card_id', $card_details->card_id)->where('type', 'wa')->exists();
-
         $enquiry_button = '#';
 
         $business_card_details = DB::table('business_cards')->where('business_cards.card_id', $card_details->card_id)
@@ -635,27 +642,38 @@ class ProfileController extends Controller
             ->first();
 
         if ($business_card_details) {
-            // Product Details
+            // Fetch product details
             $product_details = StoreProduct::where('id', $product_id)->where('card_id', $card_details->card_id)->first();
 
-            // Check product details
             if (!$product_details) {
                 return view('errors.404');
             }
 
-            $related_products = StoreProduct::where('card_id', $card_details->card_id)
+            // Fetch variants if this product has multiple variations
+            $product_variants = [];
+            if (!empty($product_details->has_variants) && $product_details->has_variants == 1) {
+                // In-stock options first, so the page preselects one that can be bought
+                $product_variants = DB::table('store_product_variants')
+                    ->where('product_id', $product_details->product_id)
+                    ->orderByRaw("status = 'instock' DESC")
+                    ->orderBy('id', 'asc')
+                    ->get();
+            }
+
+            $related_products = StoreProduct::select('store_products.*')
+                ->selectSub(StoreProduct::minVariantPriceQuery(), 'min_variant_price')
+                ->where('card_id', $card_details->card_id)
                 ->where('category_id', $product_details->category_id)
                 ->where('product_status', 'instock')
                 ->where('status', 1)
+                ->where('id', '!=', $product_details->id)
+                ->take(8)
                 ->get();
 
             $settings = GoBizCommonService::settings();
             $config   = GoBizCommonService::config();
 
-            // Delivery Options
             $deliveryOptions = json_decode($business_card_details->delivery_options);
-
-            // Business Hours
             $businessHours = StoreBusinessHour::where('store_id', $business_card_details->card_id)->first();
 
             SEOTools::setTitle($product_details->product_name . ' - ' . $business_card_details->title);
@@ -666,8 +684,6 @@ class ProfileController extends Controller
             SEOMeta::setDescription($product_details->product_short_description);
             SEOMeta::addMeta('article:section', $product_details->product_name . ' - ' . $business_card_details->title, 'property');
             SEOMeta::addKeyword(["'" . $product_details->product_name . ' - ' . $business_card_details->title . "'", "'" . $product_details->product_name . ' - ' . $business_card_details->title . " vcard online'"]);
-
-            // Add Canonical URL
             SEOMeta::setCanonical(url()->current());
 
             OpenGraph::setTitle($product_details->product_name . ' - ' . $business_card_details->title);
@@ -689,11 +705,17 @@ class ProfileController extends Controller
             $whatsapp_msg = $store_details['whatsapp_msg'];
             $currency     = $store_details['currency'];
 
-            // Get currency symbol
             $currency = Currency::where('iso_code', $currency)->first();
             $currency = $currency->symbol;
 
-            $url           = URL::to('/') . "/" . strtolower(preg_replace('/\s+/', '-', $card_details->card_url));
+            $currentHost = request()->getHost();
+            $masterHost  = parse_url(config('app.url'), PHP_URL_HOST);
+            if ($currentHost !== $masterHost) {
+                $url = URL::to('/product/' . $product_id);
+            } else {
+                $url = URL::to('/') . "/" . strtolower(preg_replace('/\s+/', '-', $card_details->card_url)) . '/product/' . $product_id;
+            }
+
             $business_name = $card_details->title;
             $profile       = URL::to('/') . "/" . $business_card_details->cover;
 
@@ -702,7 +724,6 @@ class ProfileController extends Controller
             $shareContent = str_replace("{ business_url }", $url, $shareContent);
             $shareContent = str_replace("{ appName }", $config[0]->config_value, $shareContent);
 
-            // If branding enabled, then show app name.
             if ($plan_details['hide_branding'] == "1") {
                 $shareContent = str_replace("{ appName }", $business_name, $shareContent);
             } else {
@@ -712,7 +733,6 @@ class ProfileController extends Controller
             $url          = urlencode($url);
             $shareContent = urlencode($shareContent);
 
-            // Set locale if not same as business card locale.
             $locale = Session::get('locale') ?? $business_card_details->card_lang ?? config('app.locale');
             App::setLocale($locale);
 
@@ -724,15 +744,21 @@ class ProfileController extends Controller
             $shareComponent['telegram'] = "https://telegram.me/share/url?text=$shareContent&url=$url";
             $shareComponent['whatsapp'] = "https://api.whatsapp.com/send/?phone&text=$shareContent";
 
-            $datas = compact('card_details', 'plan_details', 'store_details', 'business_card_details', 'related_products', 'product_details', 'settings', 'shareComponent', 'shareContent', 'config', 'enquiry_button', 'whatsapp_msg', 'currency', 'whatsAppNumberExists', 'deliveryOptions', 'businessHours');
-            return view('templates.store.' . $business_card_details->theme_code . '.single-product', $datas);
+            // Options ready for the page: which one to start on, prices, whether it can be bought
+            $productOptions = new ProductOptions($product_details, $product_variants);
+
+            $datas = compact('card_details', 'plan_details', 'store_details', 'business_card_details', 'related_products', 'product_details', 'product_variants', 'productOptions', 'settings', 'shareComponent', 'shareContent', 'config', 'enquiry_button', 'whatsapp_msg', 'currency', 'whatsAppNumberExists', 'deliveryOptions', 'businessHours');
+
+            return view('templates.stores.' . StoreTheme::resolve($business_card_details->theme_code)->view . '.single-product', $datas);
         }
+
+        return view('errors.404');
     }
 
     // categories
     public function profileCategories(Request $request, $id)
     {
-        $card_details = DB::table('business_cards')->where('card_url', $id)->where('card_status', 'activated')->first();
+        $card_details = DB::table('business_cards')->where('card_url', $id)->where('card_status', 'activated')->where('status', '1')->first();
 
         // Check if card is activated
         if (!$card_details) {
@@ -762,11 +788,13 @@ class ProfileController extends Controller
             // Business Hours
             $businessHours = StoreBusinessHour::where('store_id', $business_card_details->card_id)->first();
 
-            SEOTools::setTitle($business_card_details->title);
+            $pageTitle = __('Categories') . ' - ' . $business_card_details->title;
+
+            SEOTools::setTitle($pageTitle);
             SEOTools::setDescription($business_card_details->sub_title);
             SEOTools::addImages([url($business_card_details->profile)]);
 
-            SEOMeta::setTitle($business_card_details->title);
+            SEOMeta::setTitle($pageTitle);
             SEOMeta::setDescription($business_card_details->sub_title);
             SEOMeta::addMeta('article:section', $business_card_details->title, 'property');
             SEOMeta::addKeyword(["'" . $business_card_details->title . "'", "'" . $business_card_details->title . " vcard online'"]);
@@ -776,7 +804,8 @@ class ProfileController extends Controller
 
             OpenGraph::setTitle($business_card_details->title);
             OpenGraph::setDescription($business_card_details->sub_title);
-            OpenGraph::setUrl(url($business_card_details->card_url));
+            // Use current URL for dynamic domain support
+            OpenGraph::setUrl(url()->current());
             OpenGraph::addImage([url($business_card_details->profile)]);
 
             JsonLd::setTitle($business_card_details->title);
@@ -797,7 +826,17 @@ class ProfileController extends Controller
             $currency = Currency::where('iso_code', $currency)->first();
             $currency = $currency->symbol;
 
-            $url           = URL::to('/') . "/" . strtolower(preg_replace('/\s+/', '-', $card_details->card_url));
+            // Resolve share URL dynamically for custom domain, subdomain, or master domain
+            $currentHost = request()->getHost();
+            $masterHost  = parse_url(config('app.url'), PHP_URL_HOST);
+            if ($currentHost !== $masterHost) {
+                // On custom domain/subdomain, link directly to categories path
+                $url = URL::to('/categories');
+            } else {
+                // On master domain, include card slug in path
+                $url = URL::to('/') . "/" . strtolower(preg_replace('/\s+/', '-', $card_details->card_url)) . '/categories';
+            }
+
             $business_name = $card_details->title;
             $profile       = URL::to('/') . "/" . $business_card_details->cover;
 
@@ -829,8 +868,11 @@ class ProfileController extends Controller
             $shareComponent['whatsapp'] = "https://api.whatsapp.com/send/?phone&text=$shareContent";
 
             $datas = compact('card_details', 'plan_details', 'store_details', 'business_card_details', 'categories', 'settings', 'shareComponent', 'shareContent', 'config', 'enquiry_button', 'whatsapp_msg', 'currency', 'whatsAppNumberExists', 'deliveryOptions', 'businessHours');
-            return view('templates.store.' . $business_card_details->theme_code . '.categories', $datas);
+
+            return view('templates.stores.' . StoreTheme::resolve($business_card_details->theme_code)->view . '.categories', $datas);
         }
+
+        return view('errors.404');
     }
 
     // Check password
@@ -861,6 +903,7 @@ class ProfileController extends Controller
 
         $business_card = BusinessCard::where('business_cards.card_id', $id)
             ->join('users', 'business_cards.user_id', '=', 'users.user_id')
+            ->where('business_cards.card_status', 'activated')->where('business_cards.status', '1')
             ->select('business_cards.*')
             ->first();
 
@@ -1051,7 +1094,7 @@ class ProfileController extends Controller
                         $messageTwo = "Click the button below to notify the business via WhatsApp:";
                         $messageThree = "Send via WhatsApp";
 
-                        return view('templates.includes.open-whatsapp', ['whatsapp_url' => $whatsAppUrl, 'title' => $title, 'messageOne' => $messageOne, 'messageTwo' => $messageTwo, 'messageThree' => $messageThree]);
+                        return view('templates.cards.includes.open-whatsapp', ['whatsapp_url' => $whatsAppUrl, 'title' => $title, 'messageOne' => $messageOne, 'messageTwo' => $messageTwo, 'messageThree' => $messageThree]);
                     }
 
                     Session::flash('message', trans('Email sent.',));
@@ -1178,4 +1221,14 @@ class ProfileController extends Controller
             'message' => __('Locale updated!')
         ]);
     }
+
+    // Generate service worker
+    public function generateServiceWorker(ServiceWorker $serviceWorker)
+    {
+        $id = request()->get('id');
+        $url = request()->get('url', '/');
+
+        return $serviceWorker->generateServiceWorker($id, $url);
+    }
+
 }

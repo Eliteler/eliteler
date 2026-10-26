@@ -152,11 +152,13 @@ class BusinessHourController extends Controller
         $activeCards = BusinessCard::where('user_id', $userId)
             ->where('card_type', 'vcard')
             ->where('card_status', 'activated')
+            ->where('status', '1')
             ->count();
 
         $activeStores = BusinessCard::where('user_id', $userId)
             ->where('card_type', 'store')
             ->where('card_status', 'activated')
+            ->where('status', '1')
             ->count();
 
         // Check business card

@@ -1,0 +1,74 @@
+/* GoBiz vCard SaaS
+|--------------------------------------------------------------------------
+| Developed by NativeCode © 2021 - https://nativecode.in
+| All rights reserved
+| Unauthorized distribution is prohibited
+|--------------------------------------------------------------------------
+*/
+
+:root {
+    --policy-card-radius: 12px;
+    --policy-transition: all 0.2s ease-in-out;
+}
+
+/* Policy Accordion Styling */
+.policy-accordion-item {
+    background-color: var(--tblr-bg-surface);
+    border: 1px solid var(--tblr-border-color-translucent);
+    border-radius: var(--policy-card-radius) !important;
+    margin-bottom: 0.85rem;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    transition: var(--policy-transition);
+}
+
+.policy-accordion-item:hover {
+    border-color: var(--tblr-primary);
+}
+
+.policy-accordion-button {
+    padding: 1.15rem 1.25rem;
+    background-color: var(--tblr-bg-surface);
+    color: var(--tblr-body-color);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    border: none;
+    box-shadow: none !important;
+}
+
+.policy-accordion-button:not(.collapsed) {
+    background-color: var(--tblr-bg-surface-secondary);
+    color: var(--tblr-primary);
+    border-bottom: 1px solid var(--tblr-border-color-translucent);
+}
+
+.policy-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background-color: var(--tblr-primary-lt);
+    color: var(--tblr-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.85rem;
+    flex-shrink: 0;
+}
+
+.tox-tinymce {
+    border: 1px solid var(--tblr-border-color) !important;
+    border-radius: var(--tblr-border-radius) !important;
+}
+
+.input-icon {
+    width: 100% !important;
+}
+
+@media (max-width: 575.98px) {
+    .modal-dialog {
+        margin-top: 10vh;
+    }
+}

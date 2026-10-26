@@ -12,285 +12,243 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\User;
-use App\Setting;
-use App\Classes\CreateUser;
-use Illuminate\Http\Request;
-use Yajra\DataTables\DataTables;
-use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use App\Support\Admin\AdminPermissions;
+use App\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
+use Inertia\Inertia;
 
+/**
+ * Admin staff accounts: role 3 Administrator, role 4 Manager. The super admin
+ * (role 1) and customers (role 2) are never listed or changed here, and
+ * nobody can change their own account from this page (use My account).
+ * Staff can only grant permissions they have themselves.
+ */
 class UserController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
+    private const STAFF_ROLES = [3, 4];
+
     public function __construct()
     {
         $this->middleware('auth');
     }
 
-    /**
-     * Show the application dashboard.
-     *
-     * @return \Illuminate\Contracts\Support\Renderable
-     */
-
-    // All Users
     public function users(Request $request)
     {
-        if ($request->ajax()) {
-            $data = User::where('id', '!=', '1')->where('role_id', '!=', '2')->get();
+        $me      = $request->user();
+        $search  = trim((string) $request->query('search', ''));
+        $perPage = max(1, (int) $request->query('per_page', 10));
 
-            return DataTables::of($data)
-                ->addIndexColumn('id')
-                ->addColumn('role', function ($row) {
-                    if ($row->role_id == 3) {
-                        return __('Administrator');
-                    } else {
-                        return __('Manager');
-                    }
-                })
-                ->addColumn('name', function ($row) {
-                    $viewUrl = route('admin.view.user', $row->user_id);
-                    return '<a href="' . $viewUrl . '">' . $row->name . '</a>';
-                })
-                ->addColumn('email', function ($row) {
-                    return $row->email;
-                })
-                ->addColumn('created_at', function ($row) {
-                    return formatDateForUser($row->created_at);
-                })
-                ->addColumn('status', function ($row) {
-                    return $row->status == 0
-                        ? '<span class="badge bg-red text-white">' . __('Deactive') . '</span>'
-                        : '<span class="badge bg-green text-white">' . __('Active') . '</span>';
-                })
-                ->addColumn('action', function ($row) {
-                    $editUrl = route('admin.edit.user', $row->user_id);
-                    $activateDeactivate = $row->status == 0 ? trans('Activate') : trans('Deactivate');
-                    $activateDeactivateFunction = $row->status == 0 ? 'activateUser' : 'deactivateUser';
-                
-                    return '
-                        <a class="btn-action" href="#" role="button" data-bs-boundary="viewport" data-bs-toggle="dropdown" aria-expanded="false">
-                            <!-- Download SVG icon from http://tabler-icons.io/i/dots-vertical -->
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24"
-                                height="24" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round"
-                                class="icon icon-tabler icons-tabler-outline icon-tabler-dots fw-bold">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                <path d="M4 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                <path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                <path d="M18 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                            </svg>
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-end">
-                            <a class="dropdown-item" href="' . $editUrl . '">' . __('Edit') . '</a>
-                            <a class="dropdown-item" href="#" onclick="' . $activateDeactivateFunction . '(`' . $row->user_id . '`); return false;">' . __($activateDeactivate) . '</a>
-                            <a class="dropdown-item text-danger" href="#" onclick="deleteUser(`' . $row->user_id . '`); return false;">' . __('Delete') . '</a>
-                        </div>';
-                })                
-                ->rawColumns(['name', 'plan', 'status', 'action'])
-                ->make(true);
+        $query = User::whereIn('role_id', self::STAFF_ROLES)
+            ->where('id', '!=', $me->id);
+
+        // Filter staff by name or email
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
         }
 
-        $settings = Setting::where('status', 1)->first();
-        $config = DB::table('config')->get();
+        // Paginate latest staff accounts
+        $staff = $query->latest()->paginate($perPage)->withQueryString()->through(fn(User $user) => [
+            'id'          => $user->user_id,
+            'name'        => $user->name,
+            'email'       => $user->email,
+            'avatar'      => asset($user->profile_image ?: 'profile.png'),
+            'role'        => (int) $user->role_id,
+            'active'      => (int) $user->status === 1,
+            'permissions' => collect(AdminPermissions::keys())->filter(fn($key) => AdminPermissions::for($user)[$key] ?? false)->values(),
+            'hideRevenue' => AdminPermissions::hidesRevenue($user),
+            'createdAt'   => $user->created_at?->toIso8601String(),
+        ]);
 
-        return view('admin.pages.users.index', compact('settings', 'config'));
+        $granted = AdminPermissions::for($me);
+
+        return Inertia::render('settings/staff', [
+            'staff'            => $staff,
+            'groups'           => collect(AdminPermissions::GROUPS)->map(fn($items, $group) => [
+                'title' => __($group),
+                'items' => collect($items)->map(fn($label, $key) => [
+                    'key'       => $key,
+                    'label'     => __($label),
+                    'grantable' => $this->isSuperAdmin($me) || ($granted[$key] ?? false),
+                    'revenue'   => in_array($key, AdminPermissions::REVENUE_AREAS, true),
+                ])->values(),
+            ])->values(),
+            'canLoginAs'       => $this->isSuperAdmin($me),
+            'canToggleRevenue' => ! AdminPermissions::hidesRevenue($me),
+            'open'             => $request->query('edit') ?: ($request->boolean('new') ? 'new' : null),
+            'search'           => $search,
+        ]);
     }
 
-    // Create User
+    // Old sub-pages now open the dialog on the list page
     public function createUser()
     {
-        // Queries
-        $config = DB::table('config')->get();
-        $settings = Setting::where('status', 1)->first();
-
-        return view('admin.pages.users.create', compact('settings', 'config'));
+        return redirect()->route('admin.users', ['new' => 1]);
     }
 
-    // Save User
+    // View user
+    public function viewUser($id)
+    {
+        return redirect()->route('admin.users', ['edit' => $id]);
+    }
+
+    // Edit user
+    public function editUser($id)
+    {
+        return redirect()->route('admin.users', ['edit' => $id]);
+    }
+
+    // Save user
     public function saveUser(Request $request)
     {
-        // Queries
-        $emailExists = User::where('email', $request->email)->count();
+        $data = $this->validated($request);
 
-        if ($emailExists != 1) {
-            // Save
-            $user = new CreateUser;
-            $user->create($request);
+        $user                    = new User();
+        $user->user_id           = uniqid();
+        $user->role_id           = $data['role'];
+        $user->name              = $data['name'];
+        $user->email             = $data['email'];
+        $user->email_verified_at = now();
+        $user->password          = Hash::make($data['password']);
+        $user->permissions       = json_encode($this->permissions($request, null));
+        $user->status            = 1;
+        $user->save();
 
-            // Check result
-            if ($user == true) {
-                return redirect()->route('admin.create.user')->with('success', trans('Created!'));
-            } else {
-                return redirect()->route('admin.create.user')->with('failed', trans('There is an error in the create.'));
-            }
-        } else {
-            return redirect()->route('admin.create.user')->with('failed', trans('This email address already registered. Try to another email address.'));
-        }
+        return back()->with('success', __(':name can now sign in to the admin panel.', ['name' => $user->name]));
     }
 
-    // View User
-    public function viewUser(Request $request, $id)
-    {
-        // Queries
-        $user_details = User::where('user_id', $id)->first();
-
-        if ($user_details == null) {
-            return redirect()->route('admin.users')->with('failed', trans('Not Found!'));
-        } else {
-            $settings = Setting::where('status', 1)->first();
-
-            return view('admin.pages.users.view', compact('user_details', 'settings'));
-        }
-    }
-
-    // Edit User
-    public function editUser(Request $request, $id)
-    {
-        // Queries
-        $user_details = User::where('user_id', $id)->first();
-        $settings = Setting::where('status', 1)->first();
-
-        if ($user_details == null) {
-            return redirect()->route('admin.users')->with('failed', trans('Not Found!'));
-        } else {
-            return view('admin.pages.users.edit', compact('user_details', 'settings'));
-        }
-    }
-
-    // Update User
+    // Update user
     public function updateUser(Request $request)
     {
-        // Queries
-        $emailExists = User::where('email', $request->email)->count();
-        $user_details = User::where('user_id', $request->user_id)->first();
+        $user = $this->staff($request, (string) $request->input('user_id'));
+        $data = $this->validated($request, $user);
 
-        if ($emailExists != 1 || $request->email == $user_details->email) {
-
-            if ($request->password == null) {
-                // Validate
-                $validator = Validator::make($request->all(), [
-                    'user_id' => 'required',
-                    'role' => 'required',
-                    'name' => 'required',
-                    'email' => 'required'
-                ]);
-
-                if ($validator->fails()) {
-                    return back()->with('failed', $validator->messages()->all()[0])->withInput();
-                }
-
-                // Update
-                User::where('user_id', $request->user_id)->update([
-                    'role_id' => $request->role,
-                    'name' => $request->name,
-                    'email' => $request->email
-                ]);
-            } else {
-                // Validate
-                $validator = Validator::make($request->all(), [
-                    'user_id' => 'required',
-                    'role' => 'required',
-                    'name' => 'required',
-                    'email' => 'required',
-                    'password' => 'required'
-                ]);
-
-                if ($validator->fails()) {
-                    return back()->with('failed', $validator->messages()->all()[0])->withInput();
-                }
-
-                // Update
-                User::where('user_id', $request->user_id)->update([
-                    'role_id' => $request->role,
-                    'name' => $request->name,
-                    'email' => $request->email,
-                    'password' => Hash::make($request->password)
-                ]);
-            }
-
-            // List of permissions to check
-            $fields = [
-                'themes', 'plans', 'customers', 'payment_methods', 'coupons', 'currencies', 'transactions',
-                'web_templates', 'blogs', 'users', 'custom_domain', 'backup', 'general_settings', 'translations',
-                'marketing', 'sitemap', 'invoice_tax', 'maintenance_mode', 'demo_mode', 'software_update',
-                'nfc_card_design', 'nfc_card_orders', 'nfc_card_order_transactions', 'nfc_card_key_generations', 'referral_system', 'email_templates', 'plugins', 'in_app_purchases', 'vcard_store',
-                'business_card_intros', 'ai_credits'
-            ];
-
-            // Initialize an empty array for permissions
-            $permissions = [];
-
-            // Loop through each field and set the corresponding value in the permissions array
-            foreach ($fields as $field) {
-                // Check if the field exists in the request and handle its value
-                $permissions[$field] = $request->has($field) && $request->$field === 'on' ? 1 : 0;
-            }
-
-            // Convert the permissions array to a JSON string
-            $permissionsJson = json_encode($permissions);
-
-            // Update
-            User::where('user_id', $request->user_id)->update([
-                'permissions' => $permissionsJson
-            ]);
-
-            return redirect()->route('admin.edit.user', $request->user_id)->with('success', trans('Updated!'));
-        } else {
-            return redirect()->route('admin.edit.user', $request->user_id)->with('failed', trans('This email address already registered. Try to another email address.'));
+        $user->role_id     = $data['role'];
+        $user->name        = $data['name'];
+        $user->email       = $data['email'];
+        $user->permissions = json_encode($this->permissions($request, $user));
+        if (! empty($data['password'])) {
+            $user->password = Hash::make($data['password']);
         }
+        $user->save();
+
+        return back()->with('success', __(':name saved.', ['name' => $user->name]));
     }
 
     // Update user status
     public function updateUserStatus(Request $request)
     {
-        // Queries
-        $user_details = User::where('user_id', $request->query('id'))->first();
+        $user = $this->staff($request, (string) $request->input('id'));
+        $user->forceFill(['status' => (int) $user->status === 1 ? 0 : 1])->save();
 
-        if ($user_details->status == 0) {
-            $status = 1;
-        } else {
-            $status = 0;
-        }
-
-        // Update
-        User::where('user_id', $request->query('id'))->update(['status' => $status]);
-
-        return redirect()->route('admin.users')->with('success', trans('Updated!'));
+        return back()->with('success', (int) $user->status === 1
+            ? __(':name can sign in again.', ['name' => $user->name])
+            : __(':name can no longer sign in.', ['name' => $user->name]));
     }
 
-    // Delete User
+    // Delete user
     public function deleteUser(Request $request)
     {
-        // Delete
-        User::where('user_id', $request->query('id'))->delete();
+        try {
+            $user = $this->staff($request, (string) $request->input('id'));
 
-        return redirect()->route('admin.users')->with('success', trans('Removed!'));
+            if (!$user) {
+                return back()->with('failed', __('User not found.'));
+            }
+
+            $name = $user->name;
+
+            // Begin transaction to ensure safe deletion
+            DB::beginTransaction();
+
+            // This triggers the booted deleting event in App\User.php
+            $user->delete();
+
+            // Commit transaction if no errors occurred
+            DB::commit();
+
+            return back()->with('success', __(':name removed.', ['name' => $name]));
+        } catch (\Throwable $th) {
+            // Rollback all database operations if an error occurs
+            DB::rollBack();
+
+            // Log error details for reference
+            // Log::error('User deletion error: ' . $th->getMessage());
+
+            // Return error message and prevent deletion
+            return back()->with('failed', __('Failed to delete user. Reason: :error', [
+                'error' => $th->getMessage()
+            ]));
+        }
     }
 
-    // Login As User
+    /** Super admin only: open the admin panel as another staff member. */
     public function authAsUser(Request $request, $id)
     {
-        // Queries
-        $user_details = User::where('user_id', $id)->where('status', 1)->first();
+        abort_unless($this->isSuperAdmin($request->user()), 403);
 
-        if (isset($user_details)) {
-            // Login
-            Auth::loginUsingId($user_details->id);
-
-            return redirect()->route('admin.dashboard');
-        } else {
-            return redirect()->route('admin.users')->with('failed', trans('Unable to find user account!'));
+        $user = $this->staff($request, (string) $id);
+        if ((int) $user->status !== 1) {
+            return back()->with('failed', __(':name is deactivated.', ['name' => $user->name]));
         }
+
+        Auth::login($user);
+        $request->session()->regenerate();
+
+        // Force a full browser reload so <meta name="csrf-token"> gets refreshed
+        return Inertia::location(route('admin.dashboard'));
+    }
+
+    /** A staff account other than the signed-in one, or 404. */
+    private function staff(Request $request, string $userId): User
+    {
+        return User::where('user_id', $userId)
+            ->whereIn('role_id', self::STAFF_ROLES)
+            ->where('id', '!=', $request->user()->id)
+            ->firstOrFail();
+    }
+
+    private function validated(Request $request, ?User $user = null): array
+    {
+        return $request->validate([
+            'role'     => ['required', Rule::in(self::STAFF_ROLES)],
+            'name'     => 'required|string|min:2|max:191',
+            'email'    => ['required', 'email', 'max:191', Rule::unique('users', 'email')->ignore($user?->id)],
+            'password' => [$user ? 'nullable' : 'required', 'string', 'min:8', 'max:191'],
+        ], [
+            'email.unique' => __('Another account already uses this email.'),
+        ]);
+    }
+
+    /**
+     * Requested permissions, limited to what the signed-in user may grant.
+     * Permissions they can't grant keep their current value on edits.
+     * Staff with revenue hidden always save hide_revenue as on.
+     */
+    private function permissions(Request $request, ?User $user): array
+    {
+        $me        = $request->user();
+        $granted   = AdminPermissions::for($me);
+        $requested = (array) $request->input('permissions', []);
+        $current   = $user ? AdminPermissions::for($user) : [];
+
+        return collect(AdminPermissions::keys())->mapWithKeys(function ($key) use ($me, $granted, $requested, $current) {
+            $canGrant = $this->isSuperAdmin($me) || ($granted[$key] ?? false);
+
+            return [$key => $canGrant ? (int) in_array($key, $requested, true) : (int) ($current[$key] ?? false)];
+        })->put(AdminPermissions::HIDE_REVENUE, AdminPermissions::hidesRevenue($me) ? 1 : (int) $request->boolean('hide_revenue'))->all();
+    }
+
+    private function isSuperAdmin(?User $user): bool
+    {
+        return $user && (int) $user->role_id === 1;
     }
 }

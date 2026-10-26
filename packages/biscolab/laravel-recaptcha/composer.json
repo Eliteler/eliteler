@@ -1,0 +1,42 @@
+{
+    "name": "biscolab/laravel-recaptcha",
+    "version": "6.2.0",
+    "description": "reCAPTCHA validator for Laravel (Laravel 12 & 13 Support)",
+    "keywords": [
+        "laravel",
+        "recaptcha",
+        "google",
+        "validation",
+        "laravel-12",
+        "laravel-13"
+    ],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Roberto Bizzarri",
+            "email": "roberto@biscolab.com"
+        }
+    ],
+    "require": {
+        "php": "^8.1 || ^8.2 || ^8.3 || ^8.4",
+        "illuminate/support": "^10.0 || ^11.0 || ^12.0 || ^13.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Biscolab\\ReCaptcha\\": "src/"
+        },
+        "files": [
+            "src/helpers.php"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Biscolab\\ReCaptcha\\ReCaptchaServiceProvider"
+            ],
+            "aliases": {
+                "ReCaptcha": "Biscolab\\ReCaptcha\\Facades\\ReCaptcha"
+            }
+        }
+    }
+}

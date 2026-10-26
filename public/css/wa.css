@@ -1,0 +1,196 @@
+/* GoBiz vCard SaaS
+|--------------------------------------------------------------------------
+| Developed by NativeCode © 2021 - https://nativecode.in
+| All rights reserved
+| Unauthorized distribution is prohibited
+|--------------------------------------------------------------------------
+*/
+
+.wa-chatbot-wrapper {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 9999;
+}
+
+/* Floating Button */
+.wa-floating-btn {
+    width: 64px;
+    height: 64px;
+    border: none;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #25d366, #1ebe5d);
+    color: #fff;
+    font-size: 30px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow:
+        0 12px 30px rgba(37, 211, 102, 0.35),
+        0 5px 14px rgba(0, 0, 0, 0.15);
+    transition: all 0.25s ease;
+}
+
+.wa-floating-btn:hover {
+    transform: translateY(-4px);
+}
+
+/* Chat Card */
+.wa-chat-card {
+    position: absolute;
+    bottom: 70px;
+    right: 0;
+    width: 350px;
+    background: #fff;
+    border-radius: 24px;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px) scale(0.96);
+    transition: all 0.25s ease;
+    box-shadow:
+        0 25px 60px rgba(0, 0, 0, 0.15),
+        0 10px 25px rgba(0, 0, 0, 0.08);
+}
+
+.wa-chat-card.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+}
+
+/* Header */
+.wa-chat-header {
+    background: linear-gradient(135deg, #25d366, #1ebe5d);
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    color: #fff;
+}
+
+.wa-chat-avatar {
+    width: 54px;
+    height: 54px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    margin-right: 14px;
+    flex-shrink: 0;
+}
+
+.wa-chat-info h4 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.wa-chat-info span {
+    font-size: 13px;
+    opacity: 0.95;
+}
+
+.wa-chat-close {
+    margin-left: auto;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.wa-chat-close:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+/* Body */
+.wa-chat-body {
+    padding: 22px;
+    background: #f5f7fb;
+}
+
+.wa-chat-message {
+    max-width: 85%;
+    background: #fff;
+    color: #374151;
+    padding: 14px 16px;
+    border-radius: 18px 18px 18px 6px;
+    font-size: 14px;
+    line-height: 1.6;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+
+/* Footer */
+.wa-chat-footer {
+    padding: 0 22px 22px;
+    background: #f5f7fb;
+}
+
+.wa-input-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.wa-chat-input {
+    flex: 1;
+    height: 54px;
+    border: none;
+    outline: none;
+    border-radius: 16px;
+    padding: 0 18px;
+    font-size: 14px;
+    background: #fff;
+    color: #111827;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+
+.wa-chat-input:focus {
+    box-shadow: 0 0 0 4px rgba(37, 211, 102, 0.15);
+}
+
+.wa-send-btn {
+    width: 54px;
+    height: 54px;
+    border: none;
+    border-radius: 16px;
+    background: #25d366;
+    color: #fff;
+    font-size: 22px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s ease;
+    box-shadow: 0 8px 20px rgba(37, 211, 102, 0.25);
+}
+
+.wa-send-btn:hover {
+    background: #1ebe5d;
+    transform: translateY(-1px);
+}
+
+/* Mobile */
+@media (max-width: 576px) {
+    .wa-chatbot-wrapper {
+        right: 16px;
+        bottom: 16px;
+    }
+
+    .wa-chat-card {
+        width: calc(100vw - 32px);
+    }
+
+    .wa-floating-btn {
+        width: 58px;
+        height: 58px;
+        font-size: 28px;
+    }
+}

@@ -3,78 +3,43 @@
 {{-- Custom CSS --}}
 @section('css')
     <style>
-        /* container */
-        .ads-group {
-            display: flex;
-            width: 100%;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            overflow: hidden;
-        }
-
-        /* prefix */
-        .ads-prefix {
-            padding: 8px 10px;
-            background: #f3f4f6;
-            border-right: 1px solid #d1d5db;
-
-            /* key fix */
-            max-width: 60%;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        /* input */
-        .ads-input-field {
-            flex: 1;
-            min-width: 0;
-            /* critical fix */
-            padding: 8px 10px;
-            border: none;
-            outline: none;
-            width: 100%;
+        .ts-control>input {
+            display: contents !important;
         }
     </style>
 @endsection
 
 @section('content')
     <div class="page-wrapper">
-        <!-- Page title -->
+        <!-- Page Title Header Wrapper (Wraps the inner container-fluid) -->
         <div class="page-header d-print-none">
             <div class="container-fluid">
-                <div class="row g-2 align-items-center">
+                <div class="row align-items-center">
                     <div class="col">
-                        <div class="page-pretitle">
-                            {{ __('Overview') }}
-                        </div>
-                        <h2 class="page-title mb-2">
-                            {{ __('Google AdSense Settings') }}
+                        {{-- Breadcrumbs --}}
+                        <x-breadcrumb :items="[
+                            ['title' => 'Dashboard', 'route' => 'admin.dashboard'],
+                            ['title' => 'Plugins', 'route' => 'admin.plugins'],
+                            ['title' => 'Google AdSense'],
+                        ]" />
+
+                        <h2 class="page-title">
+                            {{ __('Google AdSense') }}
                         </h2>
-                    </div>
-                    <div class="col-auto ms-auto d-print-none">
-                        <div class="btn-list">
-                            <a href="{{ route('admin.plugins') }}" class="btn btn-primary text-white">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-left">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                    <path d="M5 12l14 0" />
-                                    <path d="M5 12l6 6" />
-                                    <path d="M5 12l6 -6" />
-                                </svg>
-                                {{ __('Back') }}
-                            </a>
+
+                        <!-- Helper Subtitle -->
+                        <div class="text-muted mt-1">
+                            {{ __('Configure your Google AdSense publisher code, integration options, and visibility rules.') }}
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
+        <!-- Page Body -->
         <div class="page-body">
             <div class="container-fluid">
-                {{-- Failed --}}
+                {{-- Failed Alert --}}
                 @if (Session::has('failed'))
                     <div class="alert alert-important alert-danger alert-dismissible mb-2" role="alert">
                         <div class="d-flex">
@@ -86,7 +51,7 @@
                     </div>
                 @endif
 
-                {{-- Success --}}
+                {{-- Success Alert --}}
                 @if (Session::has('success'))
                     <div class="alert alert-important alert-success alert-dismissible mb-2" role="alert">
                         <div class="d-flex">
@@ -99,43 +64,55 @@
                 @endif
 
                 <div class="row row-deck row-cards">
-                    <div class="col-sm-12 col-lg-12">
-                        <form action="{{ route('admin.google_adsense_settings.update') }}" method="post" class="card">
+                    <div class="col-12 col-md-6">
+                        <!-- Upgraded to Borderless Shadowed Card Wrapper -->
+                        <form action="{{ route('admin.google_adsense_settings.update') }}" method="post"
+                            class="card border-0 shadow-sm">
                             @csrf
-                            <div class="card-header">
-                                <h4 class="page-title">{{ __('Google AdSence Credentials') }}</h4>
-                            </div>
                             <div class="card-body">
-                                {{-- Google Analytics --}}
                                 <div class="row">
-                                    <div class="col-xl-6">
+                                    <div class="col-12">
                                         <div class="mb-3">
-                                            <label class="form-label required">{{ __('Google AdSense code') }}</label>
+                                            <label class="form-label required">{{ __('Google AdSense Code') }}</label>
 
-                                            <div class="ads-group">
-                                                <span class="ads-prefix text-muted">
+                                            <!-- Refactored using Native Tabler Input Group rules -->
+                                            <div class="input-group">
+                                                <span class="input-group-text text-muted text-truncate d-block"
+                                                    style="max-width: 60%; white-space: nowrap;">
                                                     https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=
                                                 </span>
-                                                <input type="text" class="ads-input-field" name="google_adsense_code"
-                                                    placeholder="{{ __('Google AdSense code') }}" autocomplete="off" required>
+                                                <input type="text" class="form-control" name="google_adsense_code"
+                                                    placeholder="{{ __('Enter your client ID (e.g., ca-pub-xxxxxxxxxxxxxxxx)') }}"
+                                                    autocomplete="off" required>
                                             </div>
-
-                                            <small>{{ __('Type DISABLE_ADSENSE_ONLY for enable Webtools without AdSense') }}</small><br>
-                                            <small>{{ __('Enter your AdSense code for enable Webtools with AdSense') }}</small><br>
-                                            <small>{{ __('Type DISABLE_BOTH for disable Webtools & AdSense') }}</small><br>
                                         </div>
 
-                                        <span>
-                                            {{ __('If you did not get a Google AdSense code, create a') }}
-                                            <a href="https://www.google.com/adsense/new" target="_blank">
-                                                {{ __('new AdSense code.') }}
+                                        <span class="small text-muted">
+                                            {{ __('If you do not have a Google AdSense code, you can create a') }}
+                                            <a href="https://www.google.com/adsense/new" target="_blank"
+                                                class="text-decoration-none">
+                                                {{ __('new AdSense account.') }}
                                             </a>
                                         </span>
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Standardized Right-Aligned Form Footer (Omitted Cancel Button) -->
                             <div class="card-footer text-end">
-                                <button type="submit" class="btn btn-primary">{{ __('Update') }}</button>
+                                <button type="submit" class="btn btn-primary btn-md d-inline-flex align-items-center">
+                                    <!-- Device Floppy Icon -->
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                        class="icon icon-tabler icon-tabler-device-floppy me-2" width="24"
+                                        height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                        fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                        <path d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2" />
+                                        <path d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+                                        <path d="M14 4l0 4h-6l0 -4" />
+                                    </svg>
+                                    {{ __('Save') }}
+                                </button>
                             </div>
                         </form>
                     </div>

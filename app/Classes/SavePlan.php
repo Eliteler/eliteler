@@ -19,14 +19,14 @@ class SavePlan
 {
     public function create($request)
     {
-        // Default
+        // Default result setup
         $this->result = 0;
 
         // Check plan type
         switch ($request->plan_type) {
             case 'VCARD':
 
-                // Validate
+                // Validate (Switches validated as nullable/sometimes to prevent unsubmitted checkbox validation failures)
                 $validator = Validator::make($request->all(), [
                     'plan_type' => 'required',
                     'plan_name' => 'required',
@@ -35,6 +35,7 @@ class SavePlan
                     'validity' => 'required',
                     'trial_period' => 'required',
                     'ai_credits' => 'required',
+                    'trial_ai_credits' => 'required',
                     'no_of_vcards' => 'required',
                     'no_of_services' => 'required',
                     'no_of_vcard_products' => 'required',
@@ -42,10 +43,10 @@ class SavePlan
                     'no_of_payments' => 'required',
                     'no_testimonials' => 'required',
                     'no_of_galleries' => 'required',
-                    'business_hours' => 'required',
-                    'contact_form' => 'required',
-                    'appointment' => 'required',
-                    'service_booking' => 'required',
+                    'business_hours' => 'sometimes',
+                    'contact_form' => 'sometimes',
+                    'appointment' => 'sometimes',
+                    'service_booking' => 'sometimes',
                     'no_of_enquires' => 'required',
                     'storage' => 'required',
                 ]);
@@ -77,13 +78,17 @@ class SavePlan
                 $google_wallet = 0;
                 $no_of_google_wallets = 0;
                 if (is_dir(base_path('plugins/GoogleWallet'))) {
-                    $google_wallet = $request->google_wallet == null || $request->google_wallet == "off" ? 0 : 1;
+                    $google_wallet = ($request->has('google_wallet') && $request->google_wallet == "on") ? 1 : 0;
                     $no_of_google_wallets = $request->no_of_google_wallets;
                 }
 
                 // push mobile app plan details
+                $in_app_purchase_type = null;
+                $in_app_product_id = null;
                 $in_app_purchase_id = null;
                 if (is_dir(base_path('plugins/MobileAppAPI'))) {
+                    $in_app_purchase_type = $request->in_app_purchase_type;
+                    $in_app_product_id = $request->in_app_product_id;
                     $in_app_purchase_id = $request->in_app_purchase_id;
                 }
 
@@ -99,12 +104,18 @@ class SavePlan
                     $dodo_payments_plan_price_id = $request->dodo_payments_plan_price_id;
                 }
 
+                // push paypal plan id
+                $paypal_plan_id = null;
+                if (is_dir(base_path('plugins/PaypalRecurring'))) {
+                    $paypal_plan_id = $request->paypal_plan_id;
+                }
+
                 // Initialize an empty array to store the values
                 $settings = [];
 
                 foreach ($fields as $field) {
-                    // Set the value to 0 if the field is "off", else set it to 1
-                    $settings[$field] = $request->$field == null ||  $request->$field == "off" ? 0 : 1;
+                    // Robust switch extraction supporting both checkbox states and fallback inputs
+                    $settings[$field] = ($request->has($field) && $request->$field == "on") ? 1 : 0;
                 }
 
                 // Create a new Plan instance and set its attributes
@@ -118,6 +129,7 @@ class SavePlan
                 $plan->validity = $request->validity;
                 $plan->trial = $request->trial_period;
                 $plan->ai_credits = $request->ai_credits;
+                $plan->trial_ai_credits = $request->trial_ai_credits;
                 $plan->no_of_vcards = $request->no_of_vcards;
                 $plan->no_of_services = $request->no_of_services;
                 $plan->no_of_vcard_products = $request->no_of_vcard_products;
@@ -147,7 +159,9 @@ class SavePlan
                 $plan->in_app_purchase_id = $in_app_purchase_id;
                 $plan->paddle_plan_price_id = $paddle_plan_price_id;
                 $plan->dodo_payments_plan_price_id = $dodo_payments_plan_price_id;
-
+                $plan->paypal_plan_id = $paypal_plan_id;
+                $plan->in_app_purchase_type = $in_app_purchase_type;
+                $plan->in_app_product_id = $in_app_product_id;
                 // Save the plan to the database
                 $plan->save();
 
@@ -189,8 +203,12 @@ class SavePlan
                 ];
 
                 // push mobile app plan details
+                $in_app_purchase_type = null;
+                $in_app_product_id = null;
                 $in_app_purchase_id = null;
                 if (is_dir(base_path('plugins/MobileAppAPI'))) {
+                    $in_app_purchase_type = $request->in_app_purchase_type;
+                    $in_app_product_id = $request->in_app_product_id;
                     $in_app_purchase_id = $request->in_app_purchase_id;
                 }
 
@@ -206,12 +224,18 @@ class SavePlan
                     $dodo_payments_plan_price_id = $request->dodo_payments_plan_price_id;
                 }
 
+                // push paypal plan id
+                $paypal_plan_id = null;
+                if (is_dir(base_path('plugins/PaypalRecurring'))) {
+                    $paypal_plan_id = $request->paypal_plan_id;
+                }
+
                 // Initialize an empty array to store the values
                 $settings = [];
 
                 foreach ($fields as $field) {
-                    // Check the value and set it to 0 if "off", else set it to 1
-                    $settings[$field] = $request->$field == null || $request->$field == "off" ? 0 : 1;
+                    // Robust switch extraction supporting both checkbox states and fallback inputs
+                    $settings[$field] = ($request->has($field) && $request->$field == "on") ? 1 : 0;
                 }
 
                 // Save
@@ -241,6 +265,9 @@ class SavePlan
                 $plan->in_app_purchase_id = $in_app_purchase_id;
                 $plan->paddle_plan_price_id = $paddle_plan_price_id;
                 $plan->dodo_payments_plan_price_id = $dodo_payments_plan_price_id;
+                $plan->paypal_plan_id = $paypal_plan_id;
+                $plan->in_app_purchase_type = $in_app_purchase_type;
+                $plan->in_app_product_id = $in_app_product_id;
                 $plan->save();
 
                 return $this->result = 1;
@@ -257,6 +284,7 @@ class SavePlan
                     'validity' => 'required',
                     'trial_period' => 'required',
                     'ai_credits' => 'required',
+                    'trial_ai_credits' => 'required',
                     'no_of_vcards' => 'required',
                     'no_of_services' => 'required',
                     'no_of_vcard_products' => 'required',
@@ -264,10 +292,10 @@ class SavePlan
                     'no_of_payments' => 'required',
                     'no_testimonials' => 'required',
                     'no_of_galleries' => 'required',
-                    'business_hours' => 'required',
-                    'contact_form' => 'required',
-                    'appointment' => 'required',
-                    'service_booking' => 'required',
+                    'business_hours' => 'sometimes',
+                    'contact_form' => 'sometimes',
+                    'appointment' => 'sometimes',
+                    'service_booking' => 'sometimes',
                     'no_of_enquires' => 'required',
                     'no_of_stores' => 'required',
                     'no_of_categories' => 'required',
@@ -302,13 +330,17 @@ class SavePlan
                 $google_wallet = 0;
                 $no_of_google_wallets = 0;
                 if (is_dir(base_path('plugins/GoogleWallet'))) {
-                    $google_wallet = $request->google_wallet == null || $request->google_wallet == "off" ? 0 : 1;
+                    $google_wallet = ($request->has('google_wallet') && $request->google_wallet == "on") ? 1 : 0;
                     $no_of_google_wallets = $request->no_of_google_wallets;
                 }
 
                 // push mobile app plan details
+                $in_app_purchase_type = null;
+                $in_app_product_id = null;
                 $in_app_purchase_id = null;
                 if (is_dir(base_path('plugins/MobileAppAPI'))) {
+                    $in_app_purchase_type = $request->in_app_purchase_type;
+                    $in_app_product_id = $request->in_app_product_id;
                     $in_app_purchase_id = $request->in_app_purchase_id;
                 }
 
@@ -324,12 +356,18 @@ class SavePlan
                     $dodo_payments_plan_price_id = $request->dodo_payments_plan_price_id;
                 }
 
+                // push paypal plan id
+                $paypal_plan_id = null;
+                if (is_dir(base_path('plugins/PaypalRecurring'))) {
+                    $paypal_plan_id = $request->paypal_plan_id;
+                }
+
                 // Initialize an empty array to store the values
                 $settings = [];
 
                 foreach ($fields as $field) {
-                    // Set the value to 0 if "off", otherwise 1
-                    $settings[$field] = $request->$field == null || $request->$field == "off" ? 0 : 1;
+                    // Robust switch extraction supporting both checkbox states and fallback inputs
+                    $settings[$field] = ($request->has($field) && $request->$field == "on") ? 1 : 0;
                 }
 
                 // Save
@@ -343,6 +381,7 @@ class SavePlan
                 $plan->validity = $request->validity;
                 $plan->trial = $request->trial_period;
                 $plan->ai_credits = $request->ai_credits;
+                $plan->trial_ai_credits = $request->trial_ai_credits;
                 $plan->no_of_vcards = $request->no_of_vcards;
                 $plan->no_of_services = $request->no_of_services;
                 $plan->no_of_vcard_products = $request->no_of_vcard_products;
@@ -376,6 +415,9 @@ class SavePlan
                 $plan->in_app_purchase_id = $in_app_purchase_id;
                 $plan->paddle_plan_price_id = $paddle_plan_price_id;
                 $plan->dodo_payments_plan_price_id = $dodo_payments_plan_price_id;
+                $plan->paypal_plan_id = $paypal_plan_id;
+                $plan->in_app_purchase_type = $in_app_purchase_type;
+                $plan->in_app_product_id = $in_app_product_id;
 
                 $plan->save();
 

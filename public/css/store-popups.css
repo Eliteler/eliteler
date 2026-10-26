@@ -1,0 +1,100 @@
+/* GoBiz vCard SaaS
+|--------------------------------------------------------------------------
+| Developed by NativeCode © 2021 - https://nativecode.in
+| All rights reserved
+| Unauthorized distribution is prohibited
+|--------------------------------------------------------------------------
+*/
+
+:root {
+    --store-card-radius: 12px;
+    --store-transition: all 0.2s ease-in-out;
+}
+
+.store-section-card {
+    background-color: var(--tblr-bg-surface);
+    border: 1px solid var(--tblr-border-color-translucent);
+    border-radius: var(--store-card-radius);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    margin-bottom: 1.25rem;
+}
+
+/* Feature switch card */
+.settings-switch-card {
+    background-color: var(--tblr-bg-surface);
+    border: 1px solid var(--tblr-border-color-translucent);
+    border-radius: var(--store-card-radius);
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    transition: var(--store-transition);
+}
+
+.settings-switch-card:hover {
+    border-color: var(--tblr-primary);
+}
+
+.settings-switch-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background-color: var(--tblr-primary-lt);
+    color: var(--tblr-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Configuration panel */
+.popup-config-panel {
+    background-color: var(--tblr-bg-surface-secondary);
+    border: 1px solid var(--tblr-border-color-translucent);
+    border-radius: var(--tblr-border-radius);
+    padding: 1.25rem;
+    margin-top: 1rem;
+}
+
+/* Live popup preview */
+.popup-preview-card {
+    background-color: var(--tblr-bg-surface);
+    border: 1px solid var(--tblr-border-color-translucent);
+    border-radius: var(--tblr-border-radius);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    text-align: center;
+}
+
+.popup-preview-banner {
+    width: 100%;
+    height: 130px;
+    object-fit: cover;
+    background-color: var(--tblr-bg-surface-secondary);
+}
+
+.popup-preview-body {
+    padding: 1.15rem;
+}
+
+.banner-dropzone-box {
+    border: 1.5px dashed var(--tblr-border-color);
+    border-radius: var(--tblr-border-radius);
+    padding: 0.75rem 1rem;
+    background: var(--tblr-bg-surface);
+    transition: var(--store-transition);
+    cursor: pointer;
+}
+
+.banner-dropzone-box:hover {
+    border-color: var(--tblr-primary);
+    background: var(--tblr-primary-lt);
+}
+
+.input-icon {
+    width: 100% !important;
+}
+
+@media (max-width: 575.98px) {
+    .modal-dialog {
+        margin-top: 10vh;
+    }
+}

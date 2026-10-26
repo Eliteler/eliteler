@@ -24,6 +24,30 @@ use App\Services\GoBizCommonService;
 
 class WebToolsController extends Controller
 {
+    // Helper function to handle redirection when website is disabled
+    private function getWebsiteRedirect()
+    {
+        // Retrieve redirect URL from config table
+        $redirectUrl = DB::table('config')->where('config_key', 'website_redirect_url')->value('config_value');
+
+        // Trim trailing slashes for accurate comparison
+        $trimmedRedirectUrl = rtrim($redirectUrl ?? '', '/');
+        $trimmedBaseUrl     = rtrim(url('/'), '/');
+        $trimmedCurrentUrl  = rtrim(url()->current(), '/');
+
+        // Prevent infinite redirect loop if redirectUrl is empty, matches base URL, or matches current URL
+        if (
+            !empty($trimmedRedirectUrl) &&
+            $trimmedRedirectUrl !== $trimmedBaseUrl &&
+            $trimmedRedirectUrl !== $trimmedCurrentUrl
+        ) {
+            return redirect()->to($redirectUrl);
+        }
+
+        // Default fallback to login to avoid ERR_TOO_MANY_REDIRECTS
+        return redirect('/login');
+    }
+
     // HTML Beautifier
     public function htmlBeautifier()
     {
@@ -43,7 +67,7 @@ class WebToolsController extends Controller
                 return abort(404);
             }
         } else {
-            return redirect('/login');
+            return $this->getWebsiteRedirect();
         }
     }
 
@@ -66,7 +90,7 @@ class WebToolsController extends Controller
                 return abort(404);
             }
         } else {
-            return redirect('/login');
+            return $this->getWebsiteRedirect();
         }
     }
 
@@ -89,7 +113,7 @@ class WebToolsController extends Controller
                 return abort(404);
             }
         } else {
-            return redirect('/login');
+            return $this->getWebsiteRedirect();
         }
     }
 
@@ -112,7 +136,7 @@ class WebToolsController extends Controller
                 return abort(404);
             }
         } else {
-            return redirect('/login');
+            return $this->getWebsiteRedirect();
         }
     }
 
@@ -142,7 +166,7 @@ class WebToolsController extends Controller
                 return abort(404);
             }
         } else {
-            return redirect('/login');
+            return $this->getWebsiteRedirect();
         }
     }
 
@@ -165,7 +189,7 @@ class WebToolsController extends Controller
                 return abort(404);
             }
         } else {
-            return redirect('/login');
+            return $this->getWebsiteRedirect();
         }
     }
 
@@ -188,7 +212,7 @@ class WebToolsController extends Controller
                 return abort(404);
             }
         } else {
-            return redirect('/login');
+            return $this->getWebsiteRedirect();
         }
     }
 
@@ -217,7 +241,7 @@ class WebToolsController extends Controller
                 return abort(404);
             }
         } else {
-            return redirect('/login');
+            return $this->getWebsiteRedirect();
         }
     }
 
@@ -240,7 +264,7 @@ class WebToolsController extends Controller
                 return abort(404);
             }
         } else {
-            return redirect('/login');
+            return $this->getWebsiteRedirect();
         }
     }
 
@@ -269,7 +293,7 @@ class WebToolsController extends Controller
                 return abort(404);
             }
         } else {
-            return redirect('/login');
+            return $this->getWebsiteRedirect();
         }
     }
 
@@ -292,7 +316,7 @@ class WebToolsController extends Controller
                 return abort(404);
             }
         } else {
-            return redirect('/login');
+            return $this->getWebsiteRedirect();
         }
     }
 
@@ -302,7 +326,7 @@ class WebToolsController extends Controller
         $config = GoBizCommonService::config();
 
         if ($config[38]->config_value !== "yes") {
-            return redirect('/login');
+            return $this->getWebsiteRedirect();
         }
 
         if ($config[88]->config_value !== '1') {
@@ -381,7 +405,7 @@ class WebToolsController extends Controller
                 return abort(404);
             }
         } else {
-            return redirect('/login');
+            return $this->getWebsiteRedirect();
         }
     }
 
@@ -404,7 +428,7 @@ class WebToolsController extends Controller
                 return abort(404);
             }
         } else {
-            return redirect('/login');
+            return $this->getWebsiteRedirect();
         }
     }
 
@@ -427,7 +451,7 @@ class WebToolsController extends Controller
                 return abort(404);
             }
         } else {
-            return redirect('/login');
+            return $this->getWebsiteRedirect();
         }
     }
 
@@ -450,7 +474,7 @@ class WebToolsController extends Controller
                 return abort(404);
             }
         } else {
-            return redirect('/login');
+            return $this->getWebsiteRedirect();
         }
     }
 
@@ -473,7 +497,7 @@ class WebToolsController extends Controller
                 return abort(404);
             }
         } else {
-            return redirect('/login');
+            return $this->getWebsiteRedirect();
         }
     }
 
@@ -503,7 +527,7 @@ class WebToolsController extends Controller
                 return abort(404);
             }
         } else {
-            return redirect('/login');
+            return $this->getWebsiteRedirect();
         }
     }
 
@@ -526,7 +550,7 @@ class WebToolsController extends Controller
                 return abort(404);
             }
         } else {
-            return redirect('/login');
+            return $this->getWebsiteRedirect();
         }
     }
 
@@ -558,7 +582,7 @@ class WebToolsController extends Controller
                 return abort(404);
             }
         } else {
-            return redirect('/login');
+            return $this->getWebsiteRedirect();
         }
     }
 
@@ -581,7 +605,7 @@ class WebToolsController extends Controller
                 return abort(404);
             }
         } else {
-            return redirect('/login');
+            return $this->getWebsiteRedirect();
         }
     }
 
@@ -611,7 +635,7 @@ class WebToolsController extends Controller
                 return abort(404);
             }
         } else {
-            return redirect('/login');
+            return $this->getWebsiteRedirect();
         }
     }
 
@@ -634,9 +658,9 @@ class WebToolsController extends Controller
                 return abort(404);
             }
         } else {
-            return redirect('/login');
+            return $this->getWebsiteRedirect();
         }
-    } 
+    }
 
     // Whois Result 
     public function resultWhoisLookup(Request $request)
@@ -667,7 +691,7 @@ class WebToolsController extends Controller
                 return abort(404);
             }
         } else {
-            return redirect('/login');
+            return $this->getWebsiteRedirect();
         }
     }
 
@@ -690,7 +714,7 @@ class WebToolsController extends Controller
                 return abort(404);
             }
         } else {
-            return redirect('/login');
+            return $this->getWebsiteRedirect();
         }
     }
 

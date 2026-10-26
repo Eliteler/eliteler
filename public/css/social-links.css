@@ -1,0 +1,203 @@
+/* GoBiz vCard SaaS
+|--------------------------------------------------------------------------
+| Developed by NativeCode © 2021 - https://nativecode.in
+| All rights reserved
+| Unauthorized distribution is prohibited
+|--------------------------------------------------------------------------
+*/
+
+/* Base Readability Typography Standards */
+.page-wrapper,
+.card,
+.form-label,
+.form-control,
+.ts-control {
+    font-family:
+        "Figtree",
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif !important;
+    letter-spacing: -0.01em;
+}
+
+/* Highly Legible Form Labels */
+.form-label {
+    font-weight: 600 !important;
+    font-size: 0.875rem !important;
+    color: var(--tblr-body-color, #1e293b) !important;
+    margin-bottom: 0.4rem !important;
+}
+
+/* Unified Form Controls with Crisp Text Rendering & Fixed Borders */
+.form-control,
+.ts-control {
+    border: 1px solid var(--tblr-border-color, #d1d5db) !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    line-height: 1.5 !important;
+    padding: 0.55rem 0.85rem !important;
+    min-height: 42px !important;
+    height: 42px !important;
+    box-shadow: none !important;
+    transition:
+        border-color 0.15s ease-in-out,
+        box-shadow 0.15s ease-in-out !important;
+    border-radius: 8px !important;
+}
+
+.form-control:focus,
+.ts-wrapper.focus .ts-control {
+    border-color: var(--tblr-primary, #206bc4) !important;
+    box-shadow: 0 0 0 0.25rem rgba(32, 107, 196, 0.15) !important;
+    line-height: 1.65 !important;
+}
+
+.ts-wrapper.form-control:not(.disabled) .ts-control {
+    border: 1px solid var(--tblr-border-color, #dbdfe6) !important;
+    border-radius: 8px !important;
+}
+
+/* TomSelect Dropdown Custom Styling */
+.ts-wrapper {
+    border: none !important;
+    padding: 0 !important;
+}
+
+.ts-control > input {
+    display: none !important;
+}
+
+.ts-dropdown {
+    border: 1px solid var(--tblr-border-color, #dbdfe6) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08) !important;
+    margin-top: 4px !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    z-index: 1050;
+}
+
+.ts-dropdown .dropdown-item {
+    padding: 0.55rem 1rem !important;
+}
+
+/* Modern Social Link Card Row */
+.social-link-row {
+    border: 1px solid var(--tblr-border-color, #e2e8f0);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    transition: all 0.2s ease;
+}
+
+.social-link-row:hover {
+    border: 1px solid var(--tblr-border-color, #cbd5e1) !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* Perfect Icon Square Alignment */
+.btn-icon-square {
+    width: 42px !important;
+    height: 42px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 8px !important;
+    font-size: 1.1rem !important;
+    flex-shrink: 0 !important;
+    padding: 0 !important;
+}
+
+/* Icon Picker Modal Custom Grid */
+.icon-option-card {
+    cursor: pointer;
+    border: 1px solid var(--tblr-border-color, #e2e8f0);
+    border-radius: 8px;
+    padding: 12px 6px;
+    text-align: center;
+    transition: all 0.2s ease;
+}
+
+.icon-option-card:hover {
+    border-color: var(--tblr-primary, #206bc4);
+    color: var(--tblr-primary, #206bc4);
+    transform: translateY(-2px);
+}
+
+button > svg {
+    margin: 0 !important;
+}
+
+/* Responsive Icon Picker Modal Styles */
+.icon-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    width: 100%;
+}
+
+.icon-modal-search-box {
+    position: relative;
+    width: 220px;
+    max-width: 100%;
+}
+
+.icon-modal-search-input {
+    width: 100%;
+    height: 38px;
+    padding: 6px 12px 6px 36px !important;
+    font-size: 0.875rem;
+    border-radius: 8px !important;
+    border: 1px solid var(--tblr-border-color, #d1d5db) !important;
+    outline: none;
+    background-color: var(--tblr-bg-color, #fff) !important;
+}
+
+.icon-modal-search-input:focus {
+    border-color: var(--tblr-primary, #206bc4) !important;
+    box-shadow: 0 0 0 3px rgba(32, 107, 196, 0.15) !important;
+}
+
+/* Icon Grid Cards */
+.icon-option-card {
+    cursor: pointer;
+    border: 1px solid var(--tblr-border-color, #e2e8f0);
+    border-radius: 8px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.icon-option-card:hover {
+    border-color: var(--tblr-primary, #206bc4);
+    color: var(--tblr-primary, #206bc4);
+    transform: scale(1.05);
+}
+
+/* Mobile specific adjustments */
+@media (max-width: 575.98px) {
+    .icon-modal-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .icon-modal-search-box {
+        width: 100%;
+    }
+
+    .icon-modal-header .d-flex-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+    }
+}

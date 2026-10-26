@@ -13,6 +13,8 @@
     $directory_settings = GoBizCommonService::directorySettings();
     $search = request('search', '');
     $location = request('location', '');
+    $category = $category ?? request('category', '');
+    $categories = $categories ?? collect();
     $typeParam = request('type', 'all');
     $sort = request('sort', 'newest');
     $perPage = request('per_page', 9);
@@ -119,14 +121,15 @@
             color: var(--dir-accent);
         }
 
+        /* Responsive 6 items Grid */
         .dir-search-form {
             display: grid;
-            grid-template-columns: 1fr 1fr auto auto auto;
+            grid-template-columns: 1.2fr 1fr 1fr 1fr 0.9fr auto;
             gap: 10px;
             align-items: center;
         }
 
-        @media (max-width: 900px) {
+        @media (max-width: 1024px) {
             .dir-search-form {
                 grid-template-columns: 1fr 1fr;
             }
@@ -487,16 +490,6 @@
             margin-bottom: 12px;
         }
 
-        .dir-avatar {
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid var(--dir-white);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, .12);
-            flex-shrink: 0;
-        }
-
         .dir-badge {
             display: inline-block;
             padding: 3px 10px;
@@ -637,6 +630,50 @@
             color: var(--dir-accent);
             opacity: .8;
         }
+
+        /* ── Skeleton Shimmer Placeholder ── */
+        .dir-skeleton {
+            background: linear-gradient(90deg, #f0f0f2 25%, #e2e1e7 50%, #f0f0f2 75%) !important;
+            background-size: 200% 100% !important;
+            animation: dir-shimmer 1.5s infinite linear !important;
+        }
+
+        @keyframes dir-shimmer {
+            0% {
+                background-position: 200% 0;
+            }
+
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        .dir-avatar-wrap {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            overflow: hidden;
+            flex-shrink: 0;
+            position: relative;
+            border: 2px solid var(--dir-white);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .12);
+        }
+
+        .dir-avatar-wrap .dir-avatar {
+            width: 100%;
+            height: 100%;
+            border: none;
+            box-shadow: none;
+        }
+
+        .dir-img-fade {
+            opacity: 0;
+            transition: opacity 0.35s ease-in-out;
+        }
+
+        .dir-img-fade.loaded {
+            opacity: 1;
+        }
     </style>
 @endsection
 
@@ -652,16 +689,39 @@
                     <h1>{{ __('Discover') }} <span>{{ __('Local Businesses') }}</span><br>{{ __('& Professionals') }}</h1>
 
                     <form id="dir-search-form" class="dir-search-form">
+                        {{-- Search Input --}}
                         <div class="dir-field">
                             <i class="fas fa-search"></i>
                             <input type="text" name="search" id="dir-input-search"
                                 placeholder="{{ __('Name, keyword…') }}" value="{{ $search }}">
                         </div>
+
+                        {{-- Location Input --}}
                         <div class="dir-field">
                             <i class="fas fa-location-dot"></i>
                             <input type="text" name="location" id="dir-input-location"
                                 placeholder="{{ __('City, area…') }}" value="{{ $location }}">
                         </div>
+
+                        {{-- Safe Category Dropdown --}}
+                        <div class="dir-field">
+                            <i class="fas fa-tags"></i>
+                            <select name="category" id="dir-input-category">
+                                <option value="">{{ __('All Categories') }}</option>
+                                @if (isset($categories) && is_iterable($categories) && count($categories) > 0)
+                                    @foreach ($categories as $cat)
+                                        @if (!empty($cat->theme_id) && !empty($cat->theme_name))
+                                            <option value="{{ $cat->theme_id }}"
+                                                {{ ($category ?? '') == $cat->theme_id ? 'selected' : '' }}>
+                                                {{ __($cat->theme_name) }}
+                                            </option>
+                                        @endif
+                                    @endforeach
+                                @endif
+                            </select>
+                        </div>
+
+                        {{-- Type Filter --}}
                         <div class="dir-field">
                             <i class="fas fa-layer-group"></i>
                             <select name="type" id="dir-input-type">
@@ -673,6 +733,8 @@
                                 </option>
                             </select>
                         </div>
+
+                        {{-- Sort Filter --}}
                         <div class="dir-field">
                             <i class="fas fa-arrow-up-wide-short"></i>
                             <select name="sort" id="dir-input-sort">
@@ -690,6 +752,8 @@
                                 </option>
                             </select>
                         </div>
+
+                        {{-- Submit Button --}}
                         <button type="submit" class="dir-btn-search">
                             <i class="fas fa-magnifying-glass" style="margin-right:6px"></i> {{ __('Search') }}
                         </button>
@@ -755,22 +819,24 @@
 
         </div>
     </section>
+@endsection
 
-    {{-- Custom JS --}}
+{{-- Custom JS --}}
 @section('custom-js')
     <script>
         (function() {
             'use strict';
 
-            const AJAX_URL = '{{ url()->current() }}';
+            const AJAX_URL = '{{ route('directory') }}';
             const CSRF = '{{ csrf_token() }}';
 
             let state = {
-                search: @json($search),
-                location: @json($location),
-                type: @json($typeParam),
-                sort: @json($sort),
-                per_page: {{ (int) $perPage }},
+                search: @json($search ?? ''),
+                location: @json($location ?? ''),
+                category: @json($category ?? ''),
+                type: @json($typeParam ?? 'all'),
+                sort: @json($sort ?? 'newest'),
+                per_page: {{ (int) ($perPage ?? 9) }},
                 page: {{ (int) request('page', 1) }},
             };
 
@@ -793,35 +859,41 @@
             let abortCtrl = null;
 
             /* ── Fetch ── */
-            function fetchListings(resetPage) {
-                if (resetPage) state.page = 1;
-                if (abortCtrl) abortCtrl.abort();
+            function fetchListings(resetPage = false) {
+                if (resetPage) {
+                    state.page = 1;
+                }
+
+                if (abortCtrl) {
+                    abortCtrl.abort();
+                }
+
                 abortCtrl = new AbortController();
 
                 $loading.classList.add('show');
 
                 const params = new URLSearchParams({
-                    search: state.search,
-                    location: state.location,
-                    type: state.type,
-                    sort: state.sort,
-                    per_page: state.per_page,
-                    page: state.page,
+                    search: state.search || '',
+                    location: state.location || '',
+                    category: state.category || '',
+                    type: state.type || 'all',
+                    sort: state.sort || 'newest',
+                    per_page: state.per_page || 9,
+                    page: state.page || 1
                 });
 
-                history.replaceState(null, '', '?' + params.toString());
-
                 fetch(AJAX_URL + '?' + params.toString(), {
+                        method: 'GET',
                         headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'X-CSRF-TOKEN': CSRF,
-                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
                         },
-                        signal: abortCtrl.signal,
+                        signal: abortCtrl.signal
                     })
-                    .then(r => {
-                        if (!r.ok) throw new Error('HTTP ' + r.status);
-                        return r.json();
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('HTTP ' + response.status);
+                        }
+                        return response.json();
                     })
                     .then(data => {
                         $loading.classList.remove('show');
@@ -829,29 +901,26 @@
                         renderCount(data);
                         renderChips();
                     })
-                    .catch(err => {
-                        if (err.name !== 'AbortError') {
+                    .catch(error => {
+                        if (error.name !== 'AbortError') {
                             $loading.classList.remove('show');
-                            console.error('Directory AJAX error:', err);
+                            console.error('Directory AJAX Error:', error);
                         }
                     });
             }
 
             /* ── Render HTML partial ── */
             function renderResults(data) {
-                /* Remove all previous content except loader */
                 $results.querySelectorAll(':scope > *:not(#dir-loading)').forEach(el => el.remove());
 
                 const frag = document.createRange().createContextualFragment(data.html);
                 $results.appendChild(frag);
 
-                /* Re-apply list-view if active */
                 const newGrid = document.getElementById('dir-grid');
                 if (newGrid && localStorage.getItem('dir-view') === 'list') {
                     newGrid.classList.add('list-view');
                 }
 
-                /* Wire AJAX pagination */
                 $results.querySelectorAll('.dir-pagination a[href]').forEach(link => {
                     link.addEventListener('click', function(e) {
                         e.preventDefault();
@@ -904,6 +973,14 @@
                     addChip('search', state.search, 'search', '');
                 if (state.location)
                     addChip('location-dot', state.location, 'location', '');
+                if (state.category) {
+                    const catSelect = document.getElementById('dir-input-category');
+                    const selectedOpt = catSelect ? catSelect.querySelector(`option[value="${state.category}"]`) : null;
+                    const catLabel = selectedOpt ? selectedOpt.textContent.trim() : state.category;
+                    if (catLabel) {
+                        addChip('tags', catLabel, 'category', '');
+                    }
+                }
                 if (state.type && state.type !== 'all')
                     addChip('layer-group', state.type, 'type', 'all');
                 if (state.sort && state.sort !== 'newest')
@@ -914,6 +991,9 @@
             function syncControls() {
                 document.getElementById('dir-input-search').value = state.search;
                 document.getElementById('dir-input-location').value = state.location;
+                if (document.getElementById('dir-input-category')) {
+                    document.getElementById('dir-input-category').value = state.category;
+                }
                 document.getElementById('dir-input-type').value = state.type;
                 document.getElementById('dir-input-sort').value = state.sort;
                 $ctrlSort.value = state.sort;
@@ -925,6 +1005,8 @@
                 e.preventDefault();
                 state.search = document.getElementById('dir-input-search').value.trim();
                 state.location = document.getElementById('dir-input-location').value.trim();
+                state.category = document.getElementById('dir-input-category') ? document.getElementById(
+                    'dir-input-category').value : '';
                 state.type = document.getElementById('dir-input-type').value;
                 state.sort = document.getElementById('dir-input-sort').value;
                 $ctrlSort.value = state.sort;
@@ -971,5 +1053,4 @@
 
         })();
     </script>
-@endsection
 @endsection

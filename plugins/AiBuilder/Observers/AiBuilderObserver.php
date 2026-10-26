@@ -12,7 +12,7 @@
 
 namespace Plugins\AiBuilder\Observers;
 
-
+use App\Transaction;
 use App\User;
 use Illuminate\Support\Facades\DB;
 
@@ -27,37 +27,76 @@ class AiBuilderObserver
     {
         // check if plan details is changed
         try {
-            if ($model instanceof User && $model->isDirty('plan_details')) {
-                // user
+            if ($model->wasChanged('plan_activation_date')) {
+                
+                // Get user
                 $user = $model;
 
-                // get new plan details
-                $newPlan = json_decode($model->plan_details, true);
-
-                // ai credits
+                // Get or create AI credits record
                 $ai_credits = DB::table('ai_credits')
                     ->where('user_id', $user->user_id)
                     ->first();
 
-                // unused credits
-                $unused_credits = (int) ($ai_credits ? $ai_credits->credits : 0);
-
-                // new credits
-                $new_credits = (int) ($newPlan['ai_credits'] ?? 0);
-
-                if (empty($ai_credits)) {
-                    // insert new credits
+                if (! $ai_credits) {
+                    // Insert AI credits record
                     DB::table('ai_credits')->insert([
-                        'user_id' => $user->user_id,
-                        'credits' => $new_credits,
+                        'user_id'       => $user->user_id,
+                        'credits'       => 0,
+                        'trial_credits' => 0,
                     ]);
-                } else {
-                    // update credits
+
+                    // Get AI credits
+                    $ai_credits = (object) [
+                        'credits'       => 0,
+                        'trial_credits' => 0,
+                    ];
+                }
+
+                // transaction
+                $transaction = Transaction::where('user_id', $user->id)->latest()->first();
+
+                // check if trial
+                $is_trial = optional($transaction)->payment_gateway_name == 'TRIAL';
+
+                // Get plan details
+                $newPlan = json_decode($model->plan_details, true) ?: [];
+
+                if ($is_trial) {
+                    // Update credits
                     DB::table('ai_credits')
                         ->where('user_id', $user->user_id)
                         ->update([
-                            'credits' => $unused_credits + $new_credits,
+                            'trial_credits' => (int) ($newPlan['trial_ai_credits'] ?? 0),
                         ]);
+                } else {
+                    // Plan credits
+                    $new_credits = (int) ($newPlan['ai_credits'] ?? 0);
+
+                    // Unlimited credits
+                    if ($new_credits === -1) {
+                        DB::table('ai_credits')
+                            ->where('user_id', $user->user_id)
+                            ->update([
+                                'credits'       => -1,
+                                'trial_credits' => 0,
+                            ]);
+                    } else {
+                        // Existing credits
+                        $existing_credits = (int) ($ai_credits->credits ?? 0);
+
+                        // If previously unlimited, reset to 0 before adding
+                        if ($existing_credits === -1) {
+                            $existing_credits = 0;
+                        }
+
+                        // Update credits
+                        DB::table('ai_credits')
+                            ->where('user_id', $user->user_id)
+                            ->update([
+                                'credits'       => $existing_credits + $new_credits,
+                                'trial_credits' => 0,
+                            ]);
+                    }
                 }
             }
         } catch (\Exception $e) {

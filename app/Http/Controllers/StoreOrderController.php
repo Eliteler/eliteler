@@ -10,7 +10,6 @@
  |--------------------------------------------------------------------------
 */
 
-
 namespace App\Http\Controllers;
 
 use App\BusinessCard;
@@ -71,11 +70,13 @@ class StoreOrderController extends Controller
                 $productImagePath = Str::replaceFirst(url('/'), '', $productImagePath);
             }
 
+            // Save variant_name along with other item details
             $items[] = [
                 'product_image' => $productImagePath,
                 'product_name'  => $order_item['product_name'],
+                'variant_name'  => $order_item['variant_name'] ?? null, // <-- Saved variant name cleanly
                 'price'         => number_format((float) $order_item['price'], 2, '.', ''),
-                'quantity'      => (int) $order_item['qty'], // Renamed from 'qty' to 'quantity'
+                'quantity'      => (int) $order_item['qty'],
             ];
         }
 

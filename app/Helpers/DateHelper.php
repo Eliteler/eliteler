@@ -9,11 +9,18 @@
  | Unauthorized distribution is prohibited
  |--------------------------------------------------------------------------
 */
- 
+
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
+
+// Special sentinel value used to mark the "human diff" (relative time) option.
+// Store this exact string in the config table when the admin picks
+// "3 days ago" style formatting instead of a real date format string.
+if (!defined('DATE_FORMAT_DIFF_FOR_HUMANS')) {
+    define('DATE_FORMAT_DIFF_FOR_HUMANS', 'diffForHumans');
+}
 
 // Get date time formats
 if (!function_exists('getDateTimeFormats')) {
@@ -21,35 +28,36 @@ if (!function_exists('getDateTimeFormats')) {
     {
         return [
             // Standard International Formats
-            'Y-m-d H:i'  => '2025-03-03 14:30 (ISO 8601)',
-            'Y-m-d H:i'    => '2025-03-03 14:30 (ISO 8601, No Seconds)',
-            'Y/m/d H:i'  => '2025/03/03 14:30 (Japan, Korea)',
-            'Y/m/d H:i'    => '2025/03/03 14:30 (Japan, Korea, No Seconds)',
-            'Y.m.d H:i'  => '2025.03.03 14:30 (Alternative International)',
-            
+            'Y-m-d H:i'        => '2025-03-03 14:30 (ISO 8601, No Seconds)',
+            'Y/m/d H:i'        => '2025/03/03 14:30 (Japan, Korea, No Seconds)',
+            'Y.m.d H:i'        => '2025.03.03 14:30 (Alternative International)',
+
             // European Formats
-            'd-m-Y H:i'    => '03-03-2025 14:30 (Germany, France, Italy)',
-            'd/m/Y H:i'    => '03/03/2025 14:30 (Europe, Latin America)',
-            'd.m.Y H:i'    => '03.03.2025 14:30 (Germany, Russia)',
-            'd M Y H:i'    => '03 Mar 2025 14:30 (UK, India - 24-hour)',
-            'd M Y h:i A'  => '03 Mar 2025 02:30 PM (UK, India - 12-hour)',
+            'd-m-Y H:i'        => '03-03-2025 14:30 (Germany, France, Italy)',
+            'd/m/Y H:i'        => '03/03/2025 14:30 (Europe, Latin America)',
+            'd.m.Y H:i'        => '03.03.2025 14:30 (Germany, Russia)',
+            'd M Y H:i'        => '03 Mar 2025 14:30 (UK, India - 24-hour)',
+            'd M Y h:i A'      => '03 Mar 2025 02:30 PM (UK, India - 12-hour)',
 
             // North & South America
-            'm/d/Y h:i A'  => '03/03/2025 02:30 PM (USA, Canada)',
-            'm-d-Y h:i A'  => '03-03-2025 02:30 PM (Alternative USA)',
-            'M d, Y h:i A' => 'Mar 03, 2025 02:30 PM (Common format, North America)',
-            'd-m-Y H:i'    => '03-03-2025 14:30 (Brazil, Argentina)',
+            'm/d/Y h:i A'      => '03/03/2025 02:30 PM (USA, Canada)',
+            'm-d-Y h:i A'      => '03-03-2025 02:30 PM (Alternative USA)',
+            'M d, Y h:i A'     => 'Mar 03, 2025 02:30 PM (Common format, North America)',
+            'd-m-Y H:i (BR)'   => '03-03-2025 14:30 (Brazil, Argentina)',
 
             // Asia & Middle East
-            'd/m/Y H:i'  => '03/03/2025 14:30 (India, Pakistan, UAE)',
-            'Y-m-d g:i A'  => '2025-03-03 2:30 PM (China, South Korea, Japan - 12-hour)',
-            'Y-m-d H:i'  => '2025-03-03 14:30 (Asia - 24-hour)',
-            
+            'd/m/Y H:i (Intl)' => '03/03/2025 14:30 (India, Pakistan, UAE)',
+            'Y-m-d g:i A'      => '2025-03-03 2:30 PM (China, South Korea, Japan - 12-hour)',
+            'Y-m-d H:i (Asia)' => '2025-03-03 14:30 (Asia - 24-hour)',
+
             // Full Date & Time Formats
-            'l, d F Y h:i A' => 'Monday, 03 March 2025 02:30 PM (Full Date & Time)',
-            'l, d M Y H:i' => 'Monday, 03 Mar 2025 14:30 (Full Date, 24-hour)',
-            'D, d M Y h:i A' => 'Mon, 03 Mar 2025 02:30 PM (Short Weekday, 12-hour)',
-            'D, d M Y H:i' => 'Mon, 03 Mar 2025 14:30 (Short Weekday, 24-hour)',
+            'l, d F Y h:i A'   => 'Monday, 03 March 2025 02:30 PM (Full Date & Time)',
+            'l, d M Y H:i'     => 'Monday, 03 Mar 2025 14:30 (Full Date, 24-hour)',
+            'D, d M Y h:i A'   => 'Mon, 03 Mar 2025 02:30 PM (Short Weekday, 12-hour)',
+            'D, d M Y H:i'     => 'Mon, 03 Mar 2025 14:30 (Short Weekday, 24-hour)',
+
+            // Diff for human (ex: 3 days ago)
+            DATE_FORMAT_DIFF_FOR_HUMANS => '3 days ago (Relative / Human Readable)',
         ];
     }
 }
@@ -82,7 +90,17 @@ if (!function_exists('formatDateForUser')) {
         $carbonDate = Carbon::parse($date)->setTimezone($timezone);
         $carbonDate->locale($locale); // Set locale for translation
 
-        return $carbonDate->translatedFormat($configs[75]->config_value ?? 'M d, Y h:i A');
+        // Get the configured format (may be a real PHP date format, or the
+        // special "diffForHumans" sentinel meaning "3 days ago" style output)
+        $configuredFormat = $configs[75]->config_value ?? 'M d, Y h:i A';
+
+        if ($configuredFormat === DATE_FORMAT_DIFF_FOR_HUMANS) {
+            // Carbon's diffForHumans() already respects the locale set above,
+            // so "3 days ago" will be translated automatically when supported.
+            return $carbonDate->diffForHumans();
+        }
+
+        return $carbonDate->translatedFormat($configuredFormat);
     }
 }
 
@@ -112,12 +130,19 @@ if (! function_exists('formatDateOnlyForUser')) {
         // Get the configured datetime format
         $dateTimeFormat = $configs[75]->config_value ?? 'M d, Y h:i A';
 
-                                                                               // Remove time part from format
-        $dateOnlyFormat = preg_replace('/[HhGgisAa:]+/', '', $dateTimeFormat); // remove time components
-        $dateOnlyFormat = trim(preg_replace('/\s+/', ' ', $dateOnlyFormat));   // cleanup extra spaces
-
         // Format the date
         $carbonDate = Carbon::parse($date)->setTimezone($timezone)->locale($locale);
+
+        // If the admin picked "diff for human" mode, there is no separate
+        // "date only" variant — relative time (e.g. "3 days ago") already
+        // omits a distinct date/time split, so just return it as-is.
+        if ($dateTimeFormat === DATE_FORMAT_DIFF_FOR_HUMANS) {
+            return $carbonDate->diffForHumans();
+        }
+
+        // Remove time part from format
+        $dateOnlyFormat = preg_replace('/[HhGgisAa:]+/', '', $dateTimeFormat); // remove time components
+        $dateOnlyFormat = trim(preg_replace('/\s+/', ' ', $dateOnlyFormat));   // cleanup extra spaces
 
         return $carbonDate->translatedFormat($dateOnlyFormat);
     }

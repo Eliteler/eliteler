@@ -12,14 +12,15 @@
 
 namespace App\Http\Controllers\User\Store\Edit;
 
-use App\User;
-use App\Setting;
-use PSpell\Config;
 use App\BusinessCard;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use App\Setting;
+use App\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use PSpell\Config;
 
 class EditStoreAdvancedSettingController extends Controller
 {
@@ -61,45 +62,44 @@ class EditStoreAdvancedSettingController extends Controller
         }
     }
 
+    // Update Store Advanced Settings
     public function updateStoreAdvancedSetting(Request $request)
-    { 
-        // Queries
-        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $request->store_id)->first();
+    {
+        // Validate request inputs
+        $validator = Validator::make($request->all(), [
+            'store_id' => 'required',
+            'custom_css' => 'nullable|string|max:50000',
+            'custom_js' => 'nullable|string|max:50000',
+        ]);
 
-        // Check business card
-        if ($business_card == null) {
-            return redirect()->route('user.stores')->with('failed', trans('Store not found!'));
-        } else {
-            // Check pwa enable/disable
-            if ($request->is_enable_pwa == "on") {
-                $request->is_enable_pwa = 1;
-            } else {
-                $request->is_enable_pwa = 0;
-            }
-
-            // Check language switcher enable/disable
-            if ($request->is_enable_language_switcher == "on") {
-                $request->is_enable_language_switcher = 1;
-            } else {
-                $request->is_enable_language_switcher = 0;
-            }
-
-            // Check directory listing enable/disable
-            if ($request->directory_listing == "on") {
-                $request->directory_listing = 1;
-            } else {
-                $request->directory_listing = 0;
-            }
-
-            // Update store advanced setting
-            $business_card->is_enable_pwa = $request->is_enable_pwa;
-            $business_card->is_enable_language_switcher = $request->is_enable_language_switcher;
-            $business_card->custom_css = $request->custom_css;
-            $business_card->custom_js = $request->custom_js;
-            $business_card->directory_listing = $request->directory_listing;
-            $business_card->save();
-
-            return redirect()->route('user.edit.store.advanced.setting', $request->store_id)->with('success', trans('Store advanced setting updated successfully!'));
+        if ($validator->fails()) {
+            return back()->with('failed', $validator->messages()->all()[0])->withInput();
         }
+
+        // Find the store belonging to the authenticated user
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)
+            ->where('card_id', $request->store_id)
+            ->first();
+
+        // Guard clause: check if store exists
+        if (!$business_card) {
+            return redirect()->route('user.stores')->with('failed', trans('Store not found!'));
+        }
+
+        // Safely evaluate boolean states (handles '1', 1, 'on', true, or unchecked null)
+        $isEnablePwa = $request->boolean('is_enable_pwa') ? 1 : 0;
+        $isEnableLanguageSwitcher = $request->boolean('is_enable_language_switcher') ? 1 : 0;
+        $directoryListing = $request->boolean('directory_listing') ? 1 : 0;
+
+        // Update store advanced settings
+        $business_card->is_enable_pwa = $isEnablePwa;
+        $business_card->is_enable_language_switcher = $isEnableLanguageSwitcher;
+        $business_card->directory_listing = $directoryListing;
+        $business_card->custom_css = $request->custom_css;
+        $business_card->custom_js = $request->custom_js;
+        $business_card->save();
+
+        return redirect()->route('user.edit.store.advanced.setting', $request->store_id)
+            ->with('success', trans('Store advanced setting updated successfully!'));
     }
 }

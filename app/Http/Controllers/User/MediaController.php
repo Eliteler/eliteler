@@ -12,14 +12,17 @@
 
 namespace App\Http\Controllers\User;
 
+use App\Helpers\StorageHelper;
+use App\Http\Controllers\Controller;
 use App\Medias;
 use App\Setting;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Yajra\DataTables\DataTables;
-use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Yajra\DataTables\DataTables;
 
 class MediaController extends Controller
 {
@@ -42,66 +45,69 @@ class MediaController extends Controller
     // All user media
     public function media(Request $request)
     {
-        // Check if user has active plan
+        // Check active plan
         $active_plan = json_decode(Auth::user()->plan_details);
-
-        // If user has no active plan, redirect to plans page
         if ($active_plan == null) {
             return redirect()->route('user.plans');
         }
 
-        // If user has active plan, show media
+        // AJAX API Response for File Manager
         if ($request->ajax()) {
-            $media = Medias::where('user_id', Auth::user()->user_id)
-                ->orderBy('id', 'desc')
-                ->paginate(8);
+            $query = Medias::where('user_id', Auth::user()->user_id);
+
+            // Server-side keyword search
+            if ($request->filled('search')) {
+                $search = $request->get('search');
+                $query->where('media_url', 'like', "%{$search}%");
+            }
+
+            $media = $query->orderBy('id', 'desc')->paginate(12);
 
             $media->getCollection()->transform(function ($item) {
-                $item->formatted_created_at = \Carbon\Carbon::parse($item->created_at)->diffForHumans();
-                $item->size = $this->formatBytes($item->size);
+                $fileName = basename($item->media_url);
+                $extension = strtoupper(pathinfo($fileName, PATHINFO_EXTENSION) ?: 'FILE');
+
+                $item->file_name = $fileName;
+                $item->extension = $extension;
+                $item->formatted_created_at = Carbon::parse($item->created_at)->diffForHumans();
+                $item->full_date = Carbon::parse($item->created_at)->format('d M Y, h:i A');
+                $item->size_formatted = $this->formatBytes($item->size);
                 $item->base_url = asset('');
-                $item->media_url = $item->media_url ?? '';
+                $item->full_url = asset($item->media_url);
                 return $item;
             });
 
-            return response()->json(
-                ['media' => $media],
-                200,
-                [],
-                JSON_INVALID_UTF8_SUBSTITUTE
-            );
+            return response()->json([
+                'media' => $media
+            ], 200, [], JSON_INVALID_UTF8_SUBSTITUTE);
         }
 
-        // Get total storage
-        $totalStorage = $active_plan->storage;
-        $usedStorage = Medias::where('user_id', Auth::user()->user_id)->sum('size');
-        $usedStorage = round($usedStorage / 1024 / 1024, 2);
+        // Calculate Storage Metrics
+        $totalStorage = (float) $active_plan->storage;
+        $rawUsedBytes = Medias::where('user_id', Auth::user()->user_id)->sum('size');
+        $usedStorage  = round($rawUsedBytes / 1024 / 1024, 2); // In MB
 
-        if ($totalStorage <= 0) {
+        if ($totalStorage <= 0 || $totalStorage == 999) {
             $usedStoragePercentage = 0;
-            $availableStorage = 0;
-            $availableStoragePercentage = 0;
+            $availableStorage = 'Unlimited';
+            $availableStoragePercentage = 100;
         } else {
-            $usedStoragePercentage = round(($usedStorage / $totalStorage) * 100, 2);
-            $availableStorage = $totalStorage - $usedStorage;
-            $availableStoragePercentage = round(($availableStorage / $totalStorage) * 100, 2);
+            $usedStoragePercentage = round(($usedStorage / $totalStorage) * 100, 1);
+            $availableStorage = max(0, round($totalStorage - $usedStorage, 2));
+            $availableStoragePercentage = max(0, round(100 - $usedStoragePercentage, 1));
         }
 
-        // Get settings
         $settings = Setting::where('status', 1)->first();
 
-        return view(
-            'user.pages.media.index',
-            compact(
-                'active_plan',
-                'settings',
-                'totalStorage',
-                'usedStorage',
-                'usedStoragePercentage',
-                'availableStorage',
-                'availableStoragePercentage'
-            )
-        );
+        return view('user.pages.media.index', compact(
+            'active_plan',
+            'settings',
+            'totalStorage',
+            'usedStorage',
+            'usedStoragePercentage',
+            'availableStorage',
+            'availableStoragePercentage'
+        ));
     }
 
     // Add media
@@ -148,14 +154,14 @@ class MediaController extends Controller
             return response()->json(['status' => 'error', 'message' => trans('You have reached your storage limit.')], 200);
         }
 
-        // Set filename and path
-        $imageName = Auth::user()->user_id . '-' . $uniqid . '.' . $image->extension();
-        Storage::disk('public')->putFileAs('images', $image, $imageName);
+        // Upload media image with custom name (user_id-uniqid) and get relative path
+        $media_url = StorageHelper::uploadImage(
+            $image,
+            'images',
+            Auth::user()->user_id . '-' . $uniqid
+        );
 
-        // Public URL path
-        $media_url = 'storage/images/' . $imageName;
-
-        // Save record
+        // Save record in database
         $card = new Medias();
         $card->media_id = $uniqid;
         $card->user_id = Auth::user()->user_id;
@@ -167,19 +173,31 @@ class MediaController extends Controller
         return response()->json(['status' => 'success', 'message' => trans('Uploaded!')]);
     }
 
+    // Delete media
     public function deleteMedia(Request $request)
     {
-        // Queries
-        $media_data = Medias::where('user_id', Auth::user()->user_id)->where('media_id', $request->query('id'))->first();
+        $media = Medias::where('user_id', Auth::user()->user_id)
+            ->where('media_id', $request->query('id'))
+            ->first();
 
         // Check media
-        if ($media_data != null) {
-
-            // Delete media image
-            Medias::where('user_id', Auth::user()->user_id)->where('media_id', $request->query('id'))->delete();
-
-            return redirect()->route('user.media')->with('success', trans('Removed!'));
+        if (!$media) {
+            return redirect()->route('user.media')
+                ->with('failed', trans('Media not found.'));
         }
+
+        try {
+            // Delete media image file from storage using StorageHelper
+            StorageHelper::deleteFile($media->media_url);
+        } catch (\Exception $e) {
+            Log::error('Media delete failed: ' . $e->getMessage());
+        }
+
+        // Delete media database record
+        $media->delete();
+
+        return redirect()->route('user.media')
+            ->with('success', trans('Removed!'));
     }
 
     public function multipleImages(Request $request)
@@ -214,17 +232,17 @@ class MediaController extends Controller
             return response()->json(['status' => 'error', 'message' => trans('You have reached your storage limit.')], 200);
         }
 
-        // Unique filename
+        // Unique ID
         $uniqid = uniqid();
-        $imageName = Auth::user()->user_id . '-' . $uniqid . '.' . $image->extension();
 
-        // Store image in storage/app/public/images
-        Storage::disk('public')->putFileAs('images', $image, $imageName);
+        // Upload image using StorageHelper and get relative path
+        $media_url = StorageHelper::uploadImage(
+            $image,
+            'images',
+            Auth::user()->user_id . '-' . $uniqid
+        );
 
-        // Public URL (you must have run `php artisan storage:link`)
-        $media_url = 'storage/images/' . $imageName;
-
-        // Save media record
+        // Save media record in database
         $card = new Medias();
         $card->media_id = $uniqid;
         $card->user_id = Auth::user()->user_id;
@@ -237,6 +255,52 @@ class MediaController extends Controller
             'status'     => 'success',
             'message'    => trans('Uploaded!'),
             'image_url'  => asset($media_url), // full URL for frontend use
+        ]);
+    }
+
+
+    // Delete multiple media items
+    public function deleteMultipleMedia(Request $request)
+    {
+        $ids = $request->input('ids', []);
+
+        if (empty($ids) || !is_array($ids)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => trans('No files selected for deletion.')
+            ], 400);
+        }
+
+        // Fetch only media belonging to the authenticated user
+        $mediaItems = Medias::where('user_id', Auth::user()->user_id)
+            ->whereIn('media_id', $ids)
+            ->get();
+
+        if ($mediaItems->isEmpty()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => trans('No matching media files found.')
+            ], 404);
+        }
+
+        $deletedCount = 0;
+
+        foreach ($mediaItems as $media) {
+            try {
+                // Delete file using StorageHelper
+                StorageHelper::deleteFile($media->media_url);
+
+                // Delete DB record
+                $media->delete();
+                $deletedCount++;
+            } catch (\Exception $e) {
+                Log::error('Bulk media delete failed for ID ' . $media->media_id . ': ' . $e->getMessage());
+            }
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => trans(':count media file(s) removed successfully.', ['count' => $deletedCount])
         ]);
     }
 
@@ -254,12 +318,13 @@ class MediaController extends Controller
     }
 
     // Convert to MB
-    function formatBytes($bytes, $precision = 2)
+    private function formatBytes($bytes, $precision = 2)
     {
         $units = ['B', 'KB', 'MB', 'GB', 'TB'];
-        if ($bytes <= 0) return '0 B';
-        $pow = floor(log($bytes, 1024));
+        $bytes = max($bytes, 0);
+        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
         $pow = min($pow, count($units) - 1);
-        return round($bytes / (1024 ** $pow), $precision) . ' ' . $units[$pow];
+        $bytes /= (1 << (10 * $pow));
+        return round($bytes, $precision) . ' ' . $units[$pow];
     }
 }

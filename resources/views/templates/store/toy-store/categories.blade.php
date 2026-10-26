@@ -1,3 +1,16 @@
+@php
+    $currentHost = request()->getHost();
+    $masterHost = parse_url(config('app.url'), PHP_URL_HOST);
+    $isCustomDomainOrSubdomain = ($currentHost !== $masterHost);
+
+    // Dynamic store base URL
+    if ($isCustomDomainOrSubdomain) {
+        $storeUrl = url('/');
+    } else {
+        $storeUrl = url($business_card_details->card_url);
+    }
+@endphp
+
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
@@ -5,7 +18,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-
+ 
     {{-- CSRF Token --}}
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
@@ -38,15 +51,17 @@
     <meta name="msapplication-TileColor" content="red">
     <meta name="msapplication-TileImage" content="{{ url($business_card_details->profile) }}">
 
-     {{-- CSS --}}
+    {{-- CSS --}}
     <link href="{{ url('css/tabler.min.css') }}" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
     <link href="{{ url('templates/css/store/toy-store.css') }}" rel="stylesheet">
     {{-- Swiper CSS --}}
     <link rel="stylesheet" href="{{ url('css/swiper-bundle.min.css') }}">
-    
+
     <!-- Baloo and Poppins -->
-    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;700&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;700&family=Poppins:wght@400;500;600&display=swap"
+        rel="stylesheet">
 
     <style>
         body {
@@ -63,22 +78,62 @@
     {{-- Check business details --}}
     @if ($business_card_details != null)
         @php
-            $custom_css = $business_card_details->custom_css;
-            $custom_js = $business_card_details->custom_js;
+            $custom_css = trim($business_card_details->custom_css ?? '');
+            $custom_js = trim($business_card_details->custom_js ?? '');
 
-            // Ensure <style> tags for custom CSS
-            if (strpos($custom_css, '<style>') === false && strpos($custom_css, '</style>') === false) {
-                $custom_css = "<style>" . $custom_css . "</style>";
+            /*
+            |--------------------------------------------------------------------------
+            | Custom CSS
+            |--------------------------------------------------------------------------
+            */
+
+            if (!empty($custom_css) && stripos($custom_css, '<style') === false) {
+                $custom_css = "<style>{$custom_css}</style>";
             }
 
-            // Ensure <script> tags for custom JS
-            if (strpos($custom_js, '<script>') === false && strpos($custom_js, '</script>') === false) {
-                $custom_js = "<script>" . $custom_js . "</script>";
+            /*
+            |--------------------------------------------------------------------------
+            | Split HTML tags and plain JS
+            |--------------------------------------------------------------------------
+            */
+
+            $include_custom_js = '';
+
+            if (!empty($custom_js)) {
+                // Extract HTML tags like meta, script, iframe, noscript, etc.
+                preg_match_all(
+                '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/@endphp/is',
+        $custom_js,
+        $matches,
+    );
+
+    $html_tags = implode("\n", $matches[0]);
+
+    // Remove extracted HTML tags from original content
+    $plain_js = trim(
+        preg_replace(
+            '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/?>/is',
+            '',
+            $custom_js,
+        ),
+    );
+
+    // Add HTML tags directly
+    $include_custom_js .= $html_tags;
+
+    // Wrap remaining plain JS inside script tag
+    if (!empty($plain_js)) {
+        $include_custom_js .= "\n<script>
+            {
+                $plain_js
             }
-        @endphp
+        </script>";
+    }
+}
+?>
 
         {!! $custom_css !!}
-        {!! $custom_js !!}
+        {!! $include_custom_js !!}
     @endif
 
     {{-- JS --}}
@@ -119,7 +174,8 @@
                         <div class="page-body">
                             <div class="col-md-12 mb-3 px-lg-2">
                                 <div class="position-relative">
-                                    <img class="position-absolute floater-img" src="{{ asset('img/templates/toy-store/2.png') }}"
+                                    <img class="position-absolute floater-img"
+                                        src="{{ asset('img/templates/toy-store/2.png') }}"
                                         style="
                                             width: 80px;
                                             height: 80px;
@@ -127,14 +183,12 @@
                                             top: 0px;   
                                             opacity: 0.5;
                                             filter: blur(1px);
-                                        " 
-                                    />
+                                        " />
                                 </div>
 
                                 <h2 class="head pt-4 pb-5 text-center position-relative fs-custom fw-bold">
                                     {{ __('Categories') }}
-                                    <div
-                                        class="position-absolute start-50 translate-middle-x bg-red bottom-bar2">
+                                    <div class="position-absolute start-50 translate-middle-x bg-red bottom-bar2">
                                     </div>
                                 </h2>
 
@@ -146,12 +200,13 @@
                                             @foreach ($categories as $category)
                                                 <div class="cursor-pointer col-6 col-md-3">
                                                     <a
-                                                        href="{{ url($business_card_details->card_url) . '?category=' . urlencode(strtolower($category->category_name)) }}">
+                                                        href="{{ $storeUrl . '?category=' . urlencode(strtolower($category->category_name)) }}">
                                                         <div class="card rounded-toy-store border-red">
                                                             <div
                                                                 class="card-body d-flex flex-column align-items-center justify-content-center gap-2 p-3">
                                                                 <!-- Thumbnail -->
-                                                                <div class="d-flex align-items-center justify-content-center">
+                                                                <div
+                                                                    class="d-flex align-items-center justify-content-center">
                                                                     <img src="{{ url($category->thumbnail) }}"
                                                                         class="rounded-toy-store category-thumbnail"
                                                                         alt="{{ $category->category_name }}" />
@@ -192,7 +247,7 @@
                                     <span class="text-white">
                                         {{ __('Copyright') }} &copy;
                                         <span id="year"></span>
-                                        <a href="{{ url($business_card_details->card_url) }}"
+                                        <a href="{{ $storeUrl }}"
                                             class="text-white fw-semibold">
                                             {{ $plan_details['hide_branding'] == 1 ? $card_details->title : config('app.name') }}
                                         </a>.
@@ -208,7 +263,8 @@
                                             </a>
                                         </li>
                                         <li class="list-inline-item">
-                                            <a href="{{ $shareComponent['twitter'] }}" target="_blank" class="link-light">
+                                            <a href="{{ $shareComponent['twitter'] }}" target="_blank"
+                                                class="link-light">
                                                 <i class="ti ti-brand-twitter-filled text-white"></i>
                                             </a>
                                         </li>
@@ -233,7 +289,7 @@
                                     </ul>
                                 </div>
                             </div>
-        
+
                             <!-- Second Row: Policy Links -->
                             <div class="row mt-3">
                                 <div class="col">
@@ -246,7 +302,7 @@
                                                     class="text-white">{{ __('Privacy Policy') }}</a>
                                             </li>
                                         @endif
-        
+
                                         {{-- Terms and Conditions --}}
                                         @if ($business_card_details->terms_and_conditions)
                                             <li class="list-inline-item">
@@ -254,7 +310,7 @@
                                                     class="text-white">{{ __('Terms & Conditions') }}</a>
                                             </li>
                                         @endif
-        
+
                                         {{-- Return/Refund Policy --}}
                                         @if ($business_card_details->refund_policy)
                                             <li class="list-inline-item">
@@ -262,7 +318,7 @@
                                                     class="text-white">{{ __('Return/Refund Policy') }}</a>
                                             </li>
                                         @endif
-        
+
                                         {{-- Shipping Policy --}}
                                         @if ($business_card_details->shipping_policy)
                                             <li class="list-inline-item">
@@ -270,7 +326,7 @@
                                                     class="text-white">{{ __('Shipping Policy') }}</a>
                                             </li>
                                         @endif
-        
+
                                         {{-- Cookie Policy --}}
                                         @if ($business_card_details->cookie_policy)
                                             <li class="list-inline-item">
@@ -278,7 +334,7 @@
                                                     class="text-white">{{ __('Cookie Policy') }}</a>
                                             </li>
                                         @endif
-        
+
                                         {{-- Contact Information / Customer Support Policy --}}
                                         @if ($business_card_details->customer_support_policy)
                                             <li class="list-inline-item">
@@ -331,7 +387,7 @@
     </div>
 
     {{-- Place order --}}
-    <div class="modal modal-blur fade" id="orderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal modal-bg fade" id="orderModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-md modal-dialog-centered" role="document">
             <div class="modal-content">
                 <!-- Modal Header -->
@@ -410,8 +466,7 @@
                     <!-- Close -->
                     <button type="button" class="btn btn-dark" data-bs-dismiss="modal">{{ __('Close') }}</button>
                     <!-- Confirm -->
-                    <button type="button" class="btn btn-red"
-                        onclick="confirmOrder()">{{ __('Confirm') }}</button>
+                    <button type="button" class="btn btn-red" onclick="confirmOrder()">{{ __('Confirm') }}</button>
                 </div>
             </div>
         </div>
@@ -577,7 +632,7 @@
                 // LEFT: Image
                 cart_items += `
                 <div class="me-3 flex-shrink-0" style="width: 100px; height: 100px;">
-                    <img src="${item.product_image}" class="img-fluid rounded-toy-store object-fit-cover h-100 w-100" alt="${item.product_name}" />
+                    <img src="${item.product_image}" class="img-fluid rounded-toy-store object-fit-contain h-100 w-100" alt="${item.product_name}" />
                 </div>`;
 
                 // RIGHT: Product Info
@@ -599,12 +654,12 @@
                     `<button onclick="addQty(${index})" class="btn border text-dark d-flex align-items-center justify-content-center" style="width:35px;height:35px;"><svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-plus m-0"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg></button>`;
                 cart_items +=
                     `<button onclick="removeFromCart(${index})" class="ms-3 btn btn-danger p-0 d-flex align-items-center justify-content-center" style="width:35px;height:35px;"><svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-trash m-0"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg></button>`;
+
                 cart_items += `</div>`; // end buttons
                 cart_items += `</div>`; // end text/info
                 cart_items += `</div>`; // end row
                 cart_items += `</div>`; // end card
                 cart_items += `</div>`; // end col
-
             });
 
             if (grandTotal > 0) {
@@ -749,9 +804,8 @@
                 });
 
                 // Place order ajax
-                // Place order ajax
                 $.ajax({
-                    url: "{{ config('app.url') }}/order/place",
+                    url: "{{ url('order/place') }}",
                     method: "POST",
                     data: {
                         _token: '{{ csrf_token() }}',

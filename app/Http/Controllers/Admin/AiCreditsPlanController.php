@@ -11,210 +11,134 @@
 */
 
 namespace App\Http\Controllers\Admin;
- 
+
 use App\AiCreditsPlan;
 use App\Http\Controllers\Controller;
-use App\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
-use Yajra\DataTables\Facades\DataTables;
+use Inertia\Inertia;
 
+/**
+ * AI credit packs customers can buy. status: active, inactive, deleted.
+ */
 class AiCreditsPlanController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
     public function __construct()
     {
         $this->middleware('auth');
     }
 
-    /**
-     * Show the application dashboard.
-     *
-     * @return \Illuminate\Contracts\Support\Renderable
-     */
-
     public function index(Request $request)
     {
-        // Queries
-        if ($request->ajax()) {
-            $aiPlanCredits = AiCreditsPlan::where('status', '!=', 'deleted')->get();
+        $sales = DB::table('ai_credits_transactions')
+            ->where('payment_status', 'paid')
+            ->selectRaw('ai_credits_plan_id, COUNT(*) as orders, SUM(amount) as revenue')
+            ->groupBy('ai_credits_plan_id')
+            ->get()
+            ->keyBy('ai_credits_plan_id');
 
-            // Get all aicredits plans
-            return DataTables::of($aiPlanCredits)
-                ->addIndexColumn()
-                ->addColumn('plan_name', function ($row) {
-                    return __($row->plan_name);
-                })
-                ->addColumn('plan_price', function ($row) {
-                    return formatCurrency($row->plan_price);
-                })
-                ->addColumn('no_of_ai_credits', function ($row) {
-                    return $row->no_of_ai_credits;
-                })
-                ->addColumn('status', function ($row) {
-                    switch ($row->status) {
-                        case 'inactive':
-                            return '<span class="badge bg-warning text-white">' . __('Inactive') . '</span>';
-                        case 'active':
-                            return '<span class="badge bg-success text-white">' . __('Active') . '</span>';
-                        case 'deleted':
-                            return '<span class="badge bg-danger text-white">' . __('Deleted') . '</span>';
-                        default:
-                            return '<span class="badge bg-success text-white">' . __('Active') . '</span>';
-                    }
-                })
-                ->addColumn('action', function ($row) {
-                    $editUrl = route('admin.edit.ai.credits.plan', $row->ai_credits_plan_id);
-                    $activateDeactivate = $row->status == 'inactive' ? trans('Activate') : trans('Deactivate');
-                    $activateDeactivateFunction = $row->status == 'inactive' ? 'activateAiCreditsPlan' : 'deactivateAiCreditsPlan';
+        $plans = AiCreditsPlan::where('status', '!=', 'deleted')->orderByRaw("status = 'active' DESC")->orderBy('plan_price')->get()
+            ->map(fn (AiCreditsPlan $plan) => [
+                'id'          => $plan->ai_credits_plan_id,
+                'name'        => $plan->plan_name,
+                'description' => $plan->plan_description,
+                'price'       => (float) $plan->plan_price,
+                'credits'     => (int) $plan->no_of_ai_credits,
+                'inAppId'     => $plan->in_app_product_id,
+                'active'      => $plan->status === 'active',
+                'orders'      => (int) ($sales[$plan->ai_credits_plan_id]->orders ?? 0),
+                'revenue'     => round((float) ($sales[$plan->ai_credits_plan_id]->revenue ?? 0), 2),
+            ]);
 
-                    return '
-                        <a class="btn-action" href="#" data-bs-toggle="dropdown" data-bs-placement="bottom" data-bs-auto-close="outside" aria-expanded="false">
-                            <!-- Download SVG icon from http://tabler-icons.io/i/dots-vertical -->
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24"
-                                height="24" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round"
-                                class="icon icon-tabler icons-tabler-outline icon-tabler-dots fw-bold">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                <path d="M4 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                <path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                <path d="M18 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                            </svg>
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-end">
-                            <a class="dropdown-item" href="' . $editUrl . '">' . __('Edit') . '</a>
-                            <a class="dropdown-item" href="#" onclick="' . $activateDeactivateFunction . '(`' . $row->ai_credits_plan_id . '`); return false;">' . __($activateDeactivate) . '</a>
-                            <a class="dropdown-item text-danger" href="#" onclick="deleteAiCreditsPlan(`' . $row->ai_credits_plan_id . '`); return false;">' . __('Delete') . '</a>
-                        </div>';
-                })
-                ->rawColumns(['plan_name', 'plan_description', 'no_of_ai_credits', 'status', 'action'])
-                ->make(true);
-        }
-
-        // Queries
-        $settings = Setting::where('status', 1)->first();
-        $config = DB::table('config')->get();
-
-        // Return view
-        return view('admin.pages.ai-credits.index', compact('settings', 'config'));
+        return Inertia::render('ai-credits/plans', [
+            'plans' => $plans,
+            'inApp' => plugin_active('MobileAppAPI'),
+            'open'  => $request->query('edit') ?: ($request->boolean('new') ? 'new' : null),
+        ]);
     }
 
-    // Create AI Credits Plan
+    // Old pages: open the dialog on the plans page
     public function createPlan()
     {
-        // Queries
-        $config = DB::table('config')->get();
-        $settings = Setting::where('status', 1)->first();
-
-        return view('admin.pages.ai-credits.create', compact('settings', 'config'));
+        return redirect()->route('admin.ai.credits.plans', ['new' => 1]);
     }
 
-    // Save AI Credits Plan
-    public function savePlan(Request $request)
-    {
-        // Validation
-        $validator = Validator::make($request->all(), [
-            'plan_name' => 'required',
-            'plan_description' => 'required',
-            'plan_price' => 'required',
-            'no_of_ai_credits' => 'required',
-        ]);
-
-        if ($validator->fails()) {
-            return back()->with('failed', $validator->messages()->first())->withInput();
-        }
-
-        // Save
-        $aiCreditsPlan = new AiCreditsPlan;
-        $aiCreditsPlan->ai_credits_plan_id = uniqid('aicp_');
-        $aiCreditsPlan->plan_name = $request->plan_name;
-        $aiCreditsPlan->plan_description = $request->plan_description;
-        $aiCreditsPlan->plan_price = $request->plan_price;
-        $aiCreditsPlan->no_of_ai_credits = $request->no_of_ai_credits;
-        $aiCreditsPlan->status = 'active';
-        $aiCreditsPlan->save();
-
-        return redirect()->route('admin.ai.credits.plans')->with('success', trans('Created!'));
-    }
-
-    // Edit AI Credits Plan
     public function editAiCreditsPlan($id)
     {
-        // Get AI Credits Plan
-        $aiCreditsPlan = AiCreditsPlan::where('ai_credits_plan_id', $id)->first();
-
-        if ($aiCreditsPlan == null) {
-            return redirect()->back()->with('failed', trans('Not Found!'));
-        } else {
-            // Queries
-            $settings = Setting::where('status', 1)->first();
-
-            return view('admin.pages.ai-credits.edit', compact('aiCreditsPlan', 'settings'));
-        }
+        return redirect()->route('admin.ai.credits.plans', ['edit' => $id]);
     }
 
-    // Update AI Credits Plan
-    public function updateAiCreditsPlan(Request $request)
+    public function savePlan(Request $request)
     {
-        // Validation
-        $validator = Validator::make($request->all(), [
-            'plan_name' => 'required',
-            'plan_description' => 'required',
-            'plan_price' => 'required',
-            'no_of_ai_credits' => 'required',
-        ]);
+        $data = $request->validate($this->rules(), [], $this->attributes());
 
-        if ($validator->fails()) {
-            return back()->with('failed', $validator->messages()->first())->withInput();
-        }
+        $plan                     = new AiCreditsPlan();
+        $plan->ai_credits_plan_id = uniqid('aicp_');
+        $plan->status             = 'active';
+        $this->fill($plan, $data)->save();
 
-        // Update
-        AiCreditsPlan::where('ai_credits_plan_id', $request->id)->update([
-            'plan_name' => $request->plan_name,
-            'plan_description' => $request->plan_description,
-            'plan_price' => $request->plan_price,
-            'no_of_ai_credits' => $request->no_of_ai_credits,
-            'status' => 'active',
-        ]);
-
-        return redirect()->route('admin.ai.credits.plans')->with('success', trans('Updated!'));
+        return back()->with('success', __('Credit pack “:name” created.', ['name' => $plan->plan_name]));
     }
 
-    // Status AI Credits Plan
-    public function statusAiCreditsPlan()
+    public function updateAiCreditsPlan(Request $request, $id)
     {
-        // Parameters
-        $id = request('id');
-        $status = request('action');
+        $plan = AiCreditsPlan::where('ai_credits_plan_id', $id)->firstOrFail();
+        $data = $request->validate($this->rules(), [], $this->attributes());
 
-        // Check status
-        if ($status == 'activate') {
-            $status = 'active';
-        } else {
-            $status = 'inactive';
-        }
+        // Status is kept: editing no longer re-activates a deactivated pack.
+        $this->fill($plan, $data)->save();
 
-        // Update status
-        AiCreditsPlan::where('ai_credits_plan_id', $id)->update(['status' => $status]);
-
-        return redirect()->route('admin.ai.credits.plans')->with('success', trans('Updated!'));
+        return back()->with('success', __('Credit pack updated.'));
     }
 
-    // Delete AI Credits Plan
-    public function deleteAiCreditsPlan()
+    public function statusAiCreditsPlan(Request $request)
     {
-        // Parameters
-        $id = request('id');
+        $data = $request->validate(['id' => 'required|string', 'action' => 'required|in:activate,deactivate']);
 
-        // Delete
-        AiCreditsPlan::where('ai_credits_plan_id', $id)->update(['status' => 'deleted']);
+        AiCreditsPlan::where('ai_credits_plan_id', $data['id'])->update(['status' => $data['action'] === 'activate' ? 'active' : 'inactive']);
 
-        return redirect()->route('admin.ai.credits.plans')->with('success', trans('Deleted!'));
+        return back()->with('success', $data['action'] === 'activate' ? __('Credit pack is now on sale.') : __('Credit pack hidden from customers.'));
+    }
+
+    public function deleteAiCreditsPlan(Request $request)
+    {
+        $data = $request->validate(['id' => 'required|string']);
+
+        AiCreditsPlan::where('ai_credits_plan_id', $data['id'])->update(['status' => 'deleted']);
+
+        return back()->with('success', __('Credit pack deleted.'));
+    }
+
+    private function rules(): array
+    {
+        return [
+            'plan_name'         => 'required|string|max:191',
+            'plan_description'  => 'required|string|max:1000',
+            'plan_price'        => 'required|numeric|min:0',
+            'no_of_ai_credits'  => 'required|integer|min:1',
+            'in_app_product_id' => 'nullable|string|max:255',
+        ];
+    }
+
+    private function attributes(): array
+    {
+        return [
+            'plan_name'         => __('name'),
+            'plan_description'  => __('description'),
+            'plan_price'        => __('price'),
+            'no_of_ai_credits'  => __('credits'),
+            'in_app_product_id' => __('in-app product ID'),
+        ];
+    }
+
+    private function fill(AiCreditsPlan $plan, array $data): AiCreditsPlan
+    {
+        $plan->plan_name         = $data['plan_name'];
+        $plan->plan_description  = $data['plan_description'];
+        $plan->plan_price        = $data['plan_price'];
+        $plan->no_of_ai_credits  = $data['no_of_ai_credits'];
+        $plan->in_app_product_id = $data['in_app_product_id'] ?? null;
+
+        return $plan;
     }
 }

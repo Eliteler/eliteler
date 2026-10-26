@@ -79,9 +79,10 @@
 
         <div class="page-body">
             <div class="container">
-                {{-- Failed --}}
+                {{-- Failed Alert --}}
                 @if (Session::has('failed'))
-                    <div class="alert alert-important alert-danger alert-dismissible mb-2" role="alert">
+                    <div class="alert alert-important alert-danger alert-dismissible mb-3 border-0 shadow-sm"
+                        role="alert">
                         <div class="d-flex">
                             <div>
                                 {{ Session::get('failed') }}
@@ -91,9 +92,10 @@
                     </div>
                 @endif
 
-                {{-- Success --}}
+                {{-- Success Alert --}}
                 @if (Session::has('success'))
-                    <div class="alert alert-important alert-success alert-dismissible mb-2" role="alert">
+                    <div class="alert alert-important alert-success alert-dismissible mb-3 border-0 shadow-sm"
+                        role="alert">
                         <div class="d-flex">
                             <div>
                                 {{ Session::get('success') }}
@@ -103,188 +105,76 @@
                     </div>
                 @endif
 
-                <div class="card card-lg">
-                    <div class="p-3" id="invoice">
-                        <div class="card-body">
-                            <!-- Header Section -->
-                            <div class="row mb-4">
-                                <div class="col-6">
+                <div class="card card-lg border-0 shadow-sm">
+                    {{-- Invoice parameters --}}
+                    @php
+                        // Decode JSON strings for invoice and order details
+                        $invoiceData = json_decode($transaction_details->invoice_details);
+                        $orderData = json_decode($transaction_details->order_details);
+                        $currencySymbol =
+                            $currencies->firstWhere('iso_code', $transaction_details->currency)->symbol ?? '';
 
-                                    {{-- Logo --}}
-                                    <img src="{{ asset($settings->site_logo) }}" class="img-fluid"
-                                        alt="{{ config('app.name') }}"><br>
+                        // Construct dynamic item title
+                        $itemTitle =
+                            __($transaction_details->nfc_card_name) .
+                            ' - ' .
+                            $currencySymbol .
+                            ($orderData->price ?? 0) .
+                            '/' .
+                            __('One time');
+                    @endphp
 
-                                    {{-- Name --}}
-                                    <span
-                                        class="h4">{{ json_decode($transaction_details->invoice_details)->from_billing_name }}</span><br>
-
-                                    {{-- Address --}}
-                                    <span>
-                                        {{ json_decode($transaction_details->invoice_details)->from_billing_address }},
-                                        {{ json_decode($transaction_details->invoice_details)->from_billing_city }},
-                                        {{ json_decode($transaction_details->invoice_details)->from_billing_state }}
-                                        {{ json_decode($transaction_details->invoice_details)->from_billing_country }} <br>
-                                    </span>
-
-                                    {{-- Email --}}
-                                    <span><strong>{{ __('Email') }}</strong>:
-                                        {{ json_decode($transaction_details->invoice_details)->from_billing_email }}</span><br>
-
-                                    {{-- Phone --}}
-                                    @if (json_decode($transaction_details->invoice_details)->from_billing_phone != null)
-                                        <span><strong>{{ __('Phone') }}</strong>:
-                                            {{ json_decode($transaction_details->invoice_details)->from_billing_phone }}</span><br>
-                                    @endif
-
-                                    {{-- Tax Number --}}
-                                    @if (json_decode($transaction_details->invoice_details)->from_vat_number != null)
-                                        <span><strong>{{ __('Tax Number') }}</strong>:
-                                            {{ json_decode($transaction_details->invoice_details)->from_vat_number }}</span><br>
-                                    @endif
-                                </div>
-                                <div class="col-6 text-end">
-                                    <h1>{{ __('INVOICE') }}</h1>
-                                    <h4>#{{ $transaction_details->invoice_prefix }}{{ $transaction_details->invoice_number }}
-                                    </h4>
-                                </div>
-                            </div>
-
-                            <!-- Billing Information -->
-                            <div class="row mb-4">
-                                <div class="col-6">
-                                    <h4 class="text-muted">{{ __('Bill To') }}</h4>
-                                    <span
-                                        class="h4">{{ json_decode($transaction_details->invoice_details)->to_billing_name }}</span><br>
-                                    <span>
-                                        {{ json_decode($transaction_details->invoice_details)->to_billing_address }},
-                                        {{ json_decode($transaction_details->invoice_details)->to_billing_city }},
-                                        {{ json_decode($transaction_details->invoice_details)->to_billing_state }}
-                                        {{ json_decode($transaction_details->invoice_details)->to_billing_country }} <br>
-                                    </span>
-
-                                    {{-- Email --}}
-                                    <span><strong>{{ __('Email') }}</strong>:
-                                        {{ json_decode($transaction_details->invoice_details)->to_billing_email }}</span><br>
-
-                                    {{-- Phone --}}
-                                    @if (json_decode($transaction_details->invoice_details)->to_billing_phone != null)
-                                        <span><strong>{{ __('Phone') }}</strong>:
-                                            {{ json_decode($transaction_details->invoice_details)->to_billing_phone }}</span><br>
-                                    @endif
-
-                                    {{-- Tax Number --}}
-                                    @if (json_decode($transaction_details->invoice_details)->to_vat_number != null)
-                                        <span><strong>{{ __('Tax Number') }}</strong>:
-                                            {{ json_decode($transaction_details->invoice_details)->to_vat_number }}</span><br>
-                                    @endif
-                                </div>
-                                <div class="col-6 text-end">
-                                    <p><strong>{{ __('Date') }}</strong>:
-                                        {{ date('M d, Y', strtotime($transaction_details->created_at)) }}</p>
-                                    <p><strong>{{ __('Payment Terms') }}</strong>: {{ __('One time') }}</p>
-                                    <h5><strong>{{ __('Balance Due') }}</strong>:
-                                        {{ $currencies->firstWhere('iso_code', $transaction_details->currency)->symbol ?? '' }}0.00
-                                    </h5>
-                                </div>
-                            </div>
-
-                            <!-- Items Table -->
-                            <table class="table table-borderless border">
-                                <thead class="border-bottom">
-                                    <tr>
-                                        <th>{{ __('Item') }}</th>
-                                        <th class="text-end">{{ __('Quantity') }}</th>
-                                        <th class="text-end">{{ __('Rate') }}</th>
-                                        <th class="text-end">{{ __('Amount') }}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr class="fw-bold">
-                                        <td>{{ __($transaction_details->nfc_card_name) }} -
-                                            {{ $currencies->firstWhere('iso_code', $transaction_details->currency)->symbol ?? '' }}{{ json_decode($transaction_details->invoice_details)->subtotal }}/{{ __('One time') }}
-                                        </td>
-                                        <td class="text-end">1</td>
-                                        <td class="text-end">
-                                            {{ $currencies->firstWhere('iso_code', $transaction_details->currency)->symbol ?? '' }}{{ json_decode($transaction_details->invoice_details)->subtotal }}
-                                        </td>
-                                        <td class="text-end">
-                                            {{ $currencies->firstWhere('iso_code', $transaction_details->currency)->symbol ?? '' }}{{ json_decode($transaction_details->invoice_details)->subtotal }}
-                                        </td>
-                                    </tr>
-                                </tbody>
-                                <tfoot class="border-top fw-bold">
-                                    {{-- Subtotal --}}
-                                    <tr>
-                                        <td colspan="3" class="text-end">{{ __('Subtotal') }}</td>
-                                        <td class="text-end">
-                                            {{ $currencies->firstWhere('iso_code', $transaction_details->currency)->symbol ?? '' }}{{ json_decode($transaction_details->invoice_details)->subtotal }}
-                                        </td>
-                                    </tr>
-
-                                    {{-- Tax --}}
-                                    @if (json_decode($transaction_details->invoice_details)->tax_amount > 0)
-                                        <tr>
-                                            <td colspan="3" class="text-end">
-                                                {{ __(json_decode($transaction_details->invoice_details)->tax_name) }}
-                                                ({{ json_decode($transaction_details->invoice_details)->tax_value }}%)</td>
-                                            <td class="text-end">
-                                                {{ $currencies->firstWhere('iso_code', $transaction_details->currency)->symbol ?? '' }}{{ json_decode($transaction_details->invoice_details)->tax_amount }}
-                                            </td>
-                                        </tr>
-                                    @endif
-
-                                    {{-- Applied Coupon --}}
-                                    @if (isset(json_decode($transaction_details->invoice_details)->applied_coupon) != null)
-                                        {{-- Before Discount --}}
-                                        <tr>
-                                            <td colspan="3" class="text-end">{{ __('Before Discount') }}</td>
-                                            <td class="text-end">
-                                                {{ $currencies->firstWhere('iso_code', $transaction_details->currency)->symbol ?? '' }}{{ json_decode($transaction_details->invoice_details)->subtotal + json_decode($transaction_details->invoice_details)->tax_amount }}
-                                            </td>
-                                        </tr>
-
-                                        {{-- Discount --}}
-                                        <tr>
-                                            <td colspan="3" class="font-weight-bold text-end">
-                                                <strong>{{ __('Applied Coupon') }} :
-                                                    {{ json_decode($transaction_details->invoice_details)->applied_coupon }}</strong>
-                                            </td>
-                                            <td class="font-weight-bold text-end">
-                                                -
-                                                {{ $currencies->firstWhere('iso_code', $transaction_details->currency)->symbol ?? '' }}{{ json_decode($transaction_details->invoice_details)->discounted_price }}
-                                            </td>
-                                        </tr>
-                                    @endif
-
-                                    {{-- Total --}}
-                                    <tr>
-                                        <td colspan="3" class="text-end"><strong>{{ __('Total') }}</strong></td>
-                                        <td class="text-end">
-                                            <strong>{{ $currencies->firstWhere('iso_code', $transaction_details->currency)->symbol ?? '' }}{{ json_decode($transaction_details->invoice_details)->invoice_amount }}</strong>
-                                        </td>
-                                    </tr>
-
-                                    {{-- Amount Paid --}}
-                                    <tr>
-                                        <td colspan="3" class="text-end">{{ __('Amount Paid') }}</td>
-                                        <td class="text-end">
-                                            {{ $currencies->firstWhere('iso_code', $transaction_details->currency)->symbol ?? '' }}{{ json_decode($transaction_details->invoice_details)->invoice_amount }}
-                                        </td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-
-                            <!-- Notes Section -->
-                            <p class="mt-5"><strong>{{ __('Notes') }}</strong>:<br><span
-                                    class="text-muted">{{ __('Payment from ') }}{{ __($transaction_details->payment_method) }}<br>{{ __('Transaction ID: ') }}
-                                    {{ $transaction_details->payment_transaction_id }}</span></p>
-
-                            {{-- Footer --}}
-                            <p class="text-center text-muted mt-5">
-                                {{ __($config[29]->config_value ?? 'Thank you for your business!') }}
-                            </p>
-                        </div>
-                    </div>
+                    @include('partials.invoice', [
+                        // General configurations
+                        'settings' => $settings,
+                        'config' => $config,
+                        'currencies' => $currencies,
+                        'transaction' => $transaction_details,
+                        'paymentTerms' => __('One time'),
+                    
+                        // Sender details (From)
+                        'fromName' => $invoiceData->from_billing_name ?? '',
+                        'fromAddress' => $invoiceData->from_billing_address ?? null,
+                        'fromCity' => $invoiceData->from_billing_city ?? null,
+                        'fromState' => $invoiceData->from_billing_state ?? null,
+                        'fromCountry' => $invoiceData->from_billing_country ?? null,
+                        'fromEmail' => $invoiceData->from_billing_email ?? '',
+                        'fromPhone' => $invoiceData->from_billing_phone ?? null,
+                        'fromVat' => $invoiceData->from_vat_number ?? null,
+                    
+                        // Customer details (To / Bill To)
+                        'toName' => $invoiceData->to_billing_name ?? '',
+                        'toAddress' => $invoiceData->to_billing_address ?? null,
+                        'toCity' => $invoiceData->to_billing_city ?? null,
+                        'toState' => $invoiceData->to_billing_state ?? null,
+                        'toCountry' => $invoiceData->to_billing_country ?? null,
+                        'toEmail' => $invoiceData->to_billing_email ?? '',
+                        'toPhone' => $invoiceData->to_billing_phone ?? null,
+                        'toVat' => $invoiceData->to_vat_number ?? null,
+                    
+                        // Line item details
+                        'itemTitle' => $itemTitle,
+                        'itemQty' => $orderData->order_quantity ?? 1,
+                        'itemRate' => $orderData->price ?? 0,
+                        'itemAmount' => $invoiceData->subtotal ?? 0,
+                        'planDetails' => (object) [
+                            'plan_name' => $itemTitle,
+                            'no_of_ai_credits' => null,
+                            'quantity' => $orderData->order_quantity ?? 1,
+                            'plan_price' => $orderData->price ?? 0,
+                        ],
+                    
+                        // Billing summary
+                        'billing' => [
+                            'subtotal' => $invoiceData->subtotal ?? 0,
+                            'tax_name' => $invoiceData->tax_name ?? '',
+                            'tax_value' => $invoiceData->tax_value ?? 0,
+                            'tax_amount' => $invoiceData->tax_amount ?? 0,
+                            'applied_coupon' => $invoiceData->applied_coupon ?? null,
+                            'discounted_price' => $invoiceData->discounted_price ?? 0,
+                            'invoice_amount' => $invoiceData->invoice_amount ?? 0,
+                        ],
+                    ])
                 </div>
 
                 {{-- Footer --}}
@@ -293,3 +183,25 @@
         </div>
     </div>
 @endsection
+
+{{-- Custom scripts pushed inside correct stack --}}
+@push('custom-js')
+    <script src="{{ asset('js/html2pdf.bundle.min.js') }}"></script>
+    <script>
+        "use strict";
+
+        function generatePDF() {
+            const element = document.getElementById('invoice');
+            html2pdf()
+                .set({
+                    filename: `{{ $transaction_details->invoice_prefix ? $transaction_details->invoice_prefix : 'TR' }}{{ $transaction_details->invoice_number ? $transaction_details->invoice_number : $transaction_details->nfc_card_order_transaction_id }}` +
+                        '.pdf',
+                    html2canvas: {
+                        scale: 4
+                    }
+                })
+                .from(element)
+                .save();
+        }
+    </script>
+@endpush

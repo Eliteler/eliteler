@@ -21,12 +21,15 @@ use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use App\NfcCardKey;
 use App\Services\GoBizCommonService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
+use Illuminate\Validation\ValidationException;
 
 class LoginController extends Controller
 {
@@ -60,10 +63,62 @@ class LoginController extends Controller
         $this->middleware('guest')->except('logout');
     }
 
+    /**
+     * Validate the user login request including reCAPTCHA.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return void
+     *
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    protected function validateLogin(Request $request)
+    {
+        $rules = [
+            $this->username() => 'required|string',
+            'password' => 'required|string',
+        ];
+
+        // Check if reCAPTCHA is active in environment config
+        $recaptchaEnabled = in_array(env('RECAPTCHA_ENABLE'), ['1', 'on', true, 'true'], true);
+
+        if ($recaptchaEnabled) {
+            $rules['g-recaptcha-response'] = 'required';
+        }
+
+        // Validate basic form input
+        $request->validate($rules, [
+            'g-recaptcha-response.required' => __('Please check the reCAPTCHA box.'),
+        ]);
+
+        // Verify with Google reCAPTCHA server
+        if ($recaptchaEnabled) {
+            $response = Http::asForm()->post('https://www.google.com/recaptcha/api/siteverify', [
+                'secret'   => env('RECAPTCHA_SECRET_KEY'),
+                'response' => $request->input('g-recaptcha-response'),
+                'remoteip' => $request->ip(),
+            ]);
+
+            // Halt login if verification response is unsuccessful
+            if (!$response->json('success')) {
+                throw ValidationException::withMessages([
+                    'g-recaptcha-response' => [__('reCAPTCHA verification failed. Please try again.')],
+                ]);
+            }
+        }
+    }
+
     public function authenticated(Request $request)
     {
         $config = GoBizCommonService::config()->pluck('config_value', 'config_key');
         $existingUser = Auth::user();
+
+        // Staff deactivated in Administrators & staff can't sign in
+        if ($existingUser && in_array((int) $existingUser->role_id, [3, 4], true) && (int) $existingUser->status !== 1) {
+            Auth::logout();
+
+            return redirect('/login')
+                ->with('error', trans('Your admin account has been deactivated.'));
+        }
 
         if (
             data_get($config, 'disable_user_email_verification') == '1'
@@ -87,13 +142,33 @@ class LoginController extends Controller
             return redirect('/admin/dashboard');
         }
 
+        // NFC Card Key
+        $nfc_ref = request()->get('nfc_ref');
+
+        // check nfc card key
+        if ($nfc_ref) {
+            // check nfc card key exists
+            $nfcKey = NfcCardKey::where('unqiue_key', $nfc_ref)->where('status', 1)->where('key_status', 'active')->first();
+
+            // if nfc card key not exists return error
+            if (empty($nfcKey)) {
+                throw ValidationException::withMessages([
+                    'email' => __('Invalid NFC Card Key Reference'),
+                ]);
+            }
+        }
+
+        if ($nfc_ref) {
+            session()->put('nfc_ref', $nfc_ref);
+        }
+
         // check modern_dashboard_settings table is available
         if (Schema::hasTable('modern_dashboard_settings')) {
             // check modern_dashboard_enabled
             $is_modern_dashboard_enabled = DB::table('modern_dashboard_settings')->first()->modern_dashboard_enabled;
 
             // if enabled redirect to react dashboard
-            if (is_dir(base_path('plugins/ModernDashboard')) && $is_modern_dashboard_enabled == 1) {
+            if (plugin_active('ModernDashboard') && $is_modern_dashboard_enabled == 1) {
                 return redirect()->route('user.dashboard.overview');
             } else {
                 // if disabled redirect to default dashboard
@@ -207,7 +282,7 @@ class LoginController extends Controller
                     // check modern_dashboard_enabled
                     if (Schema::hasTable('modern_dashboard_settings')) {
                         $is_modern_dashboard_enabled = DB::table('modern_dashboard_settings')->first()->modern_dashboard_enabled;
-                        if (is_dir(base_path('plugins/ModernDashboard')) && $is_modern_dashboard_enabled == 1) {
+                        if (plugin_active('ModernDashboard') && $is_modern_dashboard_enabled == 1) {
                             return redirect()->route('user.dashboard.overview');
                         } else {
                             return redirect()->route('user.dashboard');
@@ -334,7 +409,7 @@ class LoginController extends Controller
                 // check modern_dashboard_enabled
                 if (Schema::hasTable('modern_dashboard_settings')) {
                     $is_modern_dashboard_enabled = DB::table('modern_dashboard_settings')->first()->modern_dashboard_enabled;
-                    if (is_dir(base_path('plugins/ModernDashboard')) && $is_modern_dashboard_enabled == 1) {
+                    if (plugin_active('ModernDashboard') && $is_modern_dashboard_enabled == 1) {
                         return redirect()->route('user.dashboard.overview');
                     } else {
                         return redirect()->route('user.dashboard');

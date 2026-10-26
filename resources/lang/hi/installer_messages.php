@@ -1,63 +1,173 @@
 <?php
 
 return [
-
-    /*
-     *
-     * Shared translations.
-     *
-     */
-    'title' => 'تنصيب Laravel',
-    'next' => 'متابعة',
-
-    /*
-     *
-     * Home page translations.
-     *
-     */
-    'welcome' => [
-        'title'   => 'تنصيب Laravel',
-        'message' => 'أهلا بك في صفحة تنصيب Laravel',
-    ],
-
-    /*
-     *
-     * Requirements page translations.
-     *
-     */
-    'requirements' => [
-        'title' => 'المتطلبات',
-    ],
-
-    /*
-     *
-     * Permissions page translations.
-     *
-     */
-    'permissions' => [
-        'title' => 'تراخيص المجلدات',
-    ],
-
-    /*
-     *
-     * Environment page translations.
-     *
-     */
+    'back' => 'पहले का',
     'environment' => [
         'title' => 'الإعدادات',
         'save' => 'حفظ ملف .env',
         'success' => 'تم حفظ الإعدادات بنجاح',
         'errors' => 'حدث خطأ أثناء إنشاء ملف .env. رجاءا قم بإنشاءه يدويا',
+        'menu' => [
+            'templateTitle' => 'चरण 3 | ',
+            'title' => 'इंस्टालेशन',
+            'desc' => 'कृपया चुनें कि आप ऐप्स <code>.env</code> फ़ाइल को कैसे कॉन्फ़िगर करना चाहते हैं।',
+            'wizard-button' => 'प्रपत्र विज़ार्ड सेटअप',
+            'classic-button' => 'क्लासिक पाठ संपादक',
+        ],
+        'wizard' => [
+            'templateTitle' => 'चरण 3 | ',
+            'title' => 'निर्देशित <code>.env</code> विज़ार्ड',
+            'tabs' => [
+                'environment' => 'पर्यावरण',
+                'database' => 'डेटाबेस',
+                'application' => 'आवेदन',
+            ],
+            'form' => [
+                'name_required' => 'एक परिवेश नाम आवश्यक है.',
+                'app_name_label' => 'ऐप का नाम',
+                'app_name_placeholder' => 'ऐप का नाम',
+                'app_environment_label' => 'ऐप पर्यावरण',
+                'app_environment_label_local' => 'स्थानीय',
+                'app_environment_label_developement' => 'विकास',
+                'app_environment_label_qa' => 'क्यूए',
+                'app_environment_label_production' => 'उत्पादन',
+                'app_environment_label_other' => 'अन्य',
+                'app_environment_placeholder_other' => 'अपने परिवेश में प्रवेश करें...',
+                'app_debug_label' => 'ऐप डीबग',
+                'app_debug_label_true' => 'सत्य',
+                'app_debug_label_false' => 'असत्य',
+                'app_log_level_label' => 'ऐप लॉग स्तर',
+                'app_log_level_label_debug' => 'डिबग',
+                'app_log_level_label_info' => 'जानकारी',
+                'app_log_level_label_notice' => 'सूचना',
+                'app_log_level_label_warning' => 'चेतावनी',
+                'app_log_level_label_error' => 'गलती',
+                'app_log_level_label_critical' => 'गंभीर',
+                'app_log_level_label_alert' => 'चेतावनी',
+                'app_log_level_label_emergency' => 'आपातकाल',
+                'app_url_label' => 'ऐप यूआरएल',
+                'app_url_placeholder' => 'ऐप यूआरएल',
+                'db_connection_failed' => 'डेटाबेस के कनेक्ट नहीं कर सके।',
+                'db_connection_label' => 'डेटाबेस कनेक्शन',
+                'db_connection_label_mysql' => 'mysql',
+                'db_connection_label_sqlite' => 'SQLite',
+                'db_connection_label_pgsql' => 'pgsql',
+                'db_connection_label_sqlsrv' => 'sqlsrv',
+                'db_host_label' => 'डेटाबेस होस्ट',
+                'db_host_placeholder' => 'डेटाबेस होस्ट',
+                'db_port_label' => 'डेटाबेस पोर्ट',
+                'db_port_placeholder' => 'डेटाबेस पोर्ट',
+                'db_name_label' => 'डेटाबेस का नाम',
+                'db_name_placeholder' => 'डेटाबेस का नाम',
+                'db_username_label' => 'डेटाबेस उपयोगकर्ता नाम',
+                'db_username_placeholder' => 'डेटाबेस उपयोगकर्ता नाम',
+                'db_password_label' => 'डेटाबेस पासवर्ड',
+                'db_password_placeholder' => 'डेटाबेस पासवर्ड',
+                'app_tabs' => [
+                    'more_info' => 'और जानकारी',
+                    'broadcasting_title' => 'प्रसारण, कैशिंग, सत्र और कतार',
+                    'broadcasting_label' => 'प्रसारण चालक',
+                    'broadcasting_placeholder' => 'प्रसारण चालक',
+                    'cache_label' => 'कैश ड्राइवर',
+                    'cache_placeholder' => 'कैश ड्राइवर',
+                    'session_label' => 'सत्र चालक',
+                    'session_placeholder' => 'सत्र चालक',
+                    'queue_label' => 'कतार चालक',
+                    'queue_placeholder' => 'कतार चालक',
+                    'redis_label' => 'रेडिस ड्राइवर',
+                    'redis_host' => 'रेडिस होस्ट',
+                    'redis_password' => 'रेडिस पासवर्ड',
+                    'redis_port' => 'रेडिस पोर्ट',
+                    'mail_label' => 'मेल',
+                    'mail_driver_label' => 'मेल ड्राइवर',
+                    'mail_driver_placeholder' => 'मेल ड्राइवर',
+                    'mail_host_label' => 'मेल होस्ट',
+                    'mail_host_placeholder' => 'मेल होस्ट',
+                    'mail_port_label' => 'मेल पोर्ट',
+                    'mail_port_placeholder' => 'मेल पोर्ट',
+                    'mail_username_label' => 'मेल उपयोगकर्ता नाम',
+                    'mail_username_placeholder' => 'मेल उपयोगकर्ता नाम',
+                    'mail_password_label' => 'मेल पासवर्ड',
+                    'mail_password_placeholder' => 'मेल पासवर्ड',
+                    'mail_encryption_label' => 'मेल एन्क्रिप्शन',
+                    'mail_encryption_placeholder' => 'मेल एन्क्रिप्शन',
+                    'pusher_label' => 'ढकेलनेवाला',
+                    'pusher_app_id_label' => 'पुशर ऐप आईडी',
+                    'pusher_app_id_palceholder' => 'पुशर ऐप आईडी',
+                    'pusher_app_key_label' => 'पुशर ऐप कुंजी',
+                    'pusher_app_key_palceholder' => 'पुशर ऐप कुंजी',
+                    'pusher_app_secret_label' => 'पुशर ऐप सीक्रेट',
+                    'pusher_app_secret_palceholder' => 'पुशर ऐप सीक्रेट',
+                ],
+                'buttons' => [
+                    'setup_database' => 'सेटअप डेटाबेस',
+                    'setup_application' => 'सेटअप एप्लिकेशन',
+                    'install' => 'स्थापित करना',
+                ],
+            ],
+        ],
+        'classic' => [
+            'templateTitle' => 'चरण 3 | ',
+            'title' => 'क्लासिक पर्यावरण संपादक',
+            'save' => 'सहेजें .env',
+            'back' => 'प्रपत्र विज़ार्ड का उपयोग करें',
+            'install' => 'सहेजें और इंस्टॉल करें',
+        ],
     ],
-
-    /*
-     *
-     * Final page translations.
-     *
-     */
     'final' => [
         'title' => 'النهاية',
         'finished' => 'تم تنصيب البرنامج بنجاح...',
         'exit' => 'إضغط هنا للخروج',
+        'templateTitle' => 'स्थापना समाप्त',
+        'migration' => 'प्रवासन एवं बीज कंसोल आउटपुट:',
+        'console' => 'एप्लिकेशन कंसोल आउटपुट:',
+        'log' => 'स्थापना लॉग प्रविष्टि:',
+        'env' => 'अंतिम .env फ़ाइल:',
+    ],
+    'finish' => 'स्थापित करना',
+    'forms' => [
+        'errorTitle' => 'निम्नलिखित त्रुटियाँ हुईं:',
+    ],
+    'install' => 'स्थापित करना',
+    'installed' => [
+        'success_log_message' => 'नेटिवकोड इंस्टॉलर सफलतापूर्वक इंस्टॉल हो गया',
+    ],
+    'next' => 'متابعة',
+    'permissions' => [
+        'title' => 'تراخيص المجلدات',
+        'templateTitle' => 'चरण 2 | ',
+        'next' => 'पर्यावरण कॉन्फ़िगर करें',
+    ],
+    'requirements' => [
+        'title' => 'المتطلبات',
+        'templateTitle' => 'चरण 1 | ',
+        'next' => 'अनुमतियाँ जांचें',
+    ],
+    'title' => 'تنصيب Laravel',
+    'updater' => [
+        'title' => 'लारवेल अपडेटर',
+        'welcome' => [
+            'title' => 'अपडेटर में आपका स्वागत है',
+            'message' => 'अद्यतन विज़ार्ड में आपका स्वागत है.',
+        ],
+        'overview' => [
+            'title' => 'सिंहावलोकन',
+            'message' => '1 अद्यतन है||वहाँ :संख्या अद्यतन हैं।',
+            'install_updates' => 'अद्यतन स्थापित करें',
+        ],
+        'final' => [
+            'title' => 'खत्म',
+            'finished' => 'एप्लिकेशन का डेटाबेस सफलतापूर्वक अपडेट कर दिया गया है.',
+            'exit' => 'बाहर निकलने के लिए यहां क्लिक करें',
+        ],
+        'log' => [
+            'success_message' => 'नेटिवकोड इंस्टालर सफलतापूर्वक अद्यतन किया गया',
+        ],
+    ],
+    'welcome' => [
+        'title' => 'تنصيب Laravel',
+        'message' => 'أهلا بك في صفحة تنصيب Laravel',
+        'templateTitle' => 'स्वागत',
+        'next' => 'आवश्यकताओं की जाँच करें',
     ],
 ];

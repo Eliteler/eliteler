@@ -1,63 +1,173 @@
 <?php
 
 return [
-
-    /*
-     *
-     * Shared translations.
-     *
-     */
-    'title' => 'تنصيب Laravel',
-    'next' => 'متابعة',
-
-    /*
-     *
-     * Home page translations.
-     *
-     */
-    'welcome' => [
-        'title'   => 'تنصيب Laravel',
-        'message' => 'أهلا بك في صفحة تنصيب Laravel',
-    ],
-
-    /*
-     *
-     * Requirements page translations.
-     *
-     */
-    'requirements' => [
-        'title' => 'المتطلبات',
-    ],
-
-    /*
-     *
-     * Permissions page translations.
-     *
-     */
-    'permissions' => [
-        'title' => 'تراخيص المجلدات',
-    ],
-
-    /*
-     *
-     * Environment page translations.
-     *
-     */
+    'back' => 'קוֹדֵם',
     'environment' => [
         'title' => 'الإعدادات',
         'save' => 'حفظ ملف .env',
         'success' => 'تم حفظ الإعدادات بنجاح',
         'errors' => 'حدث خطأ أثناء إنشاء ملف .env. رجاءا قم بإنشاءه يدويا',
+        'menu' => [
+            'templateTitle' => 'שלב 3 | ',
+            'title' => 'הַתקָנָה',
+            'desc' => 'אנא בחר כיצד ברצונך להגדיר את קובץ האפליקציות <code>.env</code>.',
+            'wizard-button' => 'הגדרת אשף הטפסים',
+            'classic-button' => 'עורך טקסט קלאסי',
+        ],
+        'wizard' => [
+            'templateTitle' => 'שלב 3 | ',
+            'title' => 'אשף <code>.env</code> מודרך',
+            'tabs' => [
+                'environment' => 'סְבִיבָה',
+                'database' => 'מסד נתונים',
+                'application' => 'בַּקָשָׁה',
+            ],
+            'form' => [
+                'name_required' => 'נדרש שם סביבה.',
+                'app_name_label' => 'שם האפליקציה',
+                'app_name_placeholder' => 'שם האפליקציה',
+                'app_environment_label' => 'סביבת אפליקציה',
+                'app_environment_label_local' => 'מְקוֹמִי',
+                'app_environment_label_developement' => 'הִתפַּתְחוּת',
+                'app_environment_label_qa' => 'Qa',
+                'app_environment_label_production' => 'הֲפָקָה',
+                'app_environment_label_other' => 'אַחֵר',
+                'app_environment_placeholder_other' => 'היכנסו לסביבה שלכם...',
+                'app_debug_label' => 'ניפוי באגים באפליקציה',
+                'app_debug_label_true' => 'נָכוֹן',
+                'app_debug_label_false' => 'שֶׁקֶר',
+                'app_log_level_label' => 'רמת יומן אפליקציה',
+                'app_log_level_label_debug' => 'לְנַפּוֹת',
+                'app_log_level_label_info' => 'מידע',
+                'app_log_level_label_notice' => 'הוֹדָעָה',
+                'app_log_level_label_warning' => 'אַזהָרָה',
+                'app_log_level_label_error' => 'שְׁגִיאָה',
+                'app_log_level_label_critical' => 'קרִיטִי',
+                'app_log_level_label_alert' => 'עֵרָנִי',
+                'app_log_level_label_emergency' => 'חֵרוּם',
+                'app_url_label' => 'כתובת האתר של האפליקציה',
+                'app_url_placeholder' => 'כתובת האתר של האפליקציה',
+                'db_connection_failed' => 'לא ניתן להתחבר למסד הנתונים.',
+                'db_connection_label' => 'חיבור למסד נתונים',
+                'db_connection_label_mysql' => 'mysql',
+                'db_connection_label_sqlite' => 'sqlite',
+                'db_connection_label_pgsql' => 'pgsql',
+                'db_connection_label_sqlsrv' => 'sqlsrv',
+                'db_host_label' => 'מארח מסד נתונים',
+                'db_host_placeholder' => 'מארח מסד נתונים',
+                'db_port_label' => 'יציאת מסד נתונים',
+                'db_port_placeholder' => 'יציאת מסד נתונים',
+                'db_name_label' => 'שם מסד הנתונים',
+                'db_name_placeholder' => 'שם מסד הנתונים',
+                'db_username_label' => 'שם משתמש במסד נתונים',
+                'db_username_placeholder' => 'שם משתמש במסד נתונים',
+                'db_password_label' => 'סיסמת מסד נתונים',
+                'db_password_placeholder' => 'סיסמת מסד נתונים',
+                'app_tabs' => [
+                    'more_info' => 'מידע נוסף',
+                    'broadcasting_title' => 'שידור, מטמון, הפעלה ותור',
+                    'broadcasting_label' => 'דרייבר לשידור',
+                    'broadcasting_placeholder' => 'דרייבר לשידור',
+                    'cache_label' => 'מנהל התקן מטמון',
+                    'cache_placeholder' => 'מנהל התקן מטמון',
+                    'session_label' => 'מנהל ההפעלה',
+                    'session_placeholder' => 'מנהל ההפעלה',
+                    'queue_label' => 'נהג בתור',
+                    'queue_placeholder' => 'נהג בתור',
+                    'redis_label' => 'נהג Redis',
+                    'redis_host' => 'Redis מארח',
+                    'redis_password' => 'Redis סיסמה',
+                    'redis_port' => 'נמל רדיס',
+                    'mail_label' => 'דוֹאַר',
+                    'mail_driver_label' => 'דרייבר דואר',
+                    'mail_driver_placeholder' => 'דרייבר דואר',
+                    'mail_host_label' => 'מארח דואר',
+                    'mail_host_placeholder' => 'מארח דואר',
+                    'mail_port_label' => 'יציאת דואר',
+                    'mail_port_placeholder' => 'יציאת דואר',
+                    'mail_username_label' => 'שם משתמש בדואר',
+                    'mail_username_placeholder' => 'שם משתמש בדואר',
+                    'mail_password_label' => 'סיסמת דואר',
+                    'mail_password_placeholder' => 'סיסמת דואר',
+                    'mail_encryption_label' => 'הצפנת דואר',
+                    'mail_encryption_placeholder' => 'הצפנת דואר',
+                    'pusher_label' => 'דוֹחֵף',
+                    'pusher_app_id_label' => 'מזהה אפליקציית Pusher',
+                    'pusher_app_id_palceholder' => 'מזהה אפליקציית Pusher',
+                    'pusher_app_key_label' => 'מפתח אפליקציית Pusher',
+                    'pusher_app_key_palceholder' => 'מפתח אפליקציית Pusher',
+                    'pusher_app_secret_label' => 'סוד האפליקציה של Pusher',
+                    'pusher_app_secret_palceholder' => 'סוד האפליקציה של Pusher',
+                ],
+                'buttons' => [
+                    'setup_database' => 'הגדרת מסד נתונים',
+                    'setup_application' => 'יישום התקנה',
+                    'install' => 'לְהַתְקִין',
+                ],
+            ],
+        ],
+        'classic' => [
+            'templateTitle' => 'שלב 3 | ',
+            'title' => 'עורך סביבה קלאסי',
+            'save' => 'שמור .env',
+            'back' => 'השתמש באשף הטפסים',
+            'install' => 'שמור והתקן',
+        ],
     ],
-
-    /*
-     *
-     * Final page translations.
-     *
-     */
     'final' => [
         'title' => 'النهاية',
         'finished' => 'تم تنصيب البرنامج بنجاح...',
         'exit' => 'إضغط هنا للخروج',
+        'templateTitle' => 'ההתקנה הסתיימה',
+        'migration' => 'הגירה ופלט מסוף Seed:',
+        'console' => 'פלט מסוף אפליקציות:',
+        'log' => 'רישום יומן התקנה:',
+        'env' => 'קובץ .env סופי:',
+    ],
+    'finish' => 'לְהַתְקִין',
+    'forms' => [
+        'errorTitle' => 'התרחשו השגיאות הבאות:',
+    ],
+    'install' => 'לְהַתְקִין',
+    'installed' => [
+        'success_log_message' => 'מתקין NativeCode הותקן בהצלחה',
+    ],
+    'next' => 'متابعة',
+    'permissions' => [
+        'title' => 'تراخيص المجلدات',
+        'templateTitle' => 'שלב 2 | ',
+        'next' => 'הגדר את הסביבה',
+    ],
+    'requirements' => [
+        'title' => 'المتطلبات',
+        'templateTitle' => 'שלב 1 | ',
+        'next' => 'בדוק הרשאות',
+    ],
+    'title' => 'تنصيب Laravel',
+    'updater' => [
+        'title' => 'Laravel Updater',
+        'welcome' => [
+            'title' => 'ברוכים הבאים לעדכון',
+            'message' => 'ברוכים הבאים לאשף העדכון.',
+        ],
+        'overview' => [
+            'title' => 'סקירה כללית',
+            'message' => 'יש עדכון אחד.|יש עדכוני :מספר.',
+            'install_updates' => 'התקן עדכונים',
+        ],
+        'final' => [
+            'title' => 'גָמוּר',
+            'finished' => 'מסד הנתונים של האפליקציה עודכן בהצלחה.',
+            'exit' => 'לחץ כאן כדי לצאת',
+        ],
+        'log' => [
+            'success_message' => 'מתקין NativeCode עודכן בהצלחה ב-',
+        ],
+    ],
+    'welcome' => [
+        'title' => 'تنصيب Laravel',
+        'message' => 'أهلا بك في صفحة تنصيب Laravel',
+        'templateTitle' => 'קַבָּלַת פָּנִים',
+        'next' => 'בדוק דרישות',
     ],
 ];

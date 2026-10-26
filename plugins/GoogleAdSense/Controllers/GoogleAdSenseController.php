@@ -12,26 +12,39 @@
 
 namespace Plugins\GoogleAdSense\Controllers;
 
-use App\Setting;
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Support\Admin\PluginPage;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
+/**
+ * Google AdSense publisher ID (settings.google_adsense_code, used in app.blade.php).
+ * "Off" is stored as "DISABLE_ADSENSE_ONLY" (the page shows it as a blank field).
+ * Page: plugins/GoogleAdSense/resources/js/settings.tsx.
+ */
 class GoogleAdSenseController extends Controller
 {
-    public function googleAdSenseSettings(Request $request)
+    public function googleAdSenseSettings()
     {
-        $settings = Setting::where('id', 1)->first();
+        $code = (string) DB::table('settings')->where('id', 1)->value('google_adsense_code');
 
-        return view()->file(base_path('plugins/GoogleAdSense/Views/index.blade.php'), compact('settings'));
+        return PluginPage::render('GoogleAdSense', 'settings', [
+            'google_adsense_code' => $code === 'DISABLE_ADSENSE_ONLY' ? '' : $code,
+        ]);
     }
 
     public function googleAdSenseSettingsUpdate(Request $request)
     {
-        Setting::where('id', '1')->update([
-            'google_adsense_code' => $request->google_adsense_code
+        $request->merge(['google_adsense_code' => trim((string) $request->input('google_adsense_code'))]);
+        $data = $request->validate([
+            'google_adsense_code' => ['nullable', 'string', 'max:100', 'regex:/^ca-pub-\d{10,20}$/'],
+        ], [
+            'google_adsense_code.regex' => __('Use your publisher ID, which looks like ca-pub-1234567890123456.'),
         ]);
 
-        return redirect()->route('admin.plugin.google_adsense.settings')->with('success', __('Google AdSense Settings updated successfully.'));
-    }
+        // app.blade.php only skips the ads script for this exact marker, so "off" must store it
+        DB::table('settings')->where('id', 1)->update(['google_adsense_code' => $data['google_adsense_code'] ?: 'DISABLE_ADSENSE_ONLY']);
 
+        return back()->with('success', filled($data['google_adsense_code']) ? __('Google AdSense is on.') : __('Google AdSense is off.'));
+    }
 }

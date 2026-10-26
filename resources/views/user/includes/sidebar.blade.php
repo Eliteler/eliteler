@@ -32,14 +32,14 @@
         }
 
         // Check and assign missing plan details
-        $active_plan['appointment'] = $active_plan['appointment'] ?? $planDefaults->appointment;
-        $active_plan['custom_domain'] = $active_plan['custom_domain'] ?? $planDefaults->appointment;
-        $active_plan['nfc_card'] = $active_plan['nfc_card'] ?? $planDefaults->nfc_card;
-        $active_plan['storage'] = $active_plan['storage'] ?? $planDefaults->storage;
-        $active_plan['service_booking'] = $active_plan['service_booking'] ?? $planDefaults->service_booking;
-        $active_plan['google_wallet'] = $active_plan['google_wallet'] ?? $planDefaults->google_wallet;
+        $active_plan['appointment'] = $active_plan['appointment'] ?? ($planDefaults->appointment ?? null);
+        $active_plan['custom_domain'] = $active_plan['custom_domain'] ?? ($planDefaults->custom_domain ?? null);
+        $active_plan['nfc_card'] = $active_plan['nfc_card'] ?? ($planDefaults->nfc_card ?? null);
+        $active_plan['storage'] = $active_plan['storage'] ?? ($planDefaults->storage ?? null);
+        $active_plan['service_booking'] = $active_plan['service_booking'] ?? ($planDefaults->service_booking ?? null);
+        $active_plan['google_wallet'] = $active_plan['google_wallet'] ?? ($planDefaults->google_wallet ?? null);
         $active_plan['no_of_google_wallets'] =
-            $active_plan['no_of_google_wallets'] ?? $planDefaults->no_of_google_wallets;
+            $active_plan['no_of_google_wallets'] ?? ($planDefaults->no_of_google_wallets ?? null);
 
         // Update plan details if necessary
         if ($active_plan !== json_decode($plan->plan_details, true)) {
@@ -53,7 +53,7 @@
     }
 
     $google_wallet_enabled = 0;
-    // check google_wallet_enabled
+    // Check google_wallet_enabled
     if (Schema::hasTable('google_wallet_settings')) {
         $google_wallet_settings = DB::table('google_wallet_settings')->first();
 
@@ -61,7 +61,7 @@
             $google_wallet_settings &&
             !empty($google_wallet_settings->issuer_id) &&
             !empty($google_wallet_settings->auth_json) &&
-            is_dir(base_path('plugins/GoogleWallet'))
+            plugin_active('GoogleWallet')
         ) {
             $google_wallet_enabled = 1;
         }
@@ -71,27 +71,31 @@
     $aibuilder_settings = DB::table('aibuilder_settings')->first();
 @endphp
 
-<!-- Sidebar -->
+<!-- Sidebar with original Tabler classes -->
 <aside class="navbar navbar-vertical navbar-expand-lg d-print-none bg-body-tertiary">
     <div class="container-fluid">
+        <!-- Mobile Toggle Button -->
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-menu"
             aria-controls="sidebar-menu" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
+
+        <!-- Brand Logo -->
         <div class="navbar-brand navbar-brand-autodark">
             <a href="{{ route('user.dashboard') }}">
                 @if (file_exists(public_path('img/logo-light.png')))
                     <img src="{{ optional(Auth::user())->choosed_theme == 'light' ? asset($settings->site_logo) : asset('img/logo-light.png') }}"
-                        width="200" height="50" alt="{{ $settings->site_name }}"
+                        width="200" height="50" alt="{{ config('app.name') }}"
                         class="navbar-brand-image custom-logo">
                 @else
-                    <img src="{{ $settings->site_logo }}" width="200" height="50" alt="{{ $settings->site_name }}"
+                    <img src="{{ $settings->site_logo }}" width="200" height="50" alt="{{ config('app.name') }}"
                         class="navbar-brand-image custom-logo">
                 @endif
             </a>
         </div>
+
+        <!-- Mobile Header Navigation (Theme Switcher) -->
         <div class="navbar-nav flex-row d-lg-none align-items-center">
-            {{-- Light / Dark Mode --}}
             <a href="{{ route('user.change.theme', 'dark') }}" class="hide-theme-dark border rounded-3 p-2 text-white">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -112,6 +116,8 @@
                 </svg>
             </a>
         </div>
+
+        <!-- Sidebar Menu Body -->
         <div class="collapse navbar-collapse" id="sidebar-menu">
             <ul class="navbar-nav m-0 ml-lg-auto p-3 p-lg-0 overflow-y-auto bg-body-tertiary"
                 style="z-index: 9999999 !important;">
@@ -122,6 +128,14 @@
                         <span class="navbar-toggler-icon"></span>
                     </button>
                 </li>
+
+                <!-- ================= HEADER: MAIN CONSOLE ================= -->
+                <li class="nav-item-header text-uppercase text-muted px-3 mt-3 mb-1"
+                    style="font-size: 0.72rem; letter-spacing: 0.05rem; font-weight: 600;">
+                    {{ __('MAIN CONSOLE') }}
+                </li>
+
+                <!-- Dashboard -->
                 <li class="nav-item {{ request()->is('user/dashboard') ? 'active' : '' }}">
                     <a class="nav-link" href="{{ route('user.dashboard') }}">
                         <span class="nav-link-icon d-md-none d-lg-inline-block">
@@ -139,8 +153,15 @@
                         </span>
                     </a>
                 </li>
-                {{-- Check type --}}
+
+                <!-- ================= HEADER: MY BUSINESS ================= -->
                 @if ($active_plan)
+                    <li class="nav-item-header text-uppercase text-muted px-3 mt-3 mb-1"
+                        style="font-size: 0.72rem; letter-spacing: 0.05rem; font-weight: 600;">
+                        {{ __('MY BUSINESS') }}
+                    </li>
+
+                    {{-- Cards for VCARD plan --}}
                     @if ($active_plan['plan_type'] == 'VCARD')
                         <li
                             class="nav-item {{ request()->is('user/cards') || request()->is('user/edit-*') || request()->is('user/choose-card-type') || request()->is('user/create-card') || request()->is('user/appointments*') || request()->is('user/inquiries*') ? 'active' : '' }}">
@@ -159,27 +180,30 @@
                                     </svg>
                                 </span>
                                 <span class="nav-link-title">
-                                    {{ __('Business Cards') }}
+                                    {{ __('Digital Business Cards') }}
                                 </span>
                             </a>
                         </li>
                     @endif
 
+                    {{-- Stores for STORE plan --}}
                     @if ($active_plan['plan_type'] == 'STORE')
                         <li
                             class="nav-item {{ request()->is('user/stores*') || request()->is('user/categories*') ? 'active' : '' }}">
                             <a class="nav-link" href="{{ route('user.stores') }}">
                                 <span class="nav-link-icon d-md-none d-lg-inline-block">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-id"
-                                        width="24" height="24" viewBox="0 0 24 24" stroke-width="2"
-                                        stroke="currentColor" fill="none" stroke-linecap="round"
-                                        stroke-linejoin="round">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                        class="icon icon-tabler icon-tabler-building-store" width="24"
+                                        height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                        fill="none" stroke-linecap="round" stroke-linejoin="round">
                                         <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                        <rect x="3" y="4" width="18" height="16" rx="3"></rect>
-                                        <circle cx="9" cy="10" r="2"></circle>
-                                        <line x1="15" y1="8" x2="17" y2="8"></line>
-                                        <line x1="15" y1="12" x2="17" y2="12"></line>
-                                        <line x1="7" y1="16" x2="17" y2="16"></line>
+                                        <path d="M3 21l18 0"></path>
+                                        <path
+                                            d="M3 7v1a3 3 0 0 0 6 0v-1m0 1a3 3 0 0 0 6 0v-1m0 1a3 3 0 0 0 6 0v-1h-18l2 -4h14l2 4">
+                                        </path>
+                                        <path d="M5 21l0 -10.15"></path>
+                                        <path d="M19 21l0 -10.15"></path>
+                                        <path d="M9 21v-4a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v4"></path>
                                     </svg>
                                 </span>
                                 <span class="nav-link-title">
@@ -189,6 +213,7 @@
                         </li>
                     @endif
 
+                    {{-- Cards & Stores for BOTH plan --}}
                     @if ($active_plan['plan_type'] == 'BOTH')
                         <li
                             class="nav-item {{ request()->is('user/cards') ||
@@ -225,7 +250,7 @@
                                     </svg>
                                 </span>
                                 <span class="nav-link-title">
-                                    {{ __('Business Cards') }}
+                                    {{ __('Digital Business Cards') }}
                                 </span>
                             </a>
                         </li>
@@ -254,105 +279,135 @@
                             </a>
                         </li>
                     @endif
-                @endif
 
-                {{-- Google Wallet --}}
-                @if ($google_wallet_enabled == 1)
-                    <li class="nav-item {{ request()->is('user/google-wallet*') ? 'active' : '' }}">
-                        <a class="nav-link" href="{{ route('user.google-wallet.index') }}">
+                    {{-- Google Wallet --}}
+                    @if ($google_wallet_enabled == 1)
+                        <li class="nav-item {{ request()->is('user/google-wallet*') ? 'active' : '' }}">
+                            <a class="nav-link" href="{{ route('user.google-wallet.index') }}">
+                                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler google-wallet"
+                                        width="24" height="24" viewBox="0 0 640 640" stroke-width="2"
+                                        stroke="currentColor" fill="none" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <path
+                                            d="M252.8 190.8C290.4 251.4 317 303.9 337.1 353.3C328.8 387.1 318.3 419.8 305.8 451.6C292.6 399.3 279.3 350.3 249.8 303.1C256.3 266.7 252.1 229.5 252.8 190.8zM205.3 264L112.1 264C105.6 264 101.6 271.5 105.6 276.7C147.8 331 177.3 394.5 197.3 464L300.8 464C284.6 394.3 262.1 330.3 218.3 270.5C215.3 266.5 210.3 264 205.3 264zM253.1 176C321.6 284 383.1 410.5 391.3 544L505 544C493 406 436.6 279 361.8 176L253.1 176zM504.9 107.5C503.1 100.7 496.7 96 489.7 96L401.4 96C396.1 96 392.4 101 393.6 106.3C406.8 152.8 415.9 201.8 420.1 252.3C468.3 338.5 499.8 430.6 510.7 523.1C526.5 462.6 536 389.6 536 320.1C536 246.5 523.9 175 504.9 107.5z" />
+                                    </svg>
+                                </span>
+                                <span class="nav-link-title">
+                                    {{ __('Google Wallet') }}
+                                </span>
+                            </a>
+                        </li>
+                    @endif
+
+                    {{-- Media Library --}}
+                    <li class="nav-item {{ request()->is('user/media') ? 'active' : '' }}">
+                        <a class="nav-link" href="{{ route('user.media') }}">
                             <span class="nav-link-icon d-md-none d-lg-inline-block">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 640 640"><!--!Font Awesome Free v7.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->
-                                    <path fill="#396fd1"
-                                        d="M252.8 190.8C290.4 251.4 317 303.9 337.1 353.3C328.8 387.1 318.3 419.8 305.8 451.6C292.6 399.3 279.3 350.3 249.8 303.1C256.3 266.7 252.1 229.5 252.8 190.8zM205.3 264L112.1 264C105.6 264 101.6 271.5 105.6 276.7C147.8 331 177.3 394.5 197.3 464L300.8 464C284.6 394.3 262.1 330.3 218.3 270.5C215.3 266.5 210.3 264 205.3 264zM253.1 176C321.6 284 383.1 410.5 391.3 544L505 544C493 406 436.6 279 361.8 176L253.1 176zM504.9 107.5C503.1 100.7 496.7 96 489.7 96L401.4 96C396.1 96 392.4 101 393.6 106.3C406.8 152.8 415.9 201.8 420.1 252.3C468.3 338.5 499.8 430.6 510.7 523.1C526.5 462.6 536 389.6 536 320.1C536 246.5 523.9 175 504.9 107.5z" />
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-photo"
+                                    width="24" height="24" viewBox="0 0 24 24" stroke-width="2"
+                                    stroke="currentColor" fill="none" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                    <line x1="15" y1="8" x2="15.01" y2="8"></line>
+                                    <rect x="4" y="4" width="16" height="16" rx="3"></rect>
+                                    <path d="M4 15l4 -4a3 5 0 0 1 3 0l5 5"></path>
+                                    <path d="M14 14l1 -1a3 5 0 0 1 3 0l2 2"></path>
                                 </svg>
                             </span>
                             <span class="nav-link-title">
-                                {{ __('Google Wallet') }}
+                                {{ __('Media') }}
                             </span>
                         </a>
                     </li>
                 @endif
 
-                {{-- Order NFC Card --}}
-                @if ($config[76]->config_value == '1')
-                    @if ($active_plan)
-                        @if (isset($active_plan['nfc_card']) && $active_plan['nfc_card'])
-                            <li
-                                class="nav-item {{ request()->is('user/nfc-cards/order') || request()->is('user/nfc-cards/checkout') || request()->is('user/nfc-cards/checkout*') ? 'active' : '' }}">
-                                <a class="nav-link" href="{{ route('user.order.nfc.cards') }}">
-                                    <span class="nav-link-icon d-md-none d-lg-inline-block">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                            class="icon icon-tabler icons-tabler-outline icon-tabler-nfc">
-                                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                            <path d="M11 20a3 3 0 0 1 -3 -3v-11l5 5" />
-                                            <path d="M13 4a3 3 0 0 1 3 3v11l-5 -5" />
-                                            <path
-                                                d="M4 4m0 3a3 3 0 0 1 3 -3h10a3 3 0 0 1 3 3v10a3 3 0 0 1 -3 3h-10a3 3 0 0 1 -3 -3z" />
-                                        </svg>
-                                    </span>
-                                    <span class="nav-link-title">
-                                        {{ __('Order NFC Card') }}
-                                    </span>
-                                </a>
-                            </li>
+                <!-- ================= HEADER: NFC CARDS & DELIVERIES ================= -->
+                @if ($config[76]->config_value == '1' && $active_plan)
+                    <li class="nav-item-header text-uppercase text-muted px-3 mt-3 mb-1"
+                        style="font-size: 0.72rem; letter-spacing: 0.05rem; font-weight: 600;">
+                        {{ __('NFC MANAGEMENT') }}
+                    </li>
 
-                            {{-- My Orders --}}
-                            <li
-                                class="nav-item {{ request()->is('user/orders') || request()->is('user/order*') ? 'active' : '' }}">
-                                <a class="nav-link" href="{{ route('user.manage.nfc.orders') }}">
-                                    <span class="nav-link-icon d-md-none d-lg-inline-block">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                            class="icon icon-tabler icons-tabler-outline icon-tabler-truck-delivery">
-                                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                            <path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
-                                            <path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
-                                            <path d="M5 17h-2v-4m-1 -8h11v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5" />
-                                            <path d="M3 9l4 0" />
-                                        </svg>
-                                    </span>
-                                    <span class="nav-link-title">
-                                        {{ __('My Orders') }}
-                                    </span>
-                                </a>
-                            </li>
+                    {{-- Order NFC Card --}}
+                    <li
+                        class="nav-item {{ request()->is('user/nfc-cards/order') || request()->is('user/nfc-cards/checkout') || request()->is('user/nfc-cards/checkout*') ? 'active' : '' }}">
+                        <a class="nav-link" href="{{ route('user.order.nfc.cards') }}">
+                            <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round"
+                                    class="icon icon-tabler icons-tabler-outline icon-tabler-nfc">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M11 20a3 3 0 0 1 -3 -3v-11l5 5" />
+                                    <path d="M13 4a3 3 0 0 1 3 3v11l-5 -5" />
+                                    <path
+                                        d="M4 4m0 3a3 3 0 0 1 3 -3h10a3 3 0 0 1 3 3v10a3 3 0 0 1 -3 3h-10a3 3 0 0 1 -3 -3z" />
+                                </svg>
+                            </span>
+                            <span class="nav-link-title">
+                                {{ __('Order NFC Card') }}
+                            </span>
+                        </a>
+                    </li>
 
-                            {{-- My NFC Cards --}}
-                            <li
-                                class="nav-item {{ request()->is('user/manage-nfc-cards') || request()->is('user/link-nfc-card*') || request()->is('user/activate-nfc-card') ? 'active' : '' }}">
-                                <a class="nav-link" href="{{ route('user.manage.nfc.cards') }}">
-                                    <span class="nav-link-icon d-md-none d-lg-inline-block">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                                            class="icon icon-tabler icons-tabler-outline icon-tabler-credit-card-pay">
-                                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                            <path
-                                                d="M12 19h-6a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v4.5" />
-                                            <path d="M3 10h18" />
-                                            <path d="M16 19h6" />
-                                            <path d="M19 16l3 3l-3 3" />
-                                            <path d="M7.005 15h.005" />
-                                            <path d="M11 15h2" />
-                                        </svg>
-                                    </span>
-                                    <span class="nav-link-title">
-                                        {{ __('My NFC Cards') }}
-                                    </span>
-                                </a>
-                            </li>
-                        @endif
-                    @endif
+                    {{-- My Orders --}}
+                    <li
+                        class="nav-item {{ request()->is('user/orders') || request()->is('user/order*') ? 'active' : '' }}">
+                        <a class="nav-link" href="{{ route('user.manage.nfc.orders') }}">
+                            <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round"
+                                    class="icon icon-tabler icons-tabler-outline icon-tabler-truck-delivery">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+                                    <path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+                                    <path d="M5 17h-2v-4m-1 -8h11v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5" />
+                                    <path d="M3 9l4 0" />
+                                </svg>
+                            </span>
+                            <span class="nav-link-title">
+                                {{ __('My Orders') }}
+                            </span>
+                        </a>
+                    </li>
+
+                    {{-- My NFC Cards --}}
+                    <li
+                        class="nav-item {{ request()->is('user/manage-nfc-cards') || request()->is('user/link-nfc-card*') || request()->is('user/activate-nfc-card') ? 'active' : '' }}">
+                        <a class="nav-link" href="{{ route('user.manage.nfc.cards') }}">
+                            <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round"
+                                    class="icon icon-tabler icons-tabler-outline icon-tabler-credit-card-pay">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M12 19h-6a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3h12a3 3 0 0 1 3 3v4.5" />
+                                    <path d="M3 10h18" />
+                                    <path d="M16 19h6" />
+                                    <path d="M19 16l3 3l-3 3" />
+                                    <path d="M7.005 15h.005" />
+                                    <path d="M11 15h2" />
+                                </svg>
+                            </span>
+                            <span class="nav-link-title">
+                                {{ __('My NFC Cards') }}
+                            </span>
+                        </a>
+                    </li>
                 @endif
 
-                {{-- Referral --}}
+                <!-- ================= HEADER: MARKETING ================= -->
                 @if ($config[80]->config_value == '1')
+                    <li class="nav-item-header text-uppercase text-muted px-3 mt-3 mb-1"
+                        style="font-size: 0.72rem; letter-spacing: 0.05rem; font-weight: 600;">
+                        {{ __('MARKETING') }}
+                    </li>
+
+                    {{-- Referral Dropdown --}}
                     <li class="nav-item dropdown {{ request()->is('user/referrals*') ? 'active' : '' }}">
-                        <a class="nav-link dropdown-toggle" href="#navbar-help" data-bs-toggle="dropdown"
+                        <a class="nav-link dropdown-toggle" href="#navbar-referrals" data-bs-toggle="dropdown"
                             data-bs-auto-close="outside" role="button" aria-expanded="false">
                             <span class="nav-link-icon d-md-none d-lg-inline-block">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-link"
@@ -368,7 +423,7 @@
                                 </svg>
                             </span>
                             <span class="nav-link-title">
-                                {{ __('Referral') }}
+                                {{ __('Referral Program') }}
                             </span>
                         </a>
                         <div class="dropdown-menu">
@@ -382,24 +437,10 @@
                     </li>
                 @endif
 
-                {{-- Media Library --}}
-                <li class="nav-item {{ request()->is('user/media') ? 'active' : '' }}">
-                    <a class="nav-link" href="{{ route('user.media') }}">
-                        <span class="nav-link-icon d-md-none d-lg-inline-block">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-photo"
-                                width="24" height="24" viewBox="0 0 24 24" stroke-width="2"
-                                stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                <line x1="15" y1="8" x2="15.01" y2="8"></line>
-                                <rect x="4" y="4" width="16" height="16" rx="3"></rect>
-                                <path d="M4 15l4 -4a3 5 0 0 1 3 0l5 5"></path>
-                                <path d="M14 14l1 -1a3 5 0 0 1 3 0l2 2"></path>
-                            </svg>
-                        </span>
-                        <span class="nav-link-title">
-                            {{ __('Media') }}
-                        </span>
-                    </a>
+                <!-- ================= HEADER: SALES & PAYMENTS ================= -->
+                <li class="nav-item-header text-uppercase text-muted px-3 mt-3 mb-1"
+                    style="font-size: 0.72rem; letter-spacing: 0.05rem; font-weight: 600;">
+                    {{ __('SALES & PAYMENTS') }}
                 </li>
 
                 {{-- Plans --}}
@@ -425,45 +466,33 @@
                 </li>
 
                 {{-- AI Credits Plans --}}
-                @if ($active_plan && $aibuilder_settings->aibuilder == 1)
-                    @if (isset($active_plan['ai_credits']) && $active_plan['ai_credits'])
-                        <li class="nav-item dropdown {{ request()->is('user/ai-credits*') ? 'active' : '' }}">
-                            <a class="nav-link dropdown-toggle" href="#navbar-help" data-bs-toggle="dropdown"
-                                data-bs-auto-close="outside" role="button" aria-expanded="false">
-                                <span class="nav-link-icon d-md-none d-lg-inline-block">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round"
-                                        class="icon icon-tabler icons-tabler-outline icon-tabler-credits">
-                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                        <path d="M3 14a6 2 0 1 0 12 0a6 2 0 1 0 -12 0" />
-                                        <path d="M3 14v5c0 1.105 2.686 2 6 2s6 -.895 6 -2v-5" />
-                                        <path d="M9 5a6 2 0 1 0 12 0a6 2 0 1 0 -12 0" />
-                                        <path d="M9 5v3" />
-                                        <path d="M18.365 11.656c1.59 -.36 2.635 -.966 2.635 -1.656v-5" />
-                                    </svg>
-                                </span>
-                                <span class="nav-link-title">
-                                    {{ __('AI Credits') }}
-                                </span>
-                            </a>
-                            <div class="dropdown-menu">
-                                <a class="dropdown-item" href="{{ route('user.ai.credits.plans') }}">
-                                    {{ __('Plans') }}
-                                </a>
-                                <a class="dropdown-item" href="{{ route('user.ai.credits.transactions') }}">
-                                    {{ __('Transactions') }}
-                                </a>
-                            </div>
-                        </li>
-                    @endif
+                @if (isset($aibuilder_settings) && $aibuilder_settings->aibuilder == 1)
+                    <li class="nav-item {{ request()->routeIs('user.ai.credits.plans*') ? 'active' : '' }}">
+                        <a class="nav-link" href="{{ route('user.ai.credits.plans') }}">
+                            <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round"
+                                    class="icon icon-tabler icons-tabler-outline icon-tabler-credits">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M3 14a6 2 0 1 0 12 0a6 2 0 1 0 -12 0" />
+                                    <path d="M3 14v5c0 1.105 2.686 2 6 2s6 -.895 6 -2v-5" />
+                                    <path d="M9 5a6 2 0 1 0 12 0a6 2 0 1 0 -12 0" />
+                                    <path d="M9 5v3" />
+                                    <path d="M18.365 11.656c1.59 -.36 2.635 -.966 2.635 -1.656v-5" />
+                                </svg>
+                            </span>
+                            <span class="nav-link-title">
+                                {{ __('AI Credit Plans') }}
+                            </span>
+                        </a>
+                    </li>
                 @endif
 
                 {{-- Transactions --}}
                 <li
-                    class="nav-item dropdown {{ request()->is('user/transactions*') || request()->is('user/nfc-cards/transactions') || request()->is('user/nfc-cards/transaction/invoice*') || request()->is('user/view-invoice*') ? 'active' : '' }}">
-                    <a class="nav-link dropdown-toggle" href="#navbar-help" data-bs-toggle="dropdown"
-                        data-bs-auto-close="outside" role="button" aria-expanded="false">
+                    class="nav-item {{ request()->is('user/transactions') || request()->is('user/user/view-invoice*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('user.transactions') }}">
                         <span class="nav-link-icon d-md-none d-lg-inline-block">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24"
                                 viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
@@ -480,64 +509,59 @@
                             {{ __('Transactions') }}
                         </span>
                     </a>
-                    <div class="dropdown-menu">
-                        {{-- NFC Card Transactions --}}
-                        @if ($config[76]->config_value == '1')
-                            @if ($active_plan)
-                                @if (isset($active_plan['nfc_card']) && $active_plan['nfc_card'])
-                                    <a class="dropdown-item" href="{{ route('user.transaction.nfc.cards') }}">
-                                        {{ __('NFC Card') }}
-                                    </a>
-                                @endif
-                            @endif
-                        @endif
-                        <a class="dropdown-item" href="{{ route('user.transactions') }}">
-                            {{ __('Plan') }}
-                        </a>
-                    </div>
                 </li>
 
-                {{-- Additional Tools --}}
-                @if ($active_plan)
-                    @if (isset($active_plan['additional_tools']) && $active_plan['additional_tools'] == 1)
-                        <li class="nav-item dropdown {{ request()->is('user/tools*') ? 'active' : '' }}">
-                            <a class="nav-link dropdown-toggle" href="#navbar-help" data-bs-toggle="dropdown"
-                                data-bs-auto-close="outside" role="button" aria-expanded="false">
-                                <span class="nav-link-icon d-md-none d-lg-inline-block">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-tools"
-                                        width="24" height="24" viewBox="0 0 24 24" stroke-width="2"
-                                        stroke="currentColor" fill="none" stroke-linecap="round"
-                                        stroke-linejoin="round">
-                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                        <path d="M3 21h4l13 -13a1.5 1.5 0 0 0 -4 -4l-13 13v4"></path>
-                                        <line x1="14.5" y1="5.5" x2="18.5" y2="9.5"></line>
-                                        <polyline points="12 8 7 3 3 7 8 12"></polyline>
-                                        <line x1="7" y1="8" x2="5.5" y2="9.5"></line>
-                                        <polyline points="16 12 21 17 17 21 12 16"></polyline>
-                                        <line x1="16" y1="17" x2="14.5" y2="18.5"></line>
-                                    </svg>
-                                </span>
-                                <span class="nav-link-title">
-                                    {{ __('Addtional Tools') }}
-                                </span>
+                <!-- ================= HEADER: SETTINGS & TOOLS ================= -->
+                @if ($active_plan && isset($active_plan['additional_tools']) && $active_plan['additional_tools'] == 1)
+                    <li class="nav-item-header text-uppercase text-muted px-3 mt-3 mb-1"
+                        style="font-size: 0.72rem; letter-spacing: 0.05rem; font-weight: 600;">
+                        {{ __('SETTINGS & TOOLS') }}
+                    </li>
+
+                    {{-- Additional Tools Dropdown --}}
+                    <li class="nav-item dropdown {{ request()->is('user/tools*') ? 'active' : '' }}">
+                        <a class="nav-link dropdown-toggle" href="#navbar-tools" data-bs-toggle="dropdown"
+                            data-bs-auto-close="outside" role="button" aria-expanded="false">
+                            <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-tools"
+                                    width="24" height="24" viewBox="0 0 24 24" stroke-width="2"
+                                    stroke="currentColor" fill="none" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                    <path d="M3 21h4l13 -13a1.5 1.5 0 0 0 -4 -4l-13 13v4"></path>
+                                    <line x1="14.5" y1="5.5" x2="18.5" y2="9.5"></line>
+                                    <polyline points="12 8 7 3 3 7 8 12"></polyline>
+                                    <line x1="7" y1="8" x2="5.5" y2="9.5"></line>
+                                    <polyline points="16 12 21 17 17 21 12 16"></polyline>
+                                    <line x1="16" y1="17" x2="14.5" y2="18.5"></line>
+                                </svg>
+                            </span>
+                            <span class="nav-link-title">
+                                {{ __('Additional Tools') }}
+                            </span>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a class="dropdown-item" href="{{ route('user.qr-maker') }}">
+                                {{ __('QR Maker') }}
                             </a>
-                            <div class="dropdown-menu">
-                                <a class="dropdown-item" href="{{ route('user.qr-maker') }}">
-                                    {{ __('QR Maker') }}
-                                </a>
-                                <a class="dropdown-item" href="{{ route('user.whois-lookup') }}">
-                                    {{ __('Whois Lookup') }}
-                                </a>
-                                <a class="dropdown-item" href="{{ route('user.dns-lookup') }}">
-                                    {{ __('DNS Lookup') }}
-                                </a>
-                                <a class="dropdown-item" href="{{ route('user.ip-lookup') }}">
-                                    {{ __('IP Lookup') }}
-                                </a>
-                            </div>
-                        </li>
-                    @endif
+                            <a class="dropdown-item" href="{{ route('user.whois-lookup') }}">
+                                {{ __('Whois Lookup') }}
+                            </a>
+                            <a class="dropdown-item" href="{{ route('user.dns-lookup') }}">
+                                {{ __('DNS Lookup') }}
+                            </a>
+                            <a class="dropdown-item" href="{{ route('user.ip-lookup') }}">
+                                {{ __('IP Lookup') }}
+                            </a>
+                        </div>
+                    </li>
                 @endif
+
+                <!-- ================= HEADER: PERSONAL ================= -->
+                <li class="nav-item-header text-uppercase text-muted px-3 mt-3 mb-1"
+                    style="font-size: 0.72rem; letter-spacing: 0.05rem; font-weight: 600;">
+                    {{ __('PERSONAL') }}
+                </li>
 
                 {{-- My Account --}}
                 <li class="nav-item {{ request()->is('user/account') ? 'active' : '' }}">
@@ -562,11 +586,11 @@
                 {{-- Logout --}}
                 <li class="nav-item">
                     <a href="{{ route('logout') }}" class="nav-link"
-                        onclick="event.preventDefault(); document.getElementById('logout-form').submit();"><span
-                            class="nav-link-icon d-md-none d-lg-inline-block"><svg xmlns="http://www.w3.org/2000/svg"
-                                width="24" height="24" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round"
+                        onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                        <span class="nav-link-icon d-md-none d-lg-inline-block">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round"
                                 class="icon icon-tabler icons-tabler-outline icon-tabler-logout-2">
                                 <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                                 <path
@@ -577,7 +601,8 @@
                         </span>
                         <span class="nav-link-title">
                             {{ __('Logout') }}
-                        </span></a>
+                        </span>
+                    </a>
                     <form class="logout" id="logout-form" action="{{ route('logout') }}" method="POST">
                         @csrf
                     </form>

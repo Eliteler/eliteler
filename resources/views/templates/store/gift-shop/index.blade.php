@@ -1,3 +1,18 @@
+@php
+    $currentHost = request()->getHost();
+    $masterHost = parse_url(config('app.url'), PHP_URL_HOST);
+    $isCustomDomainOrSubdomain = $currentHost !== $masterHost;
+
+    // Dynamic store base URL and product URL prefix
+    if ($isCustomDomainOrSubdomain) {
+        $storeUrl = url('/');
+        $productUrlPrefix = url('product');
+    } else {
+        $storeUrl = url($business_card_details->card_url);
+        $productUrlPrefix = url($business_card_details->card_url . '/product');
+    }
+@endphp
+
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
@@ -23,7 +38,7 @@
         <link rel="apple-touch-icon" href="{{ url($seo->favicon) }}">
     @else
         <link rel="icon" href="{{ url($business_card_details->profile) }}" sizes="512x512" type="image/png">
-        <link rel="apple-touch-icon" href="{{ url($business_card_details->profile) }}">
+        <link rel="apple-touch-icon" href="{{ url($business_card_details->profile) }}">
     @endif
 
     <meta name="theme-color" content="red" />
@@ -44,7 +59,7 @@
     <link href="{{ url('templates/css/store/gift-shop.css') }}" rel="stylesheet">
     {{-- Swiper CSS --}}
     <link rel="stylesheet" href="{{ url('css/swiper-bundle.min.css') }}">
-    
+
     <!-- Google Fonts: Carattere -->
     <link href="https://fonts.googleapis.com/css2?family=Carattere&display=swap" rel="stylesheet" />
 
@@ -52,7 +67,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
     <style>
-        body, a, button {
+        body,
+        a,
+        button {
             font-family: 'Lora', sans-serif !important;
             letter-spacing: -0.3px;
         }
@@ -66,22 +83,62 @@
     {{-- Check business details --}}
     @if ($business_card_details != null)
         @php
-            $custom_css = $business_card_details->custom_css;
-            $custom_js = $business_card_details->custom_js;
+            $custom_css = trim($business_card_details->custom_css ?? '');
+            $custom_js = trim($business_card_details->custom_js ?? '');
 
-            // Ensure <style> tags for custom CSS
-            if (strpos($custom_css, '<style>') === false && strpos($custom_css, '</style>') === false) {
-                $custom_css = "<style>" . $custom_css . "</style>";
+            /*
+            |--------------------------------------------------------------------------
+            | Custom CSS
+            |--------------------------------------------------------------------------
+            */
+
+            if (!empty($custom_css) && stripos($custom_css, '<style') === false) {
+                $custom_css = "<style>{$custom_css}</style>";
             }
 
-            // Ensure <script> tags for custom JS
-            if (strpos($custom_js, '<script>') === false && strpos($custom_js, '</script>') === false) {
-                $custom_js = "<script>" . $custom_js . "</script>";
+            /*
+            |--------------------------------------------------------------------------
+            | Split HTML tags and plain JS
+            |--------------------------------------------------------------------------
+            */
+
+            $include_custom_js = '';
+
+            if (!empty($custom_js)) {
+                // Extract HTML tags like meta, script, iframe, noscript, etc.
+                preg_match_all(
+                '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/@endphp/is',
+        $custom_js,
+        $matches,
+    );
+
+    $html_tags = implode("\n", $matches[0]);
+
+    // Remove extracted HTML tags from original content
+    $plain_js = trim(
+        preg_replace(
+            '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/?>/is',
+            '',
+            $custom_js,
+        ),
+    );
+
+    // Add HTML tags directly
+    $include_custom_js .= $html_tags;
+
+    // Wrap remaining plain JS inside script tag
+    if (!empty($plain_js)) {
+        $include_custom_js .= "\n<script>
+            {
+                $plain_js
             }
-        @endphp
+        </script>";
+    }
+}
+?>
 
         {!! $custom_css !!}
-        {!! $custom_js !!}
+        {!! $include_custom_js !!}
     @endif
 
     {{-- JS --}}
@@ -141,7 +198,7 @@
         <div class="page-wrapper m-0 p-0">
             <div class="page-body m-0 p-0">
                 <div class="container-xl card border-0 rounded-0 p-0 overflow-hidden" style="min-height: 100vh;">
-                    <!-- Navbar -->                    
+                    <!-- Navbar -->
                     @include('templates.store.gift-shop.includes.header', [
                         'bg_color' => 'dark',
                         'badge_color' => 'primary',
@@ -164,19 +221,19 @@
                     <!-- Banner Images -->
                     <div class="w-100" style="margin-top: -3px;">
                         <!-- Swiper Slider -->
-                        <swiper-container space-between="20" class="mySwiper" autoplay-delay="2500"
-                            pagination="true" autoplay-disable-on-interaction="false" loop="true">
+                        <swiper-container space-between="20" class="mySwiper" autoplay-delay="2500" pagination="true"
+                            autoplay-disable-on-interaction="false" loop="true">
                             {{-- Cover --}}
                             @if (is_array(json_decode($business_card_details->cover)) == true)
                                 @foreach (json_decode($business_card_details->cover) as $cover)
                                     <swiper-slide>
-                                        <img class="w-100 h-100 object-fit-cover"
-                                            alt="{{ $business_card_details->title }}" src="{{ url($cover) }}" />
+                                        <img class="img-fluid w-100" alt="{{ $business_card_details->title }}"
+                                            src="{{ url($cover) }}" />
                                     </swiper-slide>
                                 @endforeach
                             @else
                                 <swiper-slide>
-                                    <img class="w-100 h-100 object-fit-cover"
+                                    <img class="w-100 h-100 object-fit-contain"
                                         alt="{{ $business_card_details->title }}"
                                         src="{{ $business_card_details->cover ? url($business_card_details->cover) : asset('images/default-cover.png') }}" />
                                 </swiper-slide>
@@ -218,7 +275,8 @@
                                     </div>
                                 </form>
 
-                                <h2 class="head pt-5 pb-4 w-100 fs-custom fw-bold position-relative text-center {{ request('category') ? 'd-none' : '' }}">
+                                <h2
+                                    class="head pt-5 pb-4 w-100 fs-custom fw-bold position-relative text-center {{ request('category') ? 'd-none' : '' }}">
                                     {{ __('Categories') }}
 
                                     <div class="d-flex align-items-center justify-content-center heading-divider">
@@ -226,7 +284,8 @@
                                         <div class="divider-line"></div>
 
                                         <!-- Center image -->
-                                        <img src="{{ asset('img/templates/gift-shop/heading.png') }}" class="divider-img" />
+                                        <img src="{{ asset('img/templates/gift-shop/heading.png') }}"
+                                            class="divider-img" />
 
                                         <!-- Right line -->
                                         <div class="divider-line"></div>
@@ -252,21 +311,23 @@
                                     <!-- Foreach -->
                                     @foreach ($categories as $category)
                                         <swiper-slide class="cursor-pointer">
-                                            <a href="{{ url($business_card_details->card_url) . '?category=' . urlencode(strtolower($category->category_name)) }}">
+                                            <a
+                                                href="{{ $storeUrl . '?category=' . urlencode(strtolower($category->category_name)) }}">
                                                 <!-- Thumbnail -->
-                                                <div class="rounded-gift-shop position-relative" style="height: 150px; overflow: hidden;">
+                                                <div class="rounded-gift-shop position-relative"
+                                                    style="height: 150px; overflow: hidden;">
                                                     <img src="{{ url($category->thumbnail) }}"
-                                                        class="category-img w-100 h-100"
-                                                        style="object-fit: cover;"
+                                                        class="category-img w-100 h-100" style="object-fit: contain;"
                                                         alt="{{ $category->category_name }}" />
 
                                                     <!-- Dark overlay -->
-                                                    <div class="position-absolute top-0 start-0 w-100 h-100" 
+                                                    <div class="position-absolute top-0 start-0 w-100 h-100"
                                                         style="background-color: rgba(0,0,0,0.5);">
                                                     </div>
 
                                                     <!-- Category Name -->
-                                                    <h3 class="fs-3 single-product text-white text-center position-absolute start-50 translate-middle-x" style="width: 90%; display: block;bottom: -0.50rem;">
+                                                    <h3 class="fs-3 single-product text-white text-center position-absolute start-50 translate-middle-x"
+                                                        style="width: 90%; display: block;bottom: -0.50rem;">
                                                         {{ __($category->category_name) }}
                                                     </h3>
                                                 </div>
@@ -282,7 +343,7 @@
                                             <div class="d-flex align-items-center gap-2">
                                                 <img src="{{ asset('img/templates/all-categories.png') }}"
                                                     alt="All" class="rounded-btn"
-                                                    style="width: 40px; height: 40px; object-fit: cover;">
+                                                    style="width: 40px; height: 40px; object-fit: contain;">
                                                 <h3 class="mb-0 text-dark fs-3">{{ __('All') }}</h3>
                                             </div>
                                         </a>
@@ -291,13 +352,13 @@
                                     @foreach ($categories as $category)
                                         <div class="py-3 border-top">
                                             <a
-                                                href="{{ url($business_card_details->card_url) . '?category=' . urlencode(strtolower($category->category_name)) }}">
+                                                href="{{ $storeUrl . '?category=' . urlencode(strtolower($category->category_name)) }}">
                                                 <div class="text-decoration-none">
                                                     <div class="d-flex align-items-center gap-2">
                                                         <!-- Thumbnail -->
                                                         <img src="{{ url($category->thumbnail) }}"
                                                             class="rounded-btn"
-                                                            style="width: 40px; height: 40px; object-fit: cover;"
+                                                            style="width: 40px; height: 40px; object-fit: contain;"
                                                             alt="{{ $category->category_name }}" />
                                                         @php
                                                             $category_name = urlencode(
@@ -364,7 +425,8 @@
                                 </div>
 
                                 <!-- Products -->
-                                <h2 class="head py-4 w-100 fs-custom fw-bold position-relative text-center {{ request('category') ? 'd-none' : '' }}">
+                                <h2
+                                    class="head py-4 w-100 fs-custom fw-bold position-relative text-center {{ request('category') ? 'd-none' : '' }}">
                                     {{ __('Products') }}
 
                                     <div class="d-flex align-items-center justify-content-center heading-divider">
@@ -372,7 +434,8 @@
                                         <div class="divider-line"></div>
 
                                         <!-- Center image -->
-                                        <img src="{{ asset('img/templates/gift-shop/heading.png') }}" class="divider-img" />
+                                        <img src="{{ asset('img/templates/gift-shop/heading.png') }}"
+                                            class="divider-img" />
 
                                         <!-- Right line -->
                                         <div class="divider-line"></div>
@@ -396,8 +459,7 @@
                                                         @php
                                                             $productImages = explode(',', $product->product_image);
                                                         @endphp
-                                                        <a
-                                                            href="{{ url($business_card_details->card_url . '/product/' . $product->id) }}">
+                                                        <a href="{{ $productUrlPrefix . '/' . $product->id }}">
                                                             <div id="carousel-controls" class="carousel slide mb-3"
                                                                 data-bs-ride="carousel">
                                                                 <!-- Carousel Images -->
@@ -407,7 +469,7 @@
                                                                             class="carousel-item {{ $loop->index == 0 ? 'active' : '' }} ratio ratio-4x3">
                                                                             <img class="d-block w-100 rounded-gift-shop"
                                                                                 id="{{ $product->product_id }}_product_image"
-                                                                                style="object-fit: cover; object-position: center;"
+                                                                                style="object-fit: contain; object-position: center;"
                                                                                 alt="{{ $product->product_name }}"
                                                                                 src="{{ url($productImage) }}">
                                                                         </div>
@@ -418,7 +480,8 @@
                                                                 <!-- Badge -->
                                                                 <div
                                                                     class="badge-container d-flex flex-wrap align-items-center gap-2 mb-2">
-                                                                    <span class="badge rounded-gift-shop bg-opacity-red text-red">
+                                                                    <span
+                                                                        class="badge rounded-gift-shop bg-opacity-red text-red">
                                                                         {{ $product->badge }}
                                                                     </span>
                                                                 </div>
@@ -441,20 +504,23 @@
                                                         <div class="">
                                                             <!-- Sales Price -->
                                                             <p class="m-0 fs-3 text-red fw-bold">
-                                                                <span id="{{ $product->product_id }}_currency"><span>{{ formatCurrencyCard($product->sales_price, $currency) }}</span></span>
+                                                                <span
+                                                                    id="{{ $product->product_id }}_currency"><span>{{ formatCurrencyCard($product->sales_price, $currency) }}</span></span>
                                                                 </span>
                                                             </p>
 
                                                             <!-- Regular Price -->
                                                             @if ($product->sales_price != $product->regular_price)
                                                                 @if ($product->regular_price)
-                                                                    <p class="text-muted fs-4 m-0"><del>{{ formatCurrencyCard($product->regular_price, $currency) }}</del></p>
+                                                                    <p class="text-muted fs-4 m-0">
+                                                                        <del>{{ formatCurrencyCard($product->regular_price, $currency) }}</del>
+                                                                    </p>
                                                                 @endif
                                                             @else
                                                                 <del
                                                                     class="text-white fs-4 m-0">{{ formatCurrencyCard($product->sales_price, $currency) }}</del>
                                                             @endif
-                                                        </div>                                                        
+                                                        </div>
                                                     </div>
                                                     {{-- Buy Now --}}
                                                     <div class="mt-2">
@@ -464,7 +530,7 @@
                                                                 class="btn btn-sm w-100 btn-dark btn-effect-loop fs-3 p-custom">
                                                                 <i
                                                                     class="ti ti-shopping-bag-plus text-white fs-2 pe-1"></i>
-                                                                    {{ __('Add to Cart') }}
+                                                                {{ __('Add to Cart') }}
                                                             </a>
                                                         @endif
                                                     </div>
@@ -488,13 +554,15 @@
                                     </div>
                                 @endif
                             </div>
-                        </div>                        
+                        </div>
                     </div>
 
                     <!-- Footer -->
                     <div class="footer-wave">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" preserveAspectRatio="none">
-                            <path fill="#d82b2a" fill-opacity="1" d="M0,32L48,58.7C96,85,192,139,288,133.3C384,128,480,64,576,69.3C672,75,768,149,864,181.3C960,213,1056,203,1152,165.3C1248,128,1344,64,1392,32L1440,0L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+                            <path fill="#d82b2a" fill-opacity="1"
+                                d="M0,32L48,58.7C96,85,192,139,288,133.3C384,128,480,64,576,69.3C672,75,768,149,864,181.3C960,213,1056,203,1152,165.3C1248,128,1344,64,1392,32L1440,0L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z">
+                            </path>
                         </svg>
                     </div>
                     <footer class="footer footer-transparent mb-7 mb-lg-0">
@@ -505,8 +573,7 @@
                                     <span class="text-white">
                                         {{ __('Copyright') }} &copy;
                                         <span id="year"></span>
-                                        <a href="{{ url($business_card_details->card_url) }}"
-                                            class="text-white fw-semibold">
+                                        <a href="{{ $storeUrl }}" class="text-white fw-semibold">
                                             {{ $plan_details['hide_branding'] == 1 ? $card_details->title : config('app.name') }}
                                         </a>.
                                         {{ __('All rights reserved.') }}
@@ -521,7 +588,8 @@
                                             </a>
                                         </li>
                                         <li class="list-inline-item">
-                                            <a href="{{ $shareComponent['twitter'] }}" target="_blank" class="link-light">
+                                            <a href="{{ $shareComponent['twitter'] }}" target="_blank"
+                                                class="link-light">
                                                 <i class="ti ti-brand-twitter-filled text-white"></i>
                                             </a>
                                         </li>
@@ -723,8 +791,7 @@
                 <!-- Modal Footer -->
                 <div class="modal-footer">
                     <!-- Close -->
-                    <button type="button" class="btn btn-red"
-                        data-bs-dismiss="modal">{{ __('Close') }}</button>
+                    <button type="button" class="btn btn-red" data-bs-dismiss="modal">{{ __('Close') }}</button>
                     <!-- Confirm -->
                     <button type="button" class="btn btn-dark"
                         onclick="confirmOrder()">{{ __('Confirm') }}</button>
@@ -733,7 +800,7 @@
         </div>
     </div>
 
-    {{-- Newsletter Popup --}} 
+    {{-- Newsletter Popup --}}
     @if ($business_card_details != null)
         {{-- Check Newsletter --}}
         @if (
@@ -753,7 +820,7 @@
                         </div>
                         <!-- Modal Body -->
                         <div class="modal-body">
-                            <form action="{{ route('subscribe.store.newsletter') }}" method="post">
+                            <form action="{{ url('subscribe/store/newsletter') }}" method="post">
                                 @csrf
                                 <div class="row">
                                     <input type="hidden" id="card_id" name="card_id"
@@ -828,7 +895,7 @@
                                 {{-- Image --}}
                                 <div class="w-25 h-25 mb-2">
                                     <img src="{{ url($img) }}" alt="{{ $title }}"
-                                        class="img-fluid object-fit-cover rounded-4" />
+                                        class="img-fluid object-fit-contain rounded-4" />
                                 </div>
                                 {{-- Title --}}
                                 <div class="mb-2">
@@ -1110,7 +1177,7 @@
                 // LEFT: Image
                 cart_items += `
                 <div class="me-3 flex-shrink-0" style="width: 100px; height: 100px;">
-                    <img src="${item.product_image}" class="img-fluid rounded-gift-shop object-fit-cover h-100 w-100" alt="${item.product_name}" />
+                    <img src="${item.product_image}" class="img-fluid rounded-gift-shop object-fit-contain h-100 w-100" alt="${item.product_name}" />
                 </div>`;
 
                 // RIGHT: Product Info
@@ -1125,11 +1192,11 @@
 
                 // Round buttons
                 cart_items +=
-                    `<button onclick="reduceQty(${index})" class="text-dark border btn d-flex align-items-center justify-content-center" style="width:35px;height:35px;"><svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="m-0 icon icon-tabler icons-tabler-outline icon-tabler-minus"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0" /></svg></button>`;
+                    `<button onclick="reduceQty(${index})" class="btn border text-dark d-flex align-items-center justify-content-center" style="width:35px;height:35px;"><svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="m-0 icon icon-tabler icons-tabler-outline icon-tabler-minus"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0" /></svg></button>`;
                 cart_items +=
                     `<span class="text-dark p-0 d-flex align-items-center justify-content-center fs-3 fw-bold" style="width:35px;height:35px;">${item.qty}</span>`;
                 cart_items +=
-                    `<button onclick="addQty(${index})" class="text-dark border btn d-flex align-items-center justify-content-center" style="width:35px;height:35px;"><svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-plus m-0"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg></button>`;
+                    `<button onclick="addQty(${index})" class="btn border text-dark d-flex align-items-center justify-content-center" style="width:35px;height:35px;"><svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-plus m-0"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg></button>`;
                 cart_items +=
                     `<button onclick="removeFromCart(${index})" class="ms-3 btn btn-danger p-0 d-flex align-items-center justify-content-center" style="width:35px;height:35px;"><svg  xmlns="http://www.w3.org/2000/svg"  width="24"  height="24"  viewBox="0 0 24 24"  fill="none"  stroke="currentColor"  stroke-width="2"  stroke-linecap="round"  stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-trash m-0"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg></button>`;
 
@@ -1283,9 +1350,8 @@
                 });
 
                 // Place order ajax
-                // Place order ajax
                 $.ajax({
-                    url: "{{ route('store.order.place') }}",
+                    url: "{{ url('order/place') }}",
                     method: "POST",
                     data: {
                         _token: '{{ csrf_token() }}',

@@ -12,13 +12,14 @@
 
 namespace App\Http\Controllers\User\Vcard\Edit;
 
-use App\Setting;
 use App\BusinessCard;
-use App\InformationPop;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Helpers\StorageHelper;
 use App\Http\Controllers\Controller;
+use App\InformationPop;
+use App\Setting;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class PopUpController extends Controller
@@ -89,23 +90,13 @@ class PopUpController extends Controller
             if ($is_info_pop_active == 1) {
 
                 // Validate and upload the information popup image
-                if (
-                    $request->hasFile('info_pop_image') &&
-                    $request->file('info_pop_image')->isValid()
-                ) {
-                    $allowedExtensions = ['jpeg', 'png', 'jpg', 'gif', 'svg', 'webp'];
+                if ($request->hasFile('info_pop_image') && $request->file('info_pop_image')->isValid()) {
                     $file = $request->file('info_pop_image');
-                    $extension = $file->extension();
+                    $allowedExtensions = ['jpeg', 'png', 'jpg', 'gif', 'svg', 'webp'];
 
-                    if (in_array($extension, $allowedExtensions)) {
-                        // Generate unique filename
-                        $filename = 'IMG-' . uniqid() . '-' . time() . '.' . $extension;
-
-                        // Store in storage/app/public/information_pop_images/
-                        Storage::disk('public')->putFileAs('information_pop_images', $file, $filename);
-
-                        // Get public URL
-                        $info_pop_image = Storage::url("information_pop_images/{$filename}");
+                    if (in_array(strtolower($file->getClientOriginalExtension()), $allowedExtensions)) {
+                        // Upload popup image using StorageHelper and get relative path
+                        $info_pop_image = StorageHelper::uploadImage($file, 'information_pop_images');
                     }
                 }
 

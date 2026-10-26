@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers\User\Vcard\Edit;
 
-use App\Setting;
 use App\BusinessCard;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Helpers\StorageHelper;
 use App\Http\Controllers\Controller;
+use App\Setting;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
@@ -143,20 +144,14 @@ class EditCustomizationController extends Controller
                     ]);
                 }
 
-                $file = $request->file('background_image');
-                $extension = $file->getClientOriginalExtension();
+                // Upload card background image with custom name (card_id) and get relative path
+                $imageUrl = StorageHelper::uploadImage(
+                    $request->file('background_image'),
+                    'images/card/background',
+                    $request->card_id
+                );
 
-                // Generate filename: card_id.extension
-                $filename = $request->card_id . '.' . $extension;
-
-                // Put the file into storage/app/public/images/card/background
-                $path = 'images/card/background';
-                Storage::disk('public')->putFileAs($path, $file, $filename);
-
-                // Get public URL: /storage/images/card/background/card_id.extension
-                $imageUrl = Storage::url("$path/$filename");
-
-                // Update the business card
+                // Update the business card custom styles
                 $businessCard = BusinessCard::where('card_id', $request->card_id)->first();
                 $customStyles = json_decode($businessCard->custom_styles, true) ?? [];
                 $customStyles['image_url'] = $imageUrl;

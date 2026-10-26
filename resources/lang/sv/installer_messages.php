@@ -1,63 +1,173 @@
 <?php
 
 return [
-
-    /*
-     *
-     * Shared translations.
-     *
-     */
-    'title' => 'تنصيب Laravel',
-    'next' => 'متابعة',
-
-    /*
-     *
-     * Home page translations.
-     *
-     */
-    'welcome' => [
-        'title'   => 'تنصيب Laravel',
-        'message' => 'أهلا بك في صفحة تنصيب Laravel',
-    ],
-
-    /*
-     *
-     * Requirements page translations.
-     *
-     */
-    'requirements' => [
-        'title' => 'المتطلبات',
-    ],
-
-    /*
-     *
-     * Permissions page translations.
-     *
-     */
-    'permissions' => [
-        'title' => 'تراخيص المجلدات',
-    ],
-
-    /*
-     *
-     * Environment page translations.
-     *
-     */
+    'back' => 'Tidigare',
     'environment' => [
         'title' => 'الإعدادات',
         'save' => 'حفظ ملف .env',
         'success' => 'تم حفظ الإعدادات بنجاح',
         'errors' => 'حدث خطأ أثناء إنشاء ملف .env. رجاءا قم بإنشاءه يدويا',
+        'menu' => [
+            'templateTitle' => 'Steg 3 | ',
+            'title' => 'Installation',
+            'desc' => 'Please select how you want to configure the apps <code>.env</code> file.',
+            'wizard-button' => 'Form Wizard Setup',
+            'classic-button' => 'Klassisk textredigerare',
+        ],
+        'wizard' => [
+            'templateTitle' => 'Steg 3 | ',
+            'title' => 'Guided <code>.env</code>-guide',
+            'tabs' => [
+                'environment' => 'Miljö',
+                'database' => 'Databas',
+                'application' => 'Ansökan',
+            ],
+            'form' => [
+                'name_required' => 'Ett miljönamn krävs.',
+                'app_name_label' => 'Appens namn',
+                'app_name_placeholder' => 'Appens namn',
+                'app_environment_label' => 'Appmiljö',
+                'app_environment_label_local' => 'Lokal',
+                'app_environment_label_developement' => 'Utveckling',
+                'app_environment_label_qa' => 'Qa',
+                'app_environment_label_production' => 'Produktion',
+                'app_environment_label_other' => 'Andra',
+                'app_environment_placeholder_other' => 'Gå in i din miljö...',
+                'app_debug_label' => 'App Debug',
+                'app_debug_label_true' => 'Sann',
+                'app_debug_label_false' => 'Falsk',
+                'app_log_level_label' => 'Apploggnivå',
+                'app_log_level_label_debug' => 'felsöka',
+                'app_log_level_label_info' => 'info',
+                'app_log_level_label_notice' => 'varsel',
+                'app_log_level_label_warning' => 'varning',
+                'app_log_level_label_error' => 'fel',
+                'app_log_level_label_critical' => 'kritisk',
+                'app_log_level_label_alert' => 'varna',
+                'app_log_level_label_emergency' => 'nödsituation',
+                'app_url_label' => 'Appens URL',
+                'app_url_placeholder' => 'Appens URL',
+                'db_connection_failed' => 'Kunde inte ansluta till databasen.',
+                'db_connection_label' => 'Databasanslutning',
+                'db_connection_label_mysql' => 'mysql',
+                'db_connection_label_sqlite' => 'sqlite',
+                'db_connection_label_pgsql' => 'pgsql',
+                'db_connection_label_sqlsrv' => 'sqlsrv',
+                'db_host_label' => 'Databasvärd',
+                'db_host_placeholder' => 'Databasvärd',
+                'db_port_label' => 'Databasport',
+                'db_port_placeholder' => 'Databasport',
+                'db_name_label' => 'Databasnamn',
+                'db_name_placeholder' => 'Databasnamn',
+                'db_username_label' => 'Databasanvändarnamn',
+                'db_username_placeholder' => 'Databasanvändarnamn',
+                'db_password_label' => 'Databaslösenord',
+                'db_password_placeholder' => 'Databaslösenord',
+                'app_tabs' => [
+                    'more_info' => 'Mer info',
+                    'broadcasting_title' => 'Sändning, cachelagring, session och kö',
+                    'broadcasting_label' => 'Drivrutin för sändning',
+                    'broadcasting_placeholder' => 'Drivrutin för sändning',
+                    'cache_label' => 'Cache drivrutin',
+                    'cache_placeholder' => 'Cache drivrutin',
+                    'session_label' => 'Sessionsdrivrutin',
+                    'session_placeholder' => 'Sessionsdrivrutin',
+                    'queue_label' => 'Ködrivrutin',
+                    'queue_placeholder' => 'Ködrivrutin',
+                    'redis_label' => 'Redis drivrutin',
+                    'redis_host' => 'Redis värd',
+                    'redis_password' => 'Redis lösenord',
+                    'redis_port' => 'Redis Port',
+                    'mail_label' => 'Post',
+                    'mail_driver_label' => 'Mail drivrutin',
+                    'mail_driver_placeholder' => 'Mail drivrutin',
+                    'mail_host_label' => 'E-postvärd',
+                    'mail_host_placeholder' => 'E-postvärd',
+                    'mail_port_label' => 'Mail Port',
+                    'mail_port_placeholder' => 'Mail Port',
+                    'mail_username_label' => 'Mail användarnamn',
+                    'mail_username_placeholder' => 'Mail användarnamn',
+                    'mail_password_label' => 'Mail Lösenord',
+                    'mail_password_placeholder' => 'Mail Lösenord',
+                    'mail_encryption_label' => 'E-postkryptering',
+                    'mail_encryption_placeholder' => 'E-postkryptering',
+                    'pusher_label' => 'Påskjutare',
+                    'pusher_app_id_label' => 'Pusher app-id',
+                    'pusher_app_id_palceholder' => 'Pusher app-id',
+                    'pusher_app_key_label' => 'Tryckknapp för app',
+                    'pusher_app_key_palceholder' => 'Tryckknapp för app',
+                    'pusher_app_secret_label' => 'Pusher App Secret',
+                    'pusher_app_secret_palceholder' => 'Pusher App Secret',
+                ],
+                'buttons' => [
+                    'setup_database' => 'Ställ in databas',
+                    'setup_application' => 'Installationsapplikation',
+                    'install' => 'Installera',
+                ],
+            ],
+        ],
+        'classic' => [
+            'templateTitle' => 'Steg 3 | ',
+            'title' => 'Klassisk miljöredaktör',
+            'save' => 'Spara .env',
+            'back' => 'Använd Form Wizard',
+            'install' => 'Spara och installera',
+        ],
     ],
-
-    /*
-     *
-     * Final page translations.
-     *
-     */
     'final' => [
         'title' => 'النهاية',
         'finished' => 'تم تنصيب البرنامج بنجاح...',
         'exit' => 'إضغط هنا للخروج',
+        'templateTitle' => 'Installationen avslutad',
+        'migration' => 'Migration & Seed Console-utgång:',
+        'console' => 'Utdata från applikationskonsol:',
+        'log' => 'Installationsloggpost:',
+        'env' => 'Sista .env-fil:',
+    ],
+    'finish' => 'Installera',
+    'forms' => [
+        'errorTitle' => 'Följande fel inträffade:',
+    ],
+    'install' => 'Installera',
+    'installed' => [
+        'success_log_message' => 'NativeCode Installer lyckades INSTALLERAS på',
+    ],
+    'next' => 'متابعة',
+    'permissions' => [
+        'title' => 'تراخيص المجلدات',
+        'templateTitle' => 'Steg 2 | ',
+        'next' => 'Konfigurera miljö',
+    ],
+    'requirements' => [
+        'title' => 'المتطلبات',
+        'templateTitle' => 'Steg 1 | ',
+        'next' => 'Kontrollera behörigheter',
+    ],
+    'title' => 'تنصيب Laravel',
+    'updater' => [
+        'title' => 'Laravel Updater',
+        'welcome' => [
+            'title' => 'Välkommen till Uppdateraren',
+            'message' => 'Välkommen till uppdateringsguiden.',
+        ],
+        'overview' => [
+            'title' => 'Översikt',
+            'message' => 'Det finns 1 uppdatering.|Det finns :nummeruppdateringar.',
+            'install_updates' => 'Installera uppdateringar',
+        ],
+        'final' => [
+            'title' => 'Färdig',
+            'finished' => 'Applikationens databas har uppdaterats.',
+            'exit' => 'Klicka här för att avsluta',
+        ],
+        'log' => [
+            'success_message' => 'NativeCode Installer har UPPDATERAD den',
+        ],
+    ],
+    'welcome' => [
+        'title' => 'تنصيب Laravel',
+        'message' => 'أهلا بك في صفحة تنصيب Laravel',
+        'templateTitle' => 'Välkomna',
+        'next' => 'Kontrollera krav',
     ],
 ];

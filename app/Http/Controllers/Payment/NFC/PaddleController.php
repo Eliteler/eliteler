@@ -40,15 +40,6 @@ class PaddleController extends Controller
         $this->middleware('auth')->except(['nfPaddlePaymentStatus', 'nfPaddlePaymentWebhook']);
     }
 
-    // -------------------------------------------------------------------------
-    // PADDLE BILLING HELPERS
-    // -------------------------------------------------------------------------
-
-    /**
-     * Return the Paddle Billing base API URL depending on sandbox flag.
-     * Paddle Billing sandbox: https://sandbox-api.paddle.com
-     * Paddle Billing live:    https://api.paddle.com
-     */
     private function getPaddleBillingBaseUrl($sandbox): string
     {
         return ($sandbox === 'true')
@@ -56,10 +47,6 @@ class PaddleController extends Controller
             : 'https://api.paddle.com';
     }
 
-    /**
-     * Build Guzzle headers for Paddle Billing (Bearer token auth).
-     * $config[66] holds the Paddle API key (Bearer token).
-     */
     private function getPaddleBillingHeaders($apiKey): array
     {
         return [
@@ -69,17 +56,16 @@ class PaddleController extends Controller
         ];
     }
 
-    // -------------------------------------------------------------------------
-    // GENERATE PAYMENT LINK (Paddle Billing: create a checkout transaction)
-    // -------------------------------------------------------------------------
-
-    public function nfcGeneratePaymentLink(Request $request, $nfcId, $couponId)
+    public function nfcGeneratePaymentLink(Request $request, $nfcId, $couponId, $quantity = 1)
     {
         if (Auth::user()) {
             // Queries
             $config   = DB::table('config')->get();
             $settings = Setting::where('status', 1)->first();
             $userData = User::where('id', Auth::user()->id)->first();
+
+            // Quantity
+            $quantity = max((int) $quantity, 1);
 
             // NFC Card details
             $nfcDetails = NfcCardDesign::where('nfc_card_id', $nfcId)->where('status', 1)->first();
@@ -101,6 +87,9 @@ class PaddleController extends Controller
             // Applied coupon
             $appliedCoupon = null;
 
+            // Price
+            $subtotal = $nfcDetails->nfc_card_price * $quantity;
+
             // NFC Card Order ID
             $nfcCardOrderId   = "OD" . preg_replace('/\D/', '', Str::uuid());
             $nfcTransactionId = "TX" . preg_replace('/\D/', '', Str::uuid());
@@ -108,21 +97,21 @@ class PaddleController extends Controller
             // Check coupon type
             if ($couponDetails != null) {
                 if ($couponDetails->coupon_type == 'fixed') {
-                    $appliedTaxInTotal = ((float)($nfcDetails->nfc_card_price) * (float)($config[25]->config_value) / 100);
+                    $appliedTaxInTotal = ((float)($subtotal) * (float)($config[25]->config_value) / 100);
                     $discountPrice     = $couponDetails->coupon_amount;
-                    $amountToBePaid    = ($nfcDetails->nfc_card_price + $appliedTaxInTotal) - $discountPrice;
+                    $amountToBePaid    = ($subtotal + $appliedTaxInTotal) - $discountPrice;
                     $amountToBePaid    = (float)number_format($amountToBePaid, 2, '.', '');
                     $appliedCoupon     = $couponDetails->coupon_code;
                 } else {
-                    $appliedTaxInTotal = ((float)($nfcDetails->nfc_card_price) * (float)($config[25]->config_value) / 100);
-                    $discountPrice     = $nfcDetails->nfc_card_price * $couponDetails->coupon_amount / 100;
-                    $amountToBePaid    = ($nfcDetails->nfc_card_price + $appliedTaxInTotal) - $discountPrice;
+                    $appliedTaxInTotal = ((float)($subtotal) * (float)($config[25]->config_value) / 100);
+                    $discountPrice     = $subtotal * $couponDetails->coupon_amount / 100;
+                    $amountToBePaid    = ($subtotal + $appliedTaxInTotal) - $discountPrice;
                     $amountToBePaid    = (float)number_format($amountToBePaid, 2, '.', '');
                     $appliedCoupon     = $couponDetails->coupon_code;
                 }
             } else {
-                $appliedTaxInTotal = ((float)($nfcDetails->nfc_card_price) * (float)($config[25]->config_value) / 100);
-                $amountToBePaid    = ($nfcDetails->nfc_card_price + $appliedTaxInTotal);
+                $appliedTaxInTotal = ((float)($subtotal) * (float)($config[25]->config_value) / 100);
+                $amountToBePaid    = ($subtotal + $appliedTaxInTotal);
             }
 
             // Store transaction details in nfc_card_order_id table before redirecting to Paddle
@@ -131,7 +120,7 @@ class PaddleController extends Controller
             $nfcCardOrder->user_id                           = Auth::id();
             $nfcCardOrder->nfc_card_id                       = $nfcId;
             $nfcCardOrder->nfc_card_order_transaction_id     = $nfcTransactionId;
-            $nfcCardOrder->order_details                     = json_encode($this->prepareOrderDetails($config, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice));
+            $nfcCardOrder->order_details                     = json_encode($this->prepareOrderDetails($config, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice, $quantity));
             $nfcCardOrder->delivery_address                  = json_encode($this->prepareDeliveryAddress($userData));
             $nfcCardOrder->delivery_note                     = "-";
             $nfcCardOrder->order_status                      = 'pending';
@@ -146,7 +135,7 @@ class PaddleController extends Controller
             $transaction->payment_method                     = "Paddle";
             $transaction->currency                           = $config[1]->config_value;
             $transaction->amount                             = $amountToBePaid;
-            $transaction->invoice_details                    = json_encode($this->prepareInvoiceDetails($config, $userData, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice));
+            $transaction->invoice_details                    = json_encode($this->prepareInvoiceDetails($config, $userData, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice, $quantity));
             $transaction->payment_status                     = "pending";
             $transaction->save();
 
@@ -171,7 +160,7 @@ class PaddleController extends Controller
             $currency = strtoupper($config[1]->config_value);
 
             // Amount as string in lowest currency unit (e.g. cents: "1000" = $10.00)
-            $amountInLowestUnit = (string)(int)round($amountToBePaid * 100);
+            $amountInLowestUnit = (string)(float)round($amountToBePaid * 100);
 
             // Custom data carries our internal IDs so we can match on webhook/return
             $customData = [
@@ -233,7 +222,7 @@ class PaddleController extends Controller
                 }
 
                 $paddlePriceId = $priceData['data']['id'];
-
+                
                 // -----------------------------------------------------------
                 // STEP 3 — Create the Transaction
                 // -----------------------------------------------------------
@@ -265,6 +254,8 @@ class PaddleController extends Controller
                     'json'    => $transactionPayload,
                 ]);
 
+                dd($response);
+
                 if ($response->getStatusCode() == 201) {
                     $data = json_decode($response->getBody(), true);
 
@@ -278,7 +269,8 @@ class PaddleController extends Controller
                             'nfcTransactionId',
                             'data',
                             'config',
-                            'paddleTransactionIdForCheckout'
+                            'paddleTransactionIdForCheckout',
+                            'quantity'
                         ));
                     } else {
                         Log::info('Paddle Billing NFC: unexpected response format', ['response' => $data]);
@@ -304,11 +296,6 @@ class PaddleController extends Controller
         }
     }
 
-    // -------------------------------------------------------------------------
-    // PAYMENT STATUS (return URL handler)
-    // Paddle Billing appends ?_ptxn=<paddle_transaction_id> to the return URL.
-    // -------------------------------------------------------------------------
-
     public function nfPaddlePaymentStatus(Request $request)
     {
         // Queries
@@ -323,11 +310,6 @@ class PaddleController extends Controller
             $apiKey  = $config[66]->config_value;
 
             try {
-                // ---------------------------------------------------------------
-                // PADDLE BILLING – Retrieve transaction by ID
-                // GET /transactions/{id}
-                // custom_data contains our internal user_id and transaction_id
-                // ---------------------------------------------------------------
                 $response = $client->request('GET', $baseUrl . '/transactions/' . $paddleTransactionId, [
                     'headers' => $this->getPaddleBillingHeaders($apiKey),
                 ]);
@@ -381,20 +363,8 @@ class PaddleController extends Controller
         return redirect()->route('user.order.nfc.cards')->with('failed', trans('Payment failed!'));
     }
 
-    // -------------------------------------------------------------------------
-    // PADDLE BILLING WEBHOOK
-    // Paddle Billing sends JSON with an "event_type" field.
-    // Docs: https://developer.paddle.com/webhooks/overview
-    // -------------------------------------------------------------------------
-
     public function nfPaddlePaymentWebhook(Request $request)
     {
-        // -----------------------------------------------------------------------
-        // PADDLE BILLING – Verify webhook signature
-        // Signature header: Paddle-Signature
-        // Format:           ts=<timestamp>;h1=<hmac-sha256-hex>
-        // Store webhook secret in config[67]
-        // -----------------------------------------------------------------------
         $config           = DB::table('config')->get();
         $webhookSecretKey = $config[67]->config_value ?? '';
 
@@ -422,12 +392,6 @@ class PaddleController extends Controller
         // Decode webhook payload
         $webhookData = json_decode($rawBody, true);
 
-        // -----------------------------------------------------------------------
-        // Paddle Billing event types:
-        //   transaction.completed      → payment succeeded
-        //   transaction.payment_failed → payment failed
-        //   transaction.canceled       → transaction canceled
-        // -----------------------------------------------------------------------
         $eventType       = $webhookData['event_type'] ?? '';
         $transactionData = $webhookData['data'] ?? [];
         $paddleStatus    = $transactionData['status'] ?? '';
@@ -470,12 +434,10 @@ class PaddleController extends Controller
         return response()->json(['success' => true], 200);
     }
 
-    // -------------------------------------------------------------------------
-    // PRIVATE HELPERS (unchanged)
-    // -------------------------------------------------------------------------
-
-    private function prepareInvoiceDetails($config, $userData, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice)
+    private function prepareInvoiceDetails($config, $userData, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice, $quantity)
     {
+        $subtotal = $nfcDetails->nfc_card_price * $quantity;
+
         return [
             'from_billing_name'    => $config[16]->config_value,
             'from_billing_address' => $config[19]->config_value,
@@ -492,7 +454,7 @@ class PaddleController extends Controller
             'to_billing_state'     => $userData->billing_state,
             'to_billing_zipcode'   => $userData->billing_zipcode,
             'to_billing_country'   => $userData->billing_country,
-            'to_billing_phone'     => $userData->billing_phone,
+            'to_billing_phone'     => $userData->billing_country_code . $userData->billing_phone,
             'to_billing_email'     => $userData->billing_email,
             'to_vat_number'        => $userData->vat_number,
             'tax_name'             => $config[24]->config_value,
@@ -501,27 +463,29 @@ class PaddleController extends Controller
             'applied_coupon'       => $appliedCoupon,
             'discounted_price'     => $discountPrice,
             'invoice_amount'       => $amountToBePaid,
-            'subtotal'             => $nfcDetails->nfc_card_price,
-            'tax_amount'           => (float)($nfcDetails->nfc_card_price) * (float)($config[25]->config_value) / 100,
+            'subtotal'             => $subtotal,
+            'tax_amount'           => (float)($subtotal) * (float)($config[25]->config_value) / 100,
         ];
     }
 
-    private function prepareOrderDetails($config, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice)
+    private function prepareOrderDetails($config, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice, $quantity)
     {
+        $subtotal = $nfcDetails->nfc_card_price * $quantity;
+
         return [
             'nfc_card_id'       => $nfcDetails->nfc_card_id,
             'order_item'        => $nfcDetails->nfc_card_name,
             'order_description' => $nfcDetails->nfc_card_description,
-            'order_quantity'    => 1,
+            'order_quantity'    => $quantity,
             'price'             => $nfcDetails->nfc_card_price,
             'invoice_amount'    => $amountToBePaid,
             'tax_name'          => $config[24]->config_value,
             'tax_type'          => $config[14]->config_value,
             'tax_value'         => $config[25]->config_value,
-            'tax_amount'        => (float)($nfcDetails->nfc_card_price) * (float)($config[25]->config_value) / 100,
+            'tax_amount'        => (float)($subtotal) * (float)($config[25]->config_value) / 100,
             'applied_coupon'    => $appliedCoupon,
             'discounted_price'  => $discountPrice,
-            'subtotal'          => $nfcDetails->nfc_card_price,
+            'subtotal'          => $subtotal,
         ];
     }
 
@@ -534,7 +498,7 @@ class PaddleController extends Controller
             'billing_state'    => $userData->billing_state,
             'billing_zipcode'  => $userData->billing_zipcode,
             'billing_country'  => $userData->billing_country,
-            'billing_phone'    => $userData->billing_phone,
+            'billing_phone'    => $userData->billing_country_code . $userData->billing_phone,
             'billing_email'    => $userData->billing_email,
             'shipping_name'    => $userData->billing_name,
             'shipping_address' => $userData->billing_address,
@@ -542,7 +506,7 @@ class PaddleController extends Controller
             'shipping_state'   => $userData->billing_state,
             'shipping_zipcode' => $userData->billing_zipcode,
             'shipping_country' => $userData->billing_country,
-            'shipping_phone'   => $userData->billing_phone,
+            'shipping_phone'   => $userData->billing_country_code . $userData->billing_phone,
             'shipping_email'   => $userData->billing_email,
             'type'             => $userData->type,
             'vat_number'       => $userData->vat_number,

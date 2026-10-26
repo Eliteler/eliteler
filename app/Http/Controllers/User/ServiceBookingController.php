@@ -90,9 +90,8 @@ class ServiceBookingController extends Controller
         }
 
         // Update service booking
-        $service->update([
-            'service_booking_confirmed_status' => 'confirmed'
-        ]);
+        $service->service_booking_confirmed_status = 'confirmed';
+        $service->save();
 
         // Business name with vcard URL from business_cards table
         $businessDetails = BusinessCard::where('card_id', $service->vcard_id)->first();
@@ -170,9 +169,8 @@ class ServiceBookingController extends Controller
         }
 
         // Update service booking
-        $service->update([
-            'service_booking_confirmed_status' => 'rejected'
-        ]);
+        $service->service_booking_confirmed_status = 'rejected';
+        $service->save();
 
         // Business name with vcard URL from business_cards table
         $businessDetails = BusinessCard::where('card_id', $service->vcard_id)->first();
@@ -226,9 +224,8 @@ class ServiceBookingController extends Controller
         }
 
         // Update service booking
-        $service->update([
-            'service_booking_confirmed_status' => 'completed'
-        ]);
+        $service->service_booking_confirmed_status = 'completed';
+        $service->save();
 
         // Business name with vcard URL from business_cards table
         $businessDetails = BusinessCard::where('card_id', $service->vcard_id)->first();

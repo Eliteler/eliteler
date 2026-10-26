@@ -12,192 +12,143 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Setting;
-use Carbon\Carbon;
+use App\Blog;
 use App\BlogCategory;
-use Illuminate\Http\Request;
-use Yajra\DataTables\DataTables;
-use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Inertia\Inertia;
 
+/**
+ * Blog categories. blog_categories.status: 1 visible, 0 hidden, 2 deleted.
+ * "Uncategorized" is the fallback: posts of a deleted category move there.
+ */
 class BlogCategoryController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
+    private const FALLBACK = 'uncategorized';
+
     public function __construct()
     {
         $this->middleware('auth');
     }
 
-    /**
-     * Show the application dashboard.
-     *
-     * @return \Illuminate\Contracts\Support\Renderable
-     */
-
-    // Blogs Category
     public function index(Request $request)
     {
-        // Queries
-        $settings = Setting::first();
-        $config = DB::table('config')->get();
+        $counts = Blog::where('status', '!=', 2)->groupBy('category')->selectRaw('category, COUNT(*) as total')->pluck('total', 'category');
 
-        if ($request->ajax()) {
-            $blogsCategories = BlogCategory::where('status', '!=', 2)->orderBy('created_at', 'desc')->get();
+        $categories = BlogCategory::where('status', '!=', 2)->orderBy('blog_category_title')->get()->map(fn (BlogCategory $category) => [
+            'id'         => $category->blog_category_id,
+            'name'       => $category->blog_category_title,
+            'slug'       => $category->blog_category_slug,
+            'visible'    => (int) $category->status === 1,
+            'posts'      => (int) ($counts[$category->blog_category_id] ?? 0),
+            'isFallback' => $category->blog_category_slug === self::FALLBACK,
+        ]);
 
-            return DataTables::of($blogsCategories)
-                ->addIndexColumn()
-                ->editColumn('created_at', function ($category) {
-                    return formatDateForUser(Carbon::parse($category->created_at));
-                })
-                ->editColumn('blog_category_title', function ($category) {
-                    return __($category->blog_category_title) == "Uncategory" ? __('Uncategorized') : __($category->blog_category_title);
-                })
-                ->editColumn('status', function ($category) {
-                    return $category->status == 0
-                        ? '<span class="badge bg-red text-white text-white">' . __('Unpublished') . '</span>'
-                        : '<span class="badge bg-green text-white text-white">' . __('Published') . '</span>';
-                })
-                ->addColumn('action', function ($category) {
-                    $editUrl = route('admin.edit.blog.category', $category->blog_category_id);
-                    $actionBtn = '<a class="dropdown-item" href="' . $editUrl . '">' . __('Edit') . '</a>';
-
-                    if ($category->status == 0) {
-                        $actionBtn .= '<a class="dropdown-item" href="#" onclick="getBlogCategory(\'' . $category->blog_category_id . '\', \'publish\'); return false;">' . __('Publish') . '</a>';
-                    } else {
-                        $actionBtn .= '<a class="dropdown-item" href="#" onclick="getBlogCategory(\'' . $category->blog_category_id . '\', \'unpublish\'); return false;">' . __('Unpublish') . '</a>';
-                    }
-
-                    $actionBtn .= '<a class="dropdown-item" href="#" onclick="getBlogCategory(\'' . $category->blog_category_id . '\', \'delete\'); return false;">' . __('Delete') . '</a>';
-
-                    return '<a class="btn-action" href="#" data-toggle="dropdown" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
-                                <!-- Download SVG icon from http://tabler-icons.io/i/dots-vertical -->
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24"
-                                    height="24" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    class="icon icon-tabler icons-tabler-outline icon-tabler-dots fw-bold">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                    <path d="M4 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                    <path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                    <path d="M18 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                </svg>
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-end" style="">
-                                <div class="nav-item dropdown">
-                                    ' . $actionBtn . '
-                                </div>
-                            </div>';
-                })
-                ->rawColumns(['status', 'action'])
-                ->make(true);
-        }
-
-        return view('admin.pages.blogs.categories.index', compact('settings', 'config'));
+        return Inertia::render('website/blogs/categories', [
+            'categories' => $categories,
+            'open'       => $request->query('edit') ?: ($request->boolean('new') ? 'new' : null),
+        ]);
     }
 
-    // Add Blog Category
+    // Old sub-pages now open the dialog on the list page
     public function createBlogCategory()
     {
-        // Queries
-        $settings = Setting::first();
-
-        // View
-        return view('admin.pages.blogs.categories.create', compact('settings'));
+        return redirect()->route('admin.blog.categories', ['new' => 1]);
     }
 
-    // Create Blog Category
-    public function publishBlogCategory(Request $request)
-    {
-        // Validation
-        $validator = Validator::make($request->all(), [
-            'category_name' => 'required|min:3',
-            'category_slug' => 'required|min:3'
-        ]);
-
-        if ($validator->fails()) {
-            return back()->with('failed', $validator->messages()->all()[0])->withInput();
-        }
-
-        // Save Blog Category
-        $blogCategory = new BlogCategory();
-        $blogCategory->published_by = Auth::user()->id;
-        $blogCategory->blog_category_id = uniqid();
-        $blogCategory->blog_category_title = ucfirst($request->category_name);
-        $blogCategory->blog_category_slug = $request->category_slug;
-        $blogCategory->save();
-
-        // Redirect
-        return redirect()->route('admin.create.blog.category')->with('success', trans('Created!'));
-    }
-
-    // Edit Blog Category
     public function editBlogCategory($id)
     {
-        // Get page details
-        $blogCategoryDetails = BlogCategory::where('blog_category_id', $id)->where('status', 1)->first();
-
-        if ($blogCategoryDetails) {
-            // Queries
-            $settings = Setting::first();
-
-            // View
-            return view('admin.pages.blogs.categories.edit', compact('blogCategoryDetails', 'settings'));
-        } else {
-            return redirect()->route('admin.blog.categories')->with('failed', trans('Not Found!'));
-        }
+        return redirect()->route('admin.blog.categories', ['edit' => $id]);
     }
 
-    // Update Blog Category
-    public function updateBlogCategory(Request $request)
+    public function publishBlogCategory(Request $request)
     {
-        // Validation
-        $validator = Validator::make($request->all(), [
-            'category_name' => 'required|min:3',
-            'category_slug' => 'required|min:3'
-        ]);
+        $data = $this->validated($request, null);
 
-        if ($validator->fails()) {
-            return back()->with('failed', $validator->messages()->all()[0])->withInput();
-        }
+        $category                      = new BlogCategory();
+        $category->published_by        = Auth::id();
+        $category->blog_category_id    = uniqid();
+        $category->blog_category_title = $data['category_name'];
+        $category->blog_category_slug  = $data['category_slug'];
+        $category->save();
 
-        // Blog category id
-        $blogCategoryId = $request->segment(3);
-
-        // Update query
-        BlogCategory::where('blog_category_id', $blogCategoryId)->update(['blog_category_title' => ucfirst($request->category_name), 'blog_category_slug' => $request->category_slug]);
-
-        // Redirect
-        return redirect()->route('admin.edit.blog.category', $blogCategoryId)->with('success', trans('Updated!'));
+        return back()->with('success', __(':name added.', ['name' => $category->blog_category_title]));
     }
 
-    // Actions
+    public function updateBlogCategory(Request $request, $id)
+    {
+        $category = BlogCategory::where('blog_category_id', $id)->where('status', '!=', 2)->firstOrFail();
+        $data     = $this->validated($request, $category);
+
+        $category->blog_category_title = $data['category_name'];
+        // The fallback keeps its slug so it can always be found
+        if ($category->blog_category_slug !== self::FALLBACK) {
+            $category->blog_category_slug = $data['category_slug'];
+        }
+        $category->save();
+
+        return back()->with('success', __(':name saved.', ['name' => $category->blog_category_title]));
+    }
+
     public function actionBlogCategory(Request $request)
     {
-        // Check status
-        switch ($request->query('mode')) {
-            case 'unpublish':
-                $status = 0;
-                break;
+        $data     = $request->validate(['id' => 'required|string', 'mode' => 'required|in:publish,unpublish,delete']);
+        $category = BlogCategory::where('blog_category_id', $data['id'])->where('status', '!=', 2)->firstOrFail();
 
-            case 'delete':
-                $status = 2;
-                break;
+        if ($data['mode'] === 'delete') {
+            if ($category->blog_category_slug === self::FALLBACK) {
+                return back()->with('failed', __('Uncategorized can’t be deleted. Posts without a category go there.'));
+            }
 
-            default:
-                $status = 1;
-                break;
+            $fallback = $this->fallback();
+            $moved    = Blog::where('category', $category->blog_category_id)->update(['category' => $fallback->blog_category_id]);
+            $category->forceFill(['status' => 2])->save();
+
+            return back()->with('success', $moved
+                ? __(':name deleted. Its :count posts moved to Uncategorized.', ['name' => $category->blog_category_title, 'count' => $moved])
+                : __(':name deleted.', ['name' => $category->blog_category_title]));
         }
 
-        // Update status
-        BlogCategory::where('blog_category_id', $request->query('id'))->update(['status' => $status]);
+        $category->forceFill(['status' => $data['mode'] === 'publish' ? 1 : 0])->save();
 
-        // Redirect
-        return redirect()->route('admin.blog.categories')->with('success', trans('Updated!'));
+        return back()->with('success', $data['mode'] === 'publish'
+            ? __(':name is visible on the blog.', ['name' => $category->blog_category_title])
+            : __(':name is hidden from the blog.', ['name' => $category->blog_category_title]));
+    }
+
+    private function validated(Request $request, ?BlogCategory $category): array
+    {
+        $request->merge(['category_slug' => Str::slug((string) ($request->input('category_slug') ?: $request->input('category_name')))]);
+
+        return $request->validate([
+            'category_name' => 'required|string|min:2|max:191',
+            'category_slug' => ['required', 'string', 'max:191', Rule::unique('blog_categories', 'blog_category_slug')->where(fn ($q) => $q->where('status', '!=', 2))->ignore($category?->id)],
+        ], [
+            'category_slug.unique' => __('Another category already uses this URL.'),
+        ], [
+            'category_name' => __('name'),
+            'category_slug' => __('URL'),
+        ]);
+    }
+
+    /** The Uncategorized category, created again if it was removed. */
+    private function fallback(): BlogCategory
+    {
+        $fallback = BlogCategory::where('blog_category_slug', self::FALLBACK)->orderBy('id')->first();
+
+        if (! $fallback) {
+            $fallback = new BlogCategory();
+            $fallback->published_by        = Auth::id();
+            $fallback->blog_category_id    = uniqid();
+            $fallback->blog_category_title = 'Uncategorized';
+            $fallback->blog_category_slug  = self::FALLBACK;
+        }
+        $fallback->status = 1;
+        $fallback->save();
+
+        return $fallback;
     }
 }

@@ -104,31 +104,48 @@
 
 @section('content')
     <div class="page-wrapper">
-        <!-- Page title -->
+        <!-- Page title header wrapper -->
         <div class="page-header d-print-none">
             <div class="container-fluid">
-                <div class="row g-2 align-items-center">
+                <div class="row align-items-center">
+                    <!-- Breadcrumbs -->
+                    <div class="mb-1 ms-0">
+                        <ol class="breadcrumb" aria-label="breadcrumbs">
+                            <li class="breadcrumb-item">
+                                <a href="{{ route('admin.dashboard') }}" class="text-secondary text-decoration-none">
+                                    {{ __('Dashboard') }}
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">
+                                <a href="#">{{ __('Plugins') }}</a>
+                            </li>
+                        </ol>
+                    </div>
                     <div class="col">
-                        <div class="page-pretitle">
-                            {{ __('Overview') }}
-                        </div>
-                        <h2 class="page-title mb-2">
+                        <h2 class="page-title">
                             {{ __('Plugins') }}
                         </h2>
+                        <!-- Added helper subtitle under page heading -->
+                        <div class="text-muted mt-1">
+                            {{ __('Install, configure, and manage system extensions to add additional functionalities.') }}
+                        </div>
                     </div>
+
                     <div class="col-auto ms-auto d-print-none">
                         <div class="btn-list">
                             {{-- Upload Plugin --}}
-                            <button class="btn btn-primary" onclick="openFileManager()">
+                            <button class="btn btn-primary btn-icon-only d-inline-flex align-items-center"
+                                onclick="openFileManager()">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                     stroke-linejoin="round"
-                                    class="icon icon-tabler icons-tabler-outline icon-tabler-upload">
+                                    class="icon icon-tabler icons-tabler-outline icon-tabler-upload me-1">
                                     <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                                     <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
                                     <path d="M7 9l5 -5l5 5" />
                                     <path d="M12 4l0 12" />
-                                </svg>{{ __('Upload') }}
+                                </svg>
+                                <span class="d-none d-sm-inline">{{ __('Upload') }}</span>
                             </button>
                         </div>
                     </div>
@@ -163,10 +180,10 @@
                 @endif
 
                 {{-- Plugins --}}
-                {{-- check is empty --}}
                 @if (empty($plugins))
-                    <div class="empty">
-                        <div class="empty-img">
+                    <!-- Upgraded Empty Alert Box Wrapper -->
+                    <div class="empty card border-0 shadow-sm p-4">
+                        <div class="empty-img mb-3">
                             <img src="{{ asset('img/plugins.svg') }}" height="256" alt="Plugins"
                                 style="width: 100%; height: 250px;">
                         </div>
@@ -179,10 +196,11 @@
                         {{-- Notify Me --}}
                         <div class="empty-action">
                             <a href="https://zcmp.in/zThd?ref={{ urlencode(config('app.url')) }}&size=source"
-                                target="_blank" class="btn btn-primary btn-4">
+                                target="_blank" class="btn btn-primary btn-4 d-inline-flex align-items-center">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-mail">
+                                    stroke-linejoin="round"
+                                    class="icon icon-tabler icons-tabler-outline icon-tabler-mail me-1">
                                     <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                                     <path
                                         d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10z" />
@@ -217,19 +235,20 @@
                         {{-- System plugins --}}
                         @foreach ($plugins as $plugin)
                             @if (in_array($plugin['plugin_id'], $systemPlugins))
-                                <div class="col-sm-12 col-md-4 col-lg-4 mb-3">
-                                    <div class="card h-100 d-flex flex-column">
+                                <div class="col-12 col-md-4 col-lg-4 col-xl-4 mb-3">
+                                    <!-- Upgraded plugin item wrapper -->
+                                    <div class="card h-100 d-flex flex-column border-0 shadow-sm">
                                         <div class="card-body flex-grow-1">
                                             <div class="d-flex align-items-center mb-3">
-                                                <img class="rounded-3" src="{{ asset('img/plugins/' . $plugin['img']) }}"
+                                                <img src="{{ asset('img/plugins/' . $plugin['img']) }}"
                                                     onerror="this.onerror=null; this.src='{{ asset('img/plugins/default.png') }}';"
                                                     style="width: 10%">
                                                 <h3 class="card-title ms-2 mb-0">{{ __($plugin['name']) }}</h3>
                                             </div>
-                                            <p class="text-secondary">{{ __($plugin['description']) }}</p>
+                                            <p class="text-secondary small">{{ __($plugin['description']) }}</p>
                                         </div>
                                         <div class="d-flex align-items-end gap-2 justify-content-between me-3 mb-3">
-                                            <p class="text-secondary ms-3">v{{ $plugin['version'] }}</p>
+                                            <p class="text-secondary ms-3 small">v{{ $plugin['version'] }}</p>
                                             <div class="d-flex align-items-center gap-2">
                                                 {{-- Settings --}}
                                                 <a href="{{ route($plugin['main_route']) }}"
@@ -256,19 +275,20 @@
                         {{-- Custom plugins --}}
                         @foreach ($plugins as $plugin)
                             @if (!in_array($plugin['plugin_id'], $systemPlugins))
-                                <div class="col-sm-12 col-md-4 col-lg-4 mb-3">
-                                    <div class="card h-100 d-flex flex-column">
+                                <div class="col-12 col-md-4 col-lg-4 col-xl-4 mb-3">
+                                    <!-- Upgraded custom plugin item wrapper -->
+                                    <div class="card h-100 d-flex flex-column border-0 shadow-sm">
                                         <div class="card-body flex-grow-1">
                                             <div class="d-flex align-items-center mb-3">
-                                                <img class="rounded-3" src="{{ asset('img/plugins/' . $plugin['img']) }}"
+                                                <img src="{{ asset('img/plugins/' . $plugin['img']) }}"
                                                     onerror="this.onerror=null; this.src='{{ asset('img/plugins/default.png') }}';"
                                                     style="width: 10%">
                                                 <h3 class="card-title ms-2 mb-0">{{ __($plugin['name']) }}</h3>
                                             </div>
-                                            <p class="text-secondary">{{ __($plugin['description']) }}</p>
+                                            <p class="text-secondary small">{{ __($plugin['description']) }}</p>
                                         </div>
                                         <div class="d-flex align-items-end gap-2 justify-content-between me-3 mb-3">
-                                            <p class="text-secondary ms-3">v{{ $plugin['version'] }}</p>
+                                            <p class="text-secondary ms-3 small">v{{ $plugin['version'] }}</p>
                                             <div class="d-flex align-items-center gap-2">
                                                 {{-- Delete --}}
                                                 <form action="{{ route('admin.plugins.delete', $plugin['plugin_id']) }}"
@@ -326,9 +346,9 @@
     </div>
 
     <!-- Confirmation Modal -->
-    <div class="modal modal-blur fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel"
+    <div class="modal modal-bg fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel"
         aria-hidden="true">
-        <div class="modal-dialog modal-md modal-dialog-centered" role="document">
+        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="confirmDeleteModalLabel">{{ __('Confirm Delete') }}</h5>
@@ -358,9 +378,10 @@
             <div class="cube"></div>
             <div class="cube"></div>
         </div>
-        <p class="loader-title">{{ __('Installing Template...') }}</p>
+        <p class="loader-title">{{ __('Installing Plugin') }}</p>
         <p class="loader-subtitle">{{ __('Please don\'t close this page') }}</p>
     </div>
+@endsection
 
 @section('scripts')
     <script type="text/javascript">
@@ -368,14 +389,10 @@
 
         // Confirm delete
         function confirmationModel(pluginId) {
-            // trugger alert
-            // alert(pluginId);
             $('#confirmDeleteModal').modal('show');
 
             let btn = document.getElementById('confirmDeleteBtn');
-            // add custom value to btn
             btn.setAttribute('data-plugin-id', pluginId);
-
         }
 
         // Confirm delete
@@ -432,5 +449,4 @@
                 });
         }
     </script>
-@endsection
 @endsection

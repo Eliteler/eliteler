@@ -1,3 +1,18 @@
+@php
+    $currentHost = request()->getHost();
+    $masterHost = parse_url(config('app.url'), PHP_URL_HOST);
+    $isCustomDomainOrSubdomain = $currentHost !== $masterHost;
+
+    // Dynamic store base URL and product URL prefix
+    if ($isCustomDomainOrSubdomain) {
+        $storeUrl = url('/');
+        $productUrlPrefix = url('product');
+    } else {
+        $storeUrl = url($business_card_details->card_url);
+        $productUrlPrefix = url($business_card_details->card_url . '/product');
+    }
+@endphp
+
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
@@ -44,7 +59,8 @@
     <link href="{{ url('app/css/store.css') }}" rel="stylesheet">
 
     {{-- Font --}}
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100;200;300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
 
     <style>
         body {
@@ -56,32 +72,72 @@
     {{-- Check business details --}}
     @if ($business_card_details != null)
         @php
-            $custom_css = $business_card_details->custom_css;
-            $custom_js = $business_card_details->custom_js;
+            $custom_css = trim($business_card_details->custom_css ?? '');
+            $custom_js = trim($business_card_details->custom_js ?? '');
 
-            // Ensure <style> tags for custom CSS
-            if (strpos($custom_css, '<style>') === false && strpos($custom_css, '</style>') === false) {
-                $custom_css = "<style>" . $custom_css . "</style>";
+            /*
+            |--------------------------------------------------------------------------
+            | Custom CSS
+            |--------------------------------------------------------------------------
+            */
+
+            if (!empty($custom_css) && stripos($custom_css, '<style') === false) {
+                $custom_css = "<style>{$custom_css}</style>";
             }
 
-            // Ensure <script> tags for custom JS
-            if (strpos($custom_js, '<script>') === false && strpos($custom_js, '</script>') === false) {
-                $custom_js = "<script>" . $custom_js . "</script>";
+            /*
+            |--------------------------------------------------------------------------
+            | Split HTML tags and plain JS
+            |--------------------------------------------------------------------------
+            */
+
+            $include_custom_js = '';
+
+            if (!empty($custom_js)) {
+                // Extract HTML tags like meta, script, iframe, noscript, etc.
+                preg_match_all(
+                '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/@endphp/is',
+        $custom_js,
+        $matches,
+    );
+
+    $html_tags = implode("\n", $matches[0]);
+
+    // Remove extracted HTML tags from original content
+    $plain_js = trim(
+        preg_replace(
+            '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/?>/is',
+            '',
+            $custom_js,
+        ),
+    );
+
+    // Add HTML tags directly
+    $include_custom_js .= $html_tags;
+
+    // Wrap remaining plain JS inside script tag
+    if (!empty($plain_js)) {
+        $include_custom_js .= "\n<script>
+            {
+                $plain_js
             }
-        @endphp
+        </script>";
+    }
+}
+?>
 
         {!! $custom_css !!}
-        {!! $custom_js !!}
+        {!! $include_custom_js !!}
 
         {{-- Theme CSS --}}
-        @if(!empty($business_card_details->theme_css))
+        @if (!empty($business_card_details->theme_css))
             <style>
                 {!! $business_card_details->theme_css !!}
             </style>
         @endif
 
         {{-- Theme JS --}}
-        @if(!empty($business_card_details->theme_js))
+        @if (!empty($business_card_details->theme_js))
             <script>
                 {!! $business_card_details->theme_js !!}
             </script>
@@ -103,9 +159,11 @@
         .policy-title {
             font-size: 1.5rem !important;
         }
+
         .card-lg>.card-body {
             padding: 1rem !important;
         }
+
         .mt-6 {
             margin-top: 6rem !important;
         }
@@ -152,12 +210,13 @@
                             <span class="text-muted">
                                 {{ __('Copyright') }} &copy;
                                 <span id="year"></span>
-                                <a href="{{ url($business_card_details->card_url) }}" class="text-gray fw-semibold">
+                                <a href="{{ $storeUrl }}" class="text-gray fw-semibold">
                                     {{ $card_details->title }}
                                 </a>.
                                 {{ __('All rights reserved.') }} <br>
                                 @if (!isset($plan_details['hide_branding']) || $plan_details['hide_branding'] != 1)
-                                    {{ __('Made with') }} <i class="ti ti-heart text-danger"></i> <a href="{{ config('app.url') }}">{{ config('app.name') }}</a>.
+                                    {{ __('Made with') }} <i class="ti ti-heart text-danger"></i> <a
+                                        href="{{ config('app.url') }}">{{ config('app.name') }}</a>.
                                 @endif
                             </span>
                         </div>
@@ -199,42 +258,48 @@
                                 {{-- Privacy Policy --}}
                                 @if ($business_card_details->privacy_policy)
                                     <li class="list-inline-item">
-                                        <a href="{{ route('store.privacy.policy', $business_card_details->card_url) }}" class="link-secondary">{{ __('Privacy Policy') }}</a>
+                                        <a href="{{ $isCustomDomainOrSubdomain ? url('privacy-policy') : route('store.privacy.policy', $business_card_details->card_url) }}"
+                                            class="link-secondary">{{ __('Privacy Policy') }}</a>
                                     </li>
                                 @endif
-                                
+
                                 {{-- Terms and Conditions --}}
                                 @if ($business_card_details->terms_and_conditions)
                                     <li class="list-inline-item">
-                                        <a href="{{ route('store.terms.and.conditions', $business_card_details->card_url) }}" class="link-secondary">{{ __('Terms & Conditions') }}</a>
+                                        <a href="{{ $isCustomDomainOrSubdomain ? url('terms-and-conditions') : route('store.terms.and.conditions', $business_card_details->card_url) }}"
+                                            class="link-secondary">{{ __('Terms & Conditions') }}</a>
                                     </li>
                                 @endif
 
                                 {{-- Return/Refund Policy --}}
                                 @if ($business_card_details->refund_policy)
                                     <li class="list-inline-item">
-                                        <a href="{{ route('store.refund.policy', $business_card_details->card_url) }}" class="link-secondary">{{ __('Return/Refund Policy') }}</a>
+                                        <a href="{{ $isCustomDomainOrSubdomain ? url('refund-policy') : route('store.refund.policy', $business_card_details->card_url) }}"
+                                            class="link-secondary">{{ __('Return/Refund Policy') }}</a>
                                     </li>
                                 @endif
 
                                 {{-- Shipping Policy --}}
                                 @if ($business_card_details->shipping_policy)
                                     <li class="list-inline-item">
-                                        <a href="{{ route('store.shipping.policy', $business_card_details->card_url, $business_card_details->card_url) }}" class="link-secondary">{{ __('Shipping Policy') }}</a>
+                                        <a href="{{ $isCustomDomainOrSubdomain ? url('shipping-policy') : route('store.shipping.policy', $business_card_details->card_url) }}"
+                                            class="link-secondary">{{ __('Shipping Policy') }}</a>
                                     </li>
                                 @endif
 
                                 {{-- Cookie Policy --}}
                                 @if ($business_card_details->cookie_policy)
                                     <li class="list-inline-item">
-                                        <a href="{{ route('store.cookie.policy', $business_card_details->card_url) }}" class="link-secondary">{{ __('Cookie Policy') }}</a>
+                                        <a href="{{ $isCustomDomainOrSubdomain ? url('cookie-policy') : route('store.cookie.policy', $business_card_details->card_url) }}"
+                                            class="link-secondary">{{ __('Cookie Policy') }}</a>
                                     </li>
                                 @endif
 
                                 {{-- Contact Information / Customer Support Policy --}}
                                 @if ($business_card_details->customer_support_policy)
                                     <li class="list-inline-item">
-                                        <a href="{{ route('store.contact.information', $business_card_details->card_url) }}" class="link-secondary">{{ __('Contact Us') }}</a>
+                                        <a href="{{ $isCustomDomainOrSubdomain ? url('contact-information') : route('store.contact.information', $business_card_details->card_url) }}"
+                                            class="link-secondary">{{ __('Contact Us') }}</a>
                                     </li>
                                 @endif
                             </ul>
@@ -245,7 +310,7 @@
         </div>
 
         <!-- Bottom Navbar -->
-        @include('templates.includes.bottom-bar', ['color' => 'indigo','bg' => 'light'])
+        @include('templates.includes.bottom-bar', ['color' => 'indigo', 'bg' => 'light'])
         <!-- End Bottom Navbar -->
     </div>
 
@@ -280,7 +345,7 @@
     </div>
 
     {{-- Place order --}}
-    <div class="modal modal-blur fade" id="orderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal modal-bg fade" id="orderModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-md modal-dialog-centered" role="document">
             <div class="modal-content">
                 <!-- Modal Header -->
@@ -297,14 +362,16 @@
                     <!-- Mobile -->
                     <div class="mb-3">
                         <label class="form-label required" for="cus_mobile">{{ __('Mobile') }}</label>
-                        <input type="number" class="form-control" placeholder="{{ __('Mobile number with country code, excluding +') }}" id="cus_mobile" required />
+                        <input type="number" class="form-control"
+                            placeholder="{{ __('Mobile number with country code, excluding +') }}" id="cus_mobile"
+                            required />
                     </div>
                     <!-- Address -->
                     <div class="mb-3">
                         <label class="form-label required" for="cus_address">{{ __('Address') }}</label>
                         <input type="text" class="form-control" id="cus_address" required />
                     </div>
-                    
+
                     {{-- Check delivery options --}}
                     @if ($deliveryOptions != null)
                         <!-- Delivery Type -->
@@ -331,16 +398,16 @@
 
                                 {{-- Dine In --}}
                                 @if (isset($deliveryOptions->dine_in) && $deliveryOptions->dine_in == 1)
-                                <label class="form-check">
-                                    <input class="form-check-input" type="radio" name="cus_delivery_type"
-                                        id="dine_in" value="Dine In">
-                                    <span class="form-check-label">{{ __('Dine In') }}</span>
-                                </label>
+                                    <label class="form-check">
+                                        <input class="form-check-input" type="radio" name="cus_delivery_type"
+                                            id="dine_in" value="Dine In">
+                                        <span class="form-check-label">{{ __('Dine In') }}</span>
+                                    </label>
                                 @endif
                             </div>
                         </div>
                     @endif
-                    
+
                     {{-- Notes --}}
                     <div class="mb-3">
                         <label class="form-label" for="cus_notes">{{ __('Notes') }}</label>
@@ -349,8 +416,9 @@
 
                     {{-- Customer Notes --}}
                     <div class="mb-3">
-                        <small>{{ __("Customer Notes") }}: </small>
-                        <small class="text-muted">{{ __("After you click the Confirm button, WhatsApp will open. Tap 'Send' in WhatsApp to send your order to the shop owner.") }}</small>
+                        <small>{{ __('Customer Notes') }}: </small>
+                        <small
+                            class="text-muted">{{ __("After you click the Confirm button, WhatsApp will open. Tap 'Send' in WhatsApp to send your order to the shop owner.") }}</small>
                     </div>
                 </div>
                 <!-- Modal Footer -->
@@ -376,7 +444,11 @@
     </div>
 
     {{-- WharApp Chat --}}
-    @include('templates.includes.whatsapp-float', ['businessImage' => $business_card_details->profile, 'businessName' => $card_details->title, 'whatsappNumber' => $enquiry_button])
+    @include('templates.includes.whatsapp-float', [
+        'businessImage' => $business_card_details->profile,
+        'businessName' => $card_details->title,
+        'whatsappNumber' => $enquiry_button,
+    ])
 
     <!-- Core -->
     <script type="text/javascript" src="{{ url('js/tabler.min.js') }}"></script>
@@ -395,9 +467,7 @@
         };
 
         // Currencies
-        const currencies = {!! json_encode(App\Currency::where('status', 1)
-        ->select('iso_code', 'symbol', 'symbol_first')
-        ->get()) !!};
+        const currencies = {!! json_encode(App\Currency::where('status', 1)->select('iso_code', 'symbol', 'symbol_first')->get()) !!};
 
         // Determine currency symbol and position
         let currencySymbol = '';
@@ -523,7 +593,7 @@
                 // LEFT: Image
                 cart_items += `
                 <div class="me-3 flex-shrink-0" style="width: 100px; height: 100px;">
-                    <img src="${item.product_image}" class="img-fluid rounded object-fit-cover h-100 w-100" alt="${item.product_name}" />
+                    <img src="${item.product_image}" class="img-fluid rounded object-fit-contain h-100 w-100" alt="${item.product_name}" />
                 </div>`;
 
                 // RIGHT: Product Info
@@ -628,7 +698,7 @@
             const day = days[now.getDay()];
 
             const currentTime = now.getHours().toString().padStart(2, '0') + ':' +
-                                now.getMinutes().toString().padStart(2, '0');
+                now.getMinutes().toString().padStart(2, '0');
 
             const hours = businessHours[day];
 
@@ -697,7 +767,7 @@
 
                 // Place order ajax
                 $.ajax({
-                    url: "{{ config('app.url') }}/order/place",
+                    url: "{{ url('order/place') }}",
                     method: "POST",
                     data: {
                         _token: '{{ csrf_token() }}',
@@ -710,7 +780,7 @@
                         order_items: cart,
                         total_price: grandTotal,
                     },
-                    success: function (data) {
+                    success: function(data) {
                         // Check if order was placed successfully
                         if (data.status == "success") {
                             // Map of dynamic delivery type values to translated strings
@@ -744,7 +814,8 @@
                             waShareContent += productsList + `*${whatsAppMessage}*`;
 
                             // Construct WhatsApp link and open in new tab
-                            const link = `https://api.whatsapp.com/send/?phone=${whatsAppNumber}&text=${encodeURI(waShareContent)}`;
+                            const link =
+                                `https://api.whatsapp.com/send/?phone=${whatsAppNumber}&text=${encodeURI(waShareContent)}`;
                             // Confirm before opening
                             const opened = window.open(link, '_blank');
 
@@ -764,7 +835,7 @@
                             errorAlert(data.message);
                         }
                     },
-                    error: function (error) {
+                    error: function(error) {
                         // Show error message
                         errorAlert(error.responseJSON.message);
                     }

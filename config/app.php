@@ -1,7 +1,6 @@
 <?php
 
 return [
-
     /*
     |--------------------------------------------------------------------------
     | Application Name
@@ -141,6 +140,7 @@ return [
     */
 
     'providers' => [
+        Sajjadhossainshohag\Paystack\PaystackServiceProvider::class,
 
         /*
          * Laravel Framework Service Providers...
@@ -192,6 +192,7 @@ return [
         Biscolab\ReCaptcha\ReCaptchaServiceProvider::class,
         App\Providers\PluginServiceProvider::class,
         App\Providers\TemplateServiceProvider::class,
+        Modules\TranslationManager\app\Providers\TranslationManagerServiceProvider::class,
     ],
 
     /*
@@ -256,8 +257,10 @@ return [
   'en' => 'English',
   'ar' => 'Arabic',
   'bn' => 'Bangla',
+  'pt_BR' => 'Brazilian Portuguese',
   'bg' => 'Bulgarian',
   'zh' => 'Chinese',
+  'hr' => 'Croatian',
   'nl' => 'Dutch',
   'fr' => 'French',
   'et' => 'Estonian',
@@ -269,7 +272,9 @@ return [
   'id' => 'Indonesian',
   'it' => 'Italian',
   'ja' => 'Japanese',
+  'kn' => 'Kannada',
   'lt' => 'Lithuanian',
+  'ml' => 'Malayalam',
   'ms' => 'Malay',
   'pt' => 'Portuguese',
   'pl' => 'Polish',
@@ -283,17 +288,16 @@ return [
   'tr' => 'Turkish',
   'ur' => 'Urdu',
   'vi' => 'Vietnamese',
-  'hr' => 'Croatian',
-  'pt_BR' => 'Brazilian Portuguese',
-        'ml' => 'Malayalam',
-    ], 
+],
 
     'availableLanguages' => [
         'en' => 'English',
         'ar' => 'Arabic',
         'bn' => 'Bangla',
+        'pt_BR' => 'Brazilian Portuguese',
         'bg' => 'Bulgarian',
         'zh' => 'Chinese',
+        'hr' => 'Croatian',
         'nl' => 'Dutch',
         'fr' => 'French',
         'et' => 'Estonian',
@@ -305,7 +309,9 @@ return [
         'id' => 'Indonesian',
         'it' => 'Italian',
         'ja' => 'Japanese',
+        'kn' => 'Kannada',
         'lt' => 'Lithuanian',
+        'ml' => 'Malayalam',
         'ms' => 'Malay',
         'pt' => 'Portuguese',
         'pl' => 'Polish',
@@ -318,16 +324,14 @@ return [
         'th' => 'Thai',
         'tr' => 'Turkish',
         'ur' => 'Urdu',
-        'vi' => 'Vietnamese',        
-        'hr' => 'Croatian',        
-        'pt_BR' => 'Brazilian Portuguese',
-        'ml' => 'Malayalam',
+        'vi' => 'Vietnamese',
     ],
 
     'flag-icons' => [
         'en' => 'us',
         'ar' => 'sa',
         'bn' => 'bd',
+        'pt_BR' => 'br',
         'bg' => 'bg',
         'zh' => 'cn',
         'hr' => 'hr',
@@ -342,7 +346,9 @@ return [
         'id' => 'id',
         'it' => 'it',
         'ja' => 'jp',
+        'kn' => 'in',
         'lt' => 'lt',
+        'ml' => 'in',
         'ms' => 'my',
         'pt' => 'pt',
         'pl' => 'pl',
@@ -355,8 +361,6 @@ return [
         'th' => 'th',
         'tr' => 'tr',
         'ur' => 'pk',
-        'vi' => 'vn',        
-        'pt_BR' => 'br',
-        'ml' => 'in',
+        'vi' => 'vn',
     ],
 ];

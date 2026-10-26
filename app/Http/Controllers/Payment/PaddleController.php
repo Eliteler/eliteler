@@ -12,21 +12,22 @@
 
 namespace App\Http\Controllers\Payment;
 
-use App\Plan;
-use App\User;
-use App\Coupon;
-use App\Setting;
-use App\Referral;
-use Carbon\Carbon;
-use App\Transaction;
-use App\BusinessCard;
 use App\AppliedCoupon;
+use App\BusinessCard;
+use App\Coupon;
+use App\Http\Controllers\Controller;
+use App\Plan;
+use App\Referral;
+use App\Setting;
+use App\Transaction;
+use App\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+use Plugins\Zapier\Helpers\ZapierHelper;
 
 class PaddleController extends Controller
 {
@@ -142,7 +143,7 @@ class PaddleController extends Controller
             $invoice_details['to_billing_state']     = $userData->billing_state;
             $invoice_details['to_billing_zipcode']   = $userData->billing_zipcode;
             $invoice_details['to_billing_country']   = $userData->billing_country;
-            $invoice_details['to_billing_phone']     = $userData->billing_phone;
+            $invoice_details['to_billing_phone']     = $userData->billing_country_code . $userData->billing_phone;
             $invoice_details['to_billing_email']     = $userData->billing_email;
             $invoice_details['to_vat_number']        = $userData->vat_number;
             $invoice_details['subtotal']             = $plan_details->plan_price;
@@ -152,7 +153,7 @@ class PaddleController extends Controller
             $invoice_details['tax_amount']           = $appliedTaxInTotal;
             $invoice_details['applied_coupon']       = $appliedCoupon;
             $invoice_details['discounted_price']     = $discountPrice;
-            $invoice_details['invoice_amount']       = $amountToBePaid;
+            $invoice_details['invoice_amount']       = round($amountToBePaid, 2);
 
             // Save transactions
             $transaction = new Transaction();
@@ -163,7 +164,7 @@ class PaddleController extends Controller
             $transaction->plan_id                 = $plan_details->plan_id;
             $transaction->desciption              = $plan_details->plan_name . " Plan";
             $transaction->payment_gateway_name    = "Paddle";
-            $transaction->transaction_amount      = $amountToBePaid;
+            $transaction->transaction_amount      = round($amountToBePaid, 2);
             $transaction->transaction_currency    = $config[1]->config_value;
             $transaction->invoice_details         = json_encode($invoice_details);
             $transaction->payment_status          = "PENDING";
@@ -193,7 +194,7 @@ class PaddleController extends Controller
             // Amount must be in the lowest currency unit as a string (e.g. cents).
             // Paddle Billing expects unit_price.amount as a string in the lowest
             // denomination (e.g. "1000" = $10.00 for USD).
-            $amountInLowestUnit = (string)(int)round($amountToBePaid * 100);
+            $amountInLowestUnit = (string)(float)round($amountToBePaid * 100);
 
             // Custom data carries our internal IDs so we can match on webhook/return.
             $customData = [
@@ -587,6 +588,41 @@ class PaddleController extends Controller
                         Mail::to($encode['to_billing_email'])->send(new \App\Mail\SendEmailInvoice($details));
                     } catch (\Exception $e) {
                         // Handle email sending failure if needed
+                    }
+
+                    // Decode invoice details safely
+                    $encode = json_decode($transaction_details->invoice_details ?? '{}', true);
+
+                    // Safely format user billing address
+                    $userAddress = $user_details->billing_address ?? '';
+                    $userCity = $user_details->billing_city ?? '';
+                    $userState = $user_details->billing_state ?? '';
+                    $userCountry = $user_details->billing_country ?? '';
+                    $userZip = $user_details->billing_zipcode ?? '';
+
+                    // Dispatch plan purchase event to Zapier
+                    if (function_exists('zapier_dispatch')) {
+                        zapier_dispatch('plan_purchase', [
+                            'transaction_id'  => $paddleTransactionId ?? ($paymentId ?? ($transaction_details->transaction_id ?? 'TX_' . rand(100000, 999999))),
+                            'invoice_id'      => ($config[15]->config_value ?? 'INV-') . $invoice_number,
+                            'user_name'       => $user_details->name ?? ($encode['to_billing_name'] ?? 'Customer'),
+                            'user_address'    => !empty($userAddress) ? $userAddress : ($encode['to_billing_address'] ?? ''),
+                            'user_city'       => !empty($userCity) ? $userCity : ($encode['to_billing_city'] ?? ''),
+                            'user_state'      => !empty($userState) ? $userState : ($encode['to_billing_state'] ?? ''),
+                            'user_country'    => !empty($userCountry) ? $userCountry : ($encode['to_billing_country'] ?? ''),
+                            'user_zip'        => !empty($userZip) ? $userZip : ($encode['to_billing_zipcode'] ?? ''),
+                            'user_email'      => $user_details->email ?? ($encode['to_billing_email'] ?? ''),
+                            'user_phone'      => ($user_details->country_code ?? '') . ($user_details->mobile_number ?? ($encode['to_billing_phone'] ?? '')),
+                            'user_tax_number' => $user_details->vat_number ?? $user_details->tax_number ?? ($encode['to_vat_number'] ?? ''),
+                            'plan_name'       => $plan_data->plan_name ?? $plan_data->name ?? ($transaction_details->desciption ?? ($transaction_details->description ?? 'Subscription Plan')),
+                            'quantity'        => 1,
+                            'currency'        => $transaction_details->transaction_currency ?? ($config[1]->config_value ?? 'USD'),
+                            'amount'          => (float) ($transaction_details->transaction_amount ?? ($encode['invoice_amount'] ?? 0)),
+                            'payment_method'  => 'Paddle',
+                            'payment_status'  => 'paid',
+                            'invoice_date'    => now()->toDateString(),
+                            'purchased_at'    => now()->toDateTimeString(),
+                        ]);
                     }
 
                     return redirect()->route('user.plans')->with('success', $message);

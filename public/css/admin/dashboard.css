@@ -1,0 +1,157 @@
+/* GoBiz vCard SaaS
+|--------------------------------------------------------------------------
+| Developed by NativeCode © 2021 - https://nativecode.in
+| All rights reserved
+| Unauthorized distribution is prohibited
+|--------------------------------------------------------------------------
+*/
+
+[data-bs-theme="dark"] text {
+    fill: rgb(250, 250, 250);
+}
+
+[data-bs-theme="light"] text {
+    fill: rgb(0, 0, 0);
+}
+
+[data-bs-theme="dark"] .text-slate-800 {
+    color: #697281 !important;
+    opacity: 1 !important;
+}
+
+.overview-daterange {
+    font-size: 0.75rem !important;
+    padding-left: 2rem !important;
+}
+
+.date-icon {
+    position: absolute;
+    left: 0.6rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 4;
+    pointer-events: none;
+    color: #6c757d;
+    font-size: 0.85rem;
+}
+
+#current-week-sales .apexcharts-tooltip {
+    border: none !important;
+    box-shadow:
+        0 10px 15px -3px rgba(0, 0, 0, 0.1),
+        0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+    border-radius: 8px !important;
+}
+
+#current-week-sales .apexcharts-tooltip-title {
+    border-bottom: none !important;
+}
+
+/* Modern Analytics Studio Card Aesthetics - Theme Compatible & Compact */
+.analytics-card {
+    background: var(--tblr-bg-surface);
+    border: 1px solid var(--tblr-border-color-translucent);
+    border-radius: 16px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden !important;
+    color: var(--tblr-body-color) !important;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.analytics-card:hover {
+    border-color: var(--tblr-primary);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+.primary-border:hover {
+    border-color: var(--tblr-primary) !important;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+.metric-title {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--tblr-body-color) !important;
+    font-weight: 700;
+}
+
+.metric-value {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--tblr-body-color) !important;
+    line-height: 1.15;
+}
+
+[data-bs-theme="dark"] .metric-value,
+[data-bs-theme="dark"] .text-reset {
+    color: #f8fafc !important;
+}
+
+[data-bs-theme="dark"] .analytics-card h3,
+[data-bs-theme="dark"] .analytics-card .h1,
+[data-bs-theme="dark"] .analytics-card .h3 {
+    color: #ffffff !important;
+}
+
+/* Semi-Circle Radial Gauge Wrapper */
+.radial-gauge-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 110px !important;
+    margin-top: -5px;
+    margin-bottom: 0;
+    overflow: hidden;
+}
+
+.gauge-center-text {
+    position: absolute;
+    bottom: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    pointer-events: none;
+}
+
+.gauge-center-text .gauge-number {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: var(--tblr-body-color) !important;
+}
+
+[data-bs-theme="dark"] .gauge-center-text .gauge-number {
+    color: #ffffff !important;
+}
+
+/* Trending Badges */
+.badge-trend-up {
+    color: #10b981 !important;
+    font-weight: 700;
+    font-size: 0.825rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.badge-trend-down {
+    color: #ef4444 !important;
+    font-weight: 700;
+    font-size: 0.825rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.hero-progress-line {
+    height: 4px;
+    border-radius: 4px;
+    width: 100%;
+    margin-top: 6px;
+}

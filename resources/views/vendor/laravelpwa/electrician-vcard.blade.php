@@ -22,7 +22,7 @@
 
         {{-- Description --}}
         <p class="pwa-desc">
-            {{ __('Install this app for instant access to services, bookings, and emergency dispatch — right from your home screen.') }}
+            {{ __('Add this digital card to your home screen for instant access."') }}
         </p>
 
         {{-- Buttons --}}

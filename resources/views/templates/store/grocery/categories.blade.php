@@ -1,3 +1,18 @@
+@php
+    $currentHost = request()->getHost();
+    $masterHost = parse_url(config('app.url'), PHP_URL_HOST);
+    $isCustomDomainOrSubdomain = $currentHost !== $masterHost;
+
+    // Dynamic store base URL and product URL prefix
+    if ($isCustomDomainOrSubdomain) {
+        $storeUrl = url('/');
+        $productUrlPrefix = url('product');
+    } else {
+        $storeUrl = url($business_card_details->card_url);
+        $productUrlPrefix = url($business_card_details->card_url . '/product');
+    }
+@endphp
+
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
@@ -89,32 +104,72 @@
     {{-- Check business details --}}
     @if ($business_card_details != null)
         @php
-            $custom_css = $business_card_details->custom_css;
-            $custom_js = $business_card_details->custom_js;
+            $custom_css = trim($business_card_details->custom_css ?? '');
+            $custom_js = trim($business_card_details->custom_js ?? '');
 
-            // Ensure <style> tags for custom CSS
-            if (strpos($custom_css, '<style>') === false && strpos($custom_css, '</style>') === false) {
-                $custom_css = "<style>" . $custom_css . "</style>";
+            /*
+            |--------------------------------------------------------------------------
+            | Custom CSS
+            |--------------------------------------------------------------------------
+            */
+
+            if (!empty($custom_css) && stripos($custom_css, '<style') === false) {
+                $custom_css = "<style>{$custom_css}</style>";
             }
 
-            // Ensure <script> tags for custom JS
-            if (strpos($custom_js, '<script>') === false && strpos($custom_js, '</script>') === false) {
-                $custom_js = "<script>" . $custom_js . "</script>";
+            /*
+            |--------------------------------------------------------------------------
+            | Split HTML tags and plain JS
+            |--------------------------------------------------------------------------
+            */
+
+            $include_custom_js = '';
+
+            if (!empty($custom_js)) {
+                // Extract HTML tags like meta, script, iframe, noscript, etc.
+                preg_match_all(
+                '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/@endphp/is',
+        $custom_js,
+        $matches,
+    );
+
+    $html_tags = implode("\n", $matches[0]);
+
+    // Remove extracted HTML tags from original content
+    $plain_js = trim(
+        preg_replace(
+            '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/?>/is',
+            '',
+            $custom_js,
+        ),
+    );
+
+    // Add HTML tags directly
+    $include_custom_js .= $html_tags;
+
+    // Wrap remaining plain JS inside script tag
+    if (!empty($plain_js)) {
+        $include_custom_js .= "\n<script>
+            {
+                $plain_js
             }
-        @endphp
+        </script>";
+    }
+}
+?>
 
         {!! $custom_css !!}
-        {!! $custom_js !!}
+        {!! $include_custom_js !!}
 
         {{-- Theme CSS --}}
-        @if(!empty($business_card_details->theme_css))
+        @if (!empty($business_card_details->theme_css))
             <style>
                 {!! $business_card_details->theme_css !!}
             </style>
         @endif
 
         {{-- Theme JS --}}
-        @if(!empty($business_card_details->theme_js))
+        @if (!empty($business_card_details->theme_js))
             <script>
                 {!! $business_card_details->theme_js !!}
             </script>
@@ -170,8 +225,7 @@
 
                         <h2 class="head pt-4 pb-5 text-center position-relative fs-custom fw-bold">
                             {{ __('Categories') }}
-                            <div
-                                class="position-absolute start-50 translate-middle-x bg-grocery-green bottom-bar2">
+                            <div class="position-absolute start-50 translate-middle-x bg-grocery-green bottom-bar2">
                             </div>
                         </h2>
 
@@ -183,12 +237,13 @@
                                     @foreach ($categories as $category)
                                         <div class="cursor-pointer col-6 col-md-3">
                                             <a
-                                                href="{{ url($business_card_details->card_url) . '?category=' . urlencode(strtolower($category->category_name)) }}">
+                                                href="{{ $storeUrl . '?category=' . urlencode(strtolower($category->category_name)) }}">
                                                 <div class="card rounded-grocery border-green">
                                                     <div
                                                         class="card-body d-flex flex-column align-items-center justify-content-center gap-2 p-3">
                                                         <!-- Thumbnail -->
-                                                        <div class="ratio ratio-1x1 d-flex align-items-center justify-content-center">
+                                                        <div
+                                                            class="ratio ratio-1x1 d-flex align-items-center justify-content-center">
                                                             <img src="{{ url($category->thumbnail) }}"
                                                                 class="img-fluid category-thumbnail"
                                                                 alt="{{ $category->category_name }}" />
@@ -221,12 +276,13 @@
                                     <span class="text-muted">
                                         {{ __('Copyright') }} &copy;
                                         <span id="year"></span>
-                                        <a href="{{ url($business_card_details->card_url) }}" class="text-dark fw-semibold">
+                                        <a href="{{ $storeUrl }}" class="text-dark fw-semibold">
                                             {{ $card_details->title }}
                                         </a>.
                                         {{ __('All rights reserved.') }} <br>
                                         @if (!isset($plan_details['hide_branding']) || $plan_details['hide_branding'] != 1)
-                                            {{ __('Made with') }} <i class="ti ti-heart text-danger"></i> <a href="{{ config('app.url') }}">{{ config('app.name') }}</a>.
+                                            {{ __('Made with') }} <i class="ti ti-heart text-danger"></i> <a
+                                                href="{{ config('app.url') }}">{{ config('app.name') }}</a>.
                                         @endif
                                     </span>
                                 </div>
@@ -239,7 +295,8 @@
                                             </a>
                                         </li>
                                         <li class="list-inline-item">
-                                            <a href="{{ $shareComponent['twitter'] }}" target="_blank" class="link-light">
+                                            <a href="{{ $shareComponent['twitter'] }}" target="_blank"
+                                                class="link-light">
                                                 <i class="ti ti-brand-twitter-filled text-grocery-green"></i>
                                             </a>
                                         </li>
@@ -362,7 +419,7 @@
     </div>
 
     {{-- Place order --}}
-    <div class="modal modal-blur fade" id="orderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal modal-bg fade" id="orderModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-md modal-dialog-centered" role="document">
             <div class="modal-content">
                 <!-- Modal Header -->
@@ -379,7 +436,9 @@
                     <!-- Mobile -->
                     <div class="mb-3">
                         <label class="form-label required" for="cus_mobile">{{ __('Mobile') }}</label>
-                        <input type="number" class="form-control" placeholder="{{ __('Mobile number with country code, excluding +') }}" id="cus_mobile" required />
+                        <input type="number" class="form-control"
+                            placeholder="{{ __('Mobile number with country code, excluding +') }}" id="cus_mobile"
+                            required />
                     </div>
                     <!-- Address -->
                     <div class="mb-3">
@@ -482,9 +541,7 @@
         };
 
         // Currencies
-        const currencies = {!! json_encode(App\Currency::where('status', 1)
-        ->select('iso_code', 'symbol', 'symbol_first')
-        ->get()) !!};
+        const currencies = {!! json_encode(App\Currency::where('status', 1)->select('iso_code', 'symbol', 'symbol_first')->get()) !!};
 
         // Determine currency symbol and position
         let currencySymbol = '';
@@ -610,7 +667,7 @@
                 // LEFT: Image
                 cart_items += `
                 <div class="me-3 flex-shrink-0" style="width: 100px; height: 100px;">
-                    <img src="${item.product_image}" class="img-fluid rounded-grocery object-fit-cover h-100 w-100" alt="${item.product_name}" />
+                    <img src="${item.product_image}" class="img-fluid rounded-grocery object-fit-contain h-100 w-100" alt="${item.product_name}" />
                 </div>`;
 
                 // RIGHT: Product Info
@@ -782,9 +839,8 @@
                 });
 
                 // Place order ajax
-                // Place order ajax
                 $.ajax({
-                    url: "{{ config('app.url') }}/order/place",
+                    url: "{{ url('order/place') }}",
                     method: "POST",
                     data: {
                         _token: '{{ csrf_token() }}',

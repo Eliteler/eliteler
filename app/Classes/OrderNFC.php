@@ -12,18 +12,19 @@
 
 namespace App\Classes;
 
-use App\User;
-use App\Currency;
-use App\NfcCardKey;
-use App\NfcCardOrder;
 use App\AppliedCoupon;
+use App\Currency;
 use App\EmailTemplate;
 use App\NfcCardDesign;
-use Illuminate\Support\Str;
+use App\NfcCardKey;
+use App\NfcCardOrder;
 use App\NfcCardOrderTransaction;
+use App\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail; 
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
+use Plugins\Zapier\Helpers\ZapierHelper;
 
 class OrderNFC
 {
@@ -68,25 +69,35 @@ class OrderNFC
         $nfcCardDesign->available_stocks = (int) $nfcCardDesign->available_stocks - 1;
         $nfcCardDesign->save();
 
-        // Generate NFC card key
-        $characterLimit = (int) $config[92]->config_value;
-        $unqiueKey = Str::random($characterLimit);
+        // Quantity
+        $quantity = max((int) json_decode($nfcCardOrderDetails->order_details, true)['order_quantity'], 1);
 
-        // Generate NFC card key
-        $nfcCardKey = new NfcCardKey();
-        $nfcCardKey->nfc_card_key_id = uniqid();
-        $nfcCardKey->key_type = 'online';
-        $nfcCardKey->unqiue_key = $unqiueKey;
-        $nfcCardKey->save();
+        // Generate quantity wise NFC card key
+        $orderDetails = json_decode($nfcCardOrderDetails->order_details, true) ?? [];
 
-        // Update nfc card order details
-        $orderDetails = json_decode($nfcCardOrderDetails->order_details, true) ?? []; // Ensure it's an array
-        $orderDetails['unique_key'] = $unqiueKey;
+        // Ensure unique_key is always an array
+        $orderDetails['unique_key'] = $orderDetails['unique_key'] ?? [];
 
-        $orderDetails = json_encode($orderDetails);
+        for ($i = 1; $i <= $quantity; $i++) {
 
+            // Generate NFC card key
+            $characterLimit = (int) $config[92]->config_value;
+            $unqiueKey = Str::random($characterLimit);
+
+            // Save NFC card key
+            $nfcCardKey = new NfcCardKey();
+            $nfcCardKey->nfc_card_key_id = uniqid();
+            $nfcCardKey->key_type = 'online';
+            $nfcCardKey->unqiue_key = $unqiueKey;
+            $nfcCardKey->save();
+
+            // Push unique key into array
+            $orderDetails['unique_key'][] = $unqiueKey;
+        }
+
+        // Update order once after loop
         NfcCardOrder::where('nfc_card_order_id', $transactionDetails->nfc_card_order_id)->update([
-            'order_details' => $orderDetails,
+            'order_details' => json_encode($orderDetails),
             'updated_at' => now(),
         ]);
 
@@ -141,7 +152,39 @@ class OrderNFC
             Mail::to($encode['to_billing_email'])->send(new \App\Mail\AppointmentMail($details));
             Mail::to(env('MAIL_FROM_ADDRESS'))->send(new \App\Mail\AppointmentMail($ownerDetails));
         } catch (\Exception $e) {
-            Log::info($e);
+        }
+
+        // Safely format user billing address
+        $userAddress = $customerDetails->billing_address ?? '';
+        $userCity = $customerDetails->billing_city ?? '';
+        $userState = $customerDetails->billing_state ?? '';
+        $userCountry = $customerDetails->billing_country ?? '';
+        $userZip = $customerDetails->billing_zipcode ?? '';
+
+        // Dispatch NFC card order event to Zapier
+        if (function_exists('zapier_dispatch')) {
+            zapier_dispatch('nfc_order', [
+                'transaction_id'  => $transactionDetails->nfc_card_order_id ?? $paymentId,
+                'invoice_id'      => ($config[15]->config_value ?? 'INV-') . $invoice_number,
+                'user_name'       => $customerDetails->name ?? ($encode['to_billing_name'] ?? 'Customer'),
+                'user_address'    => !empty($userAddress) ? $userAddress : ($encode['to_billing_address'] ?? ''),
+                'user_city'       => !empty($userCity) ? $userCity : ($encode['to_billing_city'] ?? ''),
+                'user_state'      => !empty($userState) ? $userState : ($encode['to_billing_state'] ?? ''),
+                'user_country'    => !empty($userCountry) ? $userCountry : ($encode['to_billing_country'] ?? ''),
+                'user_zip'        => !empty($userZip) ? $userZip : ($encode['to_billing_zipcode'] ?? ''),
+                'user_email'      => $customerDetails->email ?? ($encode['to_billing_email'] ?? ''),
+                'user_phone'      => ($customerDetails->country_code ?? '') . ($customerDetails->mobile_number ?? ($encode['to_billing_phone'] ?? '')),
+                'user_tax_number' => $customerDetails->vat_number ?? $customerDetails->tax_number ?? ($encode['to_vat_number'] ?? ''),
+                'nfc_card_name'   => $itemDetails['order_item'] ?? 'Custom Metal NFC Business Card',
+                'quantity'        => (int) $quantity,
+                'currency'        => $transactionDetails->currency ?? ($config[1]->config_value ?? 'USD'),
+                'amount'          => (float) ($transactionDetails->amount ?? ($encode['invoice_amount'] ?? 0)),
+                'order_status'    => 'processing',
+                'payment_method'  => $transactionDetails->payment_method ?? 'Online',
+                'payment_status'  => $nfcCardOrderDetails->payment_status ?? 'paid',
+                'invoice_date'    => now()->toDateString(),
+                'purchased_at'    => now()->toDateTimeString(),
+            ]);
         }
     }
 

@@ -12,194 +12,144 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\AiCredit;
-use App\AiCreditsPlan;
 use App\AiCreditsTransaction;
-use App\Currency;
 use App\Http\Controllers\Controller;
-use App\Setting;
-use App\User;
+use App\Services\Admin\AiCreditsService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Yajra\DataTables\Facades\DataTables;
+use Illuminate\Validation\Rule;
+use Inertia\Inertia;
 
 class AiCreditsTransactionController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
-    public function __construct()
+    private const TABS = [
+        'all'     => null,
+        'paid'    => ['paid'],
+        'pending' => ['pending', 'processing'],
+        'failed'  => ['failed', 'cancelled'],
+        'refunded'=> ['refunded', 'partially_refunded'],
+    ];
+
+    public function __construct(private AiCreditsService $credits)
     {
         $this->middleware('auth');
     }
 
-    /**
-     * Show the application dashboard.
-     *
-     * @return \Illuminate\Contracts\Support\Renderable
-     */
-
-    // Get all transactions
     public function index(Request $request)
     {
-        // Queries
-        if ($request->ajax()) {
-            $transactions = AiCreditsTransaction::orderBy('created_at', 'desc')->get();
+        $tab    = array_key_exists($request->query('tab'), self::TABS) ? $request->query('tab') : 'all';
+        $search = trim((string) $request->query('search', ''));
 
-            return DataTables::of($transactions)
-                ->addIndexColumn()
-                ->addColumn('created_at', function ($transaction) {
-                    return $transaction->created_at;
-                })
-                ->addColumn('ai_credits_order_id', function ($transaction) {
-                    return '<strong>' . $transaction->ai_credits_order_id . '</strong>';
-                })
-                ->addColumn('payment_transaction_id', function ($transaction) {
-                    if ($transaction->payment_status == "paid") {
-                        return '<a class="fw-bold" href="' . route('admin.ai.credits.transaction.invoice', $transaction->ai_credits_transaction_id) . '">' . $transaction->payment_transaction_id . '</a>';
-                    } else {
-                        return '<span class="fw-bold">' . $transaction->payment_transaction_id . '</span>';
-                    }
-                })
-                ->addColumn('user_id', function ($transaction) {
-                    $user_details = User::where('id', $transaction->user_id)->first();
-                    if ($user_details) {
-                        return '<a class="fw-bold" href="' . route('admin.view.customer', $user_details->user_id) . '">' . $user_details->name . '</a>';
-                    } else {
-                        return '<a class="fw-bold" href="#">' . __("Customer not available") . '</a>';
-                    }
-                })
-                ->addColumn('ai_credits_plan_id', function ($transaction) {
-                    $plan_details = DB::table('ai_credits_plans')->where('ai_credits_plan_id', $transaction->ai_credits_plan_id)->first();
-                    if ($plan_details) {
-                        return '<strong>' . $plan_details->plan_name . '</strong>';
-                    } else {
-                        return '<strong>' . __("Plan not available") . '</strong>';
-                    }
-                })
-                ->addColumn('payment_method', function ($transaction) {
-                    return $transaction->payment_method;
-                })
-                ->addColumn('amount', function ($transaction) {
-                    $currencies = Currency::where('status', 1)->pluck('symbol', 'iso_code')->toArray();
-                    $symbol = $currencies[$transaction->transaction_currency] ?? '';
-                    return formatCurrency($transaction->transaction_amount);
-                })
-                ->addColumn('payment_status', function ($transaction) {
-                    $status = '';
-                    if ($transaction->payment_status == 'pending') {
-                        $status = '<span class="badge bg-warning text-white">' . __('Pending') . '</span>';
-                    } elseif ($transaction->payment_status == 'processing') {
-                        $status = '<span class="badge bg-primary text-white">' . __('Processing') . '</span>';
-                    } elseif ($transaction->payment_status == 'paid') {
-                        $status = '<span class="badge bg-success text-white">' . __('Paid') . '</span>';
-                    } elseif ($transaction->payment_status == 'failed') {
-                        $status = '<span class="badge bg-danger text-white">' . __('Failed') . '</span>';
-                    } elseif ($transaction->payment_status == 'cancelled') {
-                        $status = '<span class="badge bg-danger text-white">' . __('Cancelled') . '</span>';
-                    } elseif ($transaction->payment_status == 'refunded') {
-                        $status = '<span class="badge bg-dark text-white">' . __('Refunded') . '</span>';
-                    } elseif ($transaction->payment_status == 'partially_refunded') {
-                        $status = '<span class="badge bg-dark text-white">' . __('Partially Refunded') . '</span>';
-                    }
-                    return $status;
-                })
-                ->addColumn('action', function ($transaction) {
-                    $actions = '
-                        <a class="btn-action" href="#" role="button" data-bs-boundary="viewport" data-bs-toggle="dropdown" aria-expanded="false">
-                            <!-- Download SVG icon from http://tabler-icons.io/i/dots-vertical -->
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24"
-                                height="24" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round"
-                                class="icon icon-tabler icons-tabler-outline icon-tabler-dots fw-bold">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                <path d="M4 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                <path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                <path d="M18 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                            </svg>
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-end">';
-                    if ($transaction->payment_status == "paid") {
-                        $actions .= '<a class="dropdown-item" href="' . route('admin.ai.credits.transaction.invoice', ['id' => $transaction->ai_credits_transaction_id]) . '">' . __('Invoice') . '</a>';
-                    }
-                    if ($transaction->payment_status != "paid") {
-                        $actions .= '<a class="dropdown-item" href="' . route('admin.ai.credits.transaction.status', ['id' => $transaction->ai_credits_transaction_id, 'status' => 'pending']) . '">' . __('Pending') . '</a>';
-                        $actions .= '<a class="dropdown-item" href="' . route('admin.ai.credits.transaction.status', ['id' => $transaction->ai_credits_transaction_id, 'status' => 'processing']) . '">' . __('Processing') . '</a>';
-                        $actions .= '<a class="dropdown-item" href="' . route('admin.ai.credits.transaction.status', ['id' => $transaction->ai_credits_transaction_id, 'status' => 'paid']) . '">' . __('Paid') . '</a>';
-                        $actions .= '<a class="dropdown-item" href="' . route('admin.ai.credits.transaction.status', ['id' => $transaction->ai_credits_transaction_id, 'status' => 'failed']) . '">' . __('Failed') . '</a>';
-                    }
-                    $actions .= '</div>';
+        $base = fn () => AiCreditsTransaction::query()
+            ->leftJoin('users', 'users.id', '=', 'ai_credits_transactions.user_id')
+            ->leftJoin('ai_credits_plans', 'ai_credits_plans.ai_credits_plan_id', '=', 'ai_credits_transactions.ai_credits_plan_id')
+            ->when($search !== '', fn ($q) => $q->where(function ($q) use ($search) {
+                $q->where('ai_credits_transactions.ai_credits_transaction_id', 'like', "%{$search}%")
+                    ->orWhere('ai_credits_transactions.ai_credits_order_id', 'like', "%{$search}%")
+                    ->orWhere('ai_credits_transactions.payment_transaction_id', 'like', "%{$search}%")
+                    ->orWhere('users.name', 'like', "%{$search}%")
+                    ->orWhere('users.email', 'like', "%{$search}%");
+            }));
 
-                    return $actions;
-                })
-                ->rawColumns(['ai_credits_order_id', 'payment_transaction_id', 'user_id', 'ai_credits_plan_id', 'payment_method', 'amount', 'payment_status', 'action'])
-                ->make(true);
-        }
+        $transactions = $base()
+            ->when(self::TABS[$tab], fn ($q, $statuses) => $q->whereIn('ai_credits_transactions.payment_status', $statuses))
+            ->select([
+                'ai_credits_transactions.ai_credits_transaction_id', 'ai_credits_transactions.payment_transaction_id',
+                'ai_credits_transactions.payment_method', 'ai_credits_transactions.amount', 'ai_credits_transactions.payment_status',
+                'ai_credits_transactions.invoice_prefix', 'ai_credits_transactions.invoice_number', 'ai_credits_transactions.created_at',
+                'ai_credits_transactions.purchase_details',
+                'ai_credits_plans.plan_name', 'ai_credits_plans.no_of_ai_credits',
+                'users.user_id as customer_id', 'users.name as customer_name', 'users.email as customer_email',
+            ])
+            ->orderByDesc('ai_credits_transactions.created_at')
+            ->paginate(20)
+            ->withQueryString()
+            ->through(fn ($row) => [
+                'id'       => $row->ai_credits_transaction_id,
+                'invoice'  => $row->invoice_number ? $row->invoice_prefix . $row->invoice_number : null,
+                'plan'     => $row->plan_name ?? $row->purchase_details,
+                'credits'  => $row->no_of_ai_credits !== null ? (int) $row->no_of_ai_credits : null,
+                'method'   => $row->payment_method,
+                'amount'   => (float) $row->amount,
+                'status'   => $row->payment_status,
+                'date'     => $row->created_at ? Carbon::parse($row->created_at)->toIso8601String() : null,
+                'customer' => $row->customer_id ? ['id' => $row->customer_id, 'name' => $row->customer_name, 'email' => $row->customer_email] : null,
+            ]);
 
-        $settings = Setting::where('status', 1)->first();
-        $currencies = Currency::where('status', 1)->get();
+        $counts = $base()->selectRaw(collect(self::TABS)->map(function ($statuses, $key) {
+            if (! $statuses) {
+                return 'COUNT(*) as `all`';
+            }
 
-        return view('admin.pages.ai-credits-transactions.index', compact('settings', 'currencies'));
+            return "SUM(ai_credits_transactions.payment_status IN ('" . implode("','", $statuses) . "')) as `{$key}`";
+        })->implode(', '))->first();
+
+        return Inertia::render('ai-credits/transactions', [
+            'transactions' => $transactions,
+            'tab'          => $tab,
+            'search'       => $search,
+            'counts'       => collect(array_keys(self::TABS))->mapWithKeys(fn ($key) => [$key => (int) $counts->{$key}]),
+        ]);
     }
 
-    // View transaction invoice
     public function viewInvoice($id)
     {
-        $transaction = AiCreditsTransaction::where('ai_credits_transaction_id', $id)->orWhere('payment_transaction_id', $id)->first();
-        if (!$transaction) {
-            return redirect()->route('admin.ai.credits.transactions')->with('error', __('Transaction not found'));
+        $row = AiCreditsTransaction::where('ai_credits_transaction_id', $id)->orWhere('payment_transaction_id', $id)->first();
+
+        if (! $row) {
+            return redirect()->route('admin.ai.credits.transactions')->with('failed', __('Not Found!'));
         }
 
-        $settings = Setting::where('status', 1)->first();
-        $currencies = Currency::where('status', 1)->get();
-        $config = DB::table('config')->get();
+        $invoice = json_decode($row->invoice_details ?? '', true) ?: [];
+        $plan    = DB::table('ai_credits_plans')->where('ai_credits_plan_id', $row->ai_credits_plan_id)->first();
+        $party   = fn (string $side) => array_filter([
+            'name'    => $invoice["{$side}_billing_name"] ?? null,
+            'address' => collect([$invoice["{$side}_billing_address"] ?? null, $invoice["{$side}_billing_city"] ?? null, $invoice["{$side}_billing_state"] ?? null, $invoice["{$side}_billing_zipcode"] ?? null, $invoice["{$side}_billing_country"] ?? null])->filter()->implode(', ') ?: null,
+            'phone'   => $invoice["{$side}_billing_phone"] ?? null,
+            'email'   => $invoice["{$side}_billing_email"] ?? null,
+            'taxId'   => $invoice["{$side}_vat_number"] ?? null,
+        ]);
+        $logo = DB::table('settings')->value('site_logo');
 
-        // Transaction details
-        $transaction['billing_details'] = json_decode($transaction['invoice_details'], true);
-
-        // Get plan details
-        $planDetails = AiCreditsPlan::where('ai_credits_plan_id', $transaction['ai_credits_plan_id'])->first();
-
-        // View
-        return view('admin.pages.ai-credits-transactions.view-invoice', compact('transaction', 'planDetails', 'settings', 'config', 'currencies'));
+        return Inertia::render('shared/invoice', [
+            'invoice' => [
+                'number'    => $row->invoice_number ? $row->invoice_prefix . $row->invoice_number : null,
+                'id'        => $row->ai_credits_transaction_id,
+                'reference' => $row->payment_transaction_id,
+                'date'      => $row->created_at?->toIso8601String(),
+                'status'    => $row->payment_status,
+                'method'    => $row->payment_method,
+                'logo'      => $logo ? asset($logo) : null,
+                'from'      => $party('from'),
+                'to'        => $party('to'),
+                'item'      => [
+                    'name'        => $plan->plan_name ?? $row->purchase_details,
+                    'description' => $plan ? __(':count AI credits', ['count' => $plan->no_of_ai_credits]) : null,
+                    'price'       => (float) ($invoice['subtotal'] ?? $plan->plan_price ?? 0),
+                    'quantity'    => 1,
+                ],
+                'subtotal' => (float) ($invoice['subtotal'] ?? 0),
+                'taxName'  => $invoice['tax_name'] ?? null,
+                'taxRate'  => $invoice['tax_value'] ?? null,
+                'tax'      => (float) ($invoice['tax_amount'] ?? 0),
+                'coupon'   => $invoice['applied_coupon'] ?? null,
+                'discount' => ! empty($invoice['applied_coupon']) ? max(0, (float) ($invoice['discounted_price'] ?? 0) - (float) ($invoice['invoice_amount'] ?? 0)) : 0,
+                'total'    => (float) ($invoice['invoice_amount'] ?? $row->amount),
+            ],
+            'back' => ['label' => __('AI credit purchases'), 'href' => route('admin.ai.credits.transactions')],
+        ]);
     }
 
-    // Update transaction status
     public function updateStatus(Request $request, $id, $status)
     {
-        $allowedStatuses = ['pending', 'processing', 'paid', 'failed', 'cancelled', 'refunded', 'partially_refunded'];
-
-        if (!in_array($status, $allowedStatuses)) {
-            $status = 'pending';
-        }
+        $request->merge(['status' => $status])->validate(['status' => ['required', Rule::in(AiCreditsService::STATUSES)]]);
 
         $transaction = AiCreditsTransaction::where('ai_credits_transaction_id', $id)->firstOrFail();
+        $this->credits->setPaymentStatus($transaction, $status);
 
-        if ($status === 'paid') {
-            $user = User::where('id', $transaction->user_id)->firstOrFail();
-
-            $planDetails = AiCreditsPlan::where('ai_credits_plan_id', $transaction->ai_credits_plan_id)->firstOrFail();
-
-            $aiCreditsOrder = AiCredit::where('user_id', $user->user_id)->first();  // Fix: use $user->id
-
-            if ($aiCreditsOrder) {
-                $aiCreditsOrder->credits += $planDetails->no_of_ai_credits;
-                $aiCreditsOrder->save();
-            } else {
-                $aiCreditsOrder = new AiCredit();
-                $aiCreditsOrder->user_id = $user->user_id;  // Fix: use $user->id
-                $aiCreditsOrder->credits = $planDetails->no_of_ai_credits;
-                $aiCreditsOrder->save();
-            }
-        }
-
-        // Single write, at the end
-        $transaction->payment_status = $status;
-        $transaction->save();
-
-        return redirect()->route('admin.ai.credits.transactions')->with('success', trans('Updated!'));
+        return back()->with('success', $status === 'paid'
+            ? __('Purchase marked as paid. The credits were added to the customer.')
+            : __('Purchase status updated.'));
     }
 }

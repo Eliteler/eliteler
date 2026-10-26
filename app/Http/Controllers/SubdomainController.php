@@ -12,37 +12,64 @@
 
 namespace App\Http\Controllers;
 
-use App\Plan;
-use App\Setting;
-use App\Visitor;
-use App\Category;
-use App\Currency;
-use Carbon\Carbon;
-use App\Testimonial;
 use App\BusinessCard;
-use App\StoreProduct;
 use App\BusinessField;
-use App\StoreCategory;
-use App\ServiceBooking;
-use App\StoreBusinessHour;
-use Jenssegers\Agent\Agent;
 use App\CardAppointmentTime;
-use Illuminate\Http\Request;
+use App\Category;
 use App\Classes\ServiceWorker;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\URL;
-use Illuminate\Support\Facades\File;
+use App\Currency;
+use App\Helpers\StorageHelper;
+use App\Plan;
+use App\ServiceBooking;
+use App\Setting;
+use App\StoreBusinessHour;
+use App\StoreCategory;
+use App\StoreProduct;
+use App\Testimonial;
+use App\Visitor;
 use Artesaos\SEOTools\Facades\JsonLd;
+use Artesaos\SEOTools\Facades\OpenGraph;
 use Artesaos\SEOTools\Facades\SEOMeta;
 use Artesaos\SEOTools\Facades\SEOTools;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Storage;
-use Artesaos\SEOTools\Facades\OpenGraph;
+use Illuminate\Support\Facades\URL;
+use Jenssegers\Agent\Agent;
+use App\Support\Store\StoreTheme;
 
 class SubdomainController extends Controller
 {
+    // Helper function to handle redirection when website is disabled
+    private function getWebsiteRedirect()
+    {
+        // Retrieve redirect URL from config table
+        $redirectUrl = DB::table('config')->where('config_key', 'website_redirect_url')->value('config_value');
+
+        // Trim trailing slashes for accurate comparison
+        $trimmedRedirectUrl = rtrim($redirectUrl ?? '', '/');
+        $trimmedBaseUrl     = rtrim(url('/'), '/');
+        $trimmedCurrentUrl  = rtrim(url()->current(), '/');
+
+        // Prevent infinite redirect loop if redirectUrl is empty, matches base URL, or matches current URL
+        if (
+            !empty($trimmedRedirectUrl) &&
+            $trimmedRedirectUrl !== $trimmedBaseUrl &&
+            $trimmedRedirectUrl !== $trimmedCurrentUrl
+        ) {
+            return redirect()->to($redirectUrl);
+        }
+
+        // Default fallback to login to avoid ERR_TOO_MANY_REDIRECTS
+        return redirect('/login');
+    }
+
+
     // Subdomain Profile
     public function subdomainProfile(Request $request, $cardname)
     {
@@ -80,11 +107,11 @@ class SubdomainController extends Controller
 
                 return view($web_template . '::Website.pages.index', compact('homePage', 'plans', 'settings', 'currency', 'config'));
             } else {
-                return redirect('/login');
+                return $this->getWebsiteRedirect();
             }
         }
 
-        $card_details = DB::table('business_cards')->where('card_url', $cardname)->where('card_status', 'activated')->first();
+        $card_details = DB::table('business_cards')->where('card_url', $cardname)->where('card_status', 'activated')->where('status', '1')->first();
 
         // Check if card is activated
         if (!$card_details) {
@@ -162,10 +189,12 @@ class SubdomainController extends Controller
                                 'store_products.sales_price',
                                 'store_products.badge',
                                 'store_products.product_status',
+                                'store_products.has_variants',
                                 'store_categories.category_name',
                                 'store_categories.thumbnail',
                                 'store_categories.category_id'
                             )
+                            ->selectSub(StoreProduct::minVariantPriceQuery(), 'min_variant_price')
                             ->groupBy(
                                 'store_products.id',
                                 'store_products.product_id',
@@ -176,6 +205,7 @@ class SubdomainController extends Controller
                                 'store_products.sales_price',
                                 'store_products.badge',
                                 'store_products.product_status',
+                                'store_products.has_variants',
                                 'store_categories.category_name',
                                 'store_categories.thumbnail',
                                 'store_categories.category_id'
@@ -222,7 +252,7 @@ class SubdomainController extends Controller
                         // Business Hours
                         $businessHours = StoreBusinessHour::where('store_id', $business_card_details->card_id)->first();
 
-                        // Paginate (consistent)
+                        // Paginate
                         $products = $products->paginate($request->filled('category') ? 9 : 8)->withQueryString();
 
                         // Get categories
@@ -240,7 +270,7 @@ class SubdomainController extends Controller
                         $subdomainURL = route('subdomain.profile', $business_card_details->card_url);
                         $startUrl = str_replace("http://", "https://", $subdomainURL);
 
-                        // Meta Title Logic (branding)
+                        // Meta Title Logic
                         $siteTitle = $config[0]->config_value ?? '';
                         $baseTitle = $seoConfig->meta_title ?? $business_card_details->title;
                         $metaTitle = isset($planDetails['hide_branding']) && $planDetails['hide_branding'] == "1"
@@ -323,9 +353,8 @@ class SubdomainController extends Controller
 
                         $out = $this->generateNew($fill);
 
-                        Storage::disk('public')->put("manifest/sub-" . $business_card_details->card_id . '.json', json_encode($out));
-
-                        $manifest = url("storage/manifest/sub-" . $business_card_details->card_id . '.json');
+                        // Store sub-manifest JSON file in public storage and get relative path
+                        $manifest = StorageHelper::uploadImage(json_encode($out), 'manifest', 'sub-' . $business_card_details->card_id . '.json');
 
                         // Generate service worker
                         $generateServiceWorker = new ServiceWorker();
@@ -386,7 +415,7 @@ class SubdomainController extends Controller
                         }
 
                         $datas = compact('card_details', 'plan_details', 'store_details', 'categories', 'business_card_details', 'products', 'settings', 'shareComponent', 'shareContent', 'config', 'enquiry_button', 'whatsapp_msg', 'currency', 'manifest', 'whatsAppNumberExists', 'deliveryOptions', 'businessHours');
-                        return view('templates.store.' . $business_card_details->theme_code . '.index', $datas);
+                        return view('templates.stores.' . StoreTheme::resolve($business_card_details->theme_code)->view . '.index', $datas);
                     } else {
                         return redirect()->route('user.edit.card', $card_details->id)->with('failed', trans('Please fill out the basic business details.'));
                     }
@@ -428,14 +457,11 @@ class SubdomainController extends Controller
 
                         // Iterate through the appointment slots and categorize them by day
                         foreach ($appointmentSlots as $slot) {
-                            // Assuming your `CardAppointmentTime` model has a `day` attribute and a `time` attribute
-                            $day  = strtolower($slot->day); // Convert to lowercase to match array keys
-                            $time = $slot->time_slots;      // Assuming this contains the time range string like "16:00 - 17:00"
+                            $day  = strtolower($slot->day);
+                            $time = $slot->time_slots;
 
-                            // Check if the day exists in the time_slots array
                             if (array_key_exists($day, $appointment_slots)) {
-                                $appointment_slots[$day][] = $time; // Add the time to the appropriate day
-                                // Get price
+                                $appointment_slots[$day][] = $time;
                                 $appointment_slots[$day][] = $slot->price;
                             }
 
@@ -445,9 +471,9 @@ class SubdomainController extends Controller
                             $appointment_slots['title'] = $appointmentSlots[0]->title;
                         }
 
-                        $appointment_slots = json_encode($appointment_slots); // Convert the array to JSON
+                        $appointment_slots = json_encode($appointment_slots);
 
-                        // service bookings 
+                        // Service bookings 
                         $service_booking_details = ServiceBooking::where('vcard_id', $card_details->card_id)->first();
 
                         if ($make_enquiry != null) {
@@ -465,7 +491,7 @@ class SubdomainController extends Controller
                         $subdomainURL = route('subdomain.profile', $business_card_details->card_url);
                         $startUrl = str_replace("http://", "https://", $subdomainURL);
 
-                        // Meta Title Logic (branding)
+                        // Meta Title Logic
                         $siteTitle = $config[0]->config_value ?? '';
                         $baseTitle = $seoConfig->meta_title ?? $business_card_details->title;
                         $metaTitle = isset($planDetails['hide_branding']) && $planDetails['hide_branding'] == "1"
@@ -548,9 +574,8 @@ class SubdomainController extends Controller
 
                         $out = $this->generateNew($fill);
 
-                        Storage::disk('public')->put("manifest/sub-" . $business_card_details->card_id . '.json', json_encode($out));
-
-                        $manifest = url("storage/manifest/sub-" . $business_card_details->card_id . '.json');
+                        // Store sub-manifest and get relative path
+                        $manifest = StorageHelper::uploadImage(json_encode($out), 'manifest', 'sub-' . $business_card_details->card_id . '.json');
 
                         // Generate service worker
                         $generateServiceWorker = new ServiceWorker();
@@ -614,7 +639,7 @@ class SubdomainController extends Controller
                             Session::get('password_protected') == false;
                         }
 
-                        return view('templates.' . $business_card_details->theme_code, $datas);
+                        return view('templates.cards.' . $business_card_details->theme_code . '.index', $datas);
                     } else {
                         return redirect()->route('user.edit.card', $card_details->id)->with('failed', trans('Please fill out the basic business details.'));
                     }
@@ -636,6 +661,7 @@ class SubdomainController extends Controller
         $card_details = DB::table('business_cards')
             ->where('card_id', $cardId)
             ->where('card_status', 'activated')
+            ->where('status', '1')
             ->first();
 
         if (!$card_details) {
@@ -645,10 +671,7 @@ class SubdomainController extends Controller
         if ($config == '1') {
             return redirect()->route('subdomain.profile', $card_details->card_url);
         } elseif (!empty($card_details->custom_domain)) {
-            // If custom_domain is a full URL
             return redirect()->away('https://' . $card_details->custom_domain);
-            // OR if custom_domain is just a slug, construct it yourself:
-            // return redirect()->to('https://' . $card_details->custom_domain);
         } else {
             return redirect()->route('profile', $card_details->card_url);
         }

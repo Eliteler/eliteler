@@ -31,7 +31,8 @@ class PluginServiceProvider extends ServiceProvider
     {
         $pluginManager = app(PluginManager::class);
 
-        foreach ($pluginManager->getPlugins() as $plugin) {
+        // Legacy (Blade admin) plugins boot too: only their admin pages are locked
+        foreach ($pluginManager->active() as $plugin) {
             // Get the plugin name
             $pluginName = basename($plugin['plugin_id']);
 

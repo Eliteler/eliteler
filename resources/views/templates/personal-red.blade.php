@@ -551,7 +551,37 @@
     <script src="{{ url('js/flatpickr.min.js') }}"></script>
 
     {{-- Flatpickr JS --}}
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/{{ app()->getLocale() }}.js"></script>
+    @php
+        $flatpickrLocales = [
+            'pt_BR' => 'pt',
+            'zh' => 'zh',
+            'ar' => 'ar',
+            'bg' => 'bg',
+            'hr' => 'hr',
+            'nl' => 'nl',
+            'fr' => 'fr',
+            'de' => 'de',
+            'he' => 'he',
+            'hu' => 'hu',
+            'id' => 'id',
+            'it' => 'it',
+            'ja' => 'ja',
+            'lt' => 'lt',
+            'ms' => 'ms',
+            'pl' => 'pl',
+            'ro' => 'ro',
+            'ru' => 'ru',
+            'es' => 'es',
+            'sv' => 'sv',
+            'th' => 'th',
+            'tr' => 'tr',
+            'vi' => 'vn',
+        ];
+
+        $locale = $flatpickrLocales[app()->getLocale()] ?? 'en';
+    @endphp
+    
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/{{ $locale }}.js"></script>
     <script>
         // Assuming $appointment_slots contains data like: {"monday": [...], "tuesday": [...], ...}
         const disableSlots = {!! $appointment_slots !!}; // Outputting the time slots
@@ -578,7 +608,7 @@
             flatpickr("#appointment-date", {
                 dateFormat: "Y-m-d",
                 minDate: "today",
-                locale: "{{ app()->getLocale() }}",
+                locale: "{{ $locale }}",
                 disable: [
                     function(date) {
                         const day = date.toLocaleString("en-us", {
@@ -600,7 +630,7 @@
             flatpickr("#service_start_date", {
                 dateFormat: "Y-m-d",
                 minDate: "today",
-                locale: "{{ app()->getLocale() }}",
+                locale: "{{ $locale }}",
                 disable: [
                     function(date) {
                         return !allowedDays.includes(date.getDay());
@@ -611,7 +641,7 @@
             flatpickr("#service_end_date", {
                 dateFormat: "Y-m-d",
                 minDate: "today",
-                locale: "{{ app()->getLocale() }}",
+                locale: "{{ $locale }}",
                 disable: [
                     function(date) {
                         return !allowedDays.includes(date.getDay());

@@ -12,1180 +12,735 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\AiCreditsTransaction;
 use App\BusinessCard;
-use App\BusinessField;
-use App\BusinessHour;
-use App\CardAppointmentTime;
-use App\Currency;
-use App\EmailTemplate;
-use App\Gallery;
 use App\Http\Controllers\Controller;
-use App\InformationPop;
-use App\Newsletter;
 use App\NfcCardOrder;
 use App\NfcCardOrderTransaction;
-use App\Payment;
 use App\Plan;
 use App\Referral;
-use App\Service;
-use App\ServiceBooking;
-use App\Setting;
-use App\StoreBusinessHour;
-use App\StoreCategory;
-use App\StoreProduct;
-use App\Testimonial;
+use App\Services\Admin\CardDuplicator;
+use App\Services\Admin\CustomerPlanService;
+use App\Services\Admin\CustomerService;
+use App\Support\Admin\AdminPermissions;
+use App\Support\Admin\AdminSharedProps;
 use App\Transaction;
 use App\User;
-use App\VcardProduct;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
-use Yajra\DataTables\DataTables;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\Rule;
+use Inertia\Inertia;
 
 class CustomerController extends Controller
 {
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
+    private const LIST_LIMIT = 50;
+
+    public function __construct(
+        private CustomerService $customers,
+        private CustomerPlanService $plans,
+    ) {
         $this->middleware('auth');
     }
 
-    /**
-     * Show the application dashboard. 
-     *
-     * @return \Illuminate\Contracts\Support\Renderable
-     */
-
-    // All Customers
+    // All customers
     public function customers(Request $request, $status)
     {
-        // Preload config
-        $config = DB::table('config')->get();
-
-        // Allowed statuses
-        $allowedStatuses = ['all', 'verified', 'unverified', 'banned', 'deleted'];
-
-        // Validate status
-        if (!in_array($status, $allowedStatuses, true)) {
-            return redirect()
-                ->route('admin.customers', ['status' => 'all'])
-                ->with('failed', __('Invalid status!'));
+        if (! in_array($status, CustomerService::TABS, true)) {
+            return redirect()->route('admin.customers', ['status' => 'all']);
         }
 
-        if ($request->ajax()) {
+        $filters = [
+            'search'       => trim((string) $request->query('search', '')),
+            'plan'         => (string) $request->query('plan', 'all'),
+            'subscription' => in_array($request->query('subscription'), ['active', 'expired', 'expiring'], true) ? $request->query('subscription') : 'all',
+            'sort'         => in_array($request->query('sort'), CustomerService::SORTS, true) ? $request->query('sort') : 'newest',
+        ];
 
-            $currencies = Currency::where('status', 1)->pluck('symbol', 'iso_code')->toArray();
-            $symbol = $currencies[$config[1]->config_value] ?? '';
-
-            $status = $status;
-
-            $query = User::where('role_id', 2)->orderBy('id', 'desc');
-
-            match ($status) {
-                'verified' => $query
-                    ->whereNotNull('email_verified_at')
-                    ->where('status', 1),
-
-                'unverified' => $query
-                    ->whereNull('email_verified_at')
-                    ->where('status', 1),
-
-                'banned' => $query
-                    ->where('status', 2),
-
-                'deleted' => $query
-                    ->whereNotNull('email_verified_at')
-                    ->where('status', -1),
-
-                default => $query,
-            };
-
-            return DataTables::of($query->get([
-                'id',
-                'user_id',
-                'name',
-                'email',
-                'plan_details',
-                'created_at',
-                'status'
-            ]))
-                ->addIndexColumn()
-
-                ->addColumn('name', function ($row) {
-                    return '<a href="' . route('admin.view.customer', $row->user_id) . '">' . $row->name . '</a>';
-                })
-
-                ->addColumn('email', function ($row) {
-                    return '<a href="mailto:' . $row->email . '">' . $row->email . '</a>';
-                })
-
-                ->addColumn('plan', function ($row) {
-                    $plan = json_decode($row->plan_details, true);
-
-                    if (!$plan) {
-                        return __('No Plan');
-                    }
-
-                    $price = $plan['plan_price'] == 0
-                        ? __('Free')
-                        : formatCurrency($plan['plan_price']);
-
-                    return '<strong>' . __($plan['plan_name']) . ' <span>(' . $price . ')</span></strong>';
-                })
-
-                ->addColumn('created_at', fn($row) => formatDateForUser($row->created_at))
-
-                ->addColumn('status', function ($row) {
-                    return match ((int) $row->status) {
-                        0 => '<span class="badge bg-warning text-white">' . __('Deactive') . '</span>',
-                        1 => '<span class="badge bg-success text-white">' . __('Active') . '</span>',
-                        2 => '<span class="badge bg-danger text-white">' . __('Ban') . '</span>',
-                        -1 => '<span class="badge bg-secondary text-white">' . __('Delete') . '</span>',
-                        default => '',
-                    };
-                })
-
-                ->addColumn('action', function ($row) {
-
-                    $editUrl = route('admin.edit.customer', $row->user_id);
-                    $changePlanUrl = route('admin.change.customer.plan', $row->user_id);
-
-                    $activateDeactivate = $row->status == 0 ? __('Activate') : __('Deactivate');
-                    $activateDeactivateFunction = $row->status == 0 ? 'activateUser' : 'deactivateUser';
-
-                    $status = request('status', 'all');
-
-                    $html = '
-        <a class="btn-action" href="#"
-           data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
-            <!-- Download SVG icon from http://tabler-icons.io/i/dots-vertical -->
-            <svg xmlns="http://www.w3.org/2000/svg" width="24"
-                height="24" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round"
-                class="icon icon-tabler icons-tabler-outline icon-tabler-dots fw-bold">
-                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                <path d="M4 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                <path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                <path d="M18 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-            </svg>
-        </a>
-
-        <div class="dropdown-menu dropdown-menu-end">
-            <a class="dropdown-item" href="' . $editUrl . '">' . __('Edit') . '</a>
-            <a class="dropdown-item" href="' . $changePlanUrl . '">' . __('Change Plan') . '</a>
-    ';
-
-                    // Check status is "all"
-                    if ($status === 'all') {
-                        $html .= '
-            <a class="dropdown-item" href="#" onclick="customerVerified(\'' . $row->user_id . '\', \'1\'); return false;">' . __('Verified') . '</a>
-            <a class="dropdown-item" href="#" onclick="customerVerified(\'' . $row->user_id . '\', \'0\'); return false;">' . __('Unverified') . '</a>
-            <a class="dropdown-item" href="#" onclick="customerVerified(\'' . $row->user_id . '\', \'2\'); return false;">' . __('Banned') . '</a>
-            <a class="dropdown-item" href="#" onclick="deleteUser(\'' . $row->user_id . '\'); return false;">' . __('Delete') . '</a>
-        ';
-                    }
-
-                    // Check status is "verified"
-                    if ($status === 'verified') {
-                        $html .= '
-            <a class="dropdown-item" href="#" onclick="customerVerified(\'' . $row->user_id . '\', \'0\'); return false;">' . __('Unverified') . '</a>
-            <a class="dropdown-item" href="#" onclick="customerVerified(\'' . $row->user_id . '\', \'2\'); return false;">' . __('Banned') . '</a>
-            <a class="dropdown-item" href="#" onclick="deleteUser(\'' . $row->user_id . '\'); return false;">' . __('Delete') . '</a>
-        ';
-                    }
-
-                    // Check status is "unverified"
-                    if ($status === 'unverified') {
-                        $html .= '
-            <a class="dropdown-item" href="#" onclick="customerVerified(\'' . $row->user_id . '\', \'1\'); return false;">' . __('Verified') . '</a>
-            <a class="dropdown-item" href="#" onclick="customerVerified(\'' . $row->user_id . '\', \'2\'); return false;">' . __('Banned') . '</a>
-            <a class="dropdown-item" href="#" onclick="deleteUser(\'' . $row->user_id . '\'); return false;">' . __('Delete') . '</a>
-        ';
-                    }
-
-                    // Check status is "banned"
-                    if ($status === 'banned') {
-                        $html .= '
-            <a class="dropdown-item" href="#" onclick="customerVerified(\'' . $row->user_id . '\', \'1\'); return false;">' . __('Verified') . '</a>
-            <a class="dropdown-item" href="#" onclick="customerVerified(\'' . $row->user_id . '\', \'0\'); return false;">' . __('Unverified') . '</a>
-            <a class="dropdown-item" href="#" onclick="customerVerified(\'' . $row->user_id . '\', \'1\'); return false;">' . __('Unbanned') . '</a>
-            <a class="dropdown-item" href="#" onclick="deleteUser(\'' . $row->user_id . '\'); return false;">' . __('Delete') . '</a>
-        ';
-                    }
-
-                    // Check status is "deleted"
-                    if ($status === 'deleted') {
-                        $html .= '
-            <a class="dropdown-item" href="#" onclick="customerVerified(\'' . $row->user_id . '\', \'1\'); return false;">' . __('Verified') . '</a>
-            <a class="dropdown-item" href="#" onclick="customerVerified(\'' . $row->user_id . '\', \'0\'); return false;">' . __('Unverified') . '</a>
-            <a class="dropdown-item" href="#" onclick="undeleteUser(\'' . $row->user_id . '\'); return false;">' . __('Undelete') . '</a>
-            <a class="dropdown-item" href="#" onclick="deleteUser(\'' . $row->user_id . '\'); return false;">' . __('Delete') . '</a>
-            ';
-                    }
-
-                    $html .= '
-            <a class="dropdown-item" href="#" onclick="' . $activateDeactivateFunction . '(\'' . $row->user_id . '\'); return false;">
-                ' . $activateDeactivate . '
-            </a>
-        ';
-
-                    $html .= '</div>';
-
-                    return $html;
-                })
-
-
-                ->rawColumns(['name', 'email', 'plan', 'status', 'action'])
-                ->make(true);
-        }
-
-        // Page load
-        $settings = Setting::where('status', 1)->first();
-        return view('admin.pages.customers.index', compact('settings', 'config'));
-    }
-
-    // View Customer
-    public function viewCustomer(Request $request, $id)
-    {
-        // Get user details
-        $user_details = User::where('user_id', $id)->first();
-
-        if ($user_details == null) {
-            return redirect()->route('admin.customers', ['status' => 'all'])->with('failed', trans('Not Found!'));
-        } else {
-            // Get all cards of the customer
-            $user_cards = BusinessCard::where('user_id', $user_details->user_id)->where('card_type', 'vcard')->where('card_status', 'activated')->where('status', '1')->orderBy('id', 'desc')->get();
-
-            // Get all stores of the customer
-            $user_stores = BusinessCard::where('user_id', $user_details->user_id)->where('card_type', 'store')->where('card_status', 'activated')->where('status', '1')->orderBy('id', 'desc')->get();
-
-            // Get all nfc card orders of the customer
-            $orders = NfcCardOrder::where('user_id', $user_details->id)->orderBy('id', 'desc')->get();
-
-            // Get all transactions of the customer
-            $transactions = Transaction::where('user_id', $user_details->id)->orderBy('id', 'desc')->get();
-
-            // Get all nfc card order transactions of the customer
-            $nfc_transactions = NfcCardOrderTransaction::join('nfc_card_orders', 'nfc_card_order_transactions.nfc_card_order_id', '=', 'nfc_card_orders.nfc_card_order_id')
-                ->where('nfc_card_orders.user_id', $user_details->id)
-                ->orderBy('nfc_card_order_transactions.id', 'desc')
-                ->get();
-
-            // Get all ai credits transactions of the customer
-            $ai_credits_transactions = DB::table('ai_credits_transactions')
-                ->join('ai_credits_plans', 'ai_credits_transactions.ai_credits_plan_id', '=', 'ai_credits_plans.ai_credits_plan_id')
-                ->where('ai_credits_transactions.user_id', $user_details->id)
-                ->orderBy('ai_credits_transactions.id', 'desc')
-                ->get(['ai_credits_transactions.*', 'ai_credits_plans.plan_name']);
-
-            // Queries
-            $settings = Setting::where('status', 1)->first();
-            $config = DB::table('config')->get();
-            $currencies = Currency::where('status', 1)->pluck('symbol', 'iso_code')->toArray();
-
-            // Currency
-            $symbol = $currencies[$config[1]->config_value] ?? '';
-
-            // Get all available customers
-            $customers = User::where('role_id', 2)->where('status', 1)->get();
-
-            return view('admin.pages.customers.view', compact('user_details', 'ai_credits_transactions', 'user_cards', 'user_stores', 'orders', 'transactions', 'nfc_transactions', 'customers', 'settings', 'config', 'symbol'));
-        }
-    }
-
-    // Edit Customer
-    public function editCustomer(Request $request, $id)
-    {
-        $user_details = User::where('user_id', $id)->first();
-        $settings = Setting::where('status', 1)->first();
-        if ($user_details == null) {
-            return redirect()->route('admin.customers', ['status' => 'all'])->with('failed', trans('Not Found!'));
-        } else {
-            return view('admin.pages.customers.edit', compact('user_details', 'settings'));
-        }
-    }
-
-    // Update Customer
-    public function updateCustomer(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'user_id' => 'required',
-            'full_name' => 'required',
-            'email' => 'required',
-            'status' => 'required'
+        $query = $this->customers->query()->select([
+            'id', 'user_id', 'name', 'email', 'profile_image', 'email_verified_at', 'status',
+            'plan_id', 'plan_details', 'plan_validity', 'plan_activation_date', 'term', 'created_at',
         ]);
 
-        if ($validator->fails()) {
-            return back()->with('failed', $validator->messages()->all()[0])->withInput();
-        }
+        $this->customers->applyTab($query, $status);
+        $this->customers->applyFilters($query, $filters);
+        $this->customers->withCardCounts($query);
 
-        // Queries
-        $emailExists = User::where('email', $request->email)->count();
-        $user_details = User::where('user_id', $request->user_id)->first();
+        $customers = $query->paginate(20)->withQueryString()->through(fn(User $user) => [
+            'id'       => $user->user_id,
+            'name'     => $user->name,
+            'email'    => $user->email,
+            'avatar'   => $user->profile_image ? asset($user->profile_image) : null,
+            'state'    => $this->customers->state($user),
+            'verified' => $user->email_verified_at !== null,
+            'plan'     => $this->customers->planSummary($user),
+            'vcards'   => (int) $user->vcards_count,
+            'stores'   => (int) $user->stores_count,
+            'joined'   => $user->created_at?->toIso8601String(),
+        ]);
 
-        if ($emailExists != 1 || $request->email == $user_details->email) {
-            if ($request->password == null) {
-                User::where('user_id', $request->user_id)->update([
-                    'name' => $request->full_name,
-                    'email' => $request->email,
-                    'status' => $request->status
-                ]);
-            } else {
-                User::where('user_id', $request->user_id)->update([
-                    'name' => $request->full_name,
-                    'email' => $request->email,
-                    'password' => Hash::make($request->password),
-                    'status' => $request->status
-                ]);
-            }
+        // Calculate tab counts using the current search and plan filters.
+        $countQuery = $this->customers->applyFilters(
+            $this->customers->query(),
+            $filters
+        );
 
-            // Set Welcome Email
-            if ($request->welcome_email == 1) {
-                // Get Welcome email template
-                $emailTemplateDetails = EmailTemplate::where('email_template_id', '584922675208')->first();
-
-                $message = [
-                    'status' => "",
-                    'emailSubject' => $emailTemplateDetails->email_template_subject,
-                    'emailContent' => $emailTemplateDetails->email_template_content,
-                    'registeredName' => ucfirst($request->full_name),
-                    'registeredEmail' => $request->email,
-                ];
-
-                try {
-                    // Welcome email
-                    Mail::to($request->email)->bcc(env('MAIL_FROM_ADDRESS'))->send(new \App\Mail\AppointmentMail($message));
-                } catch (\Exception $e) {
-                }
-            }
-
-            // Set Reset Password
-            if ($request->reset_password == 1) {
-                $token = Str::random(64);
-
-                // Store token in password_resets table
-                DB::table('password_resets')->updateOrInsert(
-                    ['email' => $request->email],
-                    [
-                        'token' => Hash::make($token),
-                        'created_at' => Carbon::now(),
-                    ]
-                );
-
-                $actionLink = url(route('password.reset', ['token' => $token, 'email' => $request->email], false));
-
-                $emailTemplateDetails = EmailTemplate::where('email_template_id', '584922675212')->first();
-
-                $details = [
-                    'emailSubject' => $emailTemplateDetails->email_template_subject,
-                    'emailContent' => $emailTemplateDetails->email_template_content,
-                    'appname' => config('app.name'),
-                    'actionlink' => $actionLink,
-                ];
-
-                try {
-                    Mail::to($request->email)->send(new \App\Mail\AppointmentMail($details));
-                } catch (\Exception $e) {
-                    return back()->with('email', $e->getMessage());
-                }
-            }
-
-            return redirect()->route('admin.customers', ['status' => 'all'])->with('success', trans('Updated!'));
-        } else {
-            return redirect()->route('admin.customers', ['status' => 'all'])->with('failed', trans('This email address already registered. Try to another email address.'));
-        }
+        return Inertia::render('customers/index', [
+            'customers' => $customers,
+            'tab'       => $status,
+            'counts'    => $this->customers->tabCounts($countQuery),
+            'filters'   => $filters,
+            'plans'     => $this->planOptions(),
+        ]);
     }
 
-    // Change Customer plan
-    public function ChangeCustomerPlan(Request $request, $id)
+    // Customer details
+    public function viewCustomer(Request $request, string $id)
     {
-        // Queries
-        $user_details = User::where('user_id', $id)->first();
+        $user = $this->findCustomer($id);
 
-        if ($user_details) {
-            // Queries
-            $plans = Plan::where('status', 1)->get();
-            $settings = Setting::where('status', 1)->first();
-            $config = DB::table('config')->get();
-
-            if ($plans == null) {
-                return redirect()->route('admin.customers', ['status' => 'all'])->with('failed', trans('Not Found!'));
-            } else {
-                return view('admin.pages.customers.change-plan', compact('user_details', 'plans', 'settings', 'config'));
-            }
-        } else {
-            return redirect()->route('admin.customers', ['status' => 'all'])->with('failed', trans('Not Found!'));
+        if (! $user) {
+            return redirect()
+                ->route('admin.customers', ['status' => 'all'])
+                ->with('failed', __('Not Found!'));
         }
+
+        $features     = AdminSharedProps::features();
+        $permissions  = AdminPermissions::for($request->user());
+        $hidesRevenue = AdminPermissions::hidesRevenue($request->user());
+
+        $date = fn($value) => $value
+            ? Carbon::parse($value)->toIso8601String()
+            : null;
+
+        $tab     = $request->query('tab', 'cards');
+        $page    = max(1, (int) $request->query('page', 1));
+        $perPage = 14;
+
+        $allowedTabs = [
+            'cards',
+            'stores',
+            'payments',
+            'nfc_orders',
+            'nfc_payments',
+            'ai_payments',
+        ];
+
+        // Payment history is money: not offered when revenue is hidden
+        if ($hidesRevenue) {
+            $allowedTabs = array_values(array_diff($allowedTabs, ['payments', 'nfc_payments', 'ai_payments']));
+        }
+
+        if (! in_array($tab, $allowedTabs, true)) {
+            $tab = 'cards';
+        }
+
+        // Check optional tables before querying them.
+        $nfcOrdersTableExists = Schema::hasTable('nfc_card_orders');
+
+        $nfcTransactionsTableExists = Schema::hasTable(
+            'nfc_card_order_transactions'
+        );
+
+        $aiTransactionsTableExists = Schema::hasTable(
+            'ai_credits_transactions'
+        );
+
+        $aiPlansTableExists = Schema::hasTable('ai_credits_plans');
+
+        $nfcEnabled = (bool) ($features['nfc'] ?? false)
+            && $nfcOrdersTableExists
+            && $nfcTransactionsTableExists;
+
+        $aiBuilderEnabled = (bool) ($features['aibuilder'] ?? false)
+            && $aiTransactionsTableExists;
+
+        // Validate requested tab against enabled features and tables.
+        if (
+            $tab === 'nfc_orders'
+            && (! ($features['nfc'] ?? false) || ! $nfcOrdersTableExists)
+        ) {
+            $tab = 'cards';
+        }
+
+        if ($tab === 'nfc_payments' && ! $nfcEnabled) {
+            $tab = 'cards';
+        }
+
+        if ($tab === 'ai_payments' && ! $aiBuilderEnabled) {
+            $tab = 'cards';
+        }
+
+        // Fetch only the current tab's activity.
+        $activity = match ($tab) {
+            'cards', 'stores' => BusinessCard::where(
+                'business_cards.user_id',
+                $user->user_id
+            )
+                ->where('business_cards.card_status', '!=', 'deleted')
+                ->when(
+                    $tab === 'stores',
+                    fn($query) => $query->where(
+                        'business_cards.card_type',
+                        'store'
+                    ),
+                    fn($query) => $query->where(function ($query) {
+                        $query->where('business_cards.card_type', '!=', 'store')
+                            ->orWhereNull('business_cards.card_type');
+                    })
+                )
+                ->leftJoin(
+                    'themes',
+                    'themes.theme_id',
+                    '=',
+                    'business_cards.theme_id'
+                )
+                ->orderByDesc('business_cards.id')
+                ->paginate($perPage, [
+                    'business_cards.card_id',
+                    'business_cards.card_type',
+                    'business_cards.title',
+                    'business_cards.card_url',
+                    'business_cards.card_status',
+                    'business_cards.status',
+                    'business_cards.created_at',
+                    'themes.theme_name',
+                ], 'page', $page)
+                ->through(fn($card) => [
+                    'id'      => $card->card_id,
+                    'type'    => $card->card_type === 'store'
+                        ? 'store'
+                        : 'vcard',
+                    'title'   => $card->title,
+                    'url'     => url($card->card_url),
+                    'theme'   => $card->theme_name,
+                    'active'  => $card->card_status === 'activated'
+                    && (string) $card->status === '1',
+                    'state'   => $card->card_status,
+                    'created' => $date($card->created_at),
+                ]),
+
+            'payments'     => Transaction::where('user_id', $user->id)
+                ->orderByDesc('id')
+                ->paginate($perPage, ['*'], 'page', $page)
+                ->through(fn($t) => [
+                    'id'          => $t->gobiz_transaction_id,
+                    'reference'   => $t->transaction_id,
+                    'description' => $t->desciption,
+                    'gateway'     => $t->payment_gateway_name,
+                    'amount'      => (float) $t->transaction_amount,
+                    'status'      => strtolower($t->payment_status),
+                    'date'        => $date($t->created_at),
+                    'invoice'     => ($permissions['transactions'] ?? false)
+                    && $t->payment_status === 'SUCCESS'
+                        ? route(
+                        'admin.view.invoice',
+                        $t->gobiz_transaction_id
+                    )
+                        : null,
+                ]),
+
+            'nfc_orders'   => NfcCardOrder::where('user_id', $user->id)
+                ->orderByDesc('id')
+                ->paginate($perPage, ['*'], 'page', $page)
+                ->through(function ($order) use ($date) {
+                    $details = json_decode(
+                        $order->order_details ?? '',
+                        true
+                    ) ?: [];
+
+                    return [
+                        'id'       => $order->nfc_card_order_id,
+                        'item'     => $details['order_item'] ?? null,
+                        'quantity' => (int) (
+                            $details['order_quantity'] ?? 1
+                        ),
+                        'amount'   => AdminPermissions::amount((float) (
+                            $details['invoice_amount'] ?? 0
+                        )),
+                        'status'   => $order->order_status,
+                        'date'     => $date($order->created_at),
+                    ];
+                }),
+
+            'nfc_payments' => NfcCardOrderTransaction::join(
+                'nfc_card_orders',
+                'nfc_card_order_transactions.nfc_card_order_id',
+                '=',
+                'nfc_card_orders.nfc_card_order_id'
+            )
+                ->where('nfc_card_orders.user_id', $user->id)
+                ->orderByDesc('nfc_card_order_transactions.id')
+                ->paginate(
+                    $perPage,
+                    ['nfc_card_order_transactions.*'],
+                    'page',
+                    $page
+                )
+                ->through(fn($t) => [
+                    'id'        => $t->nfc_card_order_transaction_id,
+                    'orderId'   => $t->nfc_card_order_id,
+                    'reference' => $t->payment_transaction_id,
+                    'gateway'   => $t->payment_method,
+                    'amount'    => (float) $t->amount,
+                    'status'    => $t->payment_status,
+                    'date'      => $date($t->created_at),
+                ]),
+
+            'ai_payments'  => AiCreditsTransaction::query()
+                ->when(
+                    $aiPlansTableExists,
+                    fn($query) => $query->leftJoin(
+                        'ai_credits_plans',
+                        'ai_credits_transactions.ai_credits_plan_id',
+                        '=',
+                        'ai_credits_plans.ai_credits_plan_id'
+                    )
+                )
+                ->where('ai_credits_transactions.user_id', $user->id)
+                ->orderByDesc('ai_credits_transactions.id')
+                ->paginate($perPage, [
+                    'ai_credits_transactions.*',
+                    ...(
+                        $aiPlansTableExists
+                            ? ['ai_credits_plans.plan_name']
+                            : []
+                    ),
+                ], 'page', $page)
+                ->through(fn($t) => [
+                    'id'      => $t->ai_credits_transaction_id,
+                    'plan'    => $aiPlansTableExists
+                        ? $t->plan_name
+                        : null,
+                    'gateway' => $t->payment_method,
+                    'amount'  => (float) $t->amount,
+                    'status'  => $t->payment_status,
+                    'date'    => $date($t->created_at),
+                ]),
+        };
+
+        // AI credits balance.
+        $credits = Schema::hasTable('ai_credits')
+            ? DB::table('ai_credits')
+            ->where('user_id', $user->user_id)
+            ->first()
+            : null;
+
+        // Referral information.
+        $referral = Referral::where('user_id', $user->user_id)->first();
+
+        $referrer = $referral
+            ? User::where(
+            'user_id',
+            $referral->referred_user_id
+        )->first(['user_id', 'name', 'email'])
+            : null;
+
+        // Card and store counts.
+        $baseCards = BusinessCard::where(
+            'user_id',
+            $user->user_id
+        )->where('card_status', '!=', 'deleted');
+
+        $cardCount = (clone $baseCards)
+            ->where(function ($query) {
+                $query->where('card_type', '!=', 'store')
+                    ->orWhereNull('card_type');
+            })
+            ->count();
+
+        $storeCount = (clone $baseCards)
+            ->where('card_type', 'store')
+            ->count();
+
+        // Counts are independent of the current pagination page.
+        $tabCounts = [
+            'cards'        => $cardCount,
+
+            'stores'       => $storeCount,
+
+            'payments'     => Transaction::where(
+                'user_id',
+                $user->id
+            )->count(),
+
+            'nfc_orders'   => ($features['nfc'] ?? false)
+            && $nfcOrdersTableExists
+                ? NfcCardOrder::where(
+                'user_id',
+                $user->id
+            )->count()
+                : 0,
+
+            'nfc_payments' => $nfcEnabled
+                ? NfcCardOrderTransaction::join(
+                'nfc_card_orders',
+                'nfc_card_order_transactions.nfc_card_order_id',
+                '=',
+                'nfc_card_orders.nfc_card_order_id'
+            )
+                ->where('nfc_card_orders.user_id', $user->id)
+                ->count()
+                : 0,
+
+            'ai_payments'  => $aiBuilderEnabled
+                ? AiCreditsTransaction::where(
+                'user_id',
+                $user->id
+            )->count()
+                : 0,
+        ];
+
+        return Inertia::render('customers/show', [
+            'customer'         => [
+                'id'         => $user->user_id,
+                'name'       => $user->name,
+                'email'      => $user->email,
+
+                'avatar'     => $user->profile_image
+                    ? asset($user->profile_image)
+                    : null,
+
+                'phone'      => $user->mobile_number
+                    ? trim(
+                    ($user->country_code
+                            ? '+' . ltrim($user->country_code, '+') . ' '
+                            : ''
+                    ) . $user->mobile_number
+                )
+                    : null,
+
+                'whatsapp'   => $user->whatsapp_number
+                    ? trim(
+                    ($user->whatsapp_country_code
+                            ? '+' . ltrim($user->whatsapp_country_code, '+') . ' '
+                            : ''
+                    ) . $user->whatsapp_number
+                )
+                    : null,
+
+                'language'   => $user->lang,
+                'signInWith' => $user->auth_type,
+                'state'      => $this->customers->state($user),
+                'verified'   => $user->email_verified_at !== null,
+                'joined'     => $date($user->created_at),
+                'updated'    => $date($user->updated_at),
+                'plan'       => $this->customers->planSummary($user),
+
+                'billing'    => array_filter([
+                    'name'    => $user->billing_name,
+                    'email'   => $user->billing_email,
+
+                    'phone'   => trim(
+                        ($user->billing_country_code ?? '')
+                        . ' '
+                        . ($user->billing_phone ?? '')
+                    ) ?: null,
+
+                    'address' => collect([
+                        $user->billing_address,
+                        $user->billing_city,
+                        $user->billing_state,
+                        $user->billing_zipcode,
+                        $user->billing_country,
+                    ])->filter()->implode(', ') ?: null,
+
+                    'taxId'   => $user->vat_number,
+                    'type'    => $user->type,
+                ]),
+
+                'aiCredits'  => $credits
+                    ? [
+                    'credits' => (int) $credits->credits,
+                    'trial'   => (int) $credits->trial_credits,
+                ]
+                    : null,
+
+                'referredBy' => $referrer
+                    ? [
+                    'id'    => $referrer->user_id,
+                    'name'  => $referrer->name,
+                    'email' => $referrer->email,
+                ]
+                    : null,
+            ],
+
+            'activeTab'        => $tab,
+            'activity'         => $activity,
+            'tabCounts'        => $hidesRevenue
+                ? array_diff_key($tabCounts, array_flip(['payments', 'nfc_payments', 'ai_payments']))
+                : $tabCounts,
+            'hideRevenue'      => $hidesRevenue,
+
+            'nfcEnabled'       => $nfcEnabled,
+            'aiBuilderEnabled' => $aiBuilderEnabled,
+
+            'plans'            => $this->planOptions(),
+            'listLimit'        => self::LIST_LIMIT,
+
+            'openDialog'       => $request->query('dialog') === 'plan'
+                ? 'plan'
+                : null,
+        ]);
     }
 
-    // Upgrade Customer plan
+    // Edit customer
+    public function editCustomer($id)
+    {
+        $user = $this->findCustomer($id);
+
+        if (! $user) {
+            return redirect()->route('admin.customers', ['status' => 'all'])->with('failed', __('Not Found!'));
+        }
+
+        return Inertia::render('customers/form', [
+            'customer' => [
+                'id'     => $user->user_id,
+                'name'   => $user->name,
+                'email'  => $user->email,
+                'status' => (int) $user->status === 0 ? 0 : 1,
+                'state'  => $this->customers->state($user),
+            ],
+            'plans'    => [],
+        ]);
+    }
+
+    // Update customer
+    public function updateCustomer(Request $request)
+    {
+        $user = $this->findCustomer((string) $request->input('user_id'));
+
+        if (! $user) {
+            return redirect()->route('admin.customers', ['status' => 'all'])->with('failed', __('Not Found!'));
+        }
+
+        $data = $request->validate([
+            'full_name'      => 'required|string|max:255',
+            'email'          => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+            'password'       => 'nullable|string|min:6',
+            'status'         => 'required|in:0,1',
+            'welcome_email'  => 'boolean',
+            'reset_password' => 'boolean',
+        ], [
+            'email.unique' => __('This email address already registered. Try to another email address.'),
+        ]);
+
+        // Suspended/deleted accounts keep their state; status here is active/inactive only.
+        if (in_array((int) $user->status, [2, -1], true)) {
+            $data['status'] = $user->status;
+        }
+
+        $this->customers->update($user, $data);
+
+        if ($request->boolean('welcome_email')) {
+            $this->customers->sendWelcomeEmail($user);
+        }
+
+        if ($request->boolean('reset_password') && ! $this->customers->sendPasswordResetEmail($user)) {
+            return redirect()->route('admin.view.customer', $user->user_id)
+                ->with('failed', __('Customer updated, but the password reset email could not be sent.'));
+        }
+
+        return redirect()->route('admin.view.customer', $user->user_id)->with('success', __('Customer updated.'));
+    }
+
+    // Change plan (opens the plan dialog on the customer page)
+    public function ChangeCustomerPlan($id)
+    {
+        return redirect()->route('admin.view.customer', ['id' => $id, 'dialog' => 'plan']);
+    }
+
+    // Assign a plan
     public function UpdateCustomerPlan(Request $request)
     {
-        $config = DB::table('config')->get();
+        $data = $request->validate([
+            'user_id' => 'required|string',
+            'plan_id' => ['required', Rule::exists('plans', 'plan_id')->where('status', 1)],
+        ]);
 
-        $user_details = User::where('user_id', $request->user_id)->first();
+        $user = $this->findCustomer($data['user_id']);
 
-        $plan_data = Plan::where('plan_id', $request->plan_id)->first();
-        $term_days = (int) $plan_data->validity;
-
-        $amountToBePaid = ((float)($plan_data->plan_price) * (float)($config[25]->config_value) / 100) + (float)($plan_data->plan_price);
-
-        if ($config[80]->config_value == '1') {
-            // Referral amount details
-            $referralCalculation = [];
-            $referralCalculation['referral_type'] = $config[81]->config_value;
-            $referralCalculation['referral_value'] = $config[82]->config_value;
-
-            // Check referral_type is percentage or amount
-            if ($config[81]->config_value == '0') {
-                // Plan amount
-                $base_amount = (float) $amountToBePaid;
-
-                $referralCalculation['referral_amount'] = ($base_amount * $referralCalculation['referral_value']) / 100;
-            } else {
-                $referralCalculation['referral_amount'] = $referralCalculation['referral_value'];
-            }
-
-            // Check user_id is already subscribed or not
-            if (Referral::where('user_id', $user_details->user_id)->where('is_subscribed', 0)->first()) {
-                // Update referral details
-                Referral::where('user_id', $user_details->user_id)->update([
-                    'is_subscribed' => 1,
-                    'referral_scheme' => json_encode($referralCalculation),
-                    'updated_at' => now(),
-                ]);
-            }
+        if (! $user) {
+            return back()->with('failed', __('Not Found!'));
         }
 
-        if ($user_details->plan_validity == "") {
+        $plan   = Plan::where('plan_id', $data['plan_id'])->firstOrFail();
+        $result = $this->plans->assign($user, $plan);
 
-            $plan_validity = Carbon::now();
-            $plan_validity->addDays($term_days);
+        $message = __('Plan changed to :plan, valid until :date.', [
+            'plan' => $plan->plan_name,
+            'date' => $result['validUntil']->format('d M Y'),
+        ]);
 
-            $invoice_count = Transaction::where("invoice_prefix", $config[15]->config_value)->count();
-            $invoice_number = $invoice_count + 1;
-
-            $gobiz_transaction_id = uniqid();
-
-            $invoice_details = [];
-
-            $invoice_details['from_billing_name'] = $config[16]->config_value;
-            $invoice_details['from_billing_address'] = $config[19]->config_value;
-            $invoice_details['from_billing_city'] = $config[20]->config_value;
-            $invoice_details['from_billing_state'] = $config[21]->config_value;
-            $invoice_details['from_billing_zipcode'] = $config[22]->config_value;
-            $invoice_details['from_billing_country'] = $config[23]->config_value;
-            $invoice_details['from_vat_number'] = $config[26]->config_value;
-            $invoice_details['from_billing_phone'] = $config[18]->config_value;
-            $invoice_details['from_billing_email'] = $config[17]->config_value;
-            $invoice_details['to_billing_name'] = $user_details->billing_name;
-            $invoice_details['to_billing_address'] = $user_details->billing_address;
-            $invoice_details['to_billing_city'] = $user_details->billing_city;
-            $invoice_details['to_billing_state'] = $user_details->billing_state;
-            $invoice_details['to_billing_zipcode'] = $user_details->billing_zipcode;
-            $invoice_details['to_billing_country'] = $user_details->billing_country;
-            $invoice_details['to_billing_phone'] = $user_details->billing_phone;
-            $invoice_details['to_billing_email'] = $user_details->billing_email;
-            $invoice_details['to_vat_number'] = $user_details->vat_number;
-            $invoice_details['tax_name'] = $config[24]->config_value;
-            $invoice_details['tax_type'] = $config[14]->config_value;
-            $invoice_details['tax_value'] = $config[25]->config_value;
-            $invoice_details['invoice_amount'] = $amountToBePaid;
-            $invoice_details['subtotal'] = $plan_data->plan_price;
-            $invoice_details['tax_amount'] = (float)($plan_data->plan_price) * (float)($config[25]->config_value) / 100;
-
-            // If order is created from stripe
-            $transaction = new Transaction();
-            $transaction->gobiz_transaction_id = $gobiz_transaction_id;
-            $transaction->transaction_date = now();
-            $transaction->transaction_id = "";
-            $transaction->user_id = $user_details->id;
-            $transaction->plan_id = $plan_data->plan_id;
-            $transaction->desciption = $plan_data->plan_name . " Plan";
-            $transaction->payment_gateway_name = "Offline";
-            $transaction->transaction_amount = $amountToBePaid;
-            $transaction->invoice_prefix = $config[15]->config_value;
-            $transaction->invoice_number = $invoice_number;
-            $transaction->transaction_currency = $config[1]->config_value;
-            $transaction->invoice_details = json_encode($invoice_details);
-            $transaction->payment_status = "SUCCESS";
-            $transaction->save();
-
-            User::where('id', $user_details->id)->update([
-                'plan_id' => $request->plan_id,
-                'term' => $term_days,
-                'plan_validity' => $plan_validity,
-                'plan_activation_date' => now(),
-                'plan_details' => $plan_data
-            ]);
-
-            $details = [
-                'from_billing_name' => $config[16]->config_value,
-                'from_billing_email' => $config[17]->config_value,
-                'from_billing_address' => $config[19]->config_value,
-                'from_billing_city' => $config[20]->config_value,
-                'from_billing_state' => $config[21]->config_value,
-                'from_billing_country' => $config[23]->config_value,
-                'from_billing_zipcode' => $config[22]->config_value,
-                'gobiz_transaction_id' => $gobiz_transaction_id,
-                'to_billing_name' => $user_details->billing_name,
-                'invoice_currency' => $config[1]->config_value,
-                'invoice_amount' => $plan_data->plan_price,
-                'invoice_id' => $config[15]->config_value . $invoice_number,
-                'invoice_date' => Carbon::now(),
-                'description' => $plan_data->plan_name . ' plan Upgrade',
-                'email_heading' => $config[27]->config_value,
-                'email_footer' => $config[28]->config_value,
-            ];
-
-            try {
-                Mail::to($user_details->email)->send(new \App\Mail\SendEmailInvoice($details));
-            } catch (\Exception $e) {
-            }
-
-            return redirect()->route('admin.change.customer.plan', $request->user_id)->with('success', trans('Changed!'));
-        } else {
-            $message = "";
-            if ($user_details->plan_id == $request->plan_id) {
-
-
-                // Check if plan validity is expired or not.
-                $plan_validity = \Carbon\Carbon::createFromFormat('Y-m-d H:s:i', $user_details->plan_validity);
-                $current_date = Carbon::now();
-                $remaining_days = $current_date->diffInDays($plan_validity, false);
-
-                if ($remaining_days > 0) {
-                    $plan_validity = Carbon::parse($user_details->plan_validity);
-                    $plan_validity->addDays($term_days);
-                    $message = trans('Changed!');
-                } else {
-                    $plan_validity = Carbon::now();
-                    $plan_validity->addDays($term_days);
-                    $message = trans('Changed!');
-                }
-            } else {
-
-                // Making all cards inactive, For Plan change
-                BusinessCard::where('user_id', $user_details->user_id)->update([
-                    'card_status' => 'inactive',
-                ]);
-
-                $plan_validity = Carbon::now();
-                $plan_validity->addDays($term_days);
-                $message = trans("Changed!");
-            }
-
-            $invoice_count = Transaction::where("invoice_prefix", $config[15]->config_value)->count();
-            $invoice_number = $invoice_count + 1;
-
-            $gobiz_transaction_id = uniqid();
-
-            $invoice_details = [];
-
-            $invoice_details['from_billing_name'] = $config[16]->config_value;
-            $invoice_details['from_billing_address'] = $config[19]->config_value;
-            $invoice_details['from_billing_city'] = $config[20]->config_value;
-            $invoice_details['from_billing_state'] = $config[21]->config_value;
-            $invoice_details['from_billing_zipcode'] = $config[22]->config_value;
-            $invoice_details['from_billing_country'] = $config[23]->config_value;
-            $invoice_details['from_vat_number'] = $config[26]->config_value;
-            $invoice_details['from_billing_phone'] = $config[18]->config_value;
-            $invoice_details['from_billing_email'] = $config[17]->config_value;
-            $invoice_details['to_billing_name'] = $user_details->billing_name;
-            $invoice_details['to_billing_address'] = $user_details->billing_address;
-            $invoice_details['to_billing_city'] = $user_details->billing_city;
-            $invoice_details['to_billing_state'] = $user_details->billing_state;
-            $invoice_details['to_billing_zipcode'] = $user_details->billing_zipcode;
-            $invoice_details['to_billing_country'] = $user_details->billing_country;
-            $invoice_details['to_billing_phone'] = $user_details->billing_phone;
-            $invoice_details['to_billing_email'] = $user_details->billing_email;
-            $invoice_details['to_vat_number'] = $user_details->vat_number;
-            $invoice_details['tax_name'] = $config[24]->config_value;
-            $invoice_details['tax_type'] = $config[14]->config_value;
-            $invoice_details['tax_value'] = $config[25]->config_value;
-            $invoice_details['invoice_amount'] = $amountToBePaid;
-            $invoice_details['subtotal'] = $plan_data->plan_price;
-            $invoice_details['tax_amount'] = (float)($plan_data->plan_price) * (float)($config[25]->config_value) / 100;
-
-            // If order is created from stripe
-            $transaction = new Transaction();
-            $transaction->gobiz_transaction_id = $gobiz_transaction_id;
-            $transaction->transaction_date = now();
-            $transaction->transaction_id = "";
-            $transaction->user_id = $user_details->id;
-            $transaction->plan_id = $plan_data->plan_id;
-            $transaction->desciption = $plan_data->plan_name . " Plan";
-            $transaction->payment_gateway_name = "Offline";
-            $transaction->transaction_amount = $amountToBePaid;
-            $transaction->invoice_prefix = $config[15]->config_value;
-            $transaction->invoice_number = $invoice_number;
-            $transaction->transaction_currency = $config[1]->config_value;
-            $transaction->invoice_details = json_encode($invoice_details);
-            $transaction->payment_status = "SUCCESS";
-            $transaction->save();
-
-            // update customer
-            $user_details->plan_id = $request->plan_id;
-            $user_details->term = $term_days;
-            $user_details->plan_validity = $plan_validity;
-            $user_details->plan_activation_date = now();
-            $user_details->plan_details = $plan_data;
-            $user_details->save();
-
-            $details = [
-                'from_billing_name' => $config[16]->config_value,
-                'from_billing_email' => $config[17]->config_value,
-                'from_billing_address' => $config[19]->config_value,
-                'from_billing_city' => $config[20]->config_value,
-                'from_billing_state' => $config[21]->config_value,
-                'from_billing_country' => $config[23]->config_value,
-                'from_billing_zipcode' => $config[22]->config_value,
-                'gobiz_transaction_id' => $gobiz_transaction_id,
-                'to_billing_name' => $user_details->billing_name,
-                'invoice_currency' => $config[1]->config_value,
-                'invoice_amount' => $plan_data->plan_price,
-                'invoice_id' => $config[15]->config_value . $invoice_number,
-                'invoice_date' => Carbon::now(),
-                'description' => $plan_data->plan_name . ' plan Upgrade',
-                'email_heading' => $config[27]->config_value,
-                'email_footer' => $config[28]->config_value,
-            ];
-
-            try {
-                Mail::to($user_details->email)->send(new \App\Mail\SendEmailInvoice($details));
-            } catch (\Exception $e) {
-            }
-
-            return redirect()->route('admin.change.customer.plan', $request->user_id)->with('success', trans($message));
+        if ($result['cardsDeactivated']) {
+            $message .= ' ' . __('Their business cards were set to inactive.');
         }
+
+        return redirect()->route('admin.view.customer', $user->user_id)->with('success', $message);
     }
 
-    // Update status
+    // Activate / deactivate
     public function updateStatus(Request $request)
     {
-        $user_details = User::where('user_id', $request->query('id'))->first();
-        if ($user_details->status == 0) {
-            // Activate business card
-            BusinessCard::where('user_id', $user_details->user_id)->update(['status' => 1]);
+        $user = $this->findCustomer((string) $request->input('id'));
 
-            $status = 1;
-        } else {
-            // Deactivate business card
-            BusinessCard::where('user_id', $user_details->user_id)->update(['status' => 0]);
-
-            $status = 0;
+        if (! $user) {
+            return back()->with('failed', __('Not Found!'));
         }
-        User::where('user_id', $request->query('id'))->update(['status' => $status]);
 
-        return redirect()->route('admin.customers', ['status' => 'all'])->with('success', trans('Updated!'));
+        $activate = (int) $user->status === 0;
+        $this->customers->changeState($user, $activate ? 'activate' : 'deactivate');
+
+        return back()->with('success', $activate ? __('Customer activated.') : __('Customer deactivated.'));
     }
 
-    // Delete Customer
-    public function deleteCustomer(Request $request)
-    {
-        // Queries
-        $allcards = BusinessCard::where('user_id', $request->query('id'))->get();
-        $user = User::where('user_id', $request->query('id'))->first();
-        for ($i = 0; $i < count($allcards); $i++) {
-            if ($allcards != null) {
-                BusinessField::where('card_id', $allcards[$i]->card_id)->delete();
-                BusinessHour::where('card_id', $allcards[$i]->card_id)->delete();
-                Gallery::where('card_id', $allcards[$i]->card_id)->delete();
-                Payment::where('card_id', $allcards[$i]->card_id)->delete();
-                Service::where('card_id', $allcards[$i]->card_id)->delete();
-                StoreProduct::where('card_id', $allcards[$i]->card_id)->delete();
-            }
-        }
-
-        $transactions = Transaction::where('user_id', $request->query('id'))->first();
-        $businessCards = BusinessCard::where('user_id', $request->query('id'))->first();
-
-        if ($transactions != null) {
-            $transactions->delete();
-        }
-
-        if ($businessCards != null) {
-            $businessCards->delete();
-        }
-
-        User::where('user_id', $request->query('id'))->delete();
-
-        return redirect()->back()->with('success', trans('Removed!'));
-    }
-
-    // Login As Customer
-    public function authAs(Request $request, $id)
-    {
-        // Queries
-        $user_details = User::where('user_id', $id)->where('status', 1)->first();
-
-        if (isset($user_details)) {
-            // Login user
-            Auth::loginUsingId($user_details->id);
-
-            return redirect()->route('user.dashboard');
-        } else {
-            return redirect()->route('admin.customers', ['status' => 'all'])->with('failed', trans('Unable to find user account!'));
-        }
-    }
-
-    // Assign card to another customer
-    public function assignCard(Request $request)
-    {
-        // Parameters
-        $cardId = $request->card_id;
-        $customerId = $request->customer_id;
-        $type = $request->type;
-
-        // Check Active plan details in user
-        $user_details = User::where('user_id', $customerId)->first();
-        $plan_details = json_decode($user_details->plan_details);
-
-        // No of cards to created
-        $cards = BusinessCard::where('user_id', $customerId)->where('card_type', 'vcard')->where('card_status', 'activated')->count();
-
-        // Check unlimited cardss
-        if ($plan_details->no_of_vcards == 999) {
-            $no_cards = 999999;
-        } else {
-            $no_cards = $plan_details->no_of_vcards;
-        }
-
-        // Chech vcard creation limit
-        if ($cards < $no_cards) {
-            // Queries
-            $businessCard = BusinessCard::where('card_id', $cardId)->first();
-
-            // Check business card
-            if ($businessCard == null) {
-                return redirect()->route('admin.customers', ['status' => 'all'])->with('failed', trans('Unable to assign card. The card doesn\'t exist.'));
-            }
-
-            // Generate card ID
-            $generateCardId = uniqid();
-
-            // Create duplicate
-            $duplicateCard = new BusinessCard();
-            $duplicateCard->card_id = $generateCardId;
-            $duplicateCard->user_id = $customerId;
-            $duplicateCard->type = $businessCard->type;
-            $duplicateCard->theme_id = $businessCard->theme_id;
-            $duplicateCard->card_lang = $businessCard->card_lang;
-            $duplicateCard->cover_type = $businessCard->cover_type;
-            $duplicateCard->cover = $businessCard->cover;
-            $duplicateCard->profile = $businessCard->profile;
-            $duplicateCard->card_url = $businessCard->card_url . '-' . Str::random(5);
-            $duplicateCard->custom_domain = $businessCard->custom_domain;
-            $duplicateCard->card_type = $businessCard->card_type;
-            $duplicateCard->title = $businessCard->title . ' (Duplicate)';
-            $duplicateCard->sub_title = $businessCard->sub_title;
-            $duplicateCard->description = $businessCard->description;
-            $duplicateCard->enquiry_email = $businessCard->enquiry_email;
-            $duplicateCard->appointment_receive_email = $businessCard->appointment_receive_email;
-            $duplicateCard->is_newsletter_pop_active = $businessCard->is_newsletter_pop_active;
-            $duplicateCard->is_info_pop_active = $businessCard->is_info_pop_active;
-            $duplicateCard->custom_css = $businessCard->custom_css;
-            $duplicateCard->custom_js = $businessCard->custom_js;
-            $duplicateCard->password = $businessCard->password;
-            $duplicateCard->expiry_time = $businessCard->expiry_time;
-            $duplicateCard->card_status = 'activated';
-            $duplicateCard->status = 1;
-            $duplicateCard->save();
-
-            // Check type
-            if ($type == 'vcard') {
-                // Duplicate social links
-                $socialLinks = BusinessField::where('card_id', $cardId)->get();
-                foreach ($socialLinks as $socialLink) {
-                    try {
-                        // Save social link
-                        $duplicateSocialLink = new BusinessField();
-                        $duplicateSocialLink->card_id = $generateCardId;
-                        $duplicateSocialLink->type = $socialLink->type;
-                        $duplicateSocialLink->icon = $socialLink->icon;
-                        $duplicateSocialLink->label = $socialLink->label;
-                        $duplicateSocialLink->content = $socialLink->content;
-                        $duplicateSocialLink->position = $socialLink->position;
-                        $duplicateSocialLink->status = 1;
-                        $duplicateSocialLink->save();
-                    } catch (\Exception $e) {
-                    }
-                }
-
-                // Duplicate payment links
-                $paymentLinks = Payment::where('card_id', $cardId)->get();
-                foreach ($paymentLinks as $paymentLink) {
-                    try {
-                        // Save payment link
-                        $duplicatePaymentLink = new Payment();
-                        $duplicatePaymentLink->card_id = $generateCardId;
-                        $duplicatePaymentLink->type = $paymentLink->type;
-                        $duplicatePaymentLink->icon = $paymentLink->icon;
-                        $duplicatePaymentLink->label = $paymentLink->label;
-                        $duplicatePaymentLink->content = $paymentLink->content;
-                        $duplicatePaymentLink->position = $paymentLink->position;
-                        $duplicatePaymentLink->status = 1;
-                        $duplicatePaymentLink->save();
-                    } catch (\Exception $e) {
-                    }
-                }
-
-                // Duplicate services
-                $services = Service::where('card_id', $cardId)->get();
-                foreach ($services as $service) {
-                    try {
-                        // Save service
-                        $duplicateService = new Service();
-                        $duplicateService->card_id = $generateCardId;
-                        $duplicateService->service_name = $service->service_name;
-                        $duplicateService->service_image = $service->service_image;
-                        $duplicateService->service_description = $service->service_description;
-                        $duplicateService->enable_enquiry = $service->enable_enquiry;
-                        $duplicateService->status = 1;
-                        $duplicateService->save();
-                    } catch (\Exception $e) {
-                    }
-                }
-
-                // Duplicate products
-                $products = VcardProduct::where('card_id', $cardId)->get();
-                foreach ($products as $product) {
-                    try {
-                        // Save product
-                        $duplicateProduct = new VcardProduct();
-                        $duplicateProduct->card_id = $generateCardId;
-                        $duplicateProduct->product_id = uniqid();
-                        $duplicateProduct->badge = $product->badge;
-                        $duplicateProduct->currency = $product->currency;
-                        $duplicateProduct->product_image = $product->product_image;
-                        $duplicateProduct->product_name = $product->product_name;
-                        $duplicateProduct->product_description = $product->product_description;
-                        $duplicateProduct->regular_price = $product->regular_price;
-                        $duplicateProduct->sales_price = $product->sales_price;
-                        $duplicateProduct->product_status = $product->product_status;
-                        $duplicateProduct->status = 1;
-                        $duplicateProduct->save();
-                    } catch (\Exception $e) {
-                    }
-                }
-
-                // Duplicate galleries
-                $galleries = Gallery::where('card_id', $cardId)->get();
-                foreach ($galleries as $gallery) {
-                    try {
-                        $duplicateGallery = new Gallery();
-                        $duplicateGallery->card_id = $generateCardId;
-                        $duplicateGallery->caption = $gallery->caption;
-                        $duplicateGallery->gallery_image = $gallery->gallery_image;
-                        $duplicateGallery->status = 1;
-                        $duplicateGallery->save();
-                    } catch (\Exception $e) {
-                    }
-                }
-
-                // Duplicate testimonials
-                $testimonials = Testimonial::where('card_id', $cardId)->get();
-                foreach ($testimonials as $testimonial) {
-                    try {
-                        // Save testimonial
-                        $duplicateTestimonial = new Testimonial();
-                        $duplicateTestimonial->card_id = $generateCardId;
-                        $duplicateTestimonial->reviewer_image = $testimonial->reviewer_image;
-                        $duplicateTestimonial->reviewer_name = $testimonial->reviewer_name;
-                        $duplicateTestimonial->reviewer_subtext = $testimonial->reviewer_subtext;
-                        $duplicateTestimonial->review = $testimonial->review;
-                        $duplicateTestimonial->status = 1;
-                        $duplicateTestimonial->save();
-                    } catch (\Exception $e) {
-                    }
-                }
-
-                // Duplicate newsletter
-                $newsletter = Newsletter::where('card_id', $cardId)->first();
-                if ($newsletter) {
-                    try {
-                        // Save newsletter
-                        $duplicateNewsletter = new Newsletter();
-                        $duplicateNewsletter->newsletter_id = $newsletter->newsletter_id;
-                        $duplicateNewsletter->card_id = $generateCardId;
-                        $duplicateNewsletter->email = $newsletter->email;
-                        $duplicateNewsletter->status = 1;
-                        $duplicateNewsletter->save();
-                    } catch (\Exception $e) {
-                    }
-                }
-
-                // Duplicate  information_pops
-                $popups = InformationPop::where('card_id', $cardId)->first();
-                if ($popups) {
-                    try {
-                        // Save information_pop
-                        $duplicateInformationPop = new InformationPop();
-                        $duplicateInformationPop->information_pop_id = $popups->information_pop_id;
-                        $duplicateInformationPop->card_id = $generateCardId;
-                        $duplicateInformationPop->confetti_effect = $popups->confetti_effect;
-                        $duplicateInformationPop->info_pop_image = $popups->info_pop_image;
-                        $duplicateInformationPop->info_pop_title = $popups->info_pop_title;
-                        $duplicateInformationPop->info_pop_desc = $popups->info_pop_desc;
-                        $duplicateInformationPop->info_pop_button_text = $popups->info_pop_button_text;
-                        $duplicateInformationPop->info_pop_button_url = $popups->info_pop_button_url;
-                        $duplicateInformationPop->status = 1;
-                        $duplicateInformationPop->save();
-                    } catch (\Exception $e) {
-                    }
-                }
-
-                // Duplicate business hours
-                $businessHours = BusinessHour::where('card_id', $cardId)->get();
-                foreach ($businessHours as $businessHour) {
-                    try {
-                        // Save business hour
-                        $duplicateBusinessHour = new BusinessHour();
-                        $duplicateBusinessHour->card_id = $generateCardId;
-                        $duplicateBusinessHour->monday = $businessHour->monday;
-                        $duplicateBusinessHour->tuesday = $businessHour->tuesday;
-                        $duplicateBusinessHour->wednesday = $businessHour->wednesday;
-                        $duplicateBusinessHour->thursday = $businessHour->thursday;
-                        $duplicateBusinessHour->friday = $businessHour->friday;
-                        $duplicateBusinessHour->saturday = $businessHour->saturday;
-                        $duplicateBusinessHour->sunday = $businessHour->sunday;
-                        $duplicateBusinessHour->is_always_open = $businessHour->is_always_open;
-                        $duplicateBusinessHour->is_display = $businessHour->is_display;
-                        $duplicateBusinessHour->status = 1;
-                        $duplicateBusinessHour->save();
-                    } catch (\Exception $e) {
-                    }
-                }
-
-                // Duplicate card appointments
-                $appointments = CardAppointmentTime::where('card_id', $cardId)->get();
-                foreach ($appointments as $appointment) {
-                    try {
-                        // Save appointment
-                        $duplicateAppointment = new CardAppointmentTime();
-                        $duplicateAppointment->card_appointment_time_id = uniqid();
-                        $duplicateAppointment->card_id = $generateCardId;
-                        $duplicateAppointment->day = $appointment->day;
-                        $duplicateAppointment->slot_duration = $appointment->slot_duration;
-                        $duplicateAppointment->time_slots = $appointment->time_slots;
-                        $duplicateAppointment->price = $appointment->price;
-                        $duplicateAppointment->status = 1;
-                        $duplicateAppointment->save();
-                    } catch (\Exception $e) {
-                    }
-                }
-
-                // Service booking
-                $serviceBookings = ServiceBooking::where('vcard_id', $cardId)->get();
-                foreach ($serviceBookings as $serviceBooking) {
-                    try {
-                        // Save service booking
-                        $duplicateServiceBooking = new ServiceBooking();
-                        $duplicateServiceBooking->service_booking_id = uniqid();
-                        $duplicateServiceBooking->user_id = $customerId;
-                        $duplicateServiceBooking->vcard_id = $generateCardId;
-                        $duplicateServiceBooking->service_booking = $serviceBooking->service_booking;
-                        $duplicateServiceBooking->service_booking_available_days = $serviceBooking->service_booking_available_days;
-                        $duplicateServiceBooking->service_booking_amount = $serviceBooking->service_booking_amount;
-                        $duplicateServiceBooking->service_booking_start_time = $serviceBooking->service_booking_start_time;
-                        $duplicateServiceBooking->service_booking_end_time = $serviceBooking->service_booking_end_time;
-                        $duplicateServiceBooking->service_booking_receive_email = $serviceBooking->service_booking_receive_email;
-                        $duplicateServiceBooking->save();
-                    } catch (\Exception $e) {
-                    }
-                }
-            } else {
-                // Product store category
-                $categories = StoreCategory::where('store_id', $cardId)->get();
-                $categoryIdMap = []; // Store original -> new category_id
-
-                foreach ($categories as $category) {
-                    try {
-                        // Save store category
-                        $newCategoryId = uniqid(); // Generate new ID once
-                        $duplicateCategory = new StoreCategory();
-                        $duplicateCategory->user_id = $customerId ?? '';
-                        $duplicateCategory->store_id = $generateCardId;
-                        $duplicateCategory->category_id = $newCategoryId;
-                        $duplicateCategory->thumbnail = $category->thumbnail ?? '';
-                        $duplicateCategory->category_name = $category->category_name ?? '';
-                        $duplicateCategory->status = 1;
-                        $duplicateCategory->save();
-
-                        // Store mapping for use in products
-                        $categoryIdMap[$category->category_id] = $newCategoryId;
-                    } catch (\Exception $e) {
-                        // Optionally log the error
-                    }
-                }
-
-                // Save products
-                $products = StoreProduct::where('card_id', $cardId)->get();
-
-                foreach ($products as $product) {
-                    try {
-                        $duplicateStoreProduct = new StoreProduct();
-                        $duplicateStoreProduct->card_id = $generateCardId;
-                        $duplicateStoreProduct->product_id = uniqid();
-
-                        // Replace old category_id with new one using the map
-                        $duplicateStoreProduct->category_id = $categoryIdMap[$product->category_id] ?? null;
-
-                        $duplicateStoreProduct->badge = $product->badge;
-                        $duplicateStoreProduct->product_image = $product->product_image;
-                        $duplicateStoreProduct->product_name = $product->product_name;
-                        $duplicateStoreProduct->product_description = $product->product_description;
-                        $duplicateStoreProduct->regular_price = $product->regular_price;
-                        $duplicateStoreProduct->sales_price = $product->sales_price;
-                        $duplicateStoreProduct->product_status = $product->product_status;
-                        $duplicateStoreProduct->status = 1;
-                        $duplicateStoreProduct->save();
-                    } catch (\Exception $e) {
-                        // Optionally log the error
-                    }
-                }
-
-                // Store Business Hours
-                $businessHours = StoreBusinessHour::where('store_id', $cardId)->get();
-                foreach ($businessHours as $businessHour) {
-                    try {
-                        // Save store business hour
-                        $duplicateBusinessHour = new StoreBusinessHour();
-                        $duplicateBusinessHour->user_id = $customerId;
-                        $duplicateBusinessHour->store_id = $generateCardId;
-                        $duplicateBusinessHour->business_hours_id = uniqid();
-                        $duplicateBusinessHour->business_hours = $businessHour->business_hours;
-                        $duplicateBusinessHour->save();
-                    } catch (\Exception $e) {
-                    }
-                }
-
-                // Duplicate newsletter
-                $newsletter = Newsletter::where('card_id', $cardId)->first();
-                if ($newsletter) {
-                    try {
-                        // Save newsletter
-                        $duplicateNewsletter = new Newsletter();
-                        $duplicateNewsletter->newsletter_id = $newsletter->newsletter_id;
-                        $duplicateNewsletter->card_id = $generateCardId;
-                        $duplicateNewsletter->email = $newsletter->email;
-                        $duplicateNewsletter->status = 1;
-                        $duplicateNewsletter->save();
-                    } catch (\Exception $e) {
-                    }
-                }
-
-                // Duplicate  information_pops
-                $popups = InformationPop::where('card_id', $cardId)->get();
-                foreach ($popups as $popup) {
-                    try {
-                        // Save information_pop
-                        $duplicateInformationPop = new InformationPop();
-                        $duplicateInformationPop->information_pop_id = $popup->information_pop_id;
-                        $duplicateInformationPop->card_id = $generateCardId;
-                        $duplicateInformationPop->confetti_effect = $popup->confetti_effect;
-                        $duplicateInformationPop->info_pop_image = $popup->info_pop_image;
-                        $duplicateInformationPop->info_pop_title = $popup->info_pop_title;
-                        $duplicateInformationPop->info_pop_desc = $popup->info_pop_desc;
-                        $duplicateInformationPop->info_pop_button_text = $popup->info_pop_button_text;
-                        $duplicateInformationPop->info_pop_button_url = $popup->info_pop_button_url;
-                        $duplicateInformationPop->status = 1;
-                        $duplicateInformationPop->save();
-                    } catch (\Exception $e) {
-                    }
-                }
-            }
-
-            // Redirect
-            if ($type == 'vcard') {
-                return redirect()->route('admin.customers', ['status' => 'all'])->with('success', trans('Duplicated!'));
-            } else {
-                return redirect()->route('admin.customers', ['status' => 'all'])->with('success', trans('Duplicated!'));
-            }
-        } else {
-            return redirect()->route('admin.customers', ['status' => 'all'])->with('failed', trans('Unable to assign card. The maximum limit has been exceeded.'));
-        }
-    }
-
-    // Customer verified / unverified / banned
+    // Verify / unverify / suspend / unsuspend
     public function customerVerified(Request $request)
     {
-        $userId = $request->query('id');
-        $status = $request->query('status');
+        $data = $request->validate([
+            'id'     => 'required|string',
+            'action' => 'required|in:verify,unverify,suspend,unsuspend',
+        ]);
 
-        $user = User::where('user_id', $userId)->first();
+        $user = $this->findCustomer($data['id']);
 
-        if (!$user) {
-            return back()->with('failed', trans('Not Found!'));
+        if (! $user) {
+            return back()->with('failed', __('Not Found!'));
         }
 
-        switch ((int) $status) {
-            case 0:
-                // Activate business card
-                BusinessCard::where('user_id', $userId)->update(['status' => 1]);
+        $this->customers->changeState($user, $data['action']);
 
-                $user->email_verified_at = null;
-                $user->status = 1; // optional reset to active
-                break;
-            case 1:
-                // Activate business card
-                BusinessCard::where('user_id', $userId)->update(['status' => 1]);
-
-                $user->email_verified_at = Carbon::now();
-                $user->status = 1;
-                break;
-            case 2:
-                // Deactivate business card
-                BusinessCard::where('user_id', $userId)->update(['status' => 0]);
-
-                $user->status = 2; // banned
-                break;
-            default:
-                // Activate business card
-                BusinessCard::where('user_id', $userId)->update(['status' => 1]);
-
-                $user->email_verified_at = Carbon::now();
-                $user->status = 1;
-                break;
-        }
-
-        $user->save();
-
-        return back()->with('success', trans('Updated!'));
+        return back()->with('success', match ($data['action']) {
+            'verify'    => __('Email marked as verified.'),
+            'unverify'  => __('Email marked as unverified.'),
+            'suspend'   => __('Customer suspended.'),
+            'unsuspend' => __('Customer unsuspended.'),
+        });
     }
 
-    // Undelete Customer
+    // Restore an account the customer deleted
     public function undeleteCustomer(Request $request)
     {
-        // Queries
-        $user = User::where('user_id', $request->query('id'))->first();
+        $user = $this->findCustomer((string) $request->input('id'));
 
-        if (!$user) {
-            return back()->with('failed', trans('Not Found!'));
+        if (! $user) {
+            return back()->with('failed', __('Not Found!'));
         }
 
-        // Check if email is exists
-        if (User::where('email', str_replace('deleted', '', $user->email))->count() > 0) {
-            return back()->with('failed', trans('Unable to undelete user. Email already exists.'));
+        if (! $this->customers->restore($user)) {
+            return back()->with('failed', __('Unable to undelete user. Email already exists.'));
         }
 
-        // Update email
-        $user->email = str_replace('deleted', '', $user->email);
+        return back()->with('success', __('Customer undeleted!'));
+    }
 
-        // Soft delete (set status = 1)
-        $user->status = 1;
-        $user->save();
+    // Permanently delete
+    public function deleteCustomer(Request $request)
+    {
+        $user = $this->findCustomer((string) $request->input('id'));
 
-        return back()->with('success', trans('Customer undeleted!'));
+        if (! $user) {
+            return back()->with('failed', __('Not Found!'));
+        }
+
+        $this->customers->delete($user);
+
+        return redirect()->route('admin.customers', ['status' => 'all'])->with('success', __('Customer deleted.'));
+    }
+
+    // Login as customer (ends the admin session)
+    public function authAs($id)
+    {
+        $user = User::where('role_id', 2)->where('user_id', $id)->where('status', 1)->first();
+
+        if (! $user) {
+            return redirect()->route('admin.customers', ['status' => 'all'])->with('failed', __('Unable to find user account!'));
+        }
+
+        Auth::loginUsingId($user->id);
+
+        return redirect()->route('user.dashboard');
+    }
+
+    // Copy a business card / store to another customer
+    public function assignCard(Request $request, CardDuplicator $duplicator)
+    {
+        $data = $request->validate([
+            'card_id'     => ['required', Rule::exists('business_cards', 'card_id')],
+            'customer_id' => 'required|string',
+        ]);
+
+        $target = $this->findCustomer($data['customer_id']);
+        $card   = BusinessCard::where('card_id', $data['card_id'])->first();
+
+        if (! $target || ! $card) {
+            return back()->with('failed', __('Not Found!'));
+        }
+
+        $plan = json_decode($target->plan_details ?? '');
+
+        if (! $plan) {
+            return back()->with('failed', __('The selected customer has no plan.'));
+        }
+
+        // 999 means unlimited
+        $limit = (int) ($card->card_type === 'store' ? ($plan->no_of_stores ?? 0) : ($plan->no_of_vcards ?? 0));
+        $used  = BusinessCard::where('user_id', $target->user_id)
+            ->where('card_type', $card->card_type)
+            ->where('card_status', 'activated')
+            ->where('status', '1')
+            ->count();
+
+        if ($limit !== 999 && $used >= $limit) {
+            return back()->with('failed', __('Unable to assign card. The maximum limit has been exceeded.'));
+        }
+
+        $duplicator->duplicate($card, $target->user_id);
+
+        return back()->with('success', __('Copied to :name.', ['name' => $target->name]));
+    }
+
+    // Customer lookup for pickers (JSON)
+    public function search(Request $request)
+    {
+        $term = trim((string) $request->query('q', ''));
+
+        return $this->customers->query()
+            ->where('status', 1)
+            ->when($request->query('except'), fn($q, $except) => $q->where('user_id', '!=', $except))
+            ->when($term !== '', fn($q) => $q->where(fn($q) => $q->where('name', 'like', "%{$term}%")->orWhere('email', 'like', "%{$term}%")))
+            ->orderBy('name')
+            ->limit(20)
+            ->get(['user_id', 'name', 'email', 'profile_image'])
+            ->map(fn(User $user) => [
+                'id'     => $user->user_id,
+                'name'   => $user->name,
+                'email'  => $user->email,
+                'avatar' => $user->profile_image ? asset($user->profile_image) : null,
+            ]);
+    }
+
+    private function findCustomer(string $userId): ?User
+    {
+        return $this->customers->query()->where('user_id', $userId)->first();
+    }
+
+    private function planOptions(): array
+    {
+        return Plan::where('status', 1)
+            ->orderBy('plan_price')
+            ->get(['plan_id', 'plan_name', 'plan_price', 'validity', 'plan_type', 'no_of_vcards', 'no_of_stores'])
+            ->map(fn(Plan $plan) => [
+                'id'       => $plan->plan_id,
+                'name'     => $plan->plan_name,
+                'price'    => AdminPermissions::price((float) $plan->plan_price),
+                'validity' => (int) $plan->validity,
+                'type'     => $plan->plan_type,
+                'vcards'   => (int) $plan->no_of_vcards,
+                'stores'   => (int) $plan->no_of_stores,
+            ])
+            ->all();
     }
 }

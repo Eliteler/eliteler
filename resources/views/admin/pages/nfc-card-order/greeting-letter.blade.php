@@ -3,7 +3,9 @@
 {{-- Custom CSS --}}
 @section('css')
     {{-- Tiny MCE --}}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/7.0.1/tinymce.min.js" integrity="sha512-KGtsnWohFUg0oksKq7p7eDgA1Rw2nBfqhGJn463/rGhtUY825dBqGexj8eP04LwfnsSW6dNAHAlOqKJKquHsnw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/7.0.1/tinymce.min.js"
+        integrity="sha512-KGtsnWohFUg0oksKq7p7eDgA1Rw2nBfqhGJn463/rGhtUY825dBqGexj8eP04LwfnsSW6dNAHAlOqKJKquHsnw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     {{-- QrCode --}}
     <script src="{{ url('js/qrious.min.js') }}"></script>
 
@@ -31,31 +33,57 @@
 
 @section('content')
     <div class="page-wrapper">
-        <!-- Page title -->
+        <!-- Page title header -->
         <div class="page-header d-print-none">
             <div class="container-fluid">
-                <div class="row g-2 align-items-center">
+                <div class="row align-items-center">
+                    <!-- Breadcrumbs -->
+                    <div class="mb-1 ms-0">
+                        <ol class="breadcrumb" aria-label="breadcrumbs">
+                            <li class="breadcrumb-item">
+                                <a href="{{ route('admin.dashboard') }}" class="text-secondary text-decoration-none">
+                                    {{ __('Dashboard') }}
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a href="{{ route('admin.designs') }}" class="text-secondary text-decoration-none">
+                                    {{ __('NFC Sales') }}
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item" aria-current="page">
+                                <a href="{{ route('admin.orders') }}" class="text-secondary text-decoration-none">
+                                    {{ __('Orders') }}
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">
+                                <a href="#">{{ __('Greeting Letter') }}</a>
+                            </li>
+                        </ol>
+                    </div>
                     <div class="col">
-                        <div class="page-pretitle">
-                            {{ __('Overview') }}
-                        </div>
                         <h2 class="page-title">
                             {{ __('Greeting Letter') }}
                         </h2>
+                        <!-- Added helper subtitle under page heading -->
+                        <div class="text-muted mt-1">
+                            {{ __('Edit the greeting letter and use short codes to personalize it.') }}
+                        </div>
                     </div>
-                    {{-- Print --}}
+                    {{-- Print Action --}}
                     <div class="col-auto">
-                        <button type="button" class="btn btn-primary" onclick="window.print();">
+                        <button type="button" class="btn btn-primary btn-icon-only d-inline-flex align-items-center"
+                            onclick="window.print();">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round" class="icon icon-1">
+                                stroke-linejoin="round" class="icon icon-tabler icon-tabler-printer me-1">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                                 <path d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2">
                                 </path>
                                 <path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4"></path>
                                 <path d="M7 13m0 2a2 2 0 0 1 2 -2h6a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2h-6a2 2 0 0 1 -2 -2z">
                                 </path>
                             </svg>
-                            {{ __('Print') }}
+                            <span class="d-none d-sm-inline">{{ __('Print') }}</span>
                         </button>
                     </div>
                 </div>
@@ -65,39 +93,108 @@
         <!-- Page body -->
         <div class="page-body">
             <div class="container-fluid">
-                <div class="row">
-                    <div class="col-12 col-md-5 col-xl-5">
-                        <div class="card m-3">
-                            <div class="card-body m-2">
+                <div class="row g-3">
+
+                    {{-- Success Message --}}
+                    @if (session('success'))
+                        <div class="alert alert-important alert-success alert-dismissible mb-2" role="alert">
+                            <div class="d-flex">
+                                <div>
+                                    {{ Session::get('success') }}
+                                </div>
+                            </div>
+                            <a class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="close"></a>
+                        </div>
+                    @endif
+
+                    {{-- Failed Message --}}
+                    @if (session('failed'))
+                        <div class="alert alert-important alert-danger alert-dismissible mb-2" role="alert">
+                            <div class="d-flex">
+                                <div>
+                                    {{ Session::get('failed') }}
+                                </div>
+                            </div>
+                            <a class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="close"></a>
+                        </div>
+                    @endif
+
+                    {{-- Preview Letter Card (Upgraded to Borderless Shadowed Card) --}}
+                    <div class="col-12 col-lg-5">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body">
                                 <div class="card-text">
                                     @php
                                         // Replacements
                                         $orderDetailsDecoded = json_decode($orderDetails['order_details']);
                                         $invoiceDetails = json_decode($orderDetails['invoice_details']);
 
+                                        $uniqueKeys = $orderDetailsDecoded->unique_key ?? [];
+
+                                        // Ensure array
+                                        if (!is_array($uniqueKeys)) {
+                                            $uniqueKeys = [$uniqueKeys];
+                                        }
+
+                                        // Activation codes HTML
+                                        $activationCodes = '';
+
+                                        foreach ($uniqueKeys as $key) {
+                                            $activationCodes .=
+                                                '
+                                                <div style="margin-bottom:10px;">
+                                                    <strong>' .
+                                                e($key) .
+                                                '</strong>
+                                                </div>';
+                                        }
+
                                         $replacements = [
                                             ':logo' => asset($settings->site_logo),
                                             '%3Alogo' => asset($settings->site_logo),
-                                            ':websitename' => config('app.name'),
-                                            ':customername' => $orderDetails['name'],
-                                            ':activationcode' => $orderDetailsDecoded->unique_key,
-                                            ':supportemail' => $invoiceDetails->from_billing_email,
-                                            ':supportphone' => empty($invoiceDetails->from_billing_phone) ? 'N/A' : $invoiceDetails->from_billing_phone,
+                                            ':websitename' => (string) config('app.name'),
+                                            ':customername' => (string) ($orderDetails['name'] ?? ''),
+                                            ':activationcode' => $activationCodes,
+                                            ':supportemail' => (string) ($invoiceDetails->from_billing_email ?? ''),
+                                            ':supportphone' => !empty($invoiceDetails->from_billing_phone)
+                                                ? (string) $invoiceDetails->from_billing_phone
+                                                : 'N/A',
                                         ];
 
-                                        $greetingLetter = str_replace(array_keys($replacements), array_values($replacements), $config[74]->config_value);
+                                        $greetingLetter = str_replace(
+                                            array_keys($replacements),
+                                            array_values($replacements),
+                                            (string) $config[74]->config_value,
+                                        );
+
+                                        // Split the rendered HTML around the ":qrcode" marker so the
+                                        // QR container renders inline, in the same position the admin
+                                        // placed it in the letter, without ever being part of the
+                                        // stored/editable TinyMCE content (so it can't get stripped).
+$qrParts = explode(':qrcode', $greetingLetter, 2);
+$beforeQr = $qrParts[0] ?? $greetingLetter;
+$afterQr = $qrParts[1] ?? '';
                                     @endphp
 
-                                    {{-- Render --}}
-                                    {!! $greetingLetter !!}
+                                    {{-- Content before the QR position --}}
+                                    {!! $beforeQr !!}
+
+                                    {{-- QR code container — one QR per activation key, rendered here --}}
+                                    <div class="qr-code">
+                                        <h3>{{ __('Scan to Activate') }}</h3>
+                                        <div class="d-flex flex-wrap gap-3" id="activateQrCode"></div>
+                                    </div>
+
+                                    {{-- Content after the QR position --}}
+                                    {!! $afterQr !!}
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {{-- Update greeting letter --}}
-                    <div class="col-12 col-md-7 col-xl-7 d-print-none">
-                        <div class="card m-3">
+                    {{-- Update Greeting Letter Card (Upgraded to Borderless Shadowed Card) --}}
+                    <div class="col-12 col-lg-7 d-print-none">
+                        <div class="card border-0 shadow-sm">
                             <form action="{{ route('admin.update.greeting.letter', $orderDetails['nfc_card_order_id']) }}"
                                 method="post">
                                 @csrf
@@ -105,46 +202,67 @@
                                     <h3 class="card-title">{{ __('Update Greeting Letter') }}</h3>
                                 </div>
                                 <div class="card-body">
-                                    <div class="form-group">
+                                    <div class="mb-3">
                                         <textarea name="greeting_letter" id="greeting_letter" class="form-control" rows="5">{{ $config[74]->config_value ?? $template }}</textarea>
                                     </div>
                                     {{-- Available Short Codes --}}
-                                    <div class="table-responsive">
-                                        <h2 class="page-title my-3"> {{ __('Available Short Codes') }} </h2>
-                                        <table class="table mb-0">
-                                            <thead>
+                                    <div class="table-responsive mt-4">
+                                        <h3 class="card-title mb-3">{{ __('Available Short Codes') }}</h3>
+
+                                        <table class="table table-bordered table-striped align-middle mb-0">
+                                            <thead class="table-light">
                                                 <tr>
-                                                    <th>{{ __('Short Code') }}</th>
-                                                    <th>{{ __('Value') }}</th>
-                                                    <th>{{ __('Short Code') }}</th>
-                                                    <th>{{ __('Value') }}</th>
+                                                    <th width="20%">{{ __('Short Code') }}</th>
+                                                    <th width="30%">{{ __('Value') }}</th>
+                                                    <th width="20%">{{ __('Short Code') }}</th>
+                                                    <th width="30%">{{ __('Value') }}</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 <tr>
-                                                    <td class="py-3">:logo</td>
-                                                    <td class="py-3 fw-bold">{{ __('Logo') }}</td>
-                                                    <td class="py-3">:websitename</td>
-                                                    <td class="py-3 fw-bold">{{ __('Website Name') }}</td>
+                                                    <td><code>:logo</code></td>
+                                                    <td class="fw-semibold">{{ __('Logo') }}</td>
+                                                    <td><code>:websitename</code></td>
+                                                    <td class="fw-semibold">{{ __('Website Name') }}</td>
                                                 </tr>
                                                 <tr>
-                                                    <td class="py-3">:customername</td>
-                                                    <td class="py-3 fw-bold">{{ __('Customer Name') }}</td>
-                                                    <td class="py-3">:activationcode</td>
-                                                    <td class="py-3 fw-bold">{{ __('Activation Code') }}</td>
+                                                    <td><code>:customername</code></td>
+                                                    <td class="fw-semibold">{{ __('Customer Name') }}</td>
+                                                    <td><code>:activationcode</code></td>
+                                                    <td class="fw-semibold">{{ __('Activation Code') }}</td>
                                                 </tr>
                                                 <tr>
-                                                    <td class="py-3">:supportemail</td>
-                                                    <td class="py-3 fw-bold">{{ __('Support Email') }}</td>
-                                                    <td class="py-3">:supportphone</td>
-                                                    <td class="py-3 fw-bold">{{ __('Support Phone') }}</td>
+                                                    <td><code>:supportemail</code></td>
+                                                    <td class="fw-semibold">{{ __('Support Email') }}</td>
+                                                    <td><code>:supportphone</code></td>
+                                                    <td class="fw-semibold">{{ __('Support Phone') }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td><code>:qrcode</code></td>
+                                                    <td class="fw-semibold">{{ __('QR Code Position') }}</td>
+                                                    <td colspan="2"></td>
                                                 </tr>
                                             </tbody>
                                         </table>
                                     </div>
                                 </div>
+
+                                {{-- Simplified Right-Aligned Card Footer (Without Cancel Button) --}}
                                 <div class="card-footer text-end">
-                                    <button type="submit" class="btn btn-primary">{{ __('Save') }}</button>
+                                    <button type="submit" class="btn btn-primary btn-md d-inline-flex align-items-center">
+                                        <!-- Device Floppy Icon -->
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                            class="icon icon-tabler icon-tabler-device-floppy me-2" width="24"
+                                            height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                            fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                            <path
+                                                d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2" />
+                                            <path d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+                                            <path d="M14 4l0 4h-6l0 -4" />
+                                        </svg>
+                                        {{ __('Save') }}
+                                    </button>
                                 </div>
                             </form>
                         </div>
@@ -156,24 +274,67 @@
         {{-- Footer --}}
         @include('admin.includes.footer')
     </div>
+@endsection
 
-    {{-- Custom JS --}}
+{{-- Custom JS --}}
 @section('scripts')
     <script>
+        // Dark Mode
+        const isDark = document.body.getAttribute('data-bs-theme') === 'dark';
+
         // HTML Editor
         tinymce.init({
             selector: '#greeting_letter',
+            extended_valid_elements: 'div[id|class|style]',
             plugins: 'code preview importcss searchreplace autolink autosave save directionality visualblocks visualchars link charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount charmap quickbars emoticons',
             menubar: 'file edit view insert format tools',
             toolbar: 'code undo redo | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | outdent indent |  numlist bullist | forecolor backcolor removeformat | pagebreak | charmap emoticons | preview save print | insertfile link anchor | ltr rtl',
             content_style: 'body { font-family:"Inter Var",Inter,-apple-system,BlinkMacSystemFont,San Francisco,Segoe UI,Roboto,Helvetica Neue,sans-serif; font-size:16px }',
             menubar: false,
             statusbar: false,
+            skin: isDark ? 'oxide-dark' : 'oxide',
+            content_css: isDark ? [
+                'https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700;800&display=swap',
+                'dark'
+            ] : [
+                'https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700;800&display=swap',
+                'default'
+            ],
+            setup: function(editor) {
+                editor.on('init', function() {
+                    if (document.body.dataset.bsTheme === 'dark') {
+                        editor.getBody().setAttribute('data-bs-theme', 'dark');
+                    }
+                });
+            },
+            content_style: isDark ? `
+            body {
+                    background-color: #151f2c !important;
+                    font-family: "Figtree", sans-serif !important;
+                }
+
+                .mce-content-body[data-mce-placeholder]:not(.mce-visualblocks)::before {
+                    color: rgba(34,47,62,.5) !important;
+                    opacity: 1 !important;
+                    font-family: "Figtree", sans-serif !important;
+                    font-size: 0.85rem !important;
+                    font-weight: 600 !important;
+                }
+            ` : `body {
+                    font-family: "Figtree", sans-serif !important;
+                }
+
+                .mce-content-body[data-mce-placeholder]:not(.mce-visualblocks)::before {
+                    opacity: 1 !important;
+                    font-family: "Figtree", sans-serif !important;
+                    font-size: 0.85rem !important;
+                    font-weight: 600 !important;
+                }
+            `,
             height: 450,
 
-            // Correct mobile settings (limited fields allowed)
+            // Correct mobile settings
             mobile: {
-                plugins: 'paste',
                 toolbar: 'code undo redo | bold italic underline strikethrough | fontfamily fontsize blocks | alignleft aligncenter alignright alignjustify | outdent indent | numlist bullist | forecolor backcolor removeformat | pagebreak | charmap emoticons | preview save print | insertfile link anchor | ltr rtl'
             }
         });
@@ -181,22 +342,35 @@
         // Activate QR Code
         document.addEventListener("DOMContentLoaded", function() {
             "use strict";
-            var activateQrCodeElement = document.getElementById('activateQrCode');
 
-            if (activateQrCodeElement) {
-                var activationUrl =
-                    "{{ route('user.activate.nfc.card') }}?id={{ json_decode($orderDetails->order_details)->unique_key }}";
+            let orderDetails = @json(json_decode($orderDetails->order_details));
+            let uniqueKeys = orderDetails.unique_key ?? [];
 
-                new QRious({
-                    element: activateQrCodeElement,
-                    value: activationUrl, // Laravel route with unique key
-                    size: 150,
-                    background: 'white', // Background color
-                    foreground: 'black', // Foreground (QR code) color
-                    level: 'H' // Error correction level
-                });
+            // Ensure array
+            if (!Array.isArray(uniqueKeys)) {
+                uniqueKeys = [uniqueKeys];
             }
+
+            let qrContainer = document.getElementById('activateQrCode');
+
+            // Guard: bail out safely if the container isn't in the DOM
+            // (previously missing entirely, causing a null appendChild error)
+            if (!qrContainer) {
+                return;
+            }
+
+            uniqueKeys.forEach(function(key) {
+                let canvas = document.createElement('canvas');
+                qrContainer.appendChild(canvas);
+                new QRious({
+                    element: canvas,
+                    value: "{{ route('user.activate.nfc.card') }}?id=" + key,
+                    size: 150,
+                    background: 'white',
+                    foreground: 'black',
+                    level: 'H'
+                });
+            });
         });
     </script>
-@endsection
 @endsection

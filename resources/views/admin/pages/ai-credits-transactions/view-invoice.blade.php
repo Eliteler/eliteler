@@ -1,6 +1,11 @@
 @extends('admin.layouts.index', ['header' => true, 'nav' => true, 'demo' => true])
 
 @section('css')
+    <style>
+        .ts-control>input {
+            display: contents !important;
+        }
+    </style>
     <script src="{{ asset('js/html2pdf.bundle.min.js') }}"></script>
     <script>
         function generatePDF() {
@@ -45,22 +50,49 @@
 
 @section('content')
     <div class="page-wrapper">
+        <!-- Page title header -->
         <div class="page-header d-print-none">
             <div class="container-fluid">
                 <div class="row g-2 align-items-center">
+                    <!-- Breadcrumbs (Replaces Overview pretitle) -->
+                    <div class="mb-1 ms-0">
+                        <ol class="breadcrumb" aria-label="breadcrumbs">
+                            <li class="breadcrumb-item">
+                                <a href="{{ route('admin.dashboard') }}" class="text-secondary text-decoration-none">
+                                    {{ __('Dashboard') }}
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a href="{{ route('admin.ai.credits.plans') }}" class="text-secondary text-decoration-none">
+                                    {{ __('AI Credit Plans') }}
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a href="{{ route('admin.ai.credits.transactions') }}"
+                                    class="text-secondary text-decoration-none">
+                                    {{ __('Transactions') }}
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">
+                                <a href="#">{{ __('Invoice') }}</a>
+                            </li>
+                        </ol>
+                    </div>
                     <div class="col">
-                        <div class="page-pretitle">
-                            {{ __('Overview') }}
-                        </div>
                         <h2 class="page-title">
                             {{ __('Invoice') }}
                         </h2>
+                        <!-- Added helper subtitle under page heading -->
+                        <div class="text-muted mt-1">
+                            {{ __('View and print your transaction invoice details.') }}
+                        </div>
                     </div>
 
                     <div class="col-auto ms-auto d-print-none">
                         <div class="dropdown">
-                            <button type="button" class="btn btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-printer"
+                            <button type="button" class="btn btn-primary d-inline-flex align-items-center dropdown-toggle"
+                                data-bs-toggle="dropdown">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-printer me-2"
                                     width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
                                     fill="none" stroke-linecap="round" stroke-linejoin="round">
                                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
@@ -72,7 +104,7 @@
                                 </svg>
                                 {{ __('Actions') }}
                             </button>
-                            <div class="dropdown-menu">
+                            <div class="dropdown-menu dropdown-menu-end">
                                 <a class="dropdown-item" onclick="generatePDF()">
                                     {{ __('Download') }}
                                 </a>
@@ -108,8 +140,8 @@
                     </div>
                 @endif
 
-                <div class="card card-lg">
-                    <div class="p-3" id="invoice">
+                <div class="card card-lg border-0 shadow-sm">
+                    <div class="p-2" id="invoice">
                         <div class="card-body">
 
                             <div class="row mb-4">
@@ -121,10 +153,18 @@
                                     <span class="h4">{{ $fromName }}</span><br>
 
                                     <span>
-                                        {{ $fromAddress }},
-                                        {{ $fromCity }},
-                                        {{ $fromState }}
-                                        {{ $fromCountry }} <br>
+                                        @if ($fromAddress)
+                                            {{ $fromAddress }},
+                                        @endif
+                                        @if ($fromCity)
+                                            {{ $fromCity }},
+                                        @endif
+                                        @if ($fromState)
+                                            {{ $fromState }}
+                                        @endif
+                                        @if ($fromCountry)
+                                            {{ $fromCountry }} <br>
+                                        @endif
                                     </span>
 
                                     <span><strong>{{ __('Email') }}</strong>: {{ $fromEmail }}</span><br>
@@ -152,10 +192,18 @@
                                     <span class="h4">{{ $toName }}</span><br>
 
                                     <span>
-                                        {{ $toAddress }},
-                                        {{ $toCity }},
-                                        {{ $toState }}
-                                        {{ $toCountry }} <br>
+                                        @if ($toAddress)
+                                            {{ $toAddress }},
+                                        @endif
+                                        @if ($toCity)
+                                            {{ $toCity }},
+                                        @endif
+                                        @if ($toState)
+                                            {{ $toState }}
+                                        @endif
+                                        @if ($toCountry)
+                                            {{ $toCountry }} <br>
+                                        @endif
                                     </span>
 
                                     <span><strong>{{ __('Email') }}</strong>: {{ $toEmail }}</span><br>
@@ -193,7 +241,7 @@
                                 <tbody>
                                     <tr class="fw-bold">
                                         <td>{{ __($planDetails->plan_name) }} -
-                                            {{ $planDetails->no_of_ai_credits }} {{ __('AI Credits') }}
+                                            {{ $planDetails->no_of_ai_credits }} {{ __('AI Credit') }}
                                         </td>
                                         <td class="text-end">1</td>
                                         <td class="text-end">
@@ -289,6 +337,7 @@
             </div>
         </div>
 
+        {{-- Footer --}}
         @include('admin.includes.footer')
     </div>
 @endsection

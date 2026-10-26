@@ -1,0 +1,12 @@
+{
+  "plugin": "GoBizOriginal",
+  "version": "1.1.0",
+  "api": "1",
+  "pages": {
+    "config": "config.js",
+    "custom-page": "custom-page.js",
+    "edit-page": "edit-page.js",
+    "pages": "pages.js"
+  },
+  "css": "style.css"
+}

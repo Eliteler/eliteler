@@ -1,58 +1,7 @@
 <?php
 
 return [
-
-    /*
-     *
-     * Shared translations.
-     *
-     */
-    'title' => 'Installateur de Laravel',
-    'next' => 'Suivant',
     'back' => 'Précedent',
-    'finish' => 'Installer',
-    'forms' => [
-        'errorTitle' => 'Les erreurs suivantes sont survenues:',
-    ],
-
-    /*
-     *
-     * Home page translations.
-     *
-     */
-    'welcome' => [
-        'title'   => 'Bienvenue dans l’installateur...',
-        'message' => 'Assistant d\'installation et de configuration facile.',
-        'next'    => 'Vérifier les prérequis',
-    ],
-
-    /*
-     *
-     * Requirements page translations.
-     *
-     */
-    'requirements' => [
-        'templateTitle' => 'Étape 1 | Prérequis du serveur',
-        'title' => 'Prérequis du serveur',
-        'next'    => 'Vérifier les Permissions',
-    ],
-
-    /*
-     *
-     * Permissions page translations.
-     *
-     */
-    'permissions' => [
-        'templateTitle' => 'Étape 2 | Permissions',
-        'title' => 'Permissions',
-        'next' => 'Configurer l\'Environment',
-    ],
-
-    /*
-     *
-     * Environment page translations.
-     *
-     */
     'environment' => [
         'menu' => [
             'templateTitle' => 'Étape 3 | Paramètres d\'environnement',
@@ -109,7 +58,6 @@ return [
                 'db_username_placeholder' => 'Database User Name',
                 'db_password_label' => 'Database Password',
                 'db_password_placeholder' => 'Database Password',
-
                 'app_tabs' => [
                     'more_info' => 'Plus d\'informations',
                     'broadcasting_title' => 'Broadcasting, Caching, Session, &amp; Queue',
@@ -125,7 +73,6 @@ return [
                     'redis_host' => 'Redis Host',
                     'redis_password' => 'Redis Password',
                     'redis_port' => 'Redis Port',
-
                     'mail_label' => 'Mail',
                     'mail_driver_label' => 'Mail Driver',
                     'mail_driver_placeholder' => 'Mail Driver',
@@ -139,7 +86,6 @@ return [
                     'mail_password_placeholder' => 'Mail Password',
                     'mail_encryption_label' => 'Mail Encryption',
                     'mail_encryption_placeholder' => 'Mail Encryption',
-
                     'pusher_label' => 'Pusher',
                     'pusher_app_id_label' => 'Pusher App Id',
                     'pusher_app_id_palceholder' => 'Pusher App Id',
@@ -153,6 +99,7 @@ return [
                     'setup_application' => 'Configuration de l\'application',
                     'install' => 'Installer',
                 ],
+                'db_connection_failed' => 'Impossible de se connecter à la base de données.',
             ],
         ],
         'classic' => [
@@ -165,14 +112,6 @@ return [
         'success' => 'Vos paramètres de fichier .env ont été enregistrés.',
         'errors' => 'Impossible de sauvegarder le fichier .env, veuillez le créer manuellement.',
     ],
-
-    'install' => 'Installer',
-
-    /*
-     *
-     * Final page translations.
-     *
-     */
     'final' => [
         'title' => 'Terminé',
         'templateTitle' => 'Installation Terminé',
@@ -183,54 +122,50 @@ return [
         'env' => 'Final .env File:',
         'exit' => 'Cliquez ici pour quitter',
     ],
-
-    /*
-     *
-     * Update specific translations
-     *
-     */
+    'finish' => 'Installer',
+    'forms' => [
+        'errorTitle' => 'Les erreurs suivantes sont survenues:',
+    ],
+    'install' => 'Installer',
+    'installed' => [
+        'success_log_message' => 'Le programme d\'installation de NativeCode a été INSTALLÉ avec succès sur',
+    ],
+    'next' => 'Suivant',
+    'permissions' => [
+        'templateTitle' => 'Étape 2 | Permissions',
+        'title' => 'Permissions',
+        'next' => 'Configurer l\'Environment',
+    ],
+    'requirements' => [
+        'templateTitle' => 'Étape 1 | Prérequis du serveur',
+        'title' => 'Prérequis du serveur',
+        'next' => 'Vérifier les Permissions',
+    ],
+    'title' => 'Installateur de Laravel',
     'updater' => [
-        /*
-         *
-         * Shared translations.
-         *
-         */
         'title' => 'Mise à jour de Laravel',
-
-        /*
-         *
-         * Welcome page translations for update feature.
-         *
-         */
         'welcome' => [
-            'title'   => 'Bienvenue dans l\'updateur...',
+            'title' => 'Bienvenue dans l\'updateur...',
             'message' => 'Bienvenue dans le programme de mise à jour.',
         ],
-
-        /*
-         *
-         * Welcome page translations for update feature.
-         *
-         */
         'overview' => [
-            'title'   => 'Aperçu',
+            'title' => 'Aperçu',
             'message' => 'Il y a 1 mise à jour.|Il y a :number mises à jour.',
             'install_updates' => 'Installer la mise à jour',
         ],
-
-        /*
-         *
-         * Final page translations.
-         *
-         */
         'final' => [
             'title' => 'Terminé',
             'finished' => 'L’application a été mise à jour avec succès.',
             'exit' => 'Cliquez ici pour quitter',
         ],
-
         'log' => [
             'success_message' => 'L\'installateur Laravel a été mis à jour avec succès le ',
         ],
+    ],
+    'welcome' => [
+        'title' => 'Bienvenue dans l’installateur...',
+        'message' => 'Assistant d\'installation et de configuration facile.',
+        'next' => 'Vérifier les prérequis',
+        'templateTitle' => 'Accueillir',
     ],
 ];

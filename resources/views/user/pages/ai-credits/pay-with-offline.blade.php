@@ -11,7 +11,7 @@
         <div class="page-header d-print-none border-bottom pb-3">
             <div class="container d-flex align-items-center justify-content-between gap-2">
                 <div class="d-flex align-item-center gap-2">
-                    <a href="{{ url()->previous() }}" class="border rounded-3 p-2 text-white">
+                    <a href="{{ url()->previous() }}" class="border rounded-3 p-2">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                             class="icon icon-tabler icon-tabler-arrow-left icon-primary">
@@ -23,7 +23,7 @@
                     </a>
 
                     <h2 class="page-title">
-                        {{ __('AI Credits Bank Transfer') }}
+                        {{ __('AI Credit Bank Transfer') }}
                     </h2>
                 </div>
 
@@ -31,11 +31,11 @@
                     <a href="{{ route('user.dashboard') }}">
                         @if (file_exists(public_path('img/logo-light.png')))
                             <img src="{{ optional(Auth::user())->choosed_theme == 'light' ? asset($settings->site_logo) : asset('img/logo-light.png') }}"
-                                width="200" height="50" alt="{{ $settings->site_name }}"
+                                width="200" height="50" alt="{{ config('app.name') }}"
                                 class="navbar-brand-image custom-logo">
                         @else
                             <img src="{{ $settings->site_logo }}" width="200" height="50"
-                                alt="{{ $settings->site_name }}" class="navbar-brand-image custom-logo">
+                                alt="{{ config('app.name') }}" class="navbar-brand-image custom-logo">
                         @endif
                     </a>
                 </div>
@@ -67,7 +67,7 @@
 
                 <div class="row justify-content-center">
                     <!-- Payment Form -->
-                    <div class="col-lg-6 col-md-12">
+                    <div class="col-lg-4 col-md-6 col-12">
                         <div class="card shadow-sm border-0">
                             <div class="card-body p-4">
                                 <div class="text-center mb-4">
@@ -85,11 +85,11 @@
                                     </h2>
 
                                     <p class="text-secondary mb-0">
-                                        {{ __('Offline AI Credits Purchase') }}
+                                        {{ __('Offline AI Credit Purchase') }}
                                     </p>
                                 </div>
 
-                                <div class="border rounded-3 p-3 mb-4 bg-light">
+                                <div class="rounded-3 p-3 mb-4">
                                     <div class="d-flex justify-content-between mb-2">
                                         <span>{{ __('Credits') }}</span>
                                         <strong>
@@ -125,23 +125,23 @@
                     </div>
 
                     <!-- Bank Details -->
-                    <div class="col-lg-5 col-md-12">
+                    <div class="col-lg-4 col-md-6 col-12">
                         <div class="card shadow-sm border-0">
                             <div class="card-body p-4">
                                 <h3 class="card-title mb-4">
                                     {{ __('Bank Details') }}
                                 </h3>
-                                <div class="bg-light rounded-3 p-3">
+                                <div class="rounded-3 p-3">
                                     <pre class="mb-0 text-wrap" style="white-space: pre-wrap;">{!! $config[31]->config_value !!}</pre>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                {{-- Footer --}}
-                @include('user.includes.footer')
             </div>
         </div>
+
+        {{-- Footer --}}
+        @include('user.includes.footer')
     </div>
 @endsection

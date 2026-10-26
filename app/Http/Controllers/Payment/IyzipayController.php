@@ -12,25 +12,26 @@
 
 namespace App\Http\Controllers\Payment;
 
-use App\Plan;
-use App\User;
+use App\AppliedCoupon;
+use App\Classes\UpgradePlan;
 use App\Coupon;
+use App\Http\Controllers\Controller;
+use App\Plan;
+use App\Services\IyzicoService;
 use App\Setting;
 use App\Transaction;
-use Iyzipay\Options;
-use App\AppliedCoupon;
-use Illuminate\Support\Str;
-use App\Classes\UpgradePlan;
+use App\User;
 use Illuminate\Http\Request;
-use App\Services\IyzicoService;
-use Iyzipay\Model\CheckoutForm;
-use Illuminate\Support\Facades\DB;
-use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
-use Iyzipay\Request\RetrieveCheckoutFormRequest;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Str;
+use Iyzipay\Model\CheckoutForm;
+use Iyzipay\Options;
 use Iyzipay\Request\CreateCheckoutFormInitializeRequest;
+use Iyzipay\Request\RetrieveCheckoutFormRequest;
+use Plugins\Zapier\Helpers\ZapierHelper;
 
 class IyzipayController extends Controller
 {
@@ -168,7 +169,7 @@ class IyzipayController extends Controller
 
                     // Get JSON response
                     if (isset($rawResult['status']) && $rawResult['status'] === 'success' && isset($rawResult['paymentPageUrl'])) {
-                        
+
                         $invoice_details = [];
 
                         $invoice_details['from_billing_name'] = $config[16]->config_value;
@@ -186,7 +187,7 @@ class IyzipayController extends Controller
                         $invoice_details['to_billing_state'] = $userData->billing_state;
                         $invoice_details['to_billing_zipcode'] = $userData->billing_zipcode;
                         $invoice_details['to_billing_country'] = $userData->billing_country;
-                        $invoice_details['to_billing_phone'] = $userData->billing_phone;
+                        $invoice_details['to_billing_phone'] = $userData->billing_country_code . $userData->billing_phone;
                         $invoice_details['to_billing_email'] = $userData->billing_email;
                         $invoice_details['to_vat_number'] = $userData->vat_number;
                         $invoice_details['subtotal'] = $plan_details->plan_price;
@@ -196,7 +197,7 @@ class IyzipayController extends Controller
                         $invoice_details['tax_amount'] = $appliedTaxInTotal;
                         $invoice_details['applied_coupon'] = $appliedCoupon;
                         $invoice_details['discounted_price'] = $discountPrice;
-                        $invoice_details['invoice_amount'] = $amountToBePaid;
+                        $invoice_details['invoice_amount'] = round($amountToBePaid, 2);
 
                         // Save transactions
                         $transaction = new Transaction();
@@ -207,7 +208,7 @@ class IyzipayController extends Controller
                         $transaction->plan_id = $plan_details->plan_id;
                         $transaction->desciption = $plan_details->plan_name . " Plan";
                         $transaction->payment_gateway_name = "Iyzipay";
-                        $transaction->transaction_amount = $amountToBePaid;
+                        $transaction->transaction_amount = round($amountToBePaid, 2);
                         $transaction->transaction_currency = $config[1]->config_value;
                         $transaction->invoice_details = json_encode($invoice_details);
                         $transaction->payment_status = "PENDING";

@@ -73,7 +73,7 @@
     bottom: 15px;
 }
 .bottom-bar-custom {
-    bottom: 34px;
+    bottom: 10px;
 }
 .bg-opacity-dark {
     background-color: #eaefef;
@@ -405,4 +405,64 @@ body.preloader-site {
     .row.ps-2.ps-lg-3 > div:last-child {
         width: 100% !important;
     }
+}
+
+/* 1. Header Navigation */
+header.navbar.sticky-top {
+    z-index: 1020 !important;
+}
+
+/* 2. Mobile Bottom Navigation Bar */
+nav.fixed-bottom {
+    z-index: 1030 !important;
+}
+
+/* 3. WhatsApp Float Trigger & Widget */
+.whatsapp-trigger-btn {
+    z-index: 1040 !important;
+}
+#whatsapp-chatbot-widget {
+    z-index: 1045 !important;
+}
+
+/* 4. Cart Offcanvas & Backdrop Fix */
+#cartOffcanvas {
+    z-index: 1055 !important;
+}
+.offcanvas-backdrop {
+    z-index: 1050 !important;
+}
+
+/* 5. Order Modal Fix */
+#orderModal {
+    z-index: 1065 !important;
+}
+.modal-backdrop {
+    z-index: 1060 !important;
+}
+
+/* 6. PWA Install Modal */
+#pwaModal {
+    z-index: 1075 !important;
+}
+
+/* 7. Toast Alerts */
+.fixed-alert-toast,
+#cart-toast {
+    z-index: 1085 !important;
+}
+
+/* 8. Fullscreen Preloader - Always on top until hidden */
+#site-preloader {
+    z-index: 99999 !important;
+}
+
+/* Prevent hidden offcanvas/modals from blocking clicks */
+.offcanvas:not(.show),
+.modal:not(.show) {
+    pointer-events: none !important;
+}
+.offcanvas.show,
+.modal.show {
+    pointer-events: auto !important;
 }

@@ -75,57 +75,111 @@ class AICreditsCheckOutController extends Controller
         // Coupon code
         $coupon_code = Str::upper($request->coupon_code);
 
-        // Get ai credits plan details
+        // Get AI Credits plan details
         $plan = AiCreditsPlan::where('ai_credits_plan_id', $planId)->where('status', 'active')->first();
 
-        // Check if ai credits plan is active
+        // Check if AI Credits plan is active
         if (!$plan) {
-            return response()->json(['status' => 'failed', 'message' => __('This AI Credits plan does not exist.')]);
+            return response()->json([
+                'status' => 'failed',
+                'message' => __('This AI Credits plan does not exist.')
+            ]);
         }
 
         // Get coupon details
-        $couponDetails = Coupon::where('used_for', 'ai_credits')->where('coupon_code', $coupon_code)->where('status', 1)->first();
+        $couponDetails = Coupon::where('used_for', 'ai_credits')
+            ->where('coupon_code', $coupon_code)
+            ->where('status', 1)
+            ->first();
 
         // Check coupon exists
         if (!$couponDetails) {
-            return response()->json(['status' => 'failed', 'message' => __('Coupon not vaild!')]);
+            return response()->json([
+                'success' => false,
+                'message' => __('Coupon not vaild!')
+            ]);
         }
 
         // Check coupon expiry
         if ($couponDetails->coupon_expired_on < Carbon::now()) {
-            return response()->json(['success' => false, 'message' => trans('Coupon not vaild!')]);
+            return response()->json([
+                'success' => false,
+                'message' => __('Coupon not vaild!')
+            ]);
+        }
+
+        // Check if coupon is applicable for this specific AI Credits plan or all plans
+        $allowedPlans = json_decode($couponDetails->plan_id, true);
+        if (!is_array($allowedPlans)) {
+            $allowedPlans = $couponDetails->plan_id ? [$couponDetails->plan_id] : ['all'];
+        }
+
+        if (!in_array('all', $allowedPlans) && !in_array($plan->ai_credits_plan_id, $allowedPlans)) {
+            return response()->json([
+                'success' => false,
+                'message' => __('This coupon is not applicable for the selected AI Credits plan!')
+            ]);
         }
 
         // Check user already has this coupon
-        $userCouponCount = AppliedCoupon::where('user_id', Auth::user()->id)->where('coupon_id', $couponDetails->coupon_id)->where('status', 1)->count();
+        $userCouponCount = AppliedCoupon::where('user_id', Auth::user()->id)
+            ->where('coupon_id', $couponDetails->coupon_id)
+            ->where('status', 1)
+            ->count();
+
         if ($userCouponCount >= $couponDetails->coupon_user_usage_limit) {
-            return response()->json(['success' => false, 'message' => trans('Coupon already used.')]);
+            return response()->json([
+                'success' => false,
+                'message' => __('Coupon already used.')
+            ]);
         }
 
         // Check total already has this coupon
-        $totalCouponCount = AppliedCoupon::where('coupon_id', $couponDetails->coupon_id)->where('status', 1)->count();
+        $totalCouponCount = AppliedCoupon::where('coupon_id', $couponDetails->coupon_id)
+            ->where('status', 1)
+            ->count();
+
         if ($totalCouponCount >= $couponDetails->coupon_total_usage_limit) {
-            return response()->json(['success' => false, 'message' => trans('Total number of users already reached.')]);
+            return response()->json([
+                'success' => false,
+                'message' => __('Total number of users already reached.')
+            ]);
         }
 
-        // Check coupon type
+        // AI Credits plan price
+        $planPrice = (float) $plan->plan_price;
+
+        // Calculate GST on plan price
+        $appliedTaxInTotal = ($planPrice * $tax) / 100;
+
+        // Calculate coupon discount
         if ($couponDetails->coupon_type == 'fixed') {
-            $appliedTaxInTotal = ($plan->plan_price * $tax) / 100;
-            $discountPrice = $couponDetails->coupon_amount;
-            $total = ($plan->plan_price + $appliedTaxInTotal) - $discountPrice;
+            $discountPrice = (float) $couponDetails->coupon_amount;
         } else {
-            // Applied tax in total
-            $appliedTaxInTotal = ($plan->plan_price * $tax) / 100;
-            // Get discount in plan price
-            $discountPrice = ($plan->plan_price * $couponDetails->coupon_amount) / 100;
-
-            // Total
-            $total = ($plan->plan_price + $appliedTaxInTotal) - $discountPrice;
+            // Percentage coupon is applied to plan price + GST
+            $discountPrice = (($planPrice + $appliedTaxInTotal) * (float) $couponDetails->coupon_amount) / 100;
         }
+
+        // Prevent discount from exceeding plan price + GST
+        $discountPrice = min($discountPrice, $planPrice + $appliedTaxInTotal);
+
+        // Calculate final total
+        $total = ($planPrice + $appliedTaxInTotal) - $discountPrice;
+
+        // Prevent negative total
+        $total = max($total, 0);
 
         // Change applied status
         $applied = true;
 
-        return response()->json(['success' => true, 'applied' => $applied, 'coupon_code' => $coupon_code, 'coupon_id' => $couponDetails->coupon_id, 'discountPrice' => $discountPrice, 'total' => $total]);
+        return response()->json([
+            'success' => true,
+            'applied' => $applied,
+            'coupon_code' => $coupon_code,
+            'coupon_id' => $couponDetails->coupon_id,
+            'discountPrice' => round($discountPrice, 2),
+            'tax' => round($appliedTaxInTotal, 2),
+            'total' => round($total, 2)
+        ]);
     }
 }

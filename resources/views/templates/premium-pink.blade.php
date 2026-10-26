@@ -8,8 +8,10 @@
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    @if(isset($business_card_details->seo_configurations) && json_decode($business_card_details->seo_configurations)->favicon != null)
-        <link rel="icon" href="{{ url(json_decode($business_card_details->seo_configurations)->favicon) }}" sizes="512x512" type="image/png" />
+    @if (isset($business_card_details->seo_configurations) &&
+            json_decode($business_card_details->seo_configurations)->favicon != null)
+        <link rel="icon" href="{{ url(json_decode($business_card_details->seo_configurations)->favicon) }}"
+            sizes="512x512" type="image/png" />
         <link rel="apple-touch-icon" href="{{ url(json_decode($business_card_details->seo_configurations)->favicon) }}">
     @else
         <link rel="icon" href="{{ url($business_card_details->profile) }}" sizes="512x512" type="image/png" />
@@ -75,32 +77,72 @@
     {{-- Check business details --}}
     @if ($business_card_details != null)
         @php
-            $custom_css = $business_card_details->custom_css;
-            $custom_js = $business_card_details->custom_js;
+            $custom_css = trim($business_card_details->custom_css ?? '');
+            $custom_js = trim($business_card_details->custom_js ?? '');
 
-            // Ensure <style> tags for custom CSS
-            if (strpos($custom_css, '<style>') === false && strpos($custom_css, '</style>') === false) {
-                $custom_css = "<style>" . $custom_css . "</style>";
+            /*
+            |--------------------------------------------------------------------------
+            | Custom CSS
+            |--------------------------------------------------------------------------
+            */
+
+            if (!empty($custom_css) && stripos($custom_css, '<style') === false) {
+                $custom_css = "<style>{$custom_css}</style>";
             }
 
-            // Ensure <script> tags for custom JS
-            if (strpos($custom_js, '<script>') === false && strpos($custom_js, '</script>') === false) {
-                $custom_js = "<script>" . $custom_js . "</script>";
+            /*
+            |--------------------------------------------------------------------------
+            | Split HTML tags and plain JS
+            |--------------------------------------------------------------------------
+            */
+
+            $include_custom_js = '';
+
+            if (!empty($custom_js)) {
+                // Extract HTML tags like meta, script, iframe, noscript, etc.
+                preg_match_all(
+                '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/@endphp/is',
+        $custom_js,
+        $matches,
+    );
+
+    $html_tags = implode("\n", $matches[0]);
+
+    // Remove extracted HTML tags from original content
+    $plain_js = trim(
+        preg_replace(
+            '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/?>/is',
+            '',
+            $custom_js,
+        ),
+    );
+
+    // Add HTML tags directly
+    $include_custom_js .= $html_tags;
+
+    // Wrap remaining plain JS inside script tag
+    if (!empty($plain_js)) {
+        $include_custom_js .= "\n<script>
+            {
+                $plain_js
             }
-        @endphp
+        </script>";
+    }
+}
+?>
 
         {!! $custom_css !!}
-        {!! $custom_js !!}
+        {!! $include_custom_js !!}
 
         {{-- Theme CSS --}}
-        @if(!empty($business_card_details->theme_css))
+        @if (!empty($business_card_details->theme_css))
             <style>
                 {!! $business_card_details->theme_css !!}
             </style>
         @endif
 
         {{-- Theme JS --}}
-        @if(!empty($business_card_details->theme_js))
+        @if (!empty($business_card_details->theme_js))
             <script>
                 {!! $business_card_details->theme_js !!}
             </script>
@@ -139,83 +181,75 @@
 
                     <div class="lg:p-2"></div>
 
-                    <div
-                        class="max-w-xl w-full mx-auto bg-white rounded-lg overflow-hidden shadow-lg relative">
+                    <div class="max-w-xl w-full mx-auto bg-white rounded-lg overflow-hidden shadow-lg relative">
 
                         {{-- Language Switcher --}}
-                        @if ($business_card_details->is_enable_language_switcher == 1 && is_array(config('app.languages')) && count(config('app.languages')) > 1)
-                        @include('templates.includes.language-switcher')
+                        @if (
+                            $business_card_details->is_enable_language_switcher == 1 &&
+                                is_array(config('app.languages')) &&
+                                count(config('app.languages')) > 1)
+                            @include('templates.includes.language-switcher')
                         @endif
 
                         {{-- Cover Photo --}}
                         @if ($business_card_details->cover_type == 'photo')
                             <div class="bottom-style-6">
                                 <div class="bg-cover bg-center h-48"
-                                    style="background-image: url('{{ $business_card_details->cover ? url($business_card_details->cover) : asset('images/default-cover.png') }}'); "></div>
+                                    style="background-image: url('{{ $business_card_details->cover ? url($business_card_details->cover) : asset('images/default-cover.png') }}'); ">
+                                </div>
                             </div>
                         @endif
 
                         {{-- Cover Vimeo AP --}}
                         @if ($business_card_details->cover_type == 'vimeo-ap')
-                        <div class="bottom-style-6">
-                            <div class="vcard-h-56 w-full overflow-hidden">
-                                <iframe
-                                    class="w-full h-full"
-                                    referrerpolicy="strict-origin-when-cross-origin"
-                                    src="https://player.vimeo.com/video/{{ $business_card_details->cover }}?autoplay=1&loop=1&autopause=0&muted=1&controls=0"
-                                    frameborder="0"
-                                    allow="autoplay">
-                                </iframe>
+                            <div class="bottom-style-6">
+                                <div class="vcard-h-56 w-full overflow-hidden">
+                                    <iframe class="w-full h-full" referrerpolicy="strict-origin-when-cross-origin"
+                                        src="https://player.vimeo.com/video/{{ $business_card_details->cover }}?autoplay=1&loop=1&autopause=0&muted=1&controls=0"
+                                        frameborder="0" allow="autoplay">
+                                    </iframe>
+                                </div>
                             </div>
-                        </div>
-                        @endif
-                        
-                        {{-- Cover Vimeo --}}
-                        @if ($business_card_details->cover_type == 'vimeo')
-                        <div class="bottom-style-6">
-                            <div class="vcard-h-56 w-full overflow-hidden">
-                                <iframe
-                                    class="w-full h-full"
-                                    referrerpolicy="strict-origin-when-cross-origin"
-                                    src="https://player.vimeo.com/video/{{ $business_card_details->cover }}?autoplay=0&loop=1&autopause=0&muted=0&controls=1"
-                                    frameborder="0"
-                                    allow="autoplay">
-                                </iframe>
-                            </div>
-                        </div>
-                        @endif
-                        
-                        {{-- Cover YouTube AP --}}
-                        @if ($business_card_details->cover_type == 'youtube-ap')
-                        <div class="bottom-style-6">
-                            <div class="vcard-h-56 w-full overflow-hidden">
-                                <iframe
-                                    class="w-full h-full"
-                                    referrerpolicy="strict-origin-when-cross-origin"
-                                    src="https://www.youtube.com/embed/{{ $business_card_details->cover }}?autoplay=1&mute=1&controls=0&loop=1&playlist={{ $business_card_details->cover }}"
-                                    frameborder="0"
-                                    allow="autoplay">
-                                </iframe>
-                            </div>
-                        </div>
-                        @endif
-                        
-                        {{-- Cover YouTube --}}
-                        @if ($business_card_details->cover_type == 'youtube')
-                        <div class="bottom-style-6">
-                            <div class="vcard-h-56 w-full overflow-hidden">
-                                <iframe
-                                    class="w-full h-full"
-                                    referrerpolicy="strict-origin-when-cross-origin"
-                                    src="https://www.youtube.com/embed/{{ $business_card_details->cover }}?autoplay=0&mute=1&controls=1&loop=1&playlist={{ $business_card_details->cover }}"
-                                    frameborder="0"
-                                    allow="autoplay">
-                                </iframe>
-                            </div>
-                        </div>
                         @endif
 
-                        <div class="border-b px-4 {{ $business_card_details->cover_type == 'none' ? 'pt-16' : 'xl:pt-4' }} flex flex-row">
+                        {{-- Cover Vimeo --}}
+                        @if ($business_card_details->cover_type == 'vimeo')
+                            <div class="bottom-style-6">
+                                <div class="vcard-h-56 w-full overflow-hidden">
+                                    <iframe class="w-full h-full" referrerpolicy="strict-origin-when-cross-origin"
+                                        src="https://player.vimeo.com/video/{{ $business_card_details->cover }}?autoplay=0&loop=1&autopause=0&muted=0&controls=1"
+                                        frameborder="0" allow="autoplay">
+                                    </iframe>
+                                </div>
+                            </div>
+                        @endif
+
+                        {{-- Cover YouTube AP --}}
+                        @if ($business_card_details->cover_type == 'youtube-ap')
+                            <div class="bottom-style-6">
+                                <div class="vcard-h-56 w-full overflow-hidden">
+                                    <iframe class="w-full h-full" referrerpolicy="strict-origin-when-cross-origin"
+                                        src="https://www.youtube.com/embed/{{ $business_card_details->cover }}?autoplay=1&mute=1&controls=0&loop=1&playlist={{ $business_card_details->cover }}"
+                                        frameborder="0" allow="autoplay">
+                                    </iframe>
+                                </div>
+                            </div>
+                        @endif
+
+                        {{-- Cover YouTube --}}
+                        @if ($business_card_details->cover_type == 'youtube')
+                            <div class="bottom-style-6">
+                                <div class="vcard-h-56 w-full overflow-hidden">
+                                    <iframe class="w-full h-full" referrerpolicy="strict-origin-when-cross-origin"
+                                        src="https://www.youtube.com/embed/{{ $business_card_details->cover }}?autoplay=0&mute=1&controls=1&loop=1&playlist={{ $business_card_details->cover }}"
+                                        frameborder="0" allow="autoplay">
+                                    </iframe>
+                                </div>
+                            </div>
+                        @endif
+
+                        <div
+                            class="border-b px-4 {{ $business_card_details->cover_type == 'none' ? 'pt-16' : 'xl:pt-4' }} flex flex-row">
                             <div class="text-center -mt-2 sm:text-left sm:flex mb-2  w-1/2 z-[0]">
                                 <img class="profile-style-8 h-24 w-24 border-2 border-white mr-4 md:ml-24 lg:ml-12 profile"
                                     src="{{ url($business_card_details->profile) }}"
@@ -357,7 +391,8 @@
                         {{-- Services --}}
                         @if ($service_details != null && !$service_details->isEmpty())
                             <div class="bg-pink-700 w-full mt-4 mb-4 flex justify-center align-middle py-2">
-                                <p class="heading font-black text-white text-xl px-4 py-2">{{ __($service_details[0]->title) }}</p>
+                                <p class="heading font-black text-white text-xl px-4 py-2">
+                                    {{ __($service_details[0]->title) }}</p>
                             </div>
 
                             <div class="px-5 py-4 grid grid-cols-2 gap-2">
@@ -367,7 +402,8 @@
                                             <a href="{{ url($service_detail->service_image) }}"
                                                 data-toggle="lightbox" data-gallery="gallery" class="col-md-4">
                                                 <img class="w-full" src="{{ url($service_detail->service_image) }}"
-                                                    alt="{{ $service_detail->service_name }}" style="width: 100%; height: 200px; object-fit: cover;" />
+                                                    alt="{{ $service_detail->service_name }}"
+                                                    style="width: 100%; height: 200px; object-fit: cover;" />
                                             </a>
                                             <div class="px-5 py-3">
                                                 <div class="mb-2">
@@ -380,7 +416,7 @@
                                                 </div>
 
                                                 @if ($enquiry_button != null)
-                                                    @if (($whatsAppNumberExists == true && $whatsAppNumberExists == true) && $service_detail->enable_enquiry == 'Enabled')
+                                                    @if ($whatsAppNumberExists == true && $whatsAppNumberExists == true && $service_detail->enable_enquiry == 'Enabled')
                                                         <div class="mt-5 mb-2">
                                                             <a href="https://wa.me/{{ $enquiry_button }}?text={{ __('Hi, I am interested in your product/service:') }} {{ $service_detail->service_name }}. {{ __('Please provide more details.') }}"
                                                                 rel="noopener nofollow noreferrer" target="_blank"
@@ -401,7 +437,8 @@
                         @if ($product_details != null && !$product_details->isEmpty())
 
                             <div class="bg-pink-700 w-full mt-4 mb-4 flex justify-center align-middle py-2">
-                                <p class="heading font-black text-white text-xl px-4 py-2">{{ __($product_details[0]->title) }}</p>
+                                <p class="heading font-black text-white text-xl px-4 py-2">
+                                    {{ __($product_details[0]->title) }}</p>
                             </div>
 
                             <div class="px-1 py-1 grid grid-cols-2">
@@ -412,7 +449,8 @@
                                                 <img class="rounded-lg pb-2"
                                                     id="{{ $product_detail->product_id }}_product_image"
                                                     src="{{ url($product_detail->product_image) }}"
-                                                    alt="{{ $product_detail->product_name }}" style="width: 100%; height: 200px; object-fit: cover;">
+                                                    alt="{{ $product_detail->product_name }}"
+                                                    style="width: 100%; height: 200px; object-fit: cover;">
                                             </div>
                                             <b
                                                 class="py-1 px-2 bg-red-700 rounded text-white">{{ $product_detail->badge }}</b>
@@ -432,23 +470,23 @@
 
                                             <div class="w-full mb-1 justify-between items-center">
                                                 @if ($product_detail->sales_price != 0)
-                                                <h4 class="lg:text-xl text-md font-black mb-3 text-dark mt-2 flex">
-                                                    <p class="lg:text-md text-sm font-black lg:mr-3 mr-1">
-                                                        <span
-                                                            id="{{ $product_detail->product_id }}_currency"></span>
-                                                        <span
-                                                            id="{{ $product_detail->product_id }}_price">{{ formatCurrencyVcard($product_detail->sales_price, $product_detail->currency) }}</span>
-                                                    </p>
-                                                    @if ($product_detail->sales_price != $product_detail->regular_price)
-                                                        <p
-                                                            class="lg:text-md text-sm font-black line-through text-red-500 float-right">
-                                                            
-                                                            {{ formatCurrencyVcard($product_detail->regular_price, $product_detail->currency) }}
+                                                    <h4 class="lg:text-xl text-md font-black mb-3 text-dark mt-2 flex">
+                                                        <p class="lg:text-md text-sm font-black lg:mr-3 mr-1">
+                                                            <span
+                                                                id="{{ $product_detail->product_id }}_currency"></span>
+                                                            <span
+                                                                id="{{ $product_detail->product_id }}_price">{{ formatCurrencyVcard($product_detail->sales_price, $product_detail->currency) }}</span>
                                                         </p>
-                                                    @endif
-                                                </h4>
+                                                        @if ($product_detail->sales_price != $product_detail->regular_price)
+                                                            <p
+                                                                class="lg:text-md text-sm font-black line-through text-red-500 float-right">
+
+                                                                {{ formatCurrencyVcard($product_detail->regular_price, $product_detail->currency) }}
+                                                            </p>
+                                                        @endif
+                                                    </h4>
                                                 @endif
-                                                
+
                                                 @if ($enquiry_button != null)
                                                     @if ($whatsAppNumberExists == true && $product_detail->product_status == 'instock')
                                                         <div class="mt-3 mb-2">
@@ -470,7 +508,8 @@
                         {{-- Galleries --}}
                         @if ($galleries_details != null && !$galleries_details->isEmpty())
                             <div class="bg-pink-700 w-full mt-4 mb-4 flex justify-center align-middle py-2">
-                                <p class="heading font-black text-white text-xl px-4 py-2">{{ __($galleries_details[0]->title) }}</p>
+                                <p class="heading font-black text-white text-xl px-4 py-2">
+                                    {{ __($galleries_details[0]->title) }}</p>
                             </div>
 
                             <div id="gallery" class="px-5 py-4 grid grid-cols-2 gap-2">
@@ -480,7 +519,8 @@
                                             <a href="{{ url($galleries_detail->gallery_image) }}"
                                                 data-toggle="lightbox" data-gallery="gallery" class="col-md-4">
                                                 <img class="w-full" src="{{ url($galleries_detail->gallery_image) }}"
-                                                    alt="{{ $galleries_detail->caption }}" style="width: 100%; height: 270px; object-fit: cover;" />
+                                                    alt="{{ $galleries_detail->caption }}"
+                                                    style="width: 100%; height: 270px; object-fit: cover;" />
                                             </a>
                                             @if ($galleries_detail->caption)
                                                 <div class="px-5 py-3">
@@ -497,10 +537,22 @@
                             </div>
                         @endif
 
+                        {{-- Instagram Section --}}
+                        @include('templates.includes.instagram-embed', [
+                            'sectionClass' => 'w-full px-5 py-4',
+                            'customHeader' =>
+                                '<div class="bg-pink-700 w-full mt-4 mb-6 flex justify-center align-middle py-2 rounded-lg"><p class="heading font-black text-white text-xl px-4 py-2">' .
+                                __('Instagram') .
+                                '</p></div>',
+                            'cardClass' => 'w-full overflow-hidden bg-white rounded-lg border-2',
+                            'labelClass' => 'px-5 py-3 text-gray-800 font-semibold sub-heading text-center',
+                        ])
+
                         {{-- Testimonials --}}
                         @if ($testimonials != null && !$testimonials->isEmpty())
                             <div class="bg-pink-700 w-full mt-4 mb-4 flex justify-center align-middle py-2">
-                                <p class="heading font-black text-white text-xl px-4 py-2">{{ __($testimonials[0]->title) }}
+                                <p class="heading font-black text-white text-xl px-4 py-2">
+                                    {{ __($testimonials[0]->title) }}
                                 </p>
                             </div>
 
@@ -554,7 +606,8 @@
                                     <div id="youtube" class="px-5 py-4 ">
                                         <div class="mb-3">
                                             <div class="w-full overflow-hidden rounded-lg border-2">
-                                                <iframe referrerpolicy="strict-origin-when-cross-origin" class="w-full h-64 text-white"
+                                                <iframe referrerpolicy="strict-origin-when-cross-origin"
+                                                    class="w-full h-64 text-white"
                                                     src="https://www.youtube.com/embed/{!! $feature->content !!}"
                                                     title="{{ $feature->label }}" frameborder="0"
                                                     allowfullscreen></iframe>
@@ -584,7 +637,8 @@
                                 <div id="youtube" class="px-5 py-4 ">
                                     <div class="mb-3">
                                         <div class="w-full overflow-hidden  border-2 border-black">
-                                            <iframe referrerpolicy="strict-origin-when-cross-origin" class="w-full h-64 text-white" src="{{ $iframe->content }}"
+                                            <iframe referrerpolicy="strict-origin-when-cross-origin"
+                                                class="w-full h-64 text-white" src="{{ $iframe->content }}"
                                                 frameborder="0"></iframe>
                                         </div>
                                     </div>
@@ -610,10 +664,10 @@
                                     <li>
                                         <div class="flex items-center w-full px-5 ">
                                             @if ($payment->type != 'image')
-                                            <div
-                                                class="flex justify-center items-center content-center bg-pink-700  h-12 w-12 rounded-full fill-current text-white">
-                                                <i class="{{ $payment->icon }}"></i>
-                                            </div>
+                                                <div
+                                                    class="flex justify-center items-center content-center bg-pink-700  h-12 w-12 rounded-full fill-current text-white">
+                                                    <i class="{{ $payment->icon }}"></i>
+                                                </div>
                                             @endif
 
                                             @if ($payment->type != 'upi' && $payment->type != 'image')
@@ -640,12 +694,13 @@
                                                 </div>
                                             @endif
 
-                                            @if($payment->type == 'image')
+                                            @if ($payment->type == 'image')
                                                 <div class="w-full mx-5 my-6">
                                                     {{-- Image --}}
                                                     <img class="w-full h-64 object-cover rounded-lg mb-2"
                                                         src="{{ url($payment->content) }}"
-                                                        alt="{{ $payment->label }}" style="width: 100%; height: 54vh; object-fit: cover;" />
+                                                        alt="{{ $payment->label }}"
+                                                        style="width: 100%; height: 54vh; object-fit: cover;" />
                                                     <p class="font-semibold break-word text-lg text-center">
                                                         {{ $payment->label }}</p>
                                                 </div>
@@ -661,9 +716,14 @@
 
                         {{-- Show appointment slots in the calendar --}}
                         @if ($appointmentEnabled == true && isset($plan_details['appointment']) == 1)
-                            @include('templates.includes.appointment', ['section_bg' => 'pink-700', 'bg_color' => 'white', 'btn_color' => 'pink-700', 'text_color' => 'white'])
+                            @include('templates.includes.appointment', [
+                                'section_bg' => 'pink-700',
+                                'bg_color' => 'white',
+                                'btn_color' => 'pink-700',
+                                'text_color' => 'white',
+                            ])
                         @endif
-                        
+
                         {{-- Business Hours --}}
                         @if ($plan_details['business_hours'] == 1)
                             @if ($business_hours != null && $business_hours->is_display != 0)
@@ -753,9 +813,11 @@
                             @if (isset($service_booking_details) && $service_booking_details->service_booking == 1)
                                 @include('templates.includes.service-booking', [
                                     'text_color' => 'text-black',
-                                    'head_style' => 'bg-pink-700 w-full mt-4 mb-4 flex justify-center align-middle py-2',
+                                    'head_style' =>
+                                        'bg-pink-700 w-full mt-4 mb-4 flex justify-center align-middle py-2',
                                     'input_style' => 'w-full p-4 bg-gray-100 font-semibold outline-none rounded',
-                                    'btn_style' => 'mb-2 sub-heading w-full py-4 bg-pink-700 font-bold text-gray-50 transition duration-200',
+                                    'btn_style' =>
+                                        'mb-2 sub-heading w-full py-4 bg-pink-700 font-bold text-gray-50 transition duration-200',
                                 ])
                             @endif
                         @endif
@@ -763,9 +825,12 @@
 
                         <!-- Start Google Wallet section -->
                         @if (is_dir(base_path('plugins/GoogleWallet')))
-                            @if (isset($plan_details['google_wallet']) && $plan_details['google_wallet'] == 1 && $business_card_details->is_google_wallet_hidden == 0)
+                            @if (isset($plan_details['google_wallet']) &&
+                                    $plan_details['google_wallet'] == 1 &&
+                                    $business_card_details->is_google_wallet_hidden == 0)
                                 <div class="bg-pink-700 w-full mt-4 mb-4 flex justify-center align-middle py-2">
-                                    <p class="heading font-black text-white text-xl px-4 py-2">{{ __('Google Wallet') }}
+                                    <p class="heading font-black text-white text-xl px-4 py-2">
+                                        {{ __('Google Wallet') }}
                                     </p>
                                 </div>
 
@@ -778,14 +843,16 @@
                                     @endif
                                     {{-- Google Wallet Button --}}
                                     @if ($google_wallet_details->wallet_link != null)
-                                        <div class="flex justify-center mt-6">                                        
-                                            <a href="{{ $google_wallet_details->wallet_link }}" class="w-full lg:w-1/2" target="_blank" rel="noopener noreferrer">
-                                                <img src="{{ url()->to('/') . '/img/google-wallet-btn.png'}}" alt="" class="w-full object-cover">
+                                        <div class="flex justify-center mt-6">
+                                            <a href="{{ $google_wallet_details->wallet_link }}"
+                                                class="w-full lg:w-1/2" target="_blank" rel="noopener noreferrer">
+                                                <img src="{{ url()->to('/') . '/img/google-wallet-btn.png' }}"
+                                                    alt="" class="w-full object-cover">
                                             </a>
                                         </div>
-                                    @endif                                    
+                                    @endif
                                 </div>
-                            @endif 
+                            @endif
                         @endif
                         <!-- End Google Wallet section -->
 
@@ -794,7 +861,8 @@
                             @if ($business_card_details->enquiry_email != null)
 
                                 <div class="bg-pink-700 w-full mt-4 mb-4 flex justify-center align-middle py-2">
-                                    <p class="heading font-black text-white text-xl px-4 py-2">{{ __($business_card_details->contact_form_title) }}
+                                    <p class="heading font-black text-white text-xl px-4 py-2">
+                                        {{ __($business_card_details->contact_form_title) }}
                                     </p>
                                 </div>
 
@@ -852,9 +920,11 @@
                                                     <textarea class="w-full h-20 font-semibold bg-gray-100 rounded outline-none" type="text"
                                                         placeholder="{{ __('Message') }} *" name="message" required></textarea>
                                                 </div>
-                                                    
+
                                                 {{-- ReCaptcha --}}
-                                                @include('templates.includes.recaptcha', ['recaptchaId' => 'recaptcha-one'])
+                                                @include('templates.includes.recaptcha', [
+                                                    'recaptchaId' => 'recaptcha-one',
+                                                ])
 
                                                 <div class="text-center">
                                                     <button
@@ -939,7 +1009,8 @@
 
                                 {{-- Download vCard --}}
                                 <li class="flex items-center cursor-pointer">
-                                    <a href="{{ config('app.url') }}/download/{{ $business_card_details->card_id }}">
+                                    <a
+                                        href="{{ config('app.url') }}/download/{{ $business_card_details->card_id }}">
                                         <div
                                             class="flex justify-center items-center content-center bg-pink-700 h-16 w-16 rounded-full fill-current text-white">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
@@ -1186,7 +1257,7 @@
                     {{-- Check Newsletter --}}
                     @if (!empty($business_card_details->is_newsletter_pop_active) && $business_card_details->is_newsletter_pop_active == 1)
                         @include('templates.includes.old_theme_newsletter_modal', [
-                            'primary_color' => 'pink'
+                            'primary_color' => 'pink',
                         ])
                     @endif
                 @endif
@@ -1196,7 +1267,7 @@
                     {{-- Check Information Popup --}}
                     @if (!empty($business_card_details->is_info_pop_active) && $business_card_details->is_info_pop_active == 1)
                         @include('templates.includes.old_theme_information_popup_modal', [
-                            'primary_color' => 'pink'
+                            'primary_color' => 'pink',
                         ])
                     @endif
                 @endif
@@ -1225,7 +1296,9 @@
 
                         <!-- Modal Content -->
                         <div class="mt-6 space-y-4">
-                            <form action="{{ config('app.url') }}/check-password/{{ $business_card_details->card_id }}" method="post">
+                            <form
+                                action="{{ config('app.url') }}/check-password/{{ $business_card_details->card_id }}"
+                                method="post">
                                 @csrf
                                 <p class="text-lg mt-2 mb-4 text-gray-600">{{ __('Enter your vcard password') }}:</p>
                                 <div class="flex">
@@ -1273,7 +1346,37 @@
     <script src="{{ url('js/flatpickr.min.js') }}"></script>
 
     {{-- Flatpickr JS --}}
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/{{ app()->getLocale() }}.js"></script>
+    @php
+        $flatpickrLocales = [
+            'pt_BR' => 'pt',
+            'zh' => 'zh',
+            'ar' => 'ar',
+            'bg' => 'bg',
+            'hr' => 'hr',
+            'nl' => 'nl',
+            'fr' => 'fr',
+            'de' => 'de',
+            'he' => 'he',
+            'hu' => 'hu',
+            'id' => 'id',
+            'it' => 'it',
+            'ja' => 'ja',
+            'lt' => 'lt',
+            'ms' => 'ms',
+            'pl' => 'pl',
+            'ro' => 'ro',
+            'ru' => 'ru',
+            'es' => 'es',
+            'sv' => 'sv',
+            'th' => 'th',
+            'tr' => 'tr',
+            'vi' => 'vn',
+        ];
+
+        $locale = $flatpickrLocales[app()->getLocale()] ?? 'en';
+    @endphp
+
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/{{ $locale }}.js"></script>
     @php
         if (isset($service_booking_details) && $service_booking_details->service_booking == 1) {
             $service_booking_available_days = json_decode($service_booking_details->service_booking_available_days);
@@ -1306,7 +1409,7 @@
             flatpickr("#appointment-date", {
                 dateFormat: "Y-m-d",
                 minDate: "today",
-                locale: "{{ app()->getLocale() }}",
+                locale: "{{ $locale }}",
                 disable: [
                     function(date) {
                         const day = date.toLocaleString("en-us", {
@@ -1328,7 +1431,7 @@
             flatpickr("#service_start_date", {
                 dateFormat: "Y-m-d",
                 minDate: "today",
-                locale: "{{ app()->getLocale() }}",
+                locale: "{{ $locale }}",
                 disable: [
                     function(date) {
                         return !allowedDays.includes(date.getDay());
@@ -1339,21 +1442,21 @@
             flatpickr("#service_end_date", {
                 dateFormat: "Y-m-d",
                 minDate: "today",
-                locale: "{{ app()->getLocale() }}",
+                locale: "{{ $locale }}",
                 disable: [
                     function(date) {
                         return !allowedDays.includes(date.getDay());
                     }
                 ],
-            });        
-            
+            });
+
             // Flatpickr timepicker
             flatpickr(".timepicker", {
                 enableTime: true,
                 noCalendar: true,
-                dateFormat: "H:i",   // only HH:MM
-                time_24hr: true      // force 24-hour, drop AM/PM
-            });    
+                dateFormat: "H:i", // only HH:MM
+                time_24hr: true // force 24-hour, drop AM/PM
+            });
         });
     </script>
 
@@ -1402,45 +1505,48 @@
 
             // Send data via fetch
             fetch("{{ config('app.url') }}/book-service", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify(formData)
-            })
-            .then(async response => {
-                const data = await response.json();
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify(formData)
+                })
+                .then(async response => {
+                    const data = await response.json();
 
-                console.log(data);
+                    console.log(data);
 
-                if (data.success) {
-                    // Reset form
-                    ['customer_name', 'customer_email', 'customer_phone', 'no_of_persons', 'customer_address', 'customer_notes', 'service_start_date', 'service_start_time', 'service_end_date', 'service_end_time']
-                    .forEach(id => {
-                        document.getElementById(id).value = '';
-                    });
+                    if (data.success) {
+                        // Reset form
+                        ['customer_name', 'customer_email', 'customer_phone', 'no_of_persons', 'customer_address',
+                            'customer_notes', 'service_start_date', 'service_start_time', 'service_end_date',
+                            'service_end_time'
+                        ]
+                        .forEach(id => {
+                            document.getElementById(id).value = '';
+                        });
 
-                    errorMessage1.classList.add('hidden');
-                    successMessage1.classList.remove('hidden');
-                    successMessage1.innerHTML = data.message || 'Your service has been successfully booked!';
-                } else {
+                        errorMessage1.classList.add('hidden');
+                        successMessage1.classList.remove('hidden');
+                        successMessage1.innerHTML = data.message || 'Your service has been successfully booked!';
+                    } else {
+                        successMessage1.classList.add('hidden');
+                        errorMessage1.classList.remove('hidden');
+                        errorMessage1.innerHTML = data.message || 'Something went wrong';
+                    }
+                })
+                .catch(error => {
                     successMessage1.classList.add('hidden');
                     errorMessage1.classList.remove('hidden');
                     errorMessage1.innerHTML = data.message || 'Something went wrong';
-                }
-            })
-            .catch(error => {
-                successMessage1.classList.add('hidden');
-                errorMessage1.classList.remove('hidden');
-                errorMessage1.innerHTML = data.message || 'Something went wrong';
-            });
+                });
         }
-        
+
         // Toggle the modal visibility
         function toggleModal() {
             "use strict";
-            
+
             const modal = document.getElementById('appointmentModal');
             modal.classList.toggle('hidden');
         }
@@ -1448,7 +1554,7 @@
         // Validate appointment date and time slot
         function validateAndShowModal() {
             "use strict";
-            
+
             const appointmentDate = document.getElementById('appointment-date').value;
             const timeSlotSelect = document.getElementById('time-slot-select').value;
             const errorMessage = document.getElementById('errorMessage');
@@ -1467,7 +1573,7 @@
         // Handle form submission
         document.getElementById('appointmentForm').addEventListener('submit', function(event) {
             "use strict";
-            
+
             event.preventDefault();
 
             const button = document.getElementById('bookAppointmentButton');
@@ -1504,20 +1610,20 @@
             };
 
             // Conditionally add reCAPTCHA response
-            @if(env('RECAPTCHA_ENABLE') == 'on')
+            @if (env('RECAPTCHA_ENABLE') == 'on')
                 formData.g_recaptcha_response = grecaptcha.getResponse(window.recaptchaWidgets['recaptcha-two']);
             @endif
 
             // Send data to Laravel route using fetch API
             fetch("{{ config('app.url') }}/book-appointment", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}' // Include CSRF token for security
-                },
-                body: JSON.stringify(formData)
-            })
-            .then(async response => {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}' // Include CSRF token for security
+                    },
+                    body: JSON.stringify(formData)
+                })
+                .then(async response => {
                     const data = await response.json();
 
                     if (response.ok) {
@@ -1558,65 +1664,66 @@
                         errorSubmitMessage.innerHTML = data.message || 'Something went wrong';
                         toggleModal();
                     }
-                button.disabled = false;
-                button.innerHTML = `{{ __('Book Appointment') }}`;
-            })
-            .catch(error => {
-                console.error('Request failed:', error);
-                toggleModal();
+                    button.disabled = false;
+                    button.innerHTML = `{{ __('Book Appointment') }}`;
+                })
+                .catch(error => {
+                    console.error('Request failed:', error);
+                    toggleModal();
 
-                button.disabled = false;
-                button.innerHTML = `{{ __('Book Appointment') }}`;
-            });
+                    button.disabled = false;
+                    button.innerHTML = `{{ __('Book Appointment') }}`;
+                });
         });
     </script>
 
     <script>
-        function generateOption(selectedDate, day) 
-        {
+        function generateOption(selectedDate, day) {
             "use strict";
-            
-            fetch('/get-available-time-slots', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                },
-                body: JSON.stringify({
-                    card: `{{ $business_card_details->card_id }}`,
-                    choose_date: selectedDate,
-                    day: day
-                })
-            }).then(response => response.json())
-            .then(data => {
-                // Check response
-                if (data.success == true) {
-                    // Set available time slots in select option
-                    document.getElementById('time-slot-select').innerHTML = `<option value="">{{ __('Select a time slot') }}`;
-                    // Available time slots in JSON.parse(data.available_time_slots)
-                    var available_time_slots = JSON.parse(data.available_time_slots);
-                    
-                    available_time_slots.forEach(time_slot => {
-                        document.getElementById('time-slot-select').innerHTML += `<option value="${time_slot}">${time_slot}</option>`;
-                    });
 
-                    // Set price
-                    const priceElement = document.getElementById('price');
-                    priceElement.value = data.price;
-                }
-            });
+            fetch('/get-available-time-slots', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    body: JSON.stringify({
+                        card: `{{ $business_card_details->card_id }}`,
+                        choose_date: selectedDate,
+                        day: day
+                    })
+                }).then(response => response.json())
+                .then(data => {
+                    // Check response
+                    if (data.success == true) {
+                        // Set available time slots in select option
+                        document.getElementById('time-slot-select').innerHTML =
+                            `<option value="">{{ __('Select a time slot') }}`;
+                        // Available time slots in JSON.parse(data.available_time_slots)
+                        var available_time_slots = JSON.parse(data.available_time_slots);
+
+                        available_time_slots.forEach(time_slot => {
+                            document.getElementById('time-slot-select').innerHTML +=
+                                `<option value="${time_slot}">${time_slot}</option>`;
+                        });
+
+                        // Set price
+                        const priceElement = document.getElementById('price');
+                        priceElement.value = data.price;
+                    }
+                });
         }
     </script>
 
     {{-- Custom JS --}}
     @yield('custom-js')
 
-    
+
 
     <script>
         function sendVcard() {
             "use strict";
-            
+
             var phone_number = $('#phone_number').val();
             window.open('https://api.whatsapp.com/send/?phone=' + phone_number + '&text=' + `{{ $shareContent }}`,
                 '_blank');

@@ -1,0 +1,97 @@
+/* GoBiz vCard SaaS
+|--------------------------------------------------------------------------
+| Developed by NativeCode © 2021 - https://nativecode.in
+| All rights reserved
+| Unauthorized distribution is prohibited
+|--------------------------------------------------------------------------
+*/
+
+.card:has(.table-responsive) {
+    border: rgba(var(--tblr-primary-rgb), 0.15) 1px solid !important;
+    border-radius: var(--tblr-border-radius-lg);
+}
+
+/* DataTables responsive layout and styling */
+.dataTables_wrapper {
+    padding: 0;
+}
+
+.dataTables_filter {
+    padding: 1rem 1.25rem 0.5rem 1.25rem;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.dataTables_filter label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0;
+    color: var(--tblr-muted);
+    font-weight: 500;
+}
+
+.dataTables_filter input {
+    border: 1.5px solid var(--tblr-border-color);
+    border-radius: var(--tblr-border-radius);
+    padding: 0.45rem 0.85rem;
+    font-size: 0.875rem;
+    background-color: var(--tblr-bg-forms);
+    color: var(--tblr-body-color);
+    min-width: 240px;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.dataTables_filter input:focus {
+    border-color: var(--tblr-primary) !important;
+    background-color: var(--tblr-bg-surface) !important;
+    box-shadow: 0 0 0 0.25rem rgba(var(--tblr-primary-rgb), 0.15) !important;
+    outline: 0;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 767.98px) {
+    .dataTables_filter {
+        justify-content: center;
+        padding: 1rem;
+    }
+
+    .dataTables_filter label,
+    .dataTables_filter input {
+        width: 100%;
+    }
+
+    div.dataTables_wrapper div.dataTables_paginate {
+        display: flex !important;
+        justify-content: center !important;
+        flex-wrap: wrap !important;
+        margin-top: 0.75rem !important;
+    }
+}
+
+/* Category modal upload box styling */
+.category-upload-dropzone {
+    border: 1.5px dashed var(--tblr-border-color);
+    border-radius: var(--tblr-border-radius);
+    padding: 1rem;
+    text-align: center;
+    background-color: var(--tblr-bg-surface-secondary);
+    transition: all 0.2s ease;
+}
+
+.category-upload-dropzone:hover {
+    border-color: var(--tblr-primary);
+    background-color: var(--tblr-primary-lt);
+}
+
+.input-icon {
+    width: 100% !important;
+}
+
+@media (max-width: 575.98px) {
+    .modal-dialog {
+        margin-top: 10vh;
+    }
+}

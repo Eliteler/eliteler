@@ -9,20 +9,23 @@
  | Unauthorized distribution is prohibited
  |--------------------------------------------------------------------------
 */
+
 namespace App\Http\Controllers\Admin;
 
 use App\Currency;
+use App\Helpers\StorageHelper;
 use App\Http\Controllers\Controller;
 use App\Setting;
 use DateTimeZone;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Inertia\Inertia;
 
 class SettingsController extends Controller
 {
@@ -36,137 +39,194 @@ class SettingsController extends Controller
         $this->middleware('auth');
     }
 
-    /**
-     * Show the application dashboard.
-     *
-     * @return \Illuminate\Contracts\Support\Renderable
-     */
+    /** Config keys saved by the general settings form. */
+    private const GENERAL_KEYS = [
+        'show_website',
+        'website_redirect_url',
+        'registration_page',
+        'timezone',
+        'default_language',
+        'date_time_format',
+        'currency',
+        'currency_format_type',
+        'currency_decimals_place',
+        'share_content',
+        'site_name',
+        'activate_plan_during_registeration',
+    ];
 
-    // Setting
+    private const CURRENCY_FORMATS = ['1,234,567.89', '12,34,567.89', '1.234.567,89', '1 234 567,89', "1'234'567.89"];
+
+    private const LOGO_EXTENSIONS = ['jpeg', 'jpg', 'png', 'gif', 'svg', 'webp'];
+
+    // General settings
     public function settings()
     {
-        // Queries
-        $timezonelist = DateTimeZone::listIdentifiers(DateTimeZone::ALL);
-        $currencies   = Currency::where('status', 1)->get();
-        $settings     = Setting::first();
-        $config       = DB::table('config')->get();    
+        $config   = DB::table('config')->whereIn('config_key', self::GENERAL_KEYS)->pluck('config_value', 'config_key');
+        $settings = Setting::first();
 
-        $image_limit = [
-            'SIZE_LIMIT' => env('SIZE_LIMIT', ''),
-        ];
-        $settings['image_limit'] = $image_limit;
-
-        // Get all languages from the config
-        $languages = config('app.languages');
-
-        // Define all languages as selected (or you can replace this with any subset of languages)
-        $selectedLanguages = array_keys($languages); // This will make all languages selected
-
-        // Get the default language 
-        $defaultLanguage = config('app.locale');
-
-        return view('admin.pages.settings.index', compact('settings', 'timezonelist', 'currencies', 'config', 'languages', 'selectedLanguages', 'defaultLanguage'));
+        return Inertia::render('settings/general', [
+            'values' => [
+                'site_name'               => (string) ($config['site_name'] ?? ''),
+                'show_website'            => ($config['show_website'] ?? 'yes') === 'yes',
+                'website_redirect_url'    => (string) ($config['website_redirect_url'] ?? ''),
+                // config value "0" means sign-ups are open
+                'allow_registration'      => ($config['registration_page'] ?? '0') === '0',
+                'free_plan_on_signup'     => ($config['activate_plan_during_registeration'] ?? '0') === '1',
+                'timezone'                => (string) ($config['timezone'] ?? config('app.timezone')),
+                'date_time_format'        => (string) ($config['date_time_format'] ?? ''),
+                'default_language'        => (string) ($config['default_language'] ?? config('app.locale')),
+                'languages'               => array_keys(config('app.languages', [])),
+                'currency'                => (string) ($config['currency'] ?? ''),
+                'currency_format'         => (string) ($config['currency_format_type'] ?? self::CURRENCY_FORMATS[0]),
+                'currency_decimals_place' => (string) ($config['currency_decimals_place'] ?? '2'),
+                'image_limit'             => (string) env('SIZE_LIMIT', 2048),
+                'share_content'           => (string) ($config['share_content'] ?? ''),
+            ],
+            'images' => [
+                'logo'      => $settings?->site_logo ? asset($settings->site_logo) : null,
+                'logoLight' => ($light = $this->lightLogoPath()) ? asset('img/' . basename($light)) . '?v=' . filemtime($light) : null,
+                'favicon'   => $settings?->favicon ? asset($settings->favicon) : null,
+            ],
+            'options' => [
+                'timezones'       => DateTimeZone::listIdentifiers(DateTimeZone::ALL),
+                'currencies'      => Currency::where('status', 1)->orderBy('iso_code')->get(['iso_code', 'name', 'symbol'])->map(fn($c) => [
+                    'value' => $c->iso_code,
+                    'label' => $c->iso_code . ' · ' . $c->name,
+                    'hint'  => $c->symbol,
+                ]),
+                'currencyFormats' => self::CURRENCY_FORMATS,
+                'dateFormats'     => collect(getDateTimeFormats())->map(fn($label, $value) => ['value' => (string) $value, 'label' => $label])->values(),
+                'languages'       => collect(config('app.availableLanguages', []))->map(fn($name, $code) => ['value' => (string) $code, 'label' => $name])->values(),
+            ],
+            'maxUploadKb' => (int) env('SIZE_LIMIT', 2048),
+        ]);
     }
 
-    // Update General Setting
+    // Update general settings
     public function changeGeneralSettings(Request $request)
     {
-        // === General Config Updates ===
-        $configUpdates = [
-            'show_website'           => $request->show_website,
-            'registration_page'      => $request->registration_page,
-            'timezone'               => $request->timezone,
-            'default_language'       => $request->default_language,
-            'date_time_format'       => $request->date_time_format,
-            'currency'               => $request->currency,
-            'currency_format_type'   => $request->currency_format,
-            'currency_decimals_place' => $request->currency_decimals_place,
-            'share_content'          => $request->share_content,
-            'site_name'              => $request->site_name,
-            'activate_plan_during_registeration' => $request->activate_plan_during_registeration,
-        ];
+        $image = 'nullable|file|mimes:' . implode(',', self::LOGO_EXTENSIONS) . '|max:' . env('SIZE_LIMIT', 2048);
+        $languages = array_keys(config('app.availableLanguages', []));
 
-        foreach ($configUpdates as $key => $value) {
-            DB::table('config')->where('config_key', $key)->update(['config_value' => $value]);
-        }
- 
-        // === Language Updates ===
-        $this->updateLanguages($request->languages, $request->default_language);
-        app()->setLocale($request->default_language);
-
-        // === Env Updates ===
-        $this->updateEnvFile('TIMEZONE', $request->timezone);
-        $this->updateEnvFile('APP_NAME', '"' . str_replace(["'", '"'], '', $request->app_name) . '"');
-        $this->updateEnvFile('COOKIE_CONSENT_ENABLED', $request->cookie);
-        $this->updateEnvFile('SIZE_LIMIT', $request->image_limit ?? '5120');
-
-        // === Settings Update ===
-        Setting::where('id', 1)->update([
-            'site_name' => $request->site_name,
+        $data = $request->validate([
+            'site_name'               => 'required|string|max:100',
+            'show_website'            => 'required|boolean',
+            'website_redirect_url'    => 'nullable|url|max:500',
+            'allow_registration'      => 'required|boolean',
+            'free_plan_on_signup'     => 'required|boolean',
+            'timezone'                => 'required|timezone',
+            'date_time_format'        => ['required', Rule::in(array_keys(getDateTimeFormats()))],
+            'languages'               => 'required|array|min:1',
+            'languages.*'             => [Rule::in($languages)],
+            'default_language'        => ['required', Rule::in($request->input('languages', []))],
+            'currency'                => ['required', Rule::exists('currencies', 'iso_code')->where('status', 1)],
+            'currency_format'         => ['required', Rule::in(self::CURRENCY_FORMATS)],
+            'currency_decimals_place' => 'required|integer|between:0,4',
+            'image_limit'             => 'required|integer|min:1024|max:1048576',
+            'share_content'           => 'required|string|max:2000',
+            'site_logo'               => $image,
+            'site_logo_light'         => $image,
+            'favi_icon'               => $image,
+        ], [
+            'default_language.in'              => __('The default language must be one of the enabled languages.'),
+        ], [
+            'site_name'               => __('website name'),
+            'website_redirect_url'    => __('redirect URL'),
+            'date_time_format'        => __('date format'),
+            'default_language'        => __('default language'),
+            'currency_format'         => __('number format'),
+            'currency_decimals_place' => __('decimal places'),
+            'image_limit'             => __('upload limit'),
+            'share_content'           => __('share message'),
+            'site_logo'               => __('logo'),
+            'site_logo_light'         => __('logo for dark backgrounds'),
+            'favi_icon'               => __('favicon'),
         ]);
 
-        // === File Uploads ===
-        // Check if logo file is uploaded
+        $showWebsite = $request->boolean('show_website');
+
+        // The redirect must leave this site, otherwise visitors loop back here
+        if (! $showWebsite && ! empty($data['website_redirect_url']) && $this->isSameSite($data['website_redirect_url'])) {
+            return back()->withErrors(['website_redirect_url' => __('Use an address on another website. Pointing to this site would send visitors in a loop.')]);
+        }
+
+        $updates = [
+            'show_website'                       => $showWebsite ? 'yes' : 'no',
+            'website_redirect_url'               => $data['website_redirect_url'] ?? '',
+            'registration_page'                  => $request->boolean('allow_registration') ? '0' : '1',
+            'activate_plan_during_registeration' => $request->boolean('free_plan_on_signup') ? '1' : '0',
+            'timezone'                           => $data['timezone'],
+            'default_language'                   => $data['default_language'],
+            'date_time_format'                   => $data['date_time_format'],
+            'currency'                           => $data['currency'],
+            'currency_format_type'               => $data['currency_format'],
+            'currency_decimals_place'            => (string) $data['currency_decimals_place'],
+            'share_content'                      => $data['share_content'],
+            'site_name'                          => $data['site_name'],
+        ];
+
+        foreach ($updates as $key => $value) {
+            DB::table('config')->where('config_key', $key)->update(['config_value' => $value]);
+        }
+
+        $this->updateLanguages($data['languages'], $data['default_language']);
+
+        $this->updateEnvFile('TIMEZONE', $data['timezone']);
+        $this->updateEnvFile('APP_NAME', '"' . str_replace(["'", '"'], '', $data['site_name']) . '"');
+        $this->updateEnvFile('SIZE_LIMIT', (string) $data['image_limit']);
+
+        $setting = Setting::find(1);
+        $changes = ['site_name' => $data['site_name']];
+
         if ($request->hasFile('site_logo')) {
-            // Validate image
-            $validator = Validator::make($request->all(), [
-                'site_logo' => 'mimes:jpeg,png,jpg,gif,svg|max:' . env('SIZE_LIMIT'),
-            ]);
-
-            if ($validator->fails()) {
-                return back()->with('failed', $validator->messages()->first())->withInput();
-            }
-
-            // Generate filename and path
-            $file = $request->file('site_logo');
-            $fileName = uniqid('logo_') . '.' . $file->getClientOriginalExtension();
-            $path = 'images/web/elements/' . $fileName;
-
-            // Store the file in public disk
-            Storage::disk('public')->put($path, file_get_contents($file));
-
-            // Public URL to access the logo (if needed)
-            $siteLogoUrl = 'storage/' . $path;
-
-            // Update settings
-            Setting::where('id', 1)->update([
-                'site_logo' => $siteLogoUrl,
-            ]);
+            StorageHelper::deleteFile($setting?->site_logo);
+            $changes['site_logo'] = StorageHelper::uploadImage($request->file('site_logo'), 'images/web/elements');
         }
 
-        // logo light
-        if ($request->hasFile('site_logo_light')) {
-            $validator = Validator::make($request->all(), [
-                'site_logo_light' => 'mimes:jpeg,png,jpg,gif,svg|max:' . env('SIZE_LIMIT'),
-            ]);
-
-            if ($validator->fails()) {
-                return back()->with('failed', $validator->messages()->first())->withInput();
-            }
-
-            // Store as a fixed filename, overwrite if exists
-            $site_logo_light = '/img/logo-light.png';
-            $request->site_logo_light->move(public_path('img'), $site_logo_light);
-        }
-
-        // === Favicon ===
         if ($request->hasFile('favi_icon')) {
-            $validator = Validator::make($request->all(), [
-                'favi_icon' => 'mimes:jpeg,png,jpg,gif,svg|max:' . env("SIZE_LIMIT"),
-            ]);
-
-            if ($validator->fails()) {
-                return back()->with('failed', $validator->messages()->first())->withInput();
-            }
-
-            $favi_icon = $this->uploadImage($request->file('favi_icon'));
-
-            Setting::where('id', 1)->update([
-                'favicon' => $favi_icon,
-            ]);
+            StorageHelper::deleteFile($setting?->favicon);
+            $changes['favicon'] = StorageHelper::uploadImage($request->file('favi_icon'), 'images/web/elements');
         }
 
-        return redirect()->route('admin.settings')->with('success', __('Updated!'));
+        Setting::where('id', 1)->update($changes);
+
+        // The logo for dark backgrounds always lives at public/img/logo-light.<ext>
+        if ($request->hasFile('site_logo_light')) {
+            foreach (self::LOGO_EXTENSIONS as $ext) {
+                File::delete(public_path('img/logo-light.' . $ext));
+            }
+            $file = $request->file('site_logo_light');
+            $file->move(public_path('img'), 'logo-light.' . strtolower($file->getClientOriginalExtension()));
+        }
+
+        return back()->with('success', __('Settings saved.'));
+    }
+
+    private function lightLogoPath(): ?string
+    {
+        foreach (self::LOGO_EXTENSIONS as $ext) {
+            if (file_exists($path = public_path('img/logo-light.' . $ext))) {
+                return $path;
+            }
+        }
+
+        return null;
+    }
+
+    private function isSameSite(?string $url): bool
+    {
+        $host = strtolower((string) parse_url((string) $url, PHP_URL_HOST));
+        $hosts = [strtolower(request()->getHost()), strtolower((string) parse_url(url('/'), PHP_URL_HOST))];
+
+        if ($host === '' || in_array($host, $hosts, true)) {
+            return true;
+        }
+
+        // On a local server, localhost and 127.0.0.1 are this site too
+        $local = ['127.0.0.1', 'localhost'];
+
+        return in_array($hosts[0], $local, true) && in_array($host, $local, true);
     }
 
     // Update Custom CSS & Scripts
@@ -183,49 +243,80 @@ class SettingsController extends Controller
     }
 
     // Clear cache
-    public function clearCache()
+    /**
+     * server:   every Laravel cache in one go: application cache, compiled
+     *           services/packages, config, events, routes and compiled views.
+     *           Caches are not rebuilt because the app reads env() outside config files.
+     * browser:  Clear-Site-Data tells this browser to drop its HTTP cache for the site.
+     * sessions: sign everyone out, including the admin who asked.
+     * A plain POST (old Blade sidebar) clears the server cache only.
+     */
+    public function clearCache(Request $request)
     {
-        try {
-            // Clear application cache
-            Cache::flush();
+        $browser = $request->boolean('browser');
+        $sessions = $request->boolean('sessions');
+        $server = $request->boolean('server') || (! $browser && ! $sessions);
 
-            // Clear caches using Artisan
-            Artisan::call('cache:clear');  // Clear application cache
-            Artisan::call('route:clear');  // Clear route cache
-            Artisan::call('config:clear'); // Clear configuration cache
-            Artisan::call('view:clear');   // Clear compiled view files
+        if ($server) {
+            try {
+                Artisan::call('optimize:clear');
+            } catch (\Throwable $e) {
+                report($e);
 
-            // Delete all files in bootstrap/cache except .gitignore
-            $cachePath  = base_path('bootstrap/cache');
-            $cacheFiles = File::files($cachePath);
-            foreach ($cacheFiles as $file) { 
-                if ($file->getFilename() !== '.gitignore') {
-                    File::delete($file);
-                }
+                return back()->with('failed', __('Couldn’t clear the server cache: :error', ['error' => $e->getMessage()]));
             }
-
-            // Delete all files in storage/framework/cache except .gitignore
-            $cachePath  = base_path('storage/framework/cache');
-            $cacheFiles = File::files($cachePath);
-            foreach ($cacheFiles as $file) {
-                if ($file->getFilename() !== '.gitignore') {
-                    File::delete($file);
-                }
-            }
-
-            // Delete all files in storage/framework/views except .gitignore
-            $cachePath  = base_path('storage/framework/views');
-            $cacheFiles = File::files($cachePath);
-            foreach ($cacheFiles as $file) {
-                if ($file->getFilename() !== '.gitignore') {
-                    File::delete($file);
-                }
-            }
-
-            return redirect()->route('admin.dashboard')->with('success', trans('Application Cache Cleared Successfully!'));
-        } catch (\Exception $e) {
-            return redirect()->route('admin.dashboard')->with('failed', trans('Failed to Clear Cache. Due to the following error: ') . ' ' . $e->getMessage());
         }
+
+        if ($sessions) {
+            if (! $this->clearSessions()) {
+                return back()->with('failed', __('Sessions are stored with the “:driver” driver, which can’t be cleared from here.', ['driver' => config('session.driver')]));
+            }
+
+            // Everyone is signed out now: start a clean session and open the login page with a full page load
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            $request->session()->flash('success', __('Cache cleared and everyone has been signed out.'));
+
+            return $this->withClearSiteData(Inertia::location(route('login')), $browser);
+        }
+
+        $message = match (true) {
+            $server && $browser => __('Server and browser cache cleared.'),
+            $browser            => __('Browser cache cleared.'),
+            default             => __('Server cache cleared.'),
+        };
+
+        return $this->withClearSiteData(back()->with('success', $message), $browser);
+    }
+
+    // Delete every stored session (file and database drivers)
+    private function clearSessions(): bool
+    {
+        switch (config('session.driver')) {
+            case 'file':
+                foreach (File::files(config('session.files')) as $file) {
+                    if ($file->getFilename() !== '.gitignore') {
+                        File::delete($file->getPathname());
+                    }
+                }
+
+                return true;
+            case 'database':
+                DB::connection(config('session.connection'))->table(config('session.table'))->delete();
+
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private function withClearSiteData($response, bool $browser)
+    {
+        if ($browser) {
+            $response->headers->set('Clear-Site-Data', '"cache"');
+        }
+
+        return $response;
     }
 
     public function updateEnvFile($key, $value)
@@ -325,50 +416,18 @@ class SettingsController extends Controller
         // Save the updated content back to config/app.php
         file_put_contents($configPath, $configContent);
 
+        // config/app.php changed, so drop cached config (and the rest, as before)
         try {
-            // Clear application cache
-            Cache::flush(); // Clear caches using Artisan
-            Artisan::call('cache:clear');  // Clear application cache
-            Artisan::call('route:clear');  // Clear route cache
-            Artisan::call('config:clear'); // Clear configuration cache
-            Artisan::call('view:clear');   // Clear compiled view files
-
-            // Delete all files in bootstrap/cache except .gitignore
-            $cachePath  = base_path('bootstrap/cache');
-            $cacheFiles = File::files($cachePath);
-            foreach ($cacheFiles as $file) {
-                if ($file->getFilename() !== '.gitignore') {
-                    File::delete($file);
-                }
-            }
-
-            // Delete all files in storage/framework/cache except .gitignore
-            $cachePath  = base_path('storage/framework/cache');
-            $cacheFiles = File::files($cachePath);
-            foreach ($cacheFiles as $file) {
-                if ($file->getFilename() !== '.gitignore') {
-                    File::delete($file);
-                }
-            }
-
-            // Delete all files in storage/framework/views except .gitignore
-            $cachePath  = base_path('storage/framework/views');
-            $cacheFiles = File::files($cachePath);
-            foreach ($cacheFiles as $file) {
-                if ($file->getFilename() !== '.gitignore') {
-                    File::delete($file);
-                }
-            }
-        } catch (\Exception $e) {
+            Artisan::call('optimize:clear');
+        } catch (\Throwable $e) {
+            report($e);
         }
     }
 
     // Helper function to handle file uploads
     function uploadImage($file, $folder = 'images/web/elements')
     {
-        $filename = uniqid() . '.' . $file->getClientOriginalExtension();
-        $path = $folder . '/' . $filename;
-        Storage::disk('public')->put($path, file_get_contents($file));
-        return 'storage/' . $path; // return public URL path
+        // Delegate upload to centralized StorageHelper
+        return StorageHelper::uploadImage($file, $folder);
     }
 }

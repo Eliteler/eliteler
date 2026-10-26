@@ -1,9 +1,10 @@
 @php
-    $shareText = "Hey 👋 have a look at this product 👀 {$productName} 👉 {$productUrl}";
+    $currentProductUrl = $productUrl ?? url()->current();
+    $shareText = "Hey 👋 have a look at this product 👀 {$productName} 👉 {$currentProductUrl}";
     $shareMessage = urlencode($shareText);
- 
+
     // Raw message
-    $rawShareMessage = "Hey! Check out this product: {$productName}. {$productUrl}";
+    $rawShareMessage = "Hey! Check out this product: {$productName}. {$currentProductUrl}";
     $encodedShareMessage = rawurlencode($rawShareMessage);
 @endphp
 
@@ -22,7 +23,7 @@
         </a>
 
         {{-- Telegram --}}
-        <a href="https://t.me/share/url?url={{ $productUrl }}&text={{ $shareMessage }}" target="_blank"
+        <a href="https://t.me/share/url?url={{ $currentProductUrl }}&text={{ $shareMessage }}" target="_blank"
             class="share-icon telegram">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -33,7 +34,7 @@
         </a>
 
         {{-- Facebook --}}
-        <a href="https://www.facebook.com/sharer/sharer.php?u={{ $productUrl }}" target="_blank"
+        <a href="https://www.facebook.com/sharer/sharer.php?u={{ $currentProductUrl }}" target="_blank"
             class="share-icon facebook">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                 fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-brand-facebook">
@@ -56,7 +57,6 @@
             </svg>
         </a>
 
-
         {{-- X --}}
         <a href="https://twitter.com/intent/tweet?text={{ $shareMessage }}" target="_blank" class="share-icon x">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
@@ -68,7 +68,8 @@
         </a>
 
         {{-- Email --}}
-        <a href="mailto:?subject={{ $productName }}&body={{ $shareMessage }}" target="_blank" class="share-icon email">
+        <a href="mailto:?subject={{ rawurlencode($productName) }}&body={{ $shareMessage }}" target="_blank"
+            class="share-icon email">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                 fill="currentColor" class="icon icon-tabler icons-tabler-filled icon-tabler-mail">
                 <path stroke="none" d="M0 0h24v24H0z" fill="none" />
@@ -91,8 +92,8 @@
         </a>
 
         {{-- More Share --}}
-        <a href="javascript:void(0)" class="share-icon more" data-share="{{ $shareMessage }}"
-            onclick="shareProduct('{{ $productName }}', '{{ $productUrl }}')">
+        <a href="javascript:void(0)" class="share-icon more" data-name="{{ $productName }}"
+            data-url="{{ $currentProductUrl }}" onclick="shareProduct(this)">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                 class="icon icon-tabler icons-tabler-outline icon-tabler-share">
@@ -243,7 +244,10 @@
     }
 
     // Share function
-    async function shareProduct(productName, productUrl) {
+    async function shareProduct(el) {
+        const productName = el.getAttribute('data-name') || '';
+        const productUrl = el.getAttribute('data-url') || '';
+
         const shareData = {
             title: productName,
             text: `Check out this ${productName}! 🚀`,

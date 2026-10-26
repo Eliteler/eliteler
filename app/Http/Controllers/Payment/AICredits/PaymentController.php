@@ -54,7 +54,7 @@ class PaymentController extends Controller
             $payment_mode = Gateway::where('payment_gateway_id', $request->payment_gateway_id)->first();
 
             // Get all plugins
-            $plugins = $this->pluginManager->getPlugins();
+            $plugins = $this->pluginManager->active();
 
             // get plugin
             $plugin = collect($plugins)->firstWhere('plugin_id', $payment_mode->plugin_id);
@@ -70,6 +70,10 @@ class PaymentController extends Controller
                 $validator = Validator::make($request->all(), [
                     'billing_name' => 'required',
                     'billing_email' => 'required',
+                    'billing_phone_country_code' => 'required',
+                    'billing_phone' => 'required',
+                    'billing_whatsapp_country_code' => 'required',
+                    'billing_whatsapp' => 'required',
                     'billing_address' => 'required',
                     'billing_city' => 'required',
                     'billing_state' => 'required',
@@ -82,11 +86,14 @@ class PaymentController extends Controller
                 }
 
                 User::where('user_id', Auth::user()->user_id)->update([
-                    'mobile_number' => $request->billing_phone ?? "",
                     'billing_name' => $request->billing_name,
                     'billing_email' => $request->billing_email,
+                    'country_code' => $request->billing_phone_country_code,
+                    'mobile_number' => $request->billing_phone,
+                    'whatsapp_country_code' => $request->billing_whatsapp_country_code,
+                    'whatsapp_number' => $request->billing_whatsapp,
+                    'billing_country_code' => $request->billing_phone_country_code,
                     'billing_phone' => $request->billing_phone ?? "",
-                    'whatsapp_number' => $request->billing_whatsapp ?? "",
                     'billing_address' => $request->billing_address,
                     'billing_city' => $request->billing_city,
                     'billing_state' => $request->billing_state,

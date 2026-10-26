@@ -74,17 +74,18 @@ if (!function_exists('formatIndianNumber')) {
     function formatIndianNumber($amount, $decimals = 2)
     {
         $amount = number_format($amount, $decimals, '.', '');
-        [$int, $dec] = array_pad(explode('.', $amount), 2, '00');
+        [$int, $dec] = array_pad(explode('.', $amount), 2, '');
 
         $last3 = substr($int, -3);
         $rest = substr($int, 0, -3);
+        $fraction = $decimals > 0 ? '.' . $dec : '';
 
         if ($rest !== '') {
             $rest = preg_replace('/\B(?=(\d{2})+(?!\d))/', ',', $rest);
-            return $rest . ',' . $last3 . '.' . $dec;
+            return $rest . ',' . $last3 . $fraction;
         }
 
-        return $last3 . '.' . $dec;
+        return $last3 . $fraction;
     }
 }
 
@@ -98,5 +99,32 @@ if (!function_exists('getConfigData')) {
     function getConfigData($key)
     {
         return GoBizCommonService::singleConfig($key);
+    }
+}
+
+// Whether a plugin is installed and may run (legacy Blade versions stay idle)
+if (!function_exists('plugin_active')) {
+    function plugin_active(string $id): bool
+    {
+        return app(\App\Services\PluginManager::class)->isActive($id);
+    }
+}
+
+// Zapier Helper
+if (!function_exists('zapier_dispatch')) {
+    /**
+     * Safe Zapier Webhook Dispatcher
+     */
+    function zapier_dispatch(string $event, array $payload)
+    {
+        $class = 'Plugins\Zapier\Helpers\ZapierHelper';
+
+        // base_path points accurately to the project root directory
+        $file = base_path('plugins/Zapier/Helpers/ZapierHelper.php');
+
+        // Check if the file physically exists before triggering the autoloader
+        if (plugin_active('Zapier') && file_exists($file) && class_exists($class)) {
+            $class::dispatch($event, $payload);
+        }
     }
 }

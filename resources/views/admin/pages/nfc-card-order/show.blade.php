@@ -1,49 +1,79 @@
-@extends('admin.layouts.index', ['header' => true, 'nav' => true, 'demo' => true])
+@extends('admin.layouts.index', ['header' => true, 'nav' => true, 'demo' => true, 'settings' => $settings])
 
 @section('content')
     <div class="page-wrapper">
-        <!-- Page title -->
+        <!-- Page title header -->
         <div class="page-header d-print-none">
             <div class="container-fluid">
-                <div class="row g-2 align-items-center">
+                <div class="row align-items-center">
+                    <!-- Breadcrumbs -->
+                    <div class="mb-1 ms-0">
+                        <ol class="breadcrumb" aria-label="breadcrumbs">
+                            <li class="breadcrumb-item">
+                                <a href="{{ route('admin.dashboard') }}" class="text-secondary text-decoration-none">
+                                    {{ __('Dashboard') }}
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a href="{{ route('admin.designs') }}" class="text-secondary text-decoration-none">
+                                    {{ __('NFC Sales') }}
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item" aria-current="page">
+                                <a href="{{ route('admin.orders') }}" class="text-secondary text-decoration-none">
+                                    {{ __('Orders') }}
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">
+                                <a href="#">{{ __('Order Details') }}</a>
+                            </li>
+                        </ol>
+                    </div>
                     <div class="col">
-                        <div class="page-pretitle">
-                            {{ __('Overview') }}
-                        </div>
                         <h2 class="page-title">
                             {{ __('NFC Card Order') }}
                         </h2>
+                        <!-- Header Helper Description -->
+                        <div class="text-muted mt-1">
+                            {{ __('View order details, shipping information, payment status, and ordered items.') }}
+                        </div>
                     </div>
                     <div class="col-auto ms-auto d-print-none">
-                        {{-- Update Status --}}
-                        @if ($order->payment_status != 'pending' && $order->payment_status != 'failed')
-                        <a href="{{ route('admin.update.order', $order->nfc_card_order_id) }}" class="btn btn-primary">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-truck">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                <path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
-                                <path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
-                                <path d="M5 17h-2v-11a1 1 0 0 1 1 -1h9v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5" />
-                            </svg>
-                            {{ __('Update Status') }}
-                        </a> 
-                        @endif
-                
-                        {{-- Print --}}
-                        <button type="button" class="btn btn-primary" onclick="javascript:window.print();">
-                            <!-- Download SVG icon from http://tabler.io/icons/icon/printer -->
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round" class="icon icon-1">
-                                <path d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2">
-                                </path>
-                                <path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4"></path>
-                                <path d="M7 13m0 2a2 2 0 0 1 2 -2h6a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2h-6a2 2 0 0 1 -2 -2z">
-                                </path>
-                            </svg>
-                            {{ __('Print') }}
-                        </button>
+                        <div class="btn-list">
+                            {{-- Update Status --}}
+                            @if ($order->payment_status != 'pending' && $order->payment_status != 'failed')
+                                <a href="{{ route('admin.update.order', $order->nfc_card_order_id) }}"
+                                    class="btn btn-primary btn-icon-only d-inline-flex align-items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round"
+                                        class="icon icon-tabler icons-tabler-outline icon-tabler-truck">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                        <path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+                                        <path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+                                        <path d="M5 17h-2v-11a1 1 0 0 1 1 -1h9v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5" />
+                                    </svg>
+                                    <span class="d-none d-sm-inline">{{ __('Update Status') }}</span>
+                                </a>
+                            @endif
+
+                            {{-- Print --}}
+                            <button type="button"
+                                class="btn btn-outline-primary btn-icon-only d-inline-flex align-items-center"
+                                onclick="window.print();">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" class="icon icon-1">
+                                    <path
+                                        d="M17 17h2a2 2 0 0 0 2 -2v-4a2 2 0 0 0 -2 -2h-14a2 2 0 0 0 -2 2v4a2 2 0 0 0 2 2h2">
+                                    </path>
+                                    <path d="M17 9v-4a2 2 0 0 0 -2 -2h-6a2 2 0 0 0 -2 2v4"></path>
+                                    <path d="M7 13m0 2a2 2 0 0 1 2 -2h6a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2h-6a2 2 0 0 1 -2 -2z">
+                                    </path>
+                                </svg>
+                                <span class="d-none d-sm-inline">{{ __('Print') }}</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -63,7 +93,7 @@
                     </div>
                 @endif
 
-                {{-- Failed --}}
+                {{-- Failed alert --}}
                 @if (Session::has('failed'))
                     <div class="alert alert-important alert-danger alert-dismissible mb-2" role="alert">
                         <div class="d-flex">
@@ -75,64 +105,66 @@
                     </div>
                 @endif
 
-                {{-- Order Details --}}
-                <div class="row mt-3">
+                {{-- Order Details (Upgraded to Borderless Shadowed Card Wrapper) --}}
+                <div class="row g-3">
                     <div class="col-12">
-                        <div class="card">
+                        <div class="card border-0 shadow-sm">
                             <div class="card-header">
                                 <h3 class="card-title">{{ __('Order & Delivery Details') }}</h3>
                             </div>
-                            <div class="card-body">
+                            <div class="card-body text-secondary">
                                 <div class="datagrid">
-                                    <div class="datagrid-item mx-3 my-1 d-print-none">
+                                    <div class="datagrid-item d-print-none">
                                         <div class="datagrid-title">{{ __('Payment ID') }}</div>
-                                        <div class="datagrid-content fw-bold">
+                                        <div class="datagrid-content fw-bold text-dark">
                                             {{ $order->nfc_card_order_transaction_id ?? '-' }}
                                         </div>
                                     </div>
-                                    <div class="datagrid-item mx-3 my-1">
+                                    <div class="datagrid-item">
                                         <div class="datagrid-title">{{ __('Order ID') }}</div>
-                                        <div class="datagrid-content fw-bold">{{ $order->nfc_card_order_id ?? '-' }}</div>
+                                        <div class="datagrid-content fw-bold text-dark">
+                                            {{ $order->nfc_card_order_id ?? '-' }}</div>
                                     </div>
-                                    <div class="datagrid-item mx-3 my-1 d-print-none">
+                                    <div class="datagrid-item d-print-none">
                                         <div class="datagrid-title">{{ __('Order Date') }}</div>
-                                        <div class="datagrid-content fw-bold">
+                                        <div class="datagrid-content fw-bold text-dark">
                                             {{ formatDateForUser($order->created_at) }}
                                         </div>
                                     </div>
-                                    <div class="datagrid-item mx-3 my-1 d-print-none">
+                                    <div class="datagrid-item">
                                         <div class="datagrid-title">{{ __('Delivery Status') }}</div>
                                         <div class="datagrid-content fw-bold">
+                                            {{-- Soft-Muted Badge Palette Updates --}}
                                             @if ($order->order_status == 'pending')
-                                                <span class="badge bg-warning text-white text-uppercase">
+                                                <span class="badge bg-slate-100 text-slate-600">
                                                     {{ __('Pending') }}
                                                 </span>
                                             @elseif($order->order_status == 'processing')
-                                                <span class="badge bg-primary text-white text-uppercase">
+                                                <span class="badge bg-slate-100 text-slate-600">
                                                     {{ __('Processing') }}
                                                 </span>
                                             @elseif($order->order_status == 'out for delivery')
-                                                <span class="badge bg-dark text-white text-uppercase">
+                                                <span class="badge bg-slate-100 text-slate-600">
                                                     {{ __('Out for delivery') }}
                                                 </span>
                                             @elseif($order->order_status == 'delivered')
-                                                <span class="badge bg-success text-white text-uppercase">
+                                                <span class="badge bg-green-600 text-green-50">
                                                     {{ __('Delivered') }}
                                                 </span>
                                             @elseif($order->order_status == 'cancelled')
-                                                <span class="badge bg-danger text-white text-uppercase">
+                                                <span class="badge bg-red-100 text-red-700">
                                                     {{ __('Cancelled') }}
                                                 </span>
                                             @elseif($order->order_status == 'hold')
-                                                <span class="badge bg-warning text-white text-uppercase">
+                                                <span class="badge bg-slate-100 text-slate-600">
                                                     {{ __('Hold') }}
                                                 </span>
                                             @elseif($order->order_status == 'shipped')
-                                                <span class="badge bg-success text-white text-uppercase">
+                                                <span class="badge bg-green-600 text-green-50">
                                                     {{ __('Shipped') }}
                                                 </span>
                                             @elseif($order->order_status == 'printing process begun')
-                                                <span class="badge bg-dark text-white text-uppercase">
+                                                <span class="badge bg-slate-100 text-slate-600">
                                                     {{ __('Printing Process Begun') }}
                                                 </span>
                                             @endif
@@ -141,38 +173,38 @@
                                 </div>
 
                                 <div class="datagrid mt-4">
-                                    <div class="datagrid-item mx-3 my-1">
+                                    <div class="datagrid-item">
                                         <div class="datagrid-title">{{ __('Payment Mode') }}</div>
-                                        <div class="datagrid-content fw-bold">
-                                            <span class="badge bg-dark text-white text-uppercase">
+                                        <div class="datagrid-content fw-bold text-dark">
+                                            <span class="badge bg-slate-100 text-slate-600">
                                                 {{ $order->payment_method ?? '-' }}
                                             </span>
                                         </div>
                                     </div>
-                                    <div class="datagrid-item mx-3 my-1">
+                                    <div class="datagrid-item">
                                         <div class="datagrid-title">{{ __('Delivery Partner') }}</div>
-                                        <div class="datagrid-content fw-bold">
+                                        <div class="datagrid-content fw-bold text-dark">
                                             {{ json_decode($order->order_details)->courier_partner ?? '-' }}
                                         </div>
                                     </div>
-                                    <div class="datagrid-item mx-3 my-1">
+                                    <div class="datagrid-item">
                                         <div class="datagrid-title">{{ __('Tracking Number') }}</div>
-                                        <div class="datagrid-content fw-bold">
+                                        <div class="datagrid-content fw-bold text-dark">
                                             {{ json_decode($order->order_details)->tracking_number ?? '-' }}
                                         </div>
                                     </div>
-                                    <div class="datagrid-item mx-3 my-1 d-print-none">
+                                    <div class="datagrid-item d-print-none">
                                         <div class="datagrid-title">{{ __('Delivery Note') }}</div>
-                                        <div class="datagrid-content fw-bold">
+                                        <div class="datagrid-content fw-bold text-dark">
                                             {{ json_decode($order->order_details)->delivery_message ?? '-' }}
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="datagrid mt-4">
-                                    <div class="datagrid-item mx-3 my-1">
+                                <div class="datagrid mt-4 col-12">
+                                    <div class="datagrid-item">
                                         <div class="datagrid-title">{{ __('Billing Address') }}</div>
-                                        <div class="datagrid-content">
+                                        <div class="datagrid-content text-secondary">
                                             @php
                                                 $address = $order->delivery_address
                                                     ? json_decode($order->delivery_address)
@@ -188,70 +220,60 @@
                                                 $type = $address->type ?? '';
                                             @endphp
                                             <span>
-                                                <span class="fw-bold">{{ $billingName }}</span>
+                                                <span class="fw-bold text-dark fs-3">{{ $billingName }}</span>
                                                 <br>
                                                 <a class="fw-bold"
-                                                    href="http://maps.google.com/?q={{ $billingAddress }},{{ $billingCity }},{{ $billingPostcode }},{{ $billingCountry }}"
-                                                    target="_blank">{{ $billingAddress }}, {{ $billingCity }},
-                                                    {{ $billingPostcode }}, {{ $billingCountry }}</a>
+                                                    href="http://maps.google.com/?q={{ $billingAddress }},{{ $billingCity ?? '' }},{{ $billingState ?? '' }}"
+                                                    target="_blank">
+                                                    {{ $billingAddress ?? ($orderDetails['billing_address'] ?? '-') }}
+                                                </a>
                                                 <br>
-                                                {{ __('Phone Number') }} : <span class="fw-bold"><a
+                                                {{ __('Phone Number') }} : <span class="fw-bold text-dark"><a
                                                         href="tel:0{{ $billingPhone }}">{{ $billingPhone }}</a></span>
                                                 <br>
-                                                {{ __('Email') }} : <span class="fw-bold"><a
+                                                {{ __('Email') }} : <span class="fw-bold text-dark"><a
                                                         href="mailto:{{ $billingEmail }}">{{ $billingEmail }}</a></span>
                                                 <br>
-                                                {{ __('VAT Number') }} : <span class="fw-bold">{{ $vatNumber }}
-                                                </span>
+                                                {{ __('VAT Number') }} : <span
+                                                    class="fw-bold text-dark">{{ $vatNumber }}</span>
+                                            </span>
                                         </div>
                                     </div>
 
-                                    <div class="datagrid-item mx-3 my-1">
+                                    <div class="datagrid-item">
                                         <div class="datagrid-title">{{ __('Shipping Address') }}</div>
-                                        <div class="datagrid-content">
-                                            @php
-                                                $address = $order->delivery_address
-                                                    ? json_decode($order->delivery_address)
-                                                    : new stdClass();
-                                                $billingName = $address->billing_name ?? '';
-                                                $billingAddress = $address->billing_address ?? '';
-                                                $billingCity = $address->billing_city ?? '';
-                                                $billingPostcode = $address->billing_zipcode ?? '';
-                                                $billingCountry = $address->billing_country ?? '';
-                                                $billingPhone = $address->billing_phone ?? '';
-                                                $billingEmail = $address->billing_email ?? '';
-                                                $vatNumber = $address->vat_number ?? '';
-                                                $type = $address->type ?? '';
-                                            @endphp
+                                        <div class="datagrid-content text-secondary">
                                             <span>
-                                                <span class="fw-bold">{{ $billingName }}</span>
+                                                <span class="fw-bold text-dark fs-3">{{ $billingName }}</span>
                                                 <br>
                                                 <a class="fw-bold"
                                                     href="http://maps.google.com/?q={{ $billingAddress }},{{ $billingCity }},{{ $billingPostcode }},{{ $billingCountry }}"
                                                     target="_blank">{{ $billingAddress }}, {{ $billingCity }},
                                                     {{ $billingPostcode }}, {{ $billingCountry }}</a>
                                                 <br>
-                                                {{ __('Phone Number') }} : <span class="fw-bold"><a
+                                                {{ __('Phone Number') }} : <span class="fw-bold text-dark"><a
                                                         href="tel:0{{ $billingPhone }}">{{ $billingPhone }}</a></span>
                                                 <br>
-                                                {{ __('Email') }} : <span class="fw-bold"><a
+                                                {{ __('Email') }} : <span class="fw-bold text-dark"><a
                                                         href="mailto:{{ $billingEmail }}">{{ $billingEmail }}</a></span>
                                                 <br>
-                                                {{ __('VAT Number') }} : <span class="fw-bold">{{ $vatNumber }}
+                                                {{ __('VAT Number') }} : <span
+                                                    class="fw-bold text-dark">{{ $vatNumber }}
                                                 </span>
+                                            </span>
                                         </div>
                                     </div>
 
-                                    <div class="datagrid-item mx-3 my-1 d-print-none">
+                                    <div class="datagrid-item d-print-none">
                                         <div class="datagrid-title">{{ __('Delivery Note') }}</div>
-                                        <div class="datagrid-content fw-bold">
+                                        <div class="datagrid-content fw-bold text-dark">
                                             {{ $order->delivery_note ?? '-' }}
                                         </div>
                                     </div>
 
-                                    <div class="datagrid-item mx-3 my-1">
+                                    <div class="datagrid-item">
                                         <div class="datagrid-title">{{ __('Total') }}</div>
-                                        <div class="datagrid-content fw-bold">
+                                        <div class="datagrid-content fw-bold text-dark fs-2">
                                             {{ formatCurrency(json_decode($order->order_details)->invoice_amount) }}
                                         </div>
                                     </div>
@@ -261,10 +283,10 @@
                     </div>
                 </div>
 
-                {{-- Order Items --}}
-                <div class="row mt-3">
+                {{-- Order Items (Upgraded to Borderless Shadowed Card Wrapper) --}}
+                <div class="row g-3 mt-3">
                     <div class="col-12">
-                        <div class="card">
+                        <div class="card border-0 shadow-sm">
                             <div class="card-header">
                                 <h3 class="card-title">{{ __('Order Items') }}</h3>
                             </div>
@@ -291,7 +313,7 @@
                                             <td class="text-end">{{ json_decode($order->order_details)->order_quantity }}
                                             </td>
                                             <td class="text-end">
-                                                {{ formatCurrency(json_decode($order->order_details)->price) }}</td>
+                                                {{ formatCurrency(json_decode($order->order_details)->subtotal) }}
                                         </tr>
                                         <tr>
                                             <td colspan="3" class="strong text-end">{{ __('Subtotal') }}</td>
@@ -345,4 +367,8 @@
         {{-- Footer --}}
         @include('admin.includes.footer')
     </div>
+@endsection
+
+{{-- Custom JS --}}
+@section('scripts')
 @endsection

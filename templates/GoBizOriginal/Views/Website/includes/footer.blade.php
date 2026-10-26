@@ -1,7 +1,7 @@
 @php
     // Settings
     use App\Services\GoBizCommonService;
-    
+
     $setting = GoBizCommonService::settings();
     $pages = GoBizCommonService::templatePageContentAll('GoBizOriginal');
 @endphp
@@ -15,7 +15,7 @@
                 class="w-full md:w-1/2 {{ $pages->where('page_name', 'Custom Page')->where('status', 'active')->isNotEmpty() ? 'lg:w-3/12' : 'lg:w-3/12' }} p-6">
                 <div class="flex flex-col justify-between h-full">
                     <div>
-                        <img class="mb-4" src="{{ asset($settings->site_logo) }}" alt="{{ $settings->site_name }}"
+                        <img class="mb-4" src="{{ asset($settings->site_logo) }}" alt="{{ config('app.name') }}"
                             width="200">
                     </div>
                 </div>
@@ -84,13 +84,13 @@
                                     href="{{ route('nfc.cards') }}">{{ __('NFC Card Ordering') }}</a></li>
                         @endif
                         {{-- Directory Listing --}}
-                        @if (is_dir(base_path('plugins/Directory')))
+                        @if (plugin_active('Directory') && Route::has('directory'))
                             @php
                                 // Directory
                                 $directory_settings = DB::table('directory_settings')->first();
                             @endphp
 
-                            @if ($directory_settings->directory == 1)
+                            @if ($directory_settings && $directory_settings->directory == 1)
                                 <li class="mb-4"><a
                                         class="font-heading font-medium text-base text-gray-900 hover:text-gray-700"
                                         href="{{ route('directory') }}">{{ __('Directory Listing') }}</a></li>

@@ -1,8 +1,24 @@
 @php
     // Page content
     use App\Services\GoBizCommonService;
+    use App\NfcCardKey;
 
     $config = GoBizCommonService::config();
+
+    // NFC key
+    $nfcKey = request()->route('id');
+
+    // NFC key details
+    $key = NfcCardKey::where('unqiue_key', $nfcKey)->first();
+
+    $register_url = route('register');
+    $login_url = route('login');
+
+    if ($key && !empty($key->associated_plan_id) && $key->key_status === 'active') {
+        // Append NFC reference to URLs
+        $register_url = route('register', ['nfc_ref' => $nfcKey]);
+        $login_url = route('login', ['nfc_ref' => $nfcKey]);
+    }
 @endphp
 
 <!DOCTYPE html>
@@ -17,7 +33,6 @@
 </head>
 
 <body class="bg-gray-100 flex items-center justify-center min-h-screen">
-
     {{-- Not Found Page --}}
     <section class="text-center px-6">
         <div class="max-w-lg mx-auto">
@@ -40,13 +55,20 @@
                 {{ __($description) }}
             </p>
 
-            <a href="{{ route('user.manage.nfc.cards') }}"
+            {{-- {{ route('user.manage.nfc.cards') }} --}}
+
+            <a href="{{ $register_url }}"
                 class="inline-block px-6 py-3 text-sm font-medium text-white bg-{{ $template_config->template_color }}-500 rounded-md hover:bg-{{ $template_config->template_color }}-600">
-                {{ __('Login & Link') }}
+                {{ __('Register & Link') }}
             </a>
+
+            <p class="text-gray-500 text-base mt-4">
+                <span>{{ __('Already have an account?') }}</span>
+                <a class="hover:text-gray-800 hover:font-medium hover:underline"
+                    href="{{ $login_url }}">{{ __('Login now') }}</a>
+            </p>
         </div>
     </section>
-
 </body>
 
 </html>

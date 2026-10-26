@@ -35,7 +35,6 @@ use App\Http\Controllers\Admin\GroupController;
 use App\Http\Controllers\Admin\InAppPurchasesController;
 use App\Http\Controllers\Admin\MailgunController;
 use App\Http\Controllers\Admin\MaintenanceController;
-use App\Http\Controllers\Admin\MarketingCustomerController;
 use App\Http\Controllers\Admin\NfcCardDesignController;
 use App\Http\Controllers\Admin\NfcCardKeyGenerationController;
 use App\Http\Controllers\Admin\NfcCardOrderController;
@@ -199,6 +198,7 @@ use App\Http\Controllers\User\VerificationController;
 use App\Http\Controllers\User\VisitorController;
 use App\Http\Controllers\WebsiteNFCCardOrderController;
 use App\Http\Controllers\WebToolsController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -232,19 +232,70 @@ Route::group(['middleware' => 'Installer'], function () {
     $templatesPath = base_path('templates');
 
     if (File::exists($pluginsPath)) {
-        foreach (File::directories($pluginsPath) as $plugin) {
-            $routeFile = $plugin . '/routes.php';
-            if (File::exists($routeFile)) {
-                require_once $routeFile;
+        $pluginManager = app(\App\Services\PluginManager::class);
+
+        // Every plugin keeps serving its routes, but a legacy (Blade admin)
+        // plugin's admin pages show the "new version available" page
+        foreach ($pluginManager->active() as $plugin) {
+            $routeFile = $plugin['path'] . '/routes.php';
+            if (! File::exists($routeFile)) {
+                continue;
+            }
+
+            $before = count(Route::getRoutes()->getRoutes());
+            require_once $routeFile;
+
+            if ($plugin['legacy']) {
+                foreach (array_slice(Route::getRoutes()->getRoutes(), $before) as $route) {
+                    if (in_array('GET', $route->methods(), true) && str_starts_with($route->uri(), 'admin/')) {
+                        $route->setAction(array_merge($route->getAction(), [
+                            'uses'       => PluginController::class . '@updateRequired',
+                            'controller' => PluginController::class . '@updateRequired',
+                        ]))->defaults('plugin', $plugin['plugin_id']);
+                    }
+                }
+            }
+        }
+
+        // A legacy plugin whose routes don't define its old settings URL
+        // (plugin.json main_route) shows the "new version available" page
+        // instead of a 404. The URL follows the route name (admin.plugin.x →
+        // admin/plugin/x), as plugins do.
+        foreach ($pluginManager->getPlugins() as $plugin) {
+            if ($plugin['legacy'] && ! empty($plugin['main_route']) && ! Route::has($plugin['main_route'])) {
+                Route::middleware(['auth', 'admin', 'user.page.permission:plugins'])
+                    ->get(str_replace('.', '/', $plugin['main_route']), [PluginController::class, 'updateRequired'])
+                    ->defaults('plugin', $plugin['plugin_id'])
+                    ->name($plugin['main_route']);
             }
         }
     }
 
     if (File::exists($templatesPath)) {
+        // Every template keeps serving the public website, but a legacy (Blade
+        // admin) template's admin pages show the "new version available" page
+        $legacyTemplates = collect(app(\App\Services\TemplateManager::class)->getTemplates())
+            ->filter(fn ($template) => $template['legacy'])
+            ->keyBy(fn ($template) => realpath($template['path']));
+
         foreach (File::directories($templatesPath) as $template) {
             $routeFile = $template . '/routes.php';
-            if (File::exists($routeFile)) {
-                require_once $routeFile;
+            if (! File::exists($routeFile)) {
+                continue;
+            }
+
+            $before = count(Route::getRoutes()->getRoutes());
+            require_once $routeFile;
+
+            if ($legacy = $legacyTemplates->get(realpath($template))) {
+                foreach (array_slice(Route::getRoutes()->getRoutes(), $before) as $route) {
+                    if (in_array('GET', $route->methods(), true) && str_starts_with($route->uri(), 'admin/')) {
+                        $route->setAction(array_merge($route->getAction(), [
+                            'uses'       => WebTemplateController::class . '@updateRequired',
+                            'controller' => WebTemplateController::class . '@updateRequired',
+                        ]))->defaults('template', $legacy['template_id']);
+                    }
+                }
             }
         }
     }
@@ -265,10 +316,11 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::get('about-us', [HomeController::class, 'about'])->name('about');
         Route::get('contact-us', [HomeController::class, 'contact'])->name('contact');
         Route::post('sent-mail', [HomeController::class, 'sentMail'])->name('sent.mail');
-        Route::get('support', [HomeController::class, 'support'])->name('support');
+        // Route::get('support', [HomeController::class, 'support'])->name('support');
         Route::get('privacy-policy', [HomeController::class, 'privacyPolicy'])->name('privacy.policy');
         Route::get('terms-and-conditions', [HomeController::class, 'termsAndConditions'])->name('terms.and.conditions');
         Route::get('refund-policy', [HomeController::class, 'refundPolicy'])->name('refund.policy');
+        Route::get('cookie-policy', [HomeController::class, 'cookiePolicy'])->name('cookie.policy');
 
         Route::get('maintenance', [HomeController::class, 'maintenance'])->name('maintenance');
 
@@ -345,6 +397,9 @@ Route::group(['middleware' => 'Installer'], function () {
 
         // NFC Card Order System
         Route::get('nfc-cards', [WebsiteNFCCardOrderController::class, 'index'])->name('nfc.cards');
+
+        // Service Worker
+        Route::get('/generate-service-worker', [ProfileController::class, 'generateServiceWorker'])->name('generate.service.worker');
     });
 
     Route::group(['as' => 'admin.', 'prefix' => 'admin', 'namespace' => 'Admin', 'middleware' => ['auth', 'admin', 'frame.destroyer', 'twofactor', 'scriptsanitizer'], 'where' => ['locale' => '[a-zA-Z]{2}']], function () {
@@ -354,30 +409,17 @@ Route::group(['middleware' => 'Installer'], function () {
         // Dashboard
         Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-        Route::get('sales/filter', [DashboardController::class, 'salesFilter'])->name('sales.filter');
-        Route::get('users/filter', [DashboardController::class, 'usersFilter'])->name('users.filter');
-        Route::get('overview/filter', [DashboardController::class, 'overviewFilter'])->name('overview.filter');
 
         // Themes
         Route::get('themes/{status}', [ThemeController::class, 'themes'])->name('themes')->middleware('user.page.permission:themes');
-        Route::get('active-themes', [ThemeController::class, 'activeThemes'])->name('active.themes')->middleware(['user.page.permission:themes', 'demo.mode']);
-        Route::get('disabled-themes', [ThemeController::class, 'disabledThemes'])->name('disabled.themes')->middleware(['user.page.permission:themes', 'demo.mode']);
         Route::get('edit-theme/{id}', [ThemeController::class, 'editTheme'])->name('edit.theme')->middleware('user.page.permission:themes');
         Route::post('update-theme', [ThemeController::class, 'updateTheme'])->name('update.theme')->middleware(['user.page.permission:themes', 'demo.mode']);
-        Route::get('update-theme-status', [ThemeController::class, 'updateThemeStatus'])->name('update.theme.status')->middleware(['user.page.permission:themes', 'demo.mode']);
-        Route::get('search/{status}', [ThemeController::class, 'searchTheme'])->name('search.theme')->middleware(['user.page.permission:themes', 'demo.mode']);
+        Route::post('update-theme-status', [ThemeController::class, 'updateThemeStatus'])->name('update.theme.status')->middleware(['user.page.permission:themes', 'demo.mode']);
 
-        // Business Card Intros
-        Route::get('business-card-intros', [BusinessCardIntrosController::class, 'index'])->name('business-card-intros');
-        Route::get('business-card-intros/edit/{id}', [BusinessCardIntrosController::class, 'edit'])->name('edit.business-card-intro');
-        Route::post('business-card-intros/update/{id}', [BusinessCardIntrosController::class, 'update'])->name('update.business-card-intro');
-        Route::get('business-card-intros/status/{id}', [BusinessCardIntrosController::class, 'status'])->name('business-card-intro.status');
-
-        // Add CSS and JS in Themes
-        Route::get('add-theme-css/{id}', [ThemeController::class, 'addThemeCss'])->name('add.theme.css')->middleware(['user.page.permission:themes', 'demo.mode']);
-        Route::post('update-theme-css', [ThemeController::class, 'updateThemeCss'])->name('update.theme.css')->middleware(['user.page.permission:themes', 'demo.mode']);
-        Route::get('add-theme-js/{id}', [ThemeController::class, 'addThemeJs'])->name('add.theme.js')->middleware(['user.page.permission:themes', 'demo.mode']);
-        Route::post('update-theme-js', [ThemeController::class, 'updateThemeJs'])->name('update.theme.js')->middleware(['user.page.permission:themes', 'demo.mode']);
+        // Business card intros
+        Route::get('business-card-intros', [BusinessCardIntrosController::class, 'index'])->name('business-card-intros')->middleware('user.page.permission:business_card_intros');
+        Route::post('business-card-intros/update/{id}', [BusinessCardIntrosController::class, 'update'])->name('update.business-card-intro')->middleware(['user.page.permission:business_card_intros', 'demo.mode']);
+        Route::post('business-card-intros/status/{id}', [BusinessCardIntrosController::class, 'status'])->name('business-card-intro.status')->middleware(['user.page.permission:business_card_intros', 'demo.mode']);
 
         // Create vCard / Store
         Route::get('create-vcard-store/{id}', [AdminCreateStoreController::class, 'CreateStore'])->name('create.vcard.store')->middleware('user.page.permission:vcard_store');
@@ -390,32 +432,22 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::post('save-plan', [PlanController::class, 'savePlan'])->name('save.plan')->middleware(['user.page.permission:plans', 'demo.mode']);
         Route::get('edit-plan/{id}', [PlanController::class, 'editPlan'])->name('edit.plan')->middleware('user.page.permission:plans');
         Route::post('update-plan', [PlanController::class, 'updatePlan'])->name('update.plan')->middleware(['user.page.permission:plans', 'demo.mode']);
-        Route::get('status-plan', [PlanController::class, 'statusPlan'])->name('status.plan')->middleware(['user.page.permission:plans', 'demo.mode']);
-        Route::get('delete-plan', [PlanController::class, 'deletePlan'])->name('delete.plan')->middleware(['user.page.permission:plans', 'demo.mode']);
+        Route::post('status-plan', [PlanController::class, 'statusPlan'])->name('status.plan')->middleware(['user.page.permission:plans', 'demo.mode']);
+        Route::post('delete-plan', [PlanController::class, 'deletePlan'])->name('delete.plan')->middleware(['user.page.permission:plans', 'demo.mode']);
 
         // Customers
         Route::get('customers/{status}', [CustomerController::class, 'customers'])->name('customers')->middleware('user.page.permission:customers');
+        Route::get('customer-search', [CustomerController::class, 'search'])->name('customers.search')->middleware('user.page.permission:customers');
+        Route::get('view-customer/{id}', [CustomerController::class, 'viewCustomer'])->name('view.customer')->middleware('user.page.permission:customers');
         Route::get('edit-customer/{id}', [CustomerController::class, 'editCustomer'])->name('edit.customer')->middleware('user.page.permission:customers');
         Route::post('update-customer', [CustomerController::class, 'updateCustomer'])->name('update.customer')->middleware(['user.page.permission:customers', 'demo.mode']);
-        Route::get('view-customer/{id}', [CustomerController::class, 'viewCustomer'])->name('view.customer')->middleware('user.page.permission:customers');
         Route::get('change-customer-plan/{id}', [CustomerController::class, 'ChangeCustomerPlan'])->name('change.customer.plan')->middleware('user.page.permission:customers');
         Route::post('update-customer-plan', [CustomerController::class, 'UpdateCustomerPlan'])->name('update.customer.plan')->middleware(['user.page.permission:customers', 'demo.mode']);
-        Route::get('update-status', [CustomerController::class, 'updateStatus'])->name('update.status')->middleware(['user.page.permission:customers', 'demo.mode']);
-        Route::get('delete-customer', [CustomerController::class, 'deleteCustomer'])->name('delete.customer')->middleware(['user.page.permission:customers', 'demo.mode']);
+        Route::post('update-status', [CustomerController::class, 'updateStatus'])->name('update.status')->middleware(['user.page.permission:customers', 'demo.mode']);
+        Route::post('customer-verified', [CustomerController::class, 'customerVerified'])->name('customer.verified')->middleware(['user.page.permission:customers', 'demo.mode']);
+        Route::post('undelete-customer', [CustomerController::class, 'undeleteCustomer'])->name('undelete.customer')->middleware(['user.page.permission:customers', 'demo.mode']);
+        Route::post('delete-customer', [CustomerController::class, 'deleteCustomer'])->name('delete.customer')->middleware(['user.page.permission:customers', 'demo.mode']);
         Route::get('login-as/{id}', [CustomerController::class, 'authAs'])->name('login-as.customer')->middleware('user.page.permission:customers');
-
-        // Unverified Customers
-        Route::get('unverified/customers', [CustomerController::class, 'unverifiedCustomers'])->name('unverified.customers')->middleware('user.page.permission:customers');
-
-        // Banned Customers
-        Route::get('banned/customers', [CustomerController::class, 'bannedCustomers'])->name('banned.customers')->middleware('user.page.permission:customers');
-
-        // Customer verified / unverified / banned
-        Route::get('customer-verified', [CustomerController::class, 'customerVerified'])->name('customer.verified')->middleware(['user.page.permission:customers']);
-
-        // Deleted Customers
-        Route::get('deleted/customers', [CustomerController::class, 'deletedCustomers'])->name('deleted.customers')->middleware('user.page.permission:customers');
-        Route::get('undelete-customer', [CustomerController::class, 'undeleteCustomer'])->name('undelete.customer')->middleware(['user.page.permission:customers', 'demo.mode']);
 
         // Create Customer
         Route::get('create-customer', [CreateCustomerController::class, 'createCustomer'])->name('create.customer')->middleware('user.page.permission:customers');
@@ -431,14 +463,11 @@ Route::group(['middleware' => 'Installer'], function () {
         // Payment Gateways
         Route::get('payment-methods', [PaymentMethodController::class, 'paymentMethods'])->name('payment.methods')->middleware('user.page.permission:payment_methods');
         Route::get('add-payment-method', [PaymentMethodController::class, 'addPaymentMethod'])->name('add.payment.method')->middleware('user.page.permission:payment_methods');
-        Route::post('save-payment-method', [PaymentMethodController::class, 'savePaymentMethod'])->name('save.payment.method')->middleware(['user.page.permission:payment_methods', 'demo.mode']);
         Route::get('edit-payment-method/{id}', [PaymentMethodController::class, 'editPaymentMethod'])->name('edit.payment.method')->middleware('user.page.permission:payment_methods');
-        Route::post('update-payment-method', [PaymentMethodController::class, 'updatePaymentMethod'])->name('update.payment.method')->middleware(['user.page.permission:payment_methods', 'demo.mode']);
-        Route::get('delete-payment-method', [PaymentMethodController::class, 'deletePaymentMethod'])->name('delete.payment.method')->middleware(['user.page.permission:payment_methods', 'demo.mode']);
-
-        // Payment Configuration
         Route::get('configure-payment-method/{id}', [PaymentSettingController::class, 'configurePaymentMethod'])->name('configure.payment')->middleware('user.page.permission:payment_methods');
-        Route::post('update-payment-configuration/{id}', [PaymentSettingController::class, 'updatePaymentConfiguration'])->name('update.payment.configuration')->middleware(['user.page.permission:payment_methods', 'demo.mode']);
+        Route::post('update-payment-method/{id}', [PaymentMethodController::class, 'updatePaymentMethod'])->name('update.payment.method')->middleware(['user.page.permission:payment_methods', 'demo.mode']);
+        Route::post('delete-payment-method', [PaymentMethodController::class, 'statusPaymentMethod'])->name('delete.payment.method')->middleware(['user.page.permission:payment_methods', 'demo.mode']);
+        Route::post('test-payment-connection/{id}', [PaymentSettingController::class, 'testPaymentConnection'])->name('test.payment.connection')->middleware(['user.page.permission:payment_methods', 'demo.mode']);
 
         // Coupons
         Route::get('coupons', [CouponsController::class, 'indexCoupons'])->name('coupons')->middleware('user.page.permission:coupons');
@@ -447,26 +476,25 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::get('statistics-coupon/{id}', [CouponsController::class, 'statisticsCoupon'])->name('statistics.coupon')->middleware('user.page.permission:coupons');
         Route::get('edit-coupon/{id}', [CouponsController::class, 'editCoupon'])->name('edit.coupon')->middleware('user.page.permission:coupons');
         Route::post('update-coupon/{id}', [CouponsController::class, 'updateCoupon'])->name('update.coupon')->middleware(['user.page.permission:coupons', 'demo.mode']);
-        Route::get('update-coupon-status', [CouponsController::class, 'updateCouponStatus'])->name('update.coupon.status')->middleware(['user.page.permission:coupons', 'demo.mode']);
-        Route::get('delete-coupon', [CouponsController::class, 'deleteCoupon'])->name('delete.coupon')->middleware(['user.page.permission:coupons', 'demo.mode']);
+        Route::post('update-coupon-status', [CouponsController::class, 'updateCouponStatus'])->name('update.coupon.status')->middleware(['user.page.permission:coupons', 'demo.mode']);
+        Route::post('delete-coupon', [CouponsController::class, 'deleteCoupon'])->name('delete.coupon')->middleware(['user.page.permission:coupons', 'demo.mode']);
 
         // Check coupon code exists
         Route::post('coupons/code-exists', [CouponsController::class, 'codeExists'])->name('coupons.code.exists')->middleware(['user.page.permission:coupons', 'demo.mode']);
 
         // Transactions
-        Route::get('online/paid/transactions', [TransactionsController::class, 'onlinePaidTransactions'])->name('online.paid.transactions')->middleware('user.page.permission:transactions');
-        Route::get('online/unpaid/transactions', [TransactionsController::class, 'onlineUnpaidTransactions'])->name('online.unpaid.transactions')->middleware('user.page.permission:transactions');
-        Route::get('transaction-status/{id}/{status}', [TransactionsController::class, 'transactionStatus'])->name('trans.status')->middleware(['user.page.permission:transactions', 'demo.mode']);
-        Route::get('offline/paid/transactions', [TransactionsController::class, 'offlinePaidTransactions'])->name('offline.paid.transactions')->middleware('user.page.permission:transactions');
-        Route::get('offline/unpaid/transactions', [TransactionsController::class, 'offlineUnpaidTransactions'])->name('offline.unpaid.transactions')->middleware('user.page.permission:transactions');
-        Route::get('offline-transaction-status/{id}/{status}', [TransactionsController::class, 'offlineTransactionStatus'])->name('offline.trans.status')->middleware(['user.page.permission:transactions', 'demo.mode']);
+        Route::get('transactions', [TransactionsController::class, 'index'])->name('transactions.index')->middleware('user.page.permission:transactions');
+        Route::post('transaction-status/{id}/{status}', [TransactionsController::class, 'transactionStatus'])->name('trans.status')->middleware(['user.page.permission:transactions', 'demo.mode']);
+        Route::post('offline-transaction-status/{id}/{status}', [TransactionsController::class, 'offlineTransactionStatus'])->name('offline.trans.status')->middleware(['user.page.permission:transactions', 'demo.mode']);
         Route::get('view-invoice/{id}', [TransactionsController::class, 'viewInvoice'])->name('view.invoice')->middleware('user.page.permission:transactions');
 
         // Currencies
         Route::get('currencies', [CurrencyController::class, 'currencies'])->name('currencies')->middleware('user.page.permission:currencies');
+        Route::get('create-currency', [CurrencyController::class, 'createCurrency'])->name('create.currency')->middleware('user.page.permission:currencies');
+        Route::post('save-currency', [CurrencyController::class, 'saveCurrency'])->name('save.currency')->middleware(['user.page.permission:currencies', 'demo.mode']);
         Route::get('edit-currency/{id}', [CurrencyController::class, 'editCurrency'])->name('edit.currency')->middleware('user.page.permission:currencies');
         Route::post('update-currency', [CurrencyController::class, 'updateCurrency'])->name('update.currency')->middleware(['user.page.permission:currencies', 'demo.mode']);
-        Route::get('delete-currency', [CurrencyController::class, 'deleteCurrency'])->name('delete.currency')->middleware('user.page.permission:currencies');
+        Route::post('delete-currency', [CurrencyController::class, 'deleteCurrency'])->name('delete.currency')->middleware(['user.page.permission:currencies', 'demo.mode']);
 
         // Users
         Route::get('users', [UserController::class, 'users'])->name('users')->middleware('user.page.permission:users');
@@ -475,19 +503,17 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::get('view-user/{id}', [UserController::class, 'viewUser'])->name('view.user')->middleware('user.page.permission:users');
         Route::get('edit-user/{id}', [UserController::class, 'editUser'])->name('edit.user')->middleware('user.page.permission:users');
         Route::post('update-user', [UserController::class, 'updateUser'])->name('update.user')->middleware(['user.page.permission:users', 'demo.mode']);
-        Route::get('update-user-status', [UserController::class, 'updateUserStatus'])->name('update.user.status')->middleware(['user.page.permission:users', 'demo.mode']);
-        Route::get('delete-user', [UserController::class, 'deleteUser'])->name('delete.user')->middleware(['user.page.permission:users', 'demo.mode']);
-        Route::get('login-as-user/{id}', [UserController::class, 'authAsUser'])->name('login-as.user')->middleware('user.page.permission:users');
+        Route::post('update-user-status', [UserController::class, 'updateUserStatus'])->name('update.user.status')->middleware(['user.page.permission:users', 'demo.mode']);
+        Route::post('delete-user', [UserController::class, 'deleteUser'])->name('delete.user')->middleware(['user.page.permission:users', 'demo.mode']);
+        Route::post('login-as-user/{id}', [UserController::class, 'authAsUser'])->name('login-as.user')->middleware(['user.page.permission:users', 'demo.mode']);
 
         // Custom domains
         Route::get('custom-domain-requests/{status}', [CustomDomainRequestsController::class, 'customDomainRequests'])->name('custom.domain.requests')->middleware('user.page.permission:custom_domain');
-        Route::get('approved-custom-domain', [CustomDomainRequestsController::class, 'approvedCustomDomain'])->name('approved.custom.domain')->middleware(['user.page.permission:custom_domain']);
-        Route::get('rejected-custom-domain', [CustomDomainRequestsController::class, 'rejectedCustomDomain'])->name('rejected.custom.domain')->middleware(['user.page.permission:custom_domain']);
 
         // Update custom domain status
-        Route::get('process-custom-domain-requests', [CustomDomainRequestsController::class, 'processCustomDomainRequests'])->name('process.custom.domain.requests')->middleware('user.page.permission:custom_domain');
-        Route::get('approved-custom-domain-requests', [CustomDomainRequestsController::class, 'approvedCustomDomainRequests'])->name('approved.custom.domain.requests')->middleware(['user.page.permission:custom_domain', 'demo.mode']);
-        Route::get('rejected-custom-domain-requests', [CustomDomainRequestsController::class, 'rejectedCustomDomainRequests'])->name('rejected.custom.domain.requests')->middleware(['user.page.permission:custom_domain', 'demo.mode']);
+        Route::post('process-custom-domain-requests', [CustomDomainRequestsController::class, 'processCustomDomainRequests'])->name('process.custom.domain.requests')->middleware(['user.page.permission:custom_domain', 'demo.mode']);
+        Route::post('approved-custom-domain-requests', [CustomDomainRequestsController::class, 'approvedCustomDomainRequests'])->name('approved.custom.domain.requests')->middleware(['user.page.permission:custom_domain', 'demo.mode']);
+        Route::post('rejected-custom-domain-requests', [CustomDomainRequestsController::class, 'rejectedCustomDomainRequests'])->name('rejected.custom.domain.requests')->middleware(['user.page.permission:custom_domain', 'demo.mode']);
 
         // Account Setting
         Route::get('account', [AccountController::class, 'account'])->name('account');
@@ -503,7 +529,8 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::get('web-templates', [WebTemplateController::class, "index"])->name('web-templates')->middleware('user.page.permission:web_templates');
         Route::delete('/web-template/{templateName}', [WebTemplateController::class, 'deleteTemplate'])->name('web-template.delete')->middleware(['user.page.permission:web_templates', 'demo.mode']);
         Route::post('web-template/upload', [WebTemplateController::class, 'upload'])->name('web-template.upload')->middleware(['user.page.permission:web_templates', 'demo.mode']);
-        Route::get('web-template/activate/{template_id}', [WebTemplateController::class, 'activateTemplate'])->name('web-template.activate')->middleware(['user.page.permission:web_templates', 'demo.mode']);
+        Route::post('web-template/activate/{template_id}', [WebTemplateController::class, 'activateTemplate'])->name('web-template.activate')->middleware(['user.page.permission:web_templates', 'demo.mode']);
+        Route::get('web-template/{id}/update-required', [WebTemplateController::class, 'updateRequired'])->name('web-template.update-required')->middleware('user.page.permission:web_templates');
 
         // Blogs Categories
         Route::get('blog-categories', [BlogCategoryController::class, "index"])->name('blog.categories')->middleware('user.page.permission:blogs');
@@ -511,7 +538,7 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::post('publish-blog-category', [BlogCategoryController::class, "publishBlogCategory"])->name('publish.blog.category')->middleware(['user.page.permission:blogs', 'demo.mode']);
         Route::get('edit-blog-category/{id}', [BlogCategoryController::class, "editBlogCategory"])->name('edit.blog.category')->middleware('user.page.permission:blogs');
         Route::post('update-blog-category/{id}', [BlogCategoryController::class, "updateBlogCategory"])->name('update.blog.category')->middleware(['user.page.permission:blogs', 'demo.mode']);
-        Route::get('action-blog-category', [BlogCategoryController::class, "actionBlogCategory"])->name('action.blog.category')->middleware(['user.page.permission:blogs', 'demo.mode']);
+        Route::post('action-blog-category', [BlogCategoryController::class, "actionBlogCategory"])->name('action.blog.category')->middleware(['user.page.permission:blogs', 'demo.mode']);
 
         // Marketing Campaigns
         Route::get('marketing/campaigns', [CampaignController::class, 'index'])->name('marketing.campaigns')->middleware('user.page.permission:marketing');
@@ -519,8 +546,8 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::post('marketing/campaigns/save', [CampaignController::class, 'saveCampaign'])->name('marketing.campaigns.save')->middleware(['user.page.permission:marketing', 'demo.mode']);
         Route::get('marketing/campaigns/recampaign', [CampaignController::class, 'recampaign'])->name('marketing.campaigns.recampaign')->middleware('user.page.permission:marketing');
         Route::post('marketing/campaigns/resend', [CampaignController::class, 'resendCampaign'])->name('marketing.campaigns.resend')->middleware(['user.page.permission:marketing', 'demo.mode']);
-        Route::get('marketing/campaigns/status', [CampaignController::class, 'statusCampaign'])->name('marketing.campaigns.status')->middleware(['user.page.permission:marketing', 'demo.mode']);
-        Route::get('marketing/campaigns/delete', [CampaignController::class, 'deleteCampaign'])->name('marketing.campaigns.delete')->middleware(['user.page.permission:marketing', 'demo.mode']);
+        Route::post('marketing/campaigns/status', [CampaignController::class, 'statusCampaign'])->name('marketing.campaigns.status')->middleware(['user.page.permission:marketing', 'demo.mode']);
+        Route::post('marketing/campaigns/delete', [CampaignController::class, 'deleteCampaign'])->name('marketing.campaigns.delete')->middleware(['user.page.permission:marketing', 'demo.mode']);
 
         // Marketing Groups
         Route::get('marketing/groups', [GroupController::class, 'index'])->name('marketing.groups')->middleware('user.page.permission:marketing');
@@ -529,10 +556,10 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::get('marketing/groups/view/{id}', [GroupController::class, 'viewGroup'])->name('marketing.groups.view')->middleware('user.page.permission:marketing');
         Route::get('marketing/groups/edit/{id}', [GroupController::class, 'editGroup'])->name('marketing.groups.edit')->middleware('user.page.permission:marketing');
         Route::post('marketing/groups/update/{id}', [GroupController::class, 'updateGroup'])->name('marketing.groups.update')->middleware(['user.page.permission:marketing', 'demo.mode']);
-        Route::get('marketing/groups/delete', [GroupController::class, 'deleteGroup'])->name('marketing.groups.delete')->middleware(['user.page.permission:marketing', 'demo.mode']);
+        Route::post('marketing/groups/delete', [GroupController::class, 'deleteGroup'])->name('marketing.groups.delete')->middleware(['user.page.permission:marketing', 'demo.mode']);
 
         // Marketing Customers
-        Route::get('marketing/customers', [MarketingCustomerController::class, 'index'])->name('marketing.customers')->middleware('user.page.permission:marketing');
+        Route::redirect('marketing/customers', '/admin/customers/all')->name('marketing.customers');
 
         // Marketing MailGun configuration
         Route::get('marketing/mailgun', [MailgunController::class, 'index'])->name('marketing.mailgun')->middleware('user.page.permission:marketing');
@@ -552,41 +579,37 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::post('nfc-card/save-design', [NfcCardDesignController::class, "store"])->name('save.design')->middleware(['user.page.permission:nfc_card_design', 'demo.mode']);
         Route::get('nfc-card/edit-design/{id}', [NfcCardDesignController::class, "edit"])->name('edit.design')->middleware('user.page.permission:nfc_card_design');
         Route::post('nfc-card/update-design', [NfcCardDesignController::class, "update"])->name('update.design')->middleware(['user.page.permission:nfc_card_design', 'demo.mode']);
-        Route::get('nfc-card/action-design', [NfcCardDesignController::class, "action"])->name('action.design')->middleware(['user.page.permission:nfc_card_design', 'demo.mode']);
+        Route::post('nfc-card/update-design-stock', [NfcCardDesignController::class, "updateStock"])->name('update.design.stock')->middleware(['user.page.permission:nfc_card_design', 'demo.mode']);
+        Route::post('nfc-card/action-design', [NfcCardDesignController::class, "action"])->name('action.design')->middleware(['user.page.permission:nfc_card_design', 'demo.mode']);
 
-        // Manage NFC Card Orders
+        // NFC card orders
         Route::get('nfc-card/orders', [NfcCardOrderController::class, 'index'])->name('orders')->middleware('user.page.permission:nfc_card_orders');
         Route::get('nfc-card/order/{order}', [NfcCardOrderController::class, 'show'])->name('order.show')->middleware('user.page.permission:nfc_card_orders');
-        Route::get('nfc-card/write-in-nfc-card/{order}', [NfcCardOrderController::class, 'writeToNfcCard'])->name('write.to.nfc.card')->middleware(['user.page.permission:nfc_card_orders', 'demo.mode']);
+        Route::get('nfc-card/write-in-nfc-card/{order}', [NfcCardOrderController::class, 'writeToNfcCard'])->name('write.to.nfc.card')->middleware(['user.page.permission:nfc_card_orders']);
+        Route::post('nfc-card/write-in-nfc-card/{order}', [NfcCardOrderController::class, 'generateKeys'])->name('generate.nfc.keys')->middleware(['user.page.permission:nfc_card_orders', 'demo.mode']);
         Route::get('nfc-card/update-order/{order}', [NfcCardOrderController::class, 'updateOrder'])->name('update.order')->middleware(['user.page.permission:nfc_card_orders']);
         Route::post('nfc-card/updated', [NfcCardOrderController::class, 'updatedOrder'])->name('updated.order')->middleware(['user.page.permission:nfc_card_orders', 'demo.mode']);
+        Route::get('nfc-card/greeting-letter/{order}', [NfcCardOrderController::class, 'greetingLetter'])->name('greeting.letter')->middleware(['user.page.permission:nfc_card_orders']);
+        Route::post('nfc-card/send-greeting-letter/{key}', [NfcCardOrderController::class, 'sendGreetingLetter'])->name('send.greeting.letter')->middleware(['user.page.permission:nfc_card_orders', 'demo.mode']);
 
-        // Greeting Letter
-        Route::get('nfc-card/greeting-letter/{order}', [NfcCardOrderController::class, 'greetingLetter'])->name('greeting.letter')->middleware(['user.page.permission:nfc_card_orders', 'demo.mode']);
-        Route::post('nfc-card/update-greeting-letter/{order}', [NfcCardOrderController::class, 'updateGreetingLetter'])->name('update.greeting.letter')->middleware(['user.page.permission:nfc_card_orders', 'demo.mode'])->withoutMiddleware('scriptsanitizer');
-
-        // NFC Card Order Transaction
+        // NFC card payments
         Route::get('nfc-card/transactions', [NfcCardOrderTransactionController::class, 'index'])->name('transactions')->middleware('user.page.permission:nfc_card_order_transactions');
         Route::get('nfc-card/transaction/{transaction}', [NfcCardOrderTransactionController::class, 'show'])->name('transaction.show')->middleware('user.page.permission:nfc_card_order_transactions');
-        Route::post('nfc-card/transaction/{transaction}', [NfcCardOrderTransactionController::class, 'update'])->name('transaction.update')->middleware(['user.page.permission:nfc_card_order_transactions', 'demo.mode']);
-        Route::get('nfc-card/view-transaction/{transaction}', [NfcCardOrderTransactionController::class, 'view'])->name('view.transaction')->middleware(['user.page.permission:nfc_card_order_transactions', 'demo.mode']);
-        Route::get('nfc-card/action-transaction', [NfcCardOrderTransactionController::class, 'action'])->name('action.transaction')->middleware(['user.page.permission:nfc_card_order_transactions', 'demo.mode']);
+        Route::post('nfc-card/action-transaction', [NfcCardOrderTransactionController::class, 'action'])->name('action.transaction')->middleware(['user.page.permission:nfc_card_order_transactions', 'demo.mode']);
 
-        // NFC Card Key Generation
+        // NFC activation keys
         Route::get('nfc-card/key-generations', [NfcCardKeyGenerationController::class, 'index'])->name('key.generations')->middleware('user.page.permission:nfc_card_key_generations');
         Route::get('nfc-card/create-key-generation', [NfcCardKeyGenerationController::class, 'create'])->name('create.key.generation')->middleware('user.page.permission:nfc_card_key_generations');
         Route::post('nfc-card/save-key-generation', [NfcCardKeyGenerationController::class, 'store'])->name('save.key.generation')->middleware(['user.page.permission:nfc_card_key_generations', 'demo.mode']);
-        Route::get('nfc-card/link-key/{id}', [NfcCardKeyGenerationController::class, 'link'])->name('link.key')->middleware(['user.page.permission:nfc_card_key_generations', 'demo.mode']);
+        Route::get('nfc-card/link-key/{id}', [NfcCardKeyGenerationController::class, 'link'])->name('link.key')->middleware(['user.page.permission:nfc_card_key_generations']);
         Route::post('nfc-card/update-link-key', [NfcCardKeyGenerationController::class, 'updateLinkKey'])->name('update.link.key')->middleware(['user.page.permission:nfc_card_key_generations', 'demo.mode']);
-        Route::get('nfc-card/action-key-generation', [NfcCardKeyGenerationController::class, 'action'])->name('action.key.generation')->middleware(['user.page.permission:nfc_card_key_generations', 'demo.mode']);
-        Route::get('nfc-card/delete-key/', [NfcCardKeyGenerationController::class, 'delete'])->name('delete.key')->middleware(['user.page.permission:nfc_card_key_generations', 'demo.mode']);
+        Route::post('nfc-card/action-key-generation', [NfcCardKeyGenerationController::class, 'action'])->name('action.key.generation')->middleware(['user.page.permission:nfc_card_key_generations', 'demo.mode']);
+        Route::post('nfc-card/delete-key', [NfcCardKeyGenerationController::class, 'delete'])->name('delete.key')->middleware(['user.page.permission:nfc_card_key_generations', 'demo.mode']);
+        Route::get('nfc-card/key-write-to-nfc-card/{key}', [NfcCardKeyGenerationController::class, 'keyWriteToNfcCard'])->name('key.write.to.nfc.card')->middleware(['user.page.permission:nfc_card_key_generations']);
 
-        // Write to NFC Card (Key Generation)
-        Route::get('nfc-card/key-write-to-nfc-card/{key}', [NfcCardKeyGenerationController::class, 'keyWriteToNfcCard'])->name('key.write.to.nfc.card')->middleware(['user.page.permission:nfc_card_orders', 'demo.mode']);
-
-        // Greeting Letter (Key Generation)
-        Route::get('nfc-card/key-greeting-letter/{key}', [NfcCardKeyGenerationController::class, 'keyGreetingLetter'])->name('key.greeting.letter')->middleware(['user.page.permission:nfc_card_orders', 'demo.mode']);
-        Route::post('nfc-card/update-key-greeting-letter/{key}', [NfcCardKeyGenerationController::class, 'updateKeyGreetingLetter'])->name('update.key.greeting.letter')->middleware(['user.page.permission:nfc_card_orders', 'demo.mode']);
+        // Greeting letter (shared template, shown per key)
+        Route::get('nfc-card/key-greeting-letter/{key}', [NfcCardKeyGenerationController::class, 'keyGreetingLetter'])->name('key.greeting.letter')->middleware(['user.page.permission:nfc_card_orders']);
+        Route::post('nfc-card/update-key-greeting-letter/{key}', [NfcCardKeyGenerationController::class, 'updateKeyGreetingLetter'])->name('update.key.greeting.letter')->middleware(['user.page.permission:nfc_card_orders', 'demo.mode'])->withoutMiddleware('scriptsanitizer');
 
         // AI Credits
         Route::get('ai-credits-plans', [AiCreditsPlanController::class, 'index'])->name('ai.credits.plans')->middleware(['user.page.permission:ai_credits']);
@@ -594,16 +617,16 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::post('ai-credits/save-plan', [AiCreditsPlanController::class, 'savePlan'])->name('save.ai.credits.plan')->middleware(['user.page.permission:ai_credits', 'demo.mode']);
         Route::get('ai-credits/edit-plan/{id}', [AiCreditsPlanController::class, 'editAiCreditsPlan'])->name('edit.ai.credits.plan')->middleware(['user.page.permission:ai_credits']);
         Route::post('ai-credits/update-plan/{id}', [AiCreditsPlanController::class, 'updateAiCreditsPlan'])->name('update.ai.credits.plan')->middleware(['user.page.permission:ai_credits', 'demo.mode']);
-        Route::get('ai-credits/status-plan', [AiCreditsPlanController::class, 'statusAiCreditsPlan'])->name('status.ai.credits.plan')->middleware(['user.page.permission:ai_credits', 'demo.mode']);
-        Route::get('ai-credits/delete-plan', [AiCreditsPlanController::class, 'deleteAiCreditsPlan'])->name('delete.ai.credits.plan')->middleware(['user.page.permission:ai_credits', 'demo.mode']);
+        Route::post('ai-credits/status-plan', [AiCreditsPlanController::class, 'statusAiCreditsPlan'])->name('status.ai.credits.plan')->middleware(['user.page.permission:ai_credits', 'demo.mode']);
+        Route::post('ai-credits/delete-plan', [AiCreditsPlanController::class, 'deleteAiCreditsPlan'])->name('delete.ai.credits.plan')->middleware(['user.page.permission:ai_credits', 'demo.mode']);
 
         // AI Credits Transactions
         Route::get('ai-credits/transactions', [AiCreditsTransactionController::class, 'index'])->name('ai.credits.transactions')->middleware(['user.page.permission:ai_credits']);
         Route::get('ai-credits/transaction/invoice/{id}', [AiCreditsTransactionController::class, 'viewInvoice'])->name('ai.credits.transaction.invoice')->middleware(['user.page.permission:ai_credits']);
-        Route::get('ai-credits/transaction/status/{id}/{status}', [AiCreditsTransactionController::class, 'updateStatus'])->name('ai.credits.transaction.status')->middleware(['user.page.permission:ai_credits', 'demo.mode']);
+        Route::post('ai-credits/transaction/status/{id}/{status}', [AiCreditsTransactionController::class, 'updateStatus'])->name('ai.credits.transaction.status')->middleware(['user.page.permission:ai_credits', 'demo.mode']);
 
         // Get customer cards
-        Route::post('get-customer-cards', [NfcCardKeyGenerationController::class, 'getCustomerCards'])->name('get.customer.cards')->middleware(['user.page.permission:nfc_card_key_generations', 'demo.mode']);
+        Route::post('get-customer-cards', [NfcCardKeyGenerationController::class, 'getCustomerCards'])->name('get.customer.cards')->middleware(['user.page.permission:nfc_card_key_generations']);
 
         // Email Templates (Edit & Update)
         Route::get('email-templates/{id}', [EmailTemplateController::class, 'emailTemplatesIndex'])->name('email.templates.index')->middleware('user.page.permission:email_templates');
@@ -613,6 +636,9 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::get('plugins', [PluginController::class, 'index'])->name('plugins')->middleware('user.page.permission:plugins');
         Route::delete('/plugins/{pluginName}', [PluginController::class, 'deletePlugin'])->name('plugins.delete')->middleware(['user.page.permission:plugins', 'demo.mode']);
         Route::post('plugin/upload', [PluginController::class, 'upload'])->name('plugin.upload')->middleware(['user.page.permission:plugins', 'demo.mode']);
+        Route::get('plugins/{id}/update-required', [PluginController::class, 'updateRequired'])->name('plugin.update-required')->middleware('user.page.permission:plugins');
+        Route::get('plugin-assets/{plugin}/{path}', \App\Http\Controllers\Admin\PluginAssetController::class)->where('path', '.*')->name('plugin.assets');
+        Route::get('template-assets/{plugin}/{path}', \App\Http\Controllers\Admin\PluginAssetController::class)->where('path', '.*')->defaults('base', 'templates')->name('template.assets');
 
         // Blogs
         Route::get('blogs', [AdminBlog::class, "index"])->name('blogs')->middleware('user.page.permission:blogs');
@@ -620,23 +646,23 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::post('publish-blog', [AdminBlog::class, "publishBlog"])->name('publish.blog')->middleware(['user.page.permission:blogs', 'demo.mode']);
         Route::get('edit-blog/{id}', [AdminBlog::class, "editBlog"])->name('edit.blog')->middleware('user.page.permission:blogs');
         Route::post('update-blog/{id}', [AdminBlog::class, "updateBlog"])->name('update.blog')->middleware(['user.page.permission:blogs', 'demo.mode']);
-        Route::get('action-blog', [AdminBlog::class, "actionBlog"])->name('action.blog')->middleware(['user.page.permission:blogs', 'demo.mode']);
+        Route::post('action-blog', [AdminBlog::class, "actionBlog"])->name('action.blog')->middleware(['user.page.permission:blogs', 'demo.mode']);
 
         // Referrals
         Route::get('referrals', [ReferralController::class, 'index'])->name('referrals')->middleware('user.page.permission:referral_system');
 
         // Referral Withdrawal request
-        Route::get('referral-withdrawal-requests', [ReferralWithdrawalRequestController::class, "index"])->name('referral.withdrawal.request')->middleware('user.page.permission:referral_system');
+        Route::get('referral-withdrawal-requests', [ReferralWithdrawalRequestController::class, "index"])->name('referral.withdrawal.request')->middleware(['user.page.permission:referral_system', 'revenue.visible']);
 
         // Withdrawal request accepted / rejected / transfer
-        Route::get('update-withdrawal-request-status', [ReferralWithdrawalRequestController::class, "updateWithdrawalRequestStatus"])->name('update.withdrawal.request.status')->middleware(['user.page.permission:referral_system', 'demo.mode']);
+        Route::post('update-withdrawal-request-status', [ReferralWithdrawalRequestController::class, "updateWithdrawalRequestStatus"])->name('update.withdrawal.request.status')->middleware(['user.page.permission:referral_system', 'demo.mode', 'revenue.visible']);
 
         // Withdrawal request transfer
-        Route::post('transfer-withdrawal-request', [ReferralWithdrawalRequestController::class, "transfer"])->name('transfer.withdrawal.request')->middleware(['user.page.permission:referral_system', 'demo.mode']);
+        Route::post('transfer-withdrawal-request', [ReferralWithdrawalRequestController::class, "transfer"])->name('transfer.withdrawal.request')->middleware(['user.page.permission:referral_system', 'demo.mode', 'revenue.visible']);
 
         // Referral system configuration
-        Route::get('referral-system-configuration', [ReferralSystemConfigurationController::class, "referralSystemConfiguration"])->name('referral.system.configuration')->middleware('user.page.permission:referral_system');
-        Route::post('update-referral-system-configuration', [ReferralSystemConfigurationController::class, "updateReferralSystemConfiguration"])->name('update.referral.system.configuration')->middleware(['user.page.permission:referral_system', 'demo.mode']);
+        Route::get('referral-system-configuration', [ReferralSystemConfigurationController::class, "referralSystemConfiguration"])->name('referral.system.configuration')->middleware(['user.page.permission:referral_system', 'revenue.visible']);
+        Route::post('update-referral-system-configuration', [ReferralSystemConfigurationController::class, "updateReferralSystemConfiguration"])->name('update.referral.system.configuration')->middleware(['user.page.permission:referral_system', 'demo.mode', 'revenue.visible']);
 
         // Settings
         Route::get('settings', [SettingsController::class, 'settings'])->name('settings')->middleware('user.page.permission:general_settings');
@@ -669,16 +695,16 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::get('in-app-purchases', [InAppPurchasesController::class, 'inAppPurchases'])->name('in-app-purchases')->middleware('user.page.permission:in_app_purchases');
 
         // Test Reminder
-        Route::get('cron/test-reminder', [CronJobController::class, 'testReminder'])->name('test.reminder')->middleware('user.page.permission:general_settings');
+        Route::post('cron/test-reminder', [CronJobController::class, 'testReminder'])->name('test.reminder')->middleware(['user.page.permission:general_settings', 'demo.mode']);
 
         // Set cronjob time
         Route::post('cron/set-cronjob-time', [CronJobController::class, 'setCronjobTime'])->name('set.cronjob.time')->middleware(['user.page.permission:general_settings', 'demo.mode']);
 
         // Run cronjob
-        Route::get('cron/run-cronjob', [CronJobController::class, 'runCronjob'])->name('set.cronjob')->middleware(['user.page.permission:general_settings', 'demo.mode']);
+        Route::post('cron/run-cronjob', [CronJobController::class, 'runCronjob'])->name('set.cronjob')->middleware(['user.page.permission:general_settings', 'demo.mode']);
 
         // Clear cache
-        Route::get('clear/cache', [SettingsController::class, 'clearCache'])->name('clear.cache')->middleware(['user.page.permission:general_settings', 'demo.mode']);
+        Route::post('clear/cache', [SettingsController::class, 'clearCache'])->name('clear.cache')->middleware(['user.page.permission:general_settings', 'demo.mode']);
 
         // Generating a sitemap
         Route::get('sitemap', [SitemapController::class, 'index'])->name('sitemap')->middleware(['user.page.permission:sitemap']);
@@ -687,11 +713,10 @@ Route::group(['middleware' => 'Installer'], function () {
         // Backup
         Route::get('backups', [BackupController::class, 'index'])->name('backups')->middleware('user.page.permission:backup');
         Route::get('backups/get-database-backup', [BackupController::class, 'getDatabaseBackup'])->name('get.database.backup')->middleware('user.page.permission:backup');
-        Route::get('backups/create-file-backup', [BackupController::class, 'createFileBackup'])->name('create.file.backup')->middleware(['user.page.permission:backup', 'demo.mode']);
-        Route::get('backups/create-database-backup', [BackupController::class, 'createDatabaseBackup'])->name('create.database.backup')->middleware(['user.page.permission:backup', 'demo.mode']);
+        Route::post('backups/create-file-backup', [BackupController::class, 'createFileBackup'])->name('create.file.backup')->middleware(['user.page.permission:backup', 'demo.mode']);
+        Route::post('backups/create-database-backup', [BackupController::class, 'createDatabaseBackup'])->name('create.database.backup')->middleware(['user.page.permission:backup', 'demo.mode']);
         Route::get('backups/restore-backup', [BackupController::class, 'restore'])->name('backup.restore')->middleware(['user.page.permission:backup', 'demo.mode']);
-        Route::get('backups/download-backup', [BackupController::class, 'download'])->name('backup.download')->middleware(['user.page.permission:backup', 'demo.mode']);
-        Route::get('backups/delete-backup', [BackupController::class, 'delete'])->name('backup.delete')->middleware(['user.page.permission:backup', 'demo.mode']);
+        Route::post('backups/delete-backup', [BackupController::class, 'delete'])->name('backup.delete')->middleware(['user.page.permission:backup', 'demo.mode']);
 
         // Check update
         Route::get('software-update', [UpdateController::class, 'check'])->name('check')->middleware('user.page.permission:software_update');
@@ -708,7 +733,7 @@ Route::group(['middleware' => 'Installer'], function () {
 
         // Business Cards
         Route::get('cards', [CardController::class, 'index'])->name('cards');
-        Route::get('card-status/{id}', [CardController::class, 'cardStatus'])->name('card.status');
+        Route::post('card-status/{id}', [CardController::class, 'cardStatus'])->name('card.status');
 
         // Newsletter
         Route::get('newsletter/{id}', [UserNewsletterController::class, 'index'])->name('newsletter');
@@ -716,7 +741,7 @@ Route::group(['middleware' => 'Installer'], function () {
         // Connect with custom domain
         Route::get('connect-domain/{id}', [ConnectDomainController::class, 'connectDomain'])->name('connect.domain');
         Route::post('new-domain-request', [ConnectDomainController::class, 'newDomainRequest'])->name('new.domain.request');
-        Route::get('unlink-domain', [ConnectDomainController::class, 'unlinkDomain'])->name('unlink.domain');
+        Route::post('unlink-domain', [ConnectDomainController::class, 'unlinkDomain'])->name('unlink.domain');
 
         // Choose Business type
         Route::get('choose-card-type', [CardController::class, 'chooseCardType'])->name('choose.card.type');
@@ -805,17 +830,17 @@ Route::group(['middleware' => 'Installer'], function () {
 
         // Appointments
         Route::get('appointments/{id}', [BookedAppointmentController::class, 'bookedAppointments'])->name('appointments');
-        Route::get('accept-appointment', [BookedAppointmentController::class, 'acceptAppointments'])->name('accept.appointment');
-        Route::get('cancel-appointment', [BookedAppointmentController::class, 'cancelAppointments'])->name('cancel.appointment');
+        Route::post('accept-appointment', [BookedAppointmentController::class, 'acceptAppointments'])->name('accept.appointment');
+        Route::post('cancel-appointment', [BookedAppointmentController::class, 'cancelAppointments'])->name('cancel.appointment');
         Route::post('reschedule-appointment', [BookedAppointmentController::class, 'rescheduleAppointments'])->name('reschedule.appointment');
-        Route::get('complete-appointment', [BookedAppointmentController::class, 'completeAppointments'])->name('complete.appointment');
+        Route::post('complete-appointment', [BookedAppointmentController::class, 'completeAppointments'])->name('complete.appointment');
         Route::get('add-my-google-calendar', [BookedAppointmentController::class, 'addMyGoogleCalendar'])->name('add.my.google.calendar');
 
         // Service Booking
         Route::get('all-service-booking/{id}', [ServiceBookingController::class, 'serviceBooking'])->name('all.service.booking');
-        Route::get('accept-service-booking', [ServiceBookingController::class, 'acceptServiceBooking'])->name('service.booking.accept');
-        Route::get('reject-service-booking', [ServiceBookingController::class, 'rejectServiceBooking'])->name('service.booking.reject');
-        Route::get('complete-service-booking', [ServiceBookingController::class, 'completeServiceBooking'])->name('service.booking.complete');
+        Route::post('accept-service-booking', [ServiceBookingController::class, 'acceptServiceBooking'])->name('service.booking.accept');
+        Route::post('reject-service-booking', [ServiceBookingController::class, 'rejectServiceBooking'])->name('service.booking.reject');
+        Route::post('complete-service-booking', [ServiceBookingController::class, 'completeServiceBooking'])->name('service.booking.complete');
         Route::get('google-calendar', [ServiceBookingController::class, 'ServiceBookingAddMyGoogleCalendar'])->name('service.booking.add.my.google.calendar');
 
         // Edit Business Card
@@ -885,7 +910,7 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::post('update-section-title/{id}', [EditSectionTitleController::class, 'updateSectionTitle'])->name('update.section.title');
 
         // Delete vcard
-        Route::get('delete-card', [CardController::class, 'deleteCard'])->name('delete.card');
+        Route::post('delete-card', [CardController::class, 'deleteCard'])->name('delete.card');
 
         // Business Stores
         Route::get('stores', [StoreController::class, 'index'])->name('stores');
@@ -956,16 +981,19 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::post('store/order/mark-as-paid/{id}', [StoreOrderController::class, 'markAsPaid'])->name('store.order.mark.as.paid');
 
         // Delete store
-        Route::get('delete-store', [StoreController::class, 'deleteStore'])->name('delete.store');
+        Route::post('delete-store', [StoreController::class, 'deleteStore'])->name('delete.store');
 
         // View Preview Business Card
         Route::get('view-preview/{id}', [PreviewController::class, 'index'])->name('view.preview');
 
         // Duplicate
-        Route::get('duplicate', [DuplicateController::class, 'duplicate'])->name('duplicate');
+        Route::post('duplicate', [DuplicateController::class, 'duplicate'])->name('duplicate');
 
         // Business Plans
         Route::get('plans', [UserPlanController::class, 'index'])->name('plans');
+
+        // Activate NFC Plan
+        Route::post('plans/activate-nfc-plan/{nfc_ref}', [UserPlanController::class, 'activateNfcPlan'])->name('activate.nfc.plan');
 
         // AI Credits Plans
         Route::get('ai-credits/plans', [UserAiCreditsPlanController::class, 'index'])->name('ai.credits.plans');
@@ -978,10 +1006,12 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::post('ai-credits/checkout-coupon/{planId}', [AICreditsCheckOutController::class, 'aiCreditsCheckoutCoupon'])->name('ai.credits.checkout.coupon');
 
         // Prepare AI Credits payment
-        Route::post('ai-credits/prepare-payment/{planId}', [AICreditsPaymentController::class, 'preparePayment'])->name('ai.credits.prepare.payment');
+        Route::post('ai-credits/prepare-payment/{planId}', [AICreditsPaymentController::class, 'preparePayment'])->name('ai.credits.prepare.payment')->middleware(['demo.mode']);
 
         // AI Credits Transactions
-        Route::get('ai-credits/transactions', [UserAiCreditsTransactionController::class, 'index'])->name('ai.credits.transactions');
+        Route::get('ai-credits/transactions', function () {
+            return redirect()->route('user.transactions');
+        })->name('ai.credits.transactions');
         Route::get('ai-credits/transaction/invoice/{id}', [UserAiCreditsTransactionController::class, 'viewInvoice'])->name('ai.credits.transaction.invoice');
 
         // Order NFC Cards
@@ -1004,8 +1034,10 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::post('nfc-cards/update-link-key', [ManageNfcCardController::class, 'updateCardLink'])->name('update.card.link')->middleware('demo.mode');
         Route::get('nfc-cards/action-key-generation', [ManageNfcCardController::class, 'action'])->name('action.key.generation')->middleware('demo.mode');
 
-        // Manage NFC cards transactions
-        Route::get('nfc-cards/transactions', [TransactionNfcCardController::class, 'index'])->name('transaction.nfc.cards');
+        // Redirect NFC Card Transactions to Unified Transactions
+        Route::get('nfc-cards/transactions', function () {
+            return redirect()->route('user.transactions');
+        })->name('transaction.nfc.cards');
         Route::get('nfc-cards/transaction/{id}', [TransactionNfcCardController::class, 'viewTransaction'])->name('transaction.nfc.card.view');
         Route::get('nfc-cards/transaction/invoice/{id}', [TransactionNfcCardController::class, 'viewTransactionInvoice'])->name('transaction.nfc.card.view.invoice');
 
@@ -1029,10 +1061,13 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::get('media-data', [MediaController::class, 'getMediaData'])->name('media.data');
         Route::get('add-media', [MediaController::class, 'addMedia'])->name('add.media');
         Route::post('upload-media', [MediaController::class, 'uploadMedia'])->name('upload.media');
-        Route::get('delete-media', [MediaController::class, 'deleteMedia'])->name('media.delete');
+        Route::post('delete-media', [MediaController::class, 'deleteMedia'])->name('media.delete');
 
         // Upload media images
         Route::post('multiple', [MediaController::class, 'multipleImages'])->name('multiple');
+
+        // Bulk delete media images
+        Route::post('media/delete-multiple', [MediaController::class, 'deleteMultipleMedia'])->name('media.delete.multiple');
 
         //Addtional Tootls -> QR Maker
         Route::get('tools/qr-maker', [AdditionalController::class, 'qrMaker'])->name('qr-maker');
@@ -1051,7 +1086,7 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::get('view-invoice/{id}', [userTransactions::class, 'viewInvoice'])->name('view.invoice');
 
         // Cancel Subscription
-        Route::get('cancel-subscription/{subscriptionId}', [UserPlanController::class, 'subscriptionCancel'])->name('cancel.subscription');
+        Route::post('cancel-subscription/{subscriptionId}', [UserPlanController::class, 'subscriptionCancel'])->name('cancel.subscription');
 
         // Billing
         Route::get('billing/{id}', [BillingController::class, 'billing'])->name('billing');
@@ -1077,7 +1112,8 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::get('update-settings', [userAccount::class, 'updateSettings'])->name('update.settings')->middleware(['demo.mode']);
 
         // Delete Account
-        Route::get('delete-account', [userAccount::class, 'deleteAccount'])->name('delete.account')->middleware(['demo.mode']);
+        // POST + CSRF: a GET here let any page (link, <img src>) delete a signed-in customer's account
+        Route::post('delete-account', [userAccount::class, 'deleteAccount'])->name('delete.account')->middleware(['demo.mode']);
 
         // Change theme
         Route::get('theme/{id}', [AccountController::class, "changeTheme"])->name('change.theme');
@@ -1159,74 +1195,74 @@ Route::group(['middleware' => 'Installer'], function () {
 
     // NFC Card
     // PayPal Payment Gateway
-    Route::get('nfc/payment-paypal/{nfcId}/{couponId}', [NFCPaypalController::class, 'nfcPaywithpaypal'])->name('nfcpaywithpaypal');
+    Route::get('nfc/payment-paypal/{nfcId}/{couponId}/{quantity}', [NFCPaypalController::class, 'nfcPaywithpaypal'])->name('nfcpaywithpaypal');
     Route::get('nfc/payment/status', [NFCPaypalController::class, 'nfcPaypalPaymentStatus'])->name('nfcpaypalPaymentStatus');
 
     // RazorPay
-    Route::get('nfc/payment-razorpay/{nfcId}/{couponId}', [NFCRazorpayController::class, 'nfcPrepareRazorpay'])->name('nfcpaywithrazorpay');
+    Route::get('nfc/payment-razorpay/{nfcId}/{couponId}/{quantity}', [NFCRazorpayController::class, 'nfcPrepareRazorpay'])->name('nfcpaywithrazorpay');
     Route::get('nfc/razorpay-payment-status/{oid}/{paymentId}', [NFCRazorpayController::class, 'nfcRazorpayPaymentStatus'])->name('nfc.razorpay.payment.status');
 
     // Phonepe
-    Route::get('nfc/payment-phonepe/{nfcId}/{couponId}', [NFCPhonepeController::class, 'nfcPreparePhonpe'])->name('nfcpaywithphonepe');
+    Route::get('nfc/payment-phonepe/{nfcId}/{couponId}/{quantity}', [NFCPhonepeController::class, 'nfcPreparePhonpe'])->name('nfcpaywithphonepe');
     Route::any('nfc/phonepe-payment-status', [NFCPhonepeController::class, 'nfcPhonepePaymentStatus'])->name('nfc.phonepe.payment.status');
 
     // Stripe
-    Route::get('nfc/payment-stripe/{nfcId}/{couponId}', [NFCStripeController::class, 'nfcStripeCheckout'])->name('nfcpaywithstripe');
+    Route::get('nfc/payment-stripe/{nfcId}/{couponId}/{quantity}', [NFCStripeController::class, 'nfcStripeCheckout'])->name('nfcpaywithstripe');
     Route::get('nfc/stripe-payment-status/{paymentId}', [NFCStripeController::class, 'nfcStripePaymentStatus'])->name('nfc.stripe.payment.status');
     Route::get('nfc/stripe-payment-cancel/{paymentId}', [NFCStripeController::class, 'nfcStripePaymentCancel'])->name('nfc.stripe.payment.cancel');
 
     // Paystack
-    Route::get('nfc/payment-paystack/{nfcId}/{couponId}', [NFCPaystackController::class, "nfcPaystackCheckout"])->name('nfcpaywithpaystack');
+    Route::get('nfc/payment-paystack/{nfcId}/{couponId}/{quantity}', [NFCPaystackController::class, "nfcPaystackCheckout"])->name('nfcpaywithpaystack');
     Route::get('nfc/paystack-payment/callback', [NFCPaystackController::class, 'nfcPaystackHandleGatewayCallback'])->name('nfc.paystack.handle.gateway.callback');
 
     // Mollie
-    Route::get('nfc/payment-mollie/{nfcId}/{couponId}', [NFCMollieController::class, "nfcPrepareMollie"])->name('nfcpaywithmollie');
+    Route::get('nfc/payment-mollie/{nfcId}/{couponId}/{quantity}', [NFCMollieController::class, "nfcPrepareMollie"])->name('nfcpaywithmollie');
     Route::get('nfc/mollie-payment-status', [NFCMollieController::class, "nfcMolliePaymentStatus"])->name('nfc.mollie.payment.status');
 
     // Mercado Pago
-    Route::get('nfc/payment-mercadopago/{nfcId}/{couponId}', [NFCMercadoPagoController::class, "nfcPrepareMercadoPago"])->name('nfcpaywithmercadopago');
+    Route::get('nfc/payment-mercadopago/{nfcId}/{couponId}/{quantity}', [NFCMercadoPagoController::class, "nfcPrepareMercadoPago"])->name('nfcpaywithmercadopago');
     Route::get('nfc/mercadopago-payment-status', [NFCMercadoPagoController::class, "nfcMercadoPagoPaymentStatus"])->name('nfc.mercadopago.payment.status');
     Route::get('nfc/mercadopago-payment-failure', [NFCMercadoPagoController::class, "nfcMercadoPagoPaymentFailure"])->name('nfc.mercadopago.payment.failure');
     Route::get('nfc/mercadopago-payment-pending', [NFCMercadoPagoController::class, "nfcMercadoPagoPaymentPending"])->name('nfc.mercadopago.payment.pending');
     Route::get('nfc/mercadopago-callback', [NFCMercadoPagoController::class, "nfcMercadoPagoCallback"])->name('nfc.mercadopago.callback');
 
     // Toyyibpay
-    Route::get('nfc/payment-toyyibpay/{nfcId}/{couponId}', [NFCToyyibpayController::class, "nfcPrepareToyyibpay"])->name('nfc.prepare.toyyibpay');
+    Route::get('nfc/payment-toyyibpay/{nfcId}/{couponId}/{quantity}', [NFCToyyibpayController::class, "nfcPrepareToyyibpay"])->name('nfc.prepare.toyyibpay');
     Route::get('nfc/toyyibpay-payment-status', [NFCToyyibpayController::class, "nfcToyyibpayPaymentStatus"])->name('nfc.toyyibpay.payment.status');
     Route::get('nfc/toyyibpay-payment-success', [NFCToyyibpayController::class, 'nfcToyyibpayPaymentSuccess'])->name('nfc.toyyibpay.payment.success');
 
     // Flutterwave
-    Route::get('nfc/payment-flutterwave/{nfcId}/{couponId}', [NFCFlutterwaveController::class, "nfcPrepareFlutterwave"])->name('nfc.prepare.flutterwave');
+    Route::get('nfc/payment-flutterwave/{nfcId}/{couponId}/{quantity}', [NFCFlutterwaveController::class, "nfcPrepareFlutterwave"])->name('nfc.prepare.flutterwave');
     Route::get('nfc/flutterwave-payment-status', [NFCFlutterwaveController::class, "nfcFlutterwavePaymentStatus"])->name('nfc.flutterwave.payment.status');
     Route::get('nfc/flutterwave-callback', [NFCFlutterwaveController::class, 'nfcFlutterwaveCallback'])->name('nfc.flutterwave.callback')->withoutMiddleware('auth');
 
     // Paddle
-    Route::get('nfc/paddle/generate-payment-link/{nfcId}/{couponId}', [NFCPaddleController::class, 'nfcGeneratePaymentLink'])->name('nfc.prepare.paddle');
+    Route::get('nfc/paddle/generate-payment-link/{nfcId}/{couponId}/{quantity}', [NFCPaddleController::class, 'nfcGeneratePaymentLink'])->name('nfc.prepare.paddle');
     Route::get('nfc/paddle-payment-status', [NFCPaddleController::class, 'nfPaddlePaymentStatus'])->name('nfc.paddle.payment.status');
     Route::get('nfc/paddle-payment-webhook', [NFCPaddleController::class, 'nfPaddlePaymentWebhook'])->name('nfc.paddle.payment.webhook');
 
     // Paytr
-    Route::get('nfc/paytr/generate-payment-link/{nfcId}/{couponId}', [NFCPaytrController::class, 'nfcGeneratePaymentLink'])->name('nfc.prepare.paytr');
+    Route::get('nfc/paytr/generate-payment-link/{nfcId}/{couponId}/{quantity}', [NFCPaytrController::class, 'nfcGeneratePaymentLink'])->name('nfc.prepare.paytr');
     Route::match(['get', 'post'], '/nfc/paytr-payment-status', [NFCPaytrController::class, 'nfcPaytrPaymentStatus'])->name('nfc.paytr.payment.status');
     Route::match(['get', 'post'], '/nfc/paytr-payment-failure', [NFCPaytrController::class, 'nfcPaytrPaymentFailure'])->name('nfc.paytr.payment.failure');
     Route::post('nfc/paytr-payment-webhook', [NFCPaytrController::class, 'nfcPaytrPaymentWebhook'])->name('nfc.paytr.payment.webhook');
 
     // Xendit
-    Route::get('nfc/xendit/generate-payment-link/{nfcId}/{couponId}', [NFCXenditController::class, 'nfcGeneratePaymentLink'])->name('nfc.prepare.xendit');
+    Route::get('nfc/xendit/generate-payment-link/{nfcId}/{couponId}/{quantity}', [NFCXenditController::class, 'nfcGeneratePaymentLink'])->name('nfc.prepare.xendit');
     Route::get('nfc/xendit-payment-status/{transactionId}', [NFCXenditController::class, 'nfcXenditPaymentStatus'])->name('nfc.xendit.payment.status');
     Route::get('nfc/xendit-payment-failure/{transactionId}', [NFCXenditController::class, "nfcXenditPaymentFailure"])->name('nfc.xendit.payment.failure');
     Route::get('nfc/xendit-payment-webhook', [NFCXenditController::class, 'nfcXenditPaymentWebhook'])->name('nfc.xendit.payment.webhook');
 
     // Cashfree
-    Route::get('nfc/cashfree/generate-payment-link/{nfcId}/{couponId}', [NFCCashfreeController::class, 'nfcGeneratePaymentLink'])->name('nfc.prepare.cashfree');
+    Route::get('nfc/cashfree/generate-payment-link/{nfcId}/{couponId}/{quantity}', [NFCCashfreeController::class, 'nfcGeneratePaymentLink'])->name('nfc.prepare.cashfree');
     Route::get('nfc/cashfree-payment-status', [NFCCashfreeController::class, 'nfcCashfreePaymentStatus'])->name('nfc.cashfree.payment.status');
 
     // Iyzipay
-    Route::get('nfc/iyzipay/generate-payment-link/{nfcId}/{couponId}', [NFCIyzipayController::class, 'nfcGeneratePaymentLink'])->name('nfc.prepare.iyzipay');
+    Route::get('nfc/iyzipay/generate-payment-link/{nfcId}/{couponId}/{quantity}', [NFCIyzipayController::class, 'nfcGeneratePaymentLink'])->name('nfc.prepare.iyzipay');
     Route::post('nfc/iyzipay-payment-status', [NFCIyzipayController::class, 'nfcIyzipayPaymentStatus'])->name('nfc.iyzipay.payment.status');
 
     // Offline
-    Route::get('nfc/payment-offline/{nfcId}/{couponId}', [NFCOfflineController::class, 'nfcOfflineCheckout'])->name('nfcpaywithoffline');
+    Route::get('nfc/payment-offline/{nfcId}/{couponId}/{quantity}', [NFCOfflineController::class, 'nfcOfflineCheckout'])->name('nfcpaywithoffline');
     Route::post('nfc/mark-offline-payment', [NFCOfflineController::class, 'nfcMarkOfflinePayment'])->name('nfc.mark.payment.payment');
 
     // AI Credits PayPal Payment Gateway
@@ -1304,16 +1340,83 @@ Route::group(['middleware' => 'Installer'], function () {
     Route::get('/google-login', [LoginController::class, 'redirectToProvider'])->name('login.google');
     Route::get('/sign-in-with-google', [LoginController::class, 'handleProviderCallback']);
 
-    // Profile
+    /*
+    |--------------------------------------------------------------------------
+    | Helper function to resolve Card URL for Custom Domains and Subdomains
+    |--------------------------------------------------------------------------
+    */
+    $resolveCardUrl = function (Request $request) {
+        $host = strtolower($request->getHost());
+        $cleanHost = preg_replace('/^www\./i', '', $host);
+        $masterHost = preg_replace('/^www\./i', '', parse_url(config('app.url'), PHP_URL_HOST));
+
+        // 1. Check Custom Domain (e.g. domain.com or www.domain.com)
+        $card = DB::table('business_cards')
+            ->where('custom_domain', 'LIKE', '%' . $cleanHost . '%')
+            ->first();
+
+        // 2. Check Subdomain (e.g. subdomain.domain.com)
+        if (!$card && str_ends_with($cleanHost, '.' . $masterHost)) {
+            $subdomain = str_replace('.' . $masterHost, '', $cleanHost);
+            $card = DB::table('business_cards')->where('card_url', $subdomain)->first();
+        }
+
+        return $card ? $card->card_url : null;
+    };
+
+    /*
+    |--------------------------------------------------------------------------
+    | Custom Domain / Subdomain Direct Routes (Must be defined BEFORE {id})
+    |--------------------------------------------------------------------------
+    */
+
+    // Categories route for custom domains and subdomains
+    Route::get('categories', function (Request $request) use ($resolveCardUrl) {
+        $cardUrl = $resolveCardUrl($request);
+        if ($cardUrl) {
+            return app(ProfileController::class)->profileCategories($request, $cardUrl);
+        }
+        return redirect(config('app.url'));
+    })->name('custom.categories');
+
+    // Single product route for custom domains and subdomains
+    Route::get('product/{product_id}', function (Request $request, $product_id) use ($resolveCardUrl) {
+        $cardUrl = $resolveCardUrl($request);
+        if ($cardUrl) {
+            return app(ProfileController::class)->profileSingleProduct($request, $cardUrl, $product_id);
+        }
+        return redirect(config('app.url'));
+    })->name('custom.product');
+
+    // Store Return/Refund Policy for custom domains and subdomains
+    Route::get('return-policy', function (Request $request) use ($resolveCardUrl) {
+        $cardUrl = $resolveCardUrl($request);
+        return $cardUrl ? app(StorePolicyController::class)->policy($request, $cardUrl) : app(HomeController::class)->refundPolicy();
+    })->name('custom.refund.policy');
+
+    // Store Shipping Policy for custom domains and subdomains
+    Route::get('shipping-policy', function (Request $request) use ($resolveCardUrl) {
+        $cardUrl = $resolveCardUrl($request);
+        return $cardUrl ? app(StorePolicyController::class)->policy($request, $cardUrl) : redirect(config('app.url'));
+    })->name('custom.shipping.policy');
+
+    // Store Contact Support for custom domains and subdomains
+    Route::get('contact', function (Request $request) use ($resolveCardUrl) {
+        $cardUrl = $resolveCardUrl($request);
+        return $cardUrl ? app(StorePolicyController::class)->policy($request, $cardUrl) : app(HomeController::class)->contact();
+    })->name('custom.contact');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Master Domain Routes (vado.ng/{id}/...)
+    |--------------------------------------------------------------------------
+    */
+
     Route::group(['middleware' => ['scriptsanitizer', 'redirect.subdomain']], function () {
         Route::get('{id}', [ProfileController::class, 'profile', 'ShareWidget'])->name('profile');
         Route::get('{id}/product/{product_id}', [ProfileController::class, 'profileSingleProduct', 'ShareWidget'])->name('profile.single-product');
         Route::get('{id}/categories', [ProfileController::class, 'profileCategories', 'profileCategories'])->name('profile.categories');
     });
-
-    Route::get('{id}', [ProfileController::class, 'profile', 'ShareWidget'])->name('profile');
-    Route::get('{id}/product/{product_id}', [ProfileController::class, 'profileSingleProduct', 'ShareWidget'])->name('profile.single-product');
-    Route::get('{id}/categories', [ProfileController::class, 'profileCategories', 'profileCategories'])->name('profile.categories');
 
     // Store Privacy Policy 
     Route::get('{id}/privacy-policy', [StorePolicyController::class, 'policy'])->name('store.privacy.policy');
@@ -1366,3 +1469,16 @@ Route::group(['middleware' => 'Installer'], function () {
     // Public activate theme
     Route::get('public/activate-theme/{theme_id}', [PublicThemeController::class, 'publicActivateTheme'])->name('public.activate.theme');
 });
+
+// Smart fallback: Serves from VPS if exists, otherwise redirects to Cloudflare R2
+Route::get('/storage/{path}', function ($path) {
+    $localFilePath = storage_path('app/public/' . $path);
+
+    // 1. Check if the image exists locally on VPS server
+    if (File::exists($localFilePath)) {
+        return response()->file($localFilePath);
+    }
+
+    // 2. If not found on VPS, redirect to Cloudflare R2
+    return redirect(rtrim(env('AWS_URL'), '/') . '/' . $path, 302);
+})->where('path', '.*');

@@ -108,22 +108,44 @@
 
 @section('content')
     <div class="page-wrapper">
-        <!-- Page title -->
+        <!-- Page title header wrapper -->
         <div class="page-header d-print-none">
             <div class="container-fluid">
-                <div class="row g-2 align-items-center">
+                <div class="row align-items-center">
+                    <!-- Breadcrumbs -->
+                    <div class="mb-1 ms-0">
+                        <ol class="breadcrumb" aria-label="breadcrumbs">
+                            <li class="breadcrumb-item">
+                                <a href="{{ route('admin.dashboard') }}" class="text-secondary text-decoration-none">
+                                    {{ __('Dashboard') }}
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item">
+                                <a href="{{ route('admin.web-templates') }}" class="text-secondary text-decoration-none">
+                                    {{ __('Website Content') }}
+                                </a>
+                            </li>
+                            <li class="breadcrumb-item active" aria-current="page">
+                                <a href="#">{{ __('Web Templates') }}</a>
+                            </li>
+                        </ol>
+                    </div>
                     <div class="col">
-                        <div class="page-pretitle">
-                            {{ __('Overview') }}
-                        </div>
-                        <h2 class="page-title mb-2">
+                        <h2 class="page-title">
                             {{ __('Web Templates') }}
                         </h2>
+                        <!-- Added helper subtitle under page heading -->
+                        <div class="text-muted mt-1">
+                            {{ __('Manage, upload, configure, and activate templates used for your website front-end layout.') }}
+                        </div>
                     </div>
+
+                    <!-- Header buttons containing responsive upload wrapper -->
                     <div class="col-auto ms-auto d-print-none">
                         <div class="btn-list">
                             {{-- Upload Template --}}
-                            <button class="btn btn-primary" onclick="openFileManager()">
+                            <button class="btn btn-primary btn-icon-only d-inline-flex align-items-center"
+                                onclick="openFileManager()">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                                     stroke-linejoin="round"
@@ -132,7 +154,8 @@
                                     <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
                                     <path d="M7 9l5 -5l5 5" />
                                     <path d="M12 4l0 12" />
-                                </svg>{{ __('Upload') }}
+                                </svg>
+                                <span class="d-none d-sm-inline">{{ __('Upload') }}</span>
                             </button>
                         </div>
                     </div>
@@ -142,7 +165,7 @@
 
         <div class="page-body">
             <div class="container-fluid">
-                {{-- Failed --}}
+                {{-- Failed alert --}}
                 @if (Session::has('failed'))
                     <div class="alert alert-important alert-danger alert-dismissible mb-2" role="alert">
                         <div class="d-flex">
@@ -154,7 +177,7 @@
                     </div>
                 @endif
 
-                {{-- Success --}}
+                {{-- Success alert --}}
                 @if (Session::has('success'))
                     <div class="alert alert-important alert-success alert-dismissible mb-2" role="alert">
                         <div class="d-flex">
@@ -166,27 +189,28 @@
                     </div>
                 @endif
 
-                {{-- Templates --}}
-                {{-- check is empty --}}
+                {{-- Templates List section --}}
                 @if (empty($templates))
-                    <div class="empty">
-                        <div class="empty-img">
-                            <img src="{{ asset('img/templates.svg') }}" height="256" alt="Templates"
+                    <!-- Upgraded Empty Alert Box Wrapper to borderless and shadowed card style -->
+                    <div class="empty card border-0 shadow-sm p-4 py-5 text-center">
+                        <div class="empty-img mb-3">
+                            <img src="{{ asset('img/templates.svg') }}" height="256" alt="{{ __('Templates') }}"
                                 style="width: 100%; height: 250px;">
                         </div>
-                        <p class="empty-title">{{ __('Coming Soon!') }}</p>
+                        <p class="empty-title fs-2 text-dark fw-semibold">{{ __('Coming Soon!') }}</p>
                         <p class="empty-subtitle text-secondary">
                             {{ __('Templates are used to add extra front-end web templates to GoBiz.') }}
                             <br>
                             {{ __('You can install templates from the GoBiz Templates Store.') }}
                         </p>
-                        {{-- Notify Me --}}
+                        {{-- Notify Me action triggers --}}
                         <div class="empty-action">
                             <a href="https://zcmp.in/zThd?ref={{ urlencode(config('app.url')) }}&size=source"
-                                target="_blank" class="btn btn-primary btn-4">
+                                target="_blank" class="btn btn-primary d-inline-flex align-items-center">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                                     fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-mail">
+                                    stroke-linejoin="round"
+                                    class="icon icon-tabler icons-tabler-outline icon-tabler-mail me-1">
                                     <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                                     <path
                                         d="M3 7a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-10z" />
@@ -197,11 +221,12 @@
                         </div>
                     </div>
                 @else
-                    <div class="row">
+                    <div class="row g-3">
                         @foreach ($templates as $template)
-                            <div class="col-sm-12 col-md-4 mb-2">
-                                <div class="card h-100 d-flex flex-column position-relative">
-                                    {{-- Version --}}
+                            <div class="col-12 col-sm-6 col-md-4 col-lg-4">
+                                <!-- Upgraded Web Template Item Card to borderless with shadowed style -->
+                                <div class="card h-100 d-flex flex-column position-relative border-0 shadow-sm">
+                                    {{-- Version Badge --}}
                                     <div class="badge bg-dark text-white position-absolute top-0 start-0 m-3"
                                         style="z-index: 100;">
                                         {{ __('v') }}{{ $template['version'] }}
@@ -217,14 +242,14 @@
                                             <img src="{{ asset($template['template_image']) }}"
                                                 class="w-100 rounded-4 mt-1">
                                         </div>
-                                        <h3 class="card-title">{{ __($template['name']) }}</h3>
-                                        <!-- Card footer -->
+                                        <h3 class="card-title text-dark fw-bold mb-2">{{ __($template['name']) }}</h3>
+
+                                        <!-- Card footer actions grid -->
                                         <div
-                                            class="d-flex align-items-center gap-2 @if ($template['template_id'] == $web_template) justify-content-end @else justify-content-between @endif">
+                                            class="d-flex align-items-center gap-2 mt-auto @if ($template['template_id'] == $web_template) justify-content-end @else justify-content-between @endif">
                                             @if ($template['template_id'] != $web_template)
                                                 <a href="{{ route('admin.web-template.activate', ['template_id' => $template['template_id']]) }}"
-                                                    class="btn btn-primary btn-icon"
-                                                    style="padding: 0.2rem 1.2rem !important;">
+                                                    class="btn btn-primary d-inline-flex align-items-center">
                                                     {{ __('Activate') }}
                                                 </a>
                                             @endif
@@ -232,7 +257,8 @@
                                                 {{-- Delete Form --}}
                                                 <form
                                                     action="{{ route('admin.web-template.delete', $template['template_id']) }}"
-                                                    method="POST" id="deleteForm{{ $template['template_id'] }}">
+                                                    method="POST" id="deleteForm{{ $template['template_id'] }}"
+                                                    class="m-0">
                                                     @csrf
                                                     @method('DELETE')
                                                     @if ($template['template_id'] != 'GoBizOriginal')
@@ -257,7 +283,7 @@
                                                     @endif
                                                 </form>
                                                 <a href="{{ route($template['config_route']) }}"
-                                                    class="btn btn-white btn-icon">
+                                                    class="btn btn-white btn-icon border">
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -269,7 +295,7 @@
                                                     </svg>
                                                 </a>
                                                 <a href="{{ route($template['main_route']) }}"
-                                                    class="btn btn-white btn-icon">
+                                                    class="btn btn-white btn-icon border">
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -298,9 +324,9 @@
     </div>
 
     <!-- Confirmation Modal -->
-    <div class="modal modal-blur fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel"
+    <div class="modal modal-bg fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel"
         aria-hidden="true">
-        <div class="modal-dialog modal-md modal-dialog-centered" role="document">
+        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="confirmDeleteModalLabel">{{ __('Confirm Delete') }}</h5>
@@ -330,27 +356,27 @@
             <div class="cube"></div>
             <div class="cube"></div>
         </div>
-        <p class="loader-title">{{ __('Installing Template...') }}</p>
+        <p class="loader-title">{{ __('Installing Web Template') }}</p>
         <p class="loader-subtitle">{{ __('Please don\'t close this page') }}</p>
     </div>
+@endsection
 
 @section('scripts')
     <script type="text/javascript">
         "use strict";
 
         // Confirm delete
-        function confirmationModel(templateId) {
+        function confirmationModel(pluginId) {
             $('#confirmDeleteModal').modal('show');
 
             let btn = document.getElementById('confirmDeleteBtn');
-            // add custom value to btn
-            btn.setAttribute('data-template-id', templateId);
+            btn.setAttribute('data-plugin-id', pluginId);
         }
 
         // Confirm delete
         function confirmDelete(btn) {
-            let templateId = btn.getAttribute('data-template-id');
-            let form = document.getElementById('deleteForm' + templateId);
+            let pluginId = btn.getAttribute('data-plugin-id');
+            let form = document.getElementById('deleteForm' + pluginId);
             form.submit();
         }
 
@@ -401,5 +427,4 @@
                 });
         }
     </script>
-@endsection
 @endsection

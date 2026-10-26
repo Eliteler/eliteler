@@ -1,8 +1,15 @@
 {
     "plugin_id": "GoogleRecaptcha",
     "name": "Google reCAPTCHA",
-    "description": "Protects websites from bots and spam.",
-    "version": "1.0.0",
+    "description": "Prevent spam and bot submissions on your forms.",
+    "version": "1.2.0",
     "img": "google_recaptcha.png",
-    "main_route": "admin.plugin.google_recaptcha.settings"
+    "main_route": "admin.plugin.google_recaptcha.settings",
+    "requires_admin": "1",
+    "platform": "gobiz-saas",
+    "min_version": "28.0.0",
+    "admin_pages": {
+        "settings": "dist/settings.js"
+    },
+    "documentation_url": "https://gobizsaas.com/docs/gobiz/setup/how-to-integrate-recaptcha.html"
 }

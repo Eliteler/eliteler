@@ -12,19 +12,20 @@
 
 namespace App\Http\Controllers\Payment;
 
-use App\Plan;
-use App\User;
-use App\Coupon;
-use App\Transaction;
 use App\AppliedCoupon;
-use Illuminate\Support\Str;
 use App\Classes\UpgradePlan;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Coupon;
 use App\Http\Controllers\Controller;
+use App\Plan;
+use App\Transaction;
+use App\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
- 
+use Illuminate\Support\Str;
+use Plugins\Zapier\Helpers\ZapierHelper;
+
 class CashfreeController extends Controller
 {
     protected $appId;
@@ -124,7 +125,7 @@ class CashfreeController extends Controller
                         "customer_id" => Auth::user()->user_id,
                         "customer_name" => Auth::user()->name,
                         "customer_email" => Auth::user()->email,
-                        "customer_phone" => Auth::user()->billing_phone,
+                        "customer_phone" => Auth::user()->billing_country_code . Auth::user()->billing_phone,
                     ],
                     "order_meta" => [
                         "return_url" => route('cashfree.payment.status') . '?order_id={order_id}',
@@ -138,9 +139,9 @@ class CashfreeController extends Controller
                         "x-client-id"      => $this->appId,
                         "x-client-secret"  => $this->secretKey,
                     ])->post("{$this->baseUrl}/orders", $data);
-                
+
                     $responseBody = $response->json(); // Directly parse JSON response
-                
+
                     if (isset($responseBody['order_status']) && $responseBody['order_status'] === 'ACTIVE') {
                         // Prepare invoice details
                         $invoice_details = [
@@ -159,7 +160,7 @@ class CashfreeController extends Controller
                             'to_billing_state' => $userData->billing_state,
                             'to_billing_zipcode' => $userData->billing_zipcode,
                             'to_billing_country' => $userData->billing_country,
-                            'to_billing_phone' => $userData->billing_phone,
+                            'to_billing_phone' => $userData->billing_country_code . $userData->billing_phone,
                             'to_billing_email' => $userData->billing_email,
                             'to_vat_number' => $userData->vat_number,
                             'subtotal' => $plan_details->plan_price,
@@ -169,7 +170,7 @@ class CashfreeController extends Controller
                             'tax_amount' => $appliedTaxInTotal,
                             'applied_coupon' => $appliedCoupon,
                             'discounted_price' => $discountPrice,
-                            'invoice_amount' => $amountToBePaid,
+                            'invoice_amount' => round($amountToBePaid, 2),
                         ];
 
                         // Order ID
@@ -184,7 +185,7 @@ class CashfreeController extends Controller
                         $transaction->plan_id = $plan_details->plan_id;
                         $transaction->desciption = $plan_details->plan_name . " Plan";
                         $transaction->payment_gateway_name = "Cashfree";
-                        $transaction->transaction_amount = $amountToBePaid;
+                        $transaction->transaction_amount = round($amountToBePaid, 2);
                         $transaction->transaction_currency = $config[1]->config_value;
                         $transaction->invoice_details = json_encode($invoice_details);
                         $transaction->payment_status = "PENDING";
@@ -247,44 +248,44 @@ class CashfreeController extends Controller
 
         if ($response->successful()) {
             $paymentDetailsArray = json_decode($response->body(), true);
-        
+
             // Check if response is valid and contains at least one element
             if (!is_array($paymentDetailsArray) || empty($paymentDetailsArray[0])) {
                 return redirect()->route('user.plans')->with('failed', trans('Invalid payment response.'));
             }
-        
+
             $paymentDetails = (object) $paymentDetailsArray[0];
-        
+
             // Check payment status
             if (isset($paymentDetails->payment_status) && $paymentDetails->payment_status == "SUCCESS") {
                 // Get transactionId
                 $orderId = $paymentDetails->order_id ?? null;
                 $transactionId = $paymentDetails->cf_payment_id ?? null;
-        
+
                 if (!$orderId || !$transactionId) {
                     return redirect()->route('user.plans')->with('failed', trans('Missing order or transaction ID.'));
                 }
-        
+
                 $upgradePlan = new UpgradePlan;
                 $upgradePlan->upgrade($orderId, $paymentDetails);
-                
+
                 // Update transaction id
                 Transaction::where('gobiz_transaction_id', $transactionDetails->gobiz_transaction_id)
                     ->update(['transaction_id' => $transactionId]);
-                
+
                 return redirect()->route('user.plans')->with('success', trans('Plan activated!'));
             } else {
                 Transaction::where('gobiz_transaction_id', $transactionDetails->gobiz_transaction_id)
                     ->update(['payment_status' => 'FAILED']);
-                
+
                 return redirect()->route('user.plans')->with('failed', trans('Payment failed.'));
             }
         } else {
             Transaction::where('gobiz_transaction_id', $transactionDetails->gobiz_transaction_id)
                 ->update(['payment_status' => 'FAILED']);
-                
+
             return redirect()->route('user.plans')->with('failed', trans('Payment failed.'));
-        }        
+        }
 
         return redirect()->route('user.plans')->with('failed', trans('Payment failed.'));
     }

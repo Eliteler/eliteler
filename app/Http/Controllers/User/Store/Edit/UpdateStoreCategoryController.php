@@ -12,17 +12,18 @@
 
 namespace App\Http\Controllers\User\Store\Edit;
 
-use App\Setting;
 use App\BusinessCard;
-use App\StoreCategory;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Helpers\StorageHelper;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
+use App\Setting;
+use App\StoreCategory;
 use Illuminate\Contracts\Cache\Store;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\Validator;
+use Yajra\DataTables\Facades\DataTables;
 
 class UpdateStoreCategoryController extends Controller
 {
@@ -54,59 +55,60 @@ class UpdateStoreCategoryController extends Controller
         } else {
             // Queries
             if ($request->ajax()) {
-                $categories = StoreCategory::where('store_id', $id)->orderBy('id', 'desc')->get();
+                // Passed builder reference directly instead of executing memory-heavy ->get() array collections
+                $categories = StoreCategory::where('store_id', $id)->orderBy('id', 'desc');
 
                 return DataTables::of($categories)
                     ->addIndexColumn()
                     ->editColumn('thumbnail', function ($category) {
-                        return '<img src="' . asset($category->thumbnail) . '" class="img-fluid rounded" style="max-width: 100px; max-height: 100px;" />';
+                        return '<img src="' . asset($category->thumbnail) . '" class="rounded border" style="width: 44px; height: 44px; object-fit: cover;" />';
                     })
                     ->editColumn('category_id', function ($category) {
-                        return '<strong>' . $category->category_id . '</strong>';
+                        return '<span class="fw-bold text-dark">' . e($category->category_id) . '</span>';
                     })
                     ->editColumn('category_name', function ($category) {
-                        return '<strong>' . $category->category_name . '</strong>';
+                        return '<span class="fw-bold text-dark">' . e($category->category_name) . '</span>';
                     })
                     ->editColumn('status', function ($category) {
+                        // Modern soft-muted badge palettes 
                         return $category->status == 0
-                            ? '<span class="badge bg-red text-white text-white">' . __('Disabled') . '</span>'
-                            : '<span class="badge bg-green text-white text-white">' . __('Enabled') . '</span>';
+                            ? '<span class="badge bg-red-100 text-red-700 text-capitalize fw-semibold">' . __('Disabled') . '</span>'
+                            : '<span class="badge bg-green-100 text-green-700 text-capitalize fw-semibold">' . __('Enabled') . '</span>';
                     })
                     ->addColumn('actions', function ($category) {
                         $actionBtn = '<a class="dropdown-item" onclick="editCategory(`' . $category->category_id . '`)">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon me-1 icon-tabler icons-tabler-outline icon-tabler-pencil">
-                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                        <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
-                                        <path d="M13.5 6.5l4 4" />
-                                    </svg>' . __('Edit') . '</a>';
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon me-2 icon-tabler icons-tabler-outline icon-tabler-pencil">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                    <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+                                    <path d="M13.5 6.5l4 4" />
+                                </svg>' . __('Edit') . '</a>';
 
                         $actionBtn .= '<a class="dropdown-item text-danger" onclick="deleteCategory(`' . $category->category_id . '`, `deleted`); return false;">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon me-1 icon-tabler icons-tabler-outline icon-tabler-trash">
-                                            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-                                            <path d="M4 7l16 0" />
-                                            <path d="M10 11l0 6" />
-                                            <path d="M14 11l0 6" />
-                                            <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
-                                            <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" />
-                                        </svg>' . __('Delete') . '</a>';
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon me-2 text-danger icon-tabler icons-tabler-outline icon-tabler-trash">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                        <path d="M4 7l16 0" />
+                                        <path d="M10 11l0 6" />
+                                        <path d="M14 11l0 6" />
+                                        <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" />
+                                        <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" />
+                                    </svg>' . __('Delete') . '</a>';
 
                         return '
-                            <a class="btn-action" href="#" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
-                                <!-- Download SVG icon from http://tabler-icons.io/i/dots-vertical -->
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24"
-                                    height="24" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    class="icon icon-tabler icons-tabler-outline icon-tabler-dots fw-bold">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                    <path d="M4 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                    <path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                    <path d="M18 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                </svg>
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-end">
-                                ' . $actionBtn . '
-                            </div>';
+                        <a class="btn-action text-decoration-none" href="#" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24"
+                                height="24" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round"
+                                class="icon icon-tabler icons-tabler-outline icon-tabler-dots">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <path d="M4 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+                                <path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+                                <path d="M18 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+                            </svg>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end">
+                            ' . $actionBtn . '
+                        </div>';
                     })
                     ->rawColumns(['category_id', 'thumbnail', 'category_name', 'status', 'actions'])
                     ->make(true);
@@ -153,24 +155,23 @@ class UpdateStoreCategoryController extends Controller
                 ]);
             }
 
-            $originalExtension = $thumbnailFile->getClientOriginalExtension();
-            $uploadPath = 'images/categories/';
-            $thumbnailName = 'IMG-' . uniqid() . '-' . time() . '.' . $originalExtension;
-
-            // Store the file in storage/app/public/images/categories
-            Storage::disk('public')->putFileAs($uploadPath, $thumbnailFile, $thumbnailName);
+            // Upload category thumbnail using StorageHelper and get relative path
+            $thumbnailPath = StorageHelper::uploadImage($thumbnailFile, 'images/categories');
 
             try {
                 $category = new StoreCategory();
                 $category->store_id = $request->store_id;
                 $category->user_id = Auth::user()->user_id;
                 $category->category_id = uniqid();
-                $category->thumbnail = "storage/" . $uploadPath . $thumbnailName; // Save relative path
+                $category->thumbnail = $thumbnailPath; // Relative path (storage/images/categories/...)
                 $category->category_name = ucfirst($request->category_name);
                 $category->save();
 
                 return response()->json(['success' => true, 'message' => trans('New Category Created!')]);
             } catch (\Exception $e) {
+                // Delete uploaded image if database insert fails
+                StorageHelper::deleteFile($thumbnailPath);
+
                 return response()->json(['success' => false, 'message' => trans('Failed to create category!')]);
             }
         } else {
@@ -224,15 +225,18 @@ class UpdateStoreCategoryController extends Controller
                 ]);
             }
 
-            $originalExtension = $thumbnailFile->getClientOriginalExtension();
-            $uploadPath = 'images/categories/';
-            $thumbnailName = 'IMG-' . uniqid() . '-' . time() . '.' . $originalExtension;
+            // Optional: Delete old category thumbnail from storage
+            $category = StoreCategory::where('category_id', $request->category_id)->first();
+            if ($category) {
+                StorageHelper::deleteFile($category->thumbnail);
+            }
 
-            // Store the image in storage/app/public/images/categories
-            Storage::disk('public')->putFileAs($uploadPath, $thumbnailFile, $thumbnailName);
+            // Upload new category thumbnail and get relative path
+            $thumbnailPath = StorageHelper::uploadImage($thumbnailFile, 'images/categories');
 
+            // Update DB with new thumbnail path
             StoreCategory::where('category_id', $request->category_id)->update([
-                'thumbnail' => 'storage/' . $uploadPath . $thumbnailName,
+                'thumbnail' => $thumbnailPath,
             ]);
         }
 

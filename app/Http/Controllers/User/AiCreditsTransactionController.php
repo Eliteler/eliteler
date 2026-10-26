@@ -46,83 +46,95 @@ class AiCreditsTransactionController extends Controller
     {
         // Queries
         if ($request->ajax()) {
-            $transactions = AiCreditsTransaction::where('user_id', Auth::user()->id)->orderBy('created_at', 'desc')->get();
+            // Return raw Query Builder to Yajra DataTables to allow efficient server-side pagination with default sorting
+            $transactions = AiCreditsTransaction::where('user_id', Auth::id())
+                ->orderBy('created_at', 'desc');
+
+            // Pre-fetch AI Plans to prevent database query performance bottlenecks (N+1 resolution)
+            $plans = DB::table('ai_credits_plans')
+                ->pluck('plan_name', 'ai_credits_plan_id')
+                ->toArray();
+
+            // Pre-fetch currencies into a map to prevent dynamic row-level lookups
+            $currencies = Currency::where('status', 1)
+                ->pluck('symbol', 'iso_code')
+                ->toArray();
 
             return DataTables::of($transactions)
                 ->addIndexColumn()
                 ->addColumn('created_at', function ($transaction) {
-                    return $transaction->created_at;
+                    return '<span class="fw-bold text-secondary">' . e($transaction->created_at->format('Y-m-d H:i:s')) . '</span>';
                 })
                 ->addColumn('ai_credits_order_id', function ($transaction) {
-                    return '<strong>' . $transaction->ai_credits_order_id . '</strong>';
+                    return '<span class="fw-bold">' . e($transaction->ai_credits_order_id) . '</span>';
                 })
                 ->addColumn('payment_transaction_id', function ($transaction) {
                     if ($transaction->payment_status == "paid") {
-                        return '<a class="fw-bold" href="' . route('user.ai.credits.transaction.invoice', $transaction->ai_credits_transaction_id) . '">' . $transaction->payment_transaction_id . '</a>';
-                    } else {
-                        return '<span class="fw-bold">' . $transaction->payment_transaction_id . '</span>';
+                        return '<a class="fw-bold text-decoration-none" href="' . route('user.ai.credits.transaction.invoice', $transaction->ai_credits_transaction_id) . '">' . e($transaction->payment_transaction_id) . '</a>';
                     }
+                    return '<span class="fw-bold text-secondary">' . e($transaction->payment_transaction_id) . '</span>';
                 })
-                ->addColumn('ai_credits_plan_id', function ($transaction) {
-                    $plan_details = DB::table('ai_credits_plans')->where('ai_credits_plan_id', $transaction->ai_credits_plan_id)->first();
-                    if ($plan_details) {
-                        return '<strong>' . __($plan_details->plan_name) . '</strong>';
-                    } else {
-                        return '<strong>' . __("Plan not available") . '</strong>';
+                ->addColumn('ai_credits_plan_id', function ($transaction) use ($plans) {
+                    $planName = $plans[$transaction->ai_credits_plan_id] ?? null;
+                    if ($planName) {
+                        return '<span class="fw-bold">' . e(__($planName)) . '</span>';
                     }
+                    return '<span class="fw-bold text-muted">' . __("Plan not available") . '</span>';
                 })
                 ->addColumn('payment_method', function ($transaction) {
-                    return __($transaction->payment_method) ?? __('N/A');
+                    return '<span class="fw-medium">' . e(__($transaction->payment_method) ?? __('N/A')) . '</span>';
                 })
                 ->addColumn('amount', function ($transaction) {
-                    $currencies = Currency::where('status', 1)->pluck('symbol', 'iso_code')->toArray();
-                    $symbol = $currencies[$transaction->transaction_currency] ?? '';
-                    return formatCurrency($transaction->amount);
+                    return '<span class="fw-bold text-dark">' . formatCurrency($transaction->amount) . '</span>';
                 })
                 ->addColumn('payment_status', function ($transaction) {
-                    $status = '';
-                    if ($transaction->payment_status == 'pending') {
-                        $status = '<span class="badge bg-warning text-white">' . __('Pending') . '</span>';
-                    } elseif ($transaction->payment_status == 'processing') {
-                        $status = '<span class="badge bg-primary text-white">' . __('Processing') . '</span>';
-                    } elseif ($transaction->payment_status == 'paid') {
-                        $status = '<span class="badge bg-success text-white">' . __('Paid') . '</span>';
-                    } elseif ($transaction->payment_status == 'failed') {
-                        $status = '<span class="badge bg-danger text-white">' . __('Failed') . '</span>';
-                    } elseif ($transaction->payment_status == 'cancelled') {
-                        $status = '<span class="badge bg-danger text-white">' . __('Cancelled') . '</span>';
-                    } elseif ($transaction->payment_status == 'refunded') {
-                        $status = '<span class="badge bg-dark text-white">' . __('Refunded') . '</span>';
-                    } elseif ($transaction->payment_status == 'partially_refunded') {
-                        $status = '<span class="badge bg-dark text-white">' . __('Partially Refunded') . '</span>';
+                    switch ($transaction->payment_status) {
+                        case 'paid':
+                            return '<span class="badge bg-green-600 text-green-50">' . __('Paid') . '</span>';
+                        case 'pending':
+                            return '<span class="badge bg-slate-100 text-slate-600">' . __('Pending') . '</span>';
+                        case 'processing':
+                            return '<span class="badge bg-yellow-100 text-yellow-800">' . __('Processing') . '</span>';
+                        case 'failed':
+                            return '<span class="badge bg-red-100 text-red-700">' . __('Failed') . '</span>';
+                        case 'cancelled':
+                            return '<span class="badge bg-red-100 text-red-700">' . __('Cancelled') . '</span>';
+                        case 'refunded':
+                            return '<span class="badge bg-slate-100 text-slate-600">' . __('Refunded') . '</span>';
+                        case 'partially_refunded':
+                            return '<span class="badge bg-slate-100 text-slate-600">' . __('Partially Refunded') . '</span>';
+                        default:
+                            return '<span class="badge bg-slate-100 text-slate-600">' . e(ucfirst($transaction->payment_status)) . '</span>';
                     }
-                    return $status;
                 })
                 ->addColumn('action', function ($transaction) {
                     if ($transaction->payment_status == "paid") {
-                        $actions = '
-                        <a class="btn-action" href="#" role="button" data-bs-boundary="viewport" data-bs-toggle="dropdown" aria-expanded="false">
-                            <!-- Download SVG icon from http://tabler-icons.io/i/dots-vertical -->
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24"
-                                height="24" viewBox="0 0 24 24" fill="none"
-                                stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round"
-                                class="icon icon-tabler icons-tabler-outline icon-tabler-dots fw-bold">
+                        return '
+                    <div class="dropdown">
+                        <a class="btn-action text-decoration-none" href="#" role="button" data-bs-boundary="viewport" data-bs-toggle="dropdown" aria-expanded="false">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icon-tabler-dots">
                                 <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                <path d="M4 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                <path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                <path d="M18 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+                                <circle cx="5" cy="12" r="1" />
+                                <circle cx="12" cy="12" r="1" />
+                                <circle cx="19" cy="12" r="1" />
                             </svg>
                         </a>
-                        <div class="dropdown-menu dropdown-menu-end">';
-
-                        $actions .= '<a class="dropdown-item" href="' . route('user.ai.credits.transaction.invoice', ['id' => $transaction->ai_credits_transaction_id]) . '">' . __('Invoice') . '</a>';
-                        $actions .= '</div>';
-
-                        return $actions;
+                        <div class="dropdown-menu dropdown-menu-end">
+                            <a class="dropdown-item" href="' . route('user.ai.credits.transaction.invoice', ['id' => $transaction->ai_credits_transaction_id]) . '">' . __('Invoice') . '</a>
+                        </div>
+                    </div>';
                     }
+                    return '';
                 })
-                ->rawColumns(['ai_credits_order_id', 'payment_transaction_id', 'user_id', 'ai_credits_plan_id', 'payment_method', 'amount', 'payment_status', 'action'])
+                // Custom subquery filter to map search strings directly to Plan Names
+                ->filterColumn('ai_credits_plan_id', function ($query, $keyword) {
+                    $query->whereIn('ai_credits_plan_id', function ($subQuery) use ($keyword) {
+                        $subQuery->select('ai_credits_plan_id')
+                            ->from('ai_credits_plans')
+                            ->where('plan_name', 'like', "%{$keyword}%");
+                    });
+                })
+                ->rawColumns(['created_at', 'ai_credits_order_id', 'payment_transaction_id', 'ai_credits_plan_id', 'payment_method', 'amount', 'payment_status', 'action'])
                 ->make(true);
         }
 

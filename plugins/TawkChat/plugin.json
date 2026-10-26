@@ -1,8 +1,15 @@
 {
     "plugin_id": "TawkChat",
     "name": "Tawk.to Chatbot",
-    "description": "Tawk.to is a tool for live chat with customers",
-    "version": "1.0.0",
+    "description": "Chat with visitors and answer their questions in real time.",
+    "version": "1.2.0",
     "img": "tawk.png",
-    "main_route": "admin.plugin.tawkchat.settings"
+    "main_route": "admin.plugin.tawkchat.settings",
+    "requires_admin": "1",
+    "platform": "gobiz-saas",
+    "min_version": "28.0.0",
+    "admin_pages": {
+        "settings": "dist/settings.js"
+    },
+    "documentation_url": null
 }

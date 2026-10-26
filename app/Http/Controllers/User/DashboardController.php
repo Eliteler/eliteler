@@ -47,7 +47,7 @@ class DashboardController extends Controller
         // check modern_dashboard_enabled
         if (Schema::hasTable('modern_dashboard_settings')) {
             $is_modern_dashboard_enabled = DB::table('modern_dashboard_settings')->first()->modern_dashboard_enabled;
-            if (is_dir(base_path('plugins/ModernDashboard')) && $is_modern_dashboard_enabled == 1) {
+            if (plugin_active('ModernDashboard') && $is_modern_dashboard_enabled == 1) {
                 return redirect()->route('user.dashboard.overview');
             }
         }
@@ -58,8 +58,8 @@ class DashboardController extends Controller
             $plan = User::where('user_id', Auth::user()->user_id)->first();
             $active_plan = json_decode($plan->plan_details);
             $settings = Setting::where('status', 1)->first();
-            $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_type', 'vcard')->where('card_status', 'activated')->count();
-            $storesCount = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_type', 'store')->where('card_status', 'activated')->count();
+            $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_type', 'vcard')->where('card_status', 'activated')->where('status', '1')->count();
+            $storesCount = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_type', 'store')->where('card_status', 'activated')->where('status', '1')->count();
             $remaining_days = 0;
 
             // Check active plan in user

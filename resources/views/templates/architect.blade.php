@@ -9,7 +9,9 @@
         $service_booking_available_days = json_decode($service_booking_details->service_booking_available_days);
     }
 
-    $introScreen = BusinessCardIntro::where('business_card_intro_id', $business_card_details->intro_screen)->where('status', 1)->first();
+    $introScreen = BusinessCardIntro::where('business_card_intro_id', $business_card_details->intro_screen)
+        ->where('status', 1)
+        ->first();
 @endphp
 
 <head>
@@ -19,8 +21,10 @@
     <!-- CSRF Token -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    @if(isset($business_card_details->seo_configurations) && json_decode($business_card_details->seo_configurations)->favicon != null)
-        <link rel="icon" href="{{ url(json_decode($business_card_details->seo_configurations)->favicon) }}" sizes="512x512" type="image/png" />
+    @if (isset($business_card_details->seo_configurations) &&
+            json_decode($business_card_details->seo_configurations)->favicon != null)
+        <link rel="icon" href="{{ url(json_decode($business_card_details->seo_configurations)->favicon) }}"
+            sizes="512x512" type="image/png" />
         <link rel="apple-touch-icon" href="{{ url(json_decode($business_card_details->seo_configurations)->favicon) }}">
     @else
         <link rel="icon" href="{{ url($business_card_details->profile) }}" sizes="512x512" type="image/png" />
@@ -86,32 +90,72 @@
     {{-- Check business details --}}
     @if ($business_card_details != null)
         @php
-            $custom_css = $business_card_details->custom_css;
-            $custom_js = $business_card_details->custom_js;
+            $custom_css = trim($business_card_details->custom_css ?? '');
+            $custom_js = trim($business_card_details->custom_js ?? '');
 
-            // Ensure <style> tags for custom CSS
-            if (strpos($custom_css, '<style>') === false && strpos($custom_css, '</style>') === false) {
-                $custom_css = "<style>" . $custom_css . "</style>";
+            /*
+            |--------------------------------------------------------------------------
+            | Custom CSS
+            |--------------------------------------------------------------------------
+            */
+
+            if (!empty($custom_css) && stripos($custom_css, '<style') === false) {
+                $custom_css = "<style>{$custom_css}</style>";
             }
 
-            // Ensure <script> tags for custom JS
-            if (strpos($custom_js, '<script>') === false && strpos($custom_js, '</script>') === false) {
-                $custom_js = "<script>" . $custom_js . "</script>";
+            /*
+            |--------------------------------------------------------------------------
+            | Split HTML tags and plain JS
+            |--------------------------------------------------------------------------
+            */
+
+            $include_custom_js = '';
+
+            if (!empty($custom_js)) {
+                // Extract HTML tags like meta, script, iframe, noscript, etc.
+                preg_match_all(
+                '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/@endphp/is',
+        $custom_js,
+        $matches,
+    );
+
+    $html_tags = implode("\n", $matches[0]);
+
+    // Remove extracted HTML tags from original content
+    $plain_js = trim(
+        preg_replace(
+            '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/?>/is',
+            '',
+            $custom_js,
+        ),
+    );
+
+    // Add HTML tags directly
+    $include_custom_js .= $html_tags;
+
+    // Wrap remaining plain JS inside script tag
+    if (!empty($plain_js)) {
+        $include_custom_js .= "\n<script>
+            {
+                $plain_js
             }
-        @endphp
+        </script>";
+    }
+}
+?>
 
         {!! $custom_css !!}
-        {!! $custom_js !!}
+        {!! $include_custom_js !!}
 
         {{-- Theme CSS --}}
-        @if(!empty($business_card_details->theme_css))
+        @if (!empty($business_card_details->theme_css))
             <style>
                 {!! $business_card_details->theme_css !!}
             </style>
         @endif
 
         {{-- Theme JS --}}
-        @if(!empty($business_card_details->theme_js))
+        @if (!empty($business_card_details->theme_js))
             <script>
                 {!! $business_card_details->theme_js !!}
             </script>
@@ -150,11 +194,11 @@
                         {{-- Index Screen --}}
                         @if ($introScreen != null)
                             @include("templates.includes.intros.{$introScreen->intro_code}", [
-                                'theme' => $business_card_details->theme_id
+                                'theme' => $business_card_details->theme_id,
                             ])
-                        @endif 
+                        @endif
 
-                        <div id="content-screen">                        
+                        <div id="content-screen">
                             <!-- Start Cover Image Section -->
                             @if ($business_card_details->cover_type == 'none')
                                 <div class="lg:h-80 h-60 relative" id="profile">
@@ -238,7 +282,10 @@
                             <!-- End Cover Video Section -->
 
                             {{-- Language Switcher --}}
-                            @if ($business_card_details->is_enable_language_switcher == 1 && is_array(config('app.languages')) && count(config('app.languages')) > 1) 
+                            @if (
+                                $business_card_details->is_enable_language_switcher == 1 &&
+                                    is_array(config('app.languages')) &&
+                                    count(config('app.languages')) > 1)
                                 @include('templates.includes.language-switcher')
                             @endif
 
@@ -258,7 +305,8 @@
 
                                     <div class="relative z-10 flex flex-col ml-6">
                                         {{-- Name --}}
-                                        <h1 class="lg:text-4xl text-3xl font-medium text-[#5E503F] head tracking-tighter ">
+                                        <h1
+                                            class="lg:text-4xl text-3xl font-medium text-[#5E503F] head tracking-tighter ">
                                             {{ $business_card_details->title }}
                                         </h1>
                                         {{-- Job Title --}}
@@ -351,10 +399,20 @@
                                 @if (!empty($feature_details) && count($feature_details) > 0)
                                     @php
                                         // List of excluded feature types
-                                        $excludedTypes = ['tel', 'instagram', 'wa', 'address', 'map', 'iframe', 'youtube'];
+                                        $excludedTypes = [
+                                            'tel',
+                                            'instagram',
+                                            'wa',
+                                            'address',
+                                            'map',
+                                            'iframe',
+                                            'youtube',
+                                        ];
 
                                         // Filter the features to include only valid ones
-                                        $validFeatures = collect($feature_details)->filter(function ($feature) use ($excludedTypes) {
+                                        $validFeatures = collect($feature_details)->filter(function ($feature) use (
+                                            $excludedTypes,
+                                        ) {
                                             return isset($feature->type) && !in_array($feature->type, $excludedTypes);
                                         });
                                     @endphp
@@ -383,9 +441,11 @@
                                                     <a href="{{ $href }}" target="_blank"
                                                         class="p-4 bg-orange-50 border border-[#C6AC8E] transition-colors rounded-2xl flex flex-col focus:outline-none">
                                                         <!-- Font Awesome Icon -->
-                                                        <i class="{{ $feature->icon ?? '' }} text-[#C6AC8E] text-xl mb-1.5"></i>
+                                                        <i
+                                                            class="{{ $feature->icon ?? '' }} text-[#C6AC8E] text-xl mb-1.5"></i>
                                                         <!-- Title -->
-                                                        <h2 class="text-[#121212] text-md font-semibold">{{ $feature->label ?? 'N/A' }}</h2>
+                                                        <h2 class="text-[#121212] text-md font-semibold">
+                                                            {{ $feature->label ?? 'N/A' }}</h2>
                                                         <!-- Description -->
                                                         <p class="text-[#121212] text-sm truncate">
                                                             {{ $feature->content ?? '' }}
@@ -410,8 +470,9 @@
                                             <hr class="flex-grow border-t-[4px] border-[#E1D1B8]">
                                         </div>
                                         <div class="">
-                                            <swiper-container slides-per-view="1" class="mySwiper" autoplay-delay="3000"
-                                                autoplay-disable-on-interaction="false" loop="true">
+                                            <swiper-container slides-per-view="1" class="mySwiper"
+                                                autoplay-delay="3000" autoplay-disable-on-interaction="false"
+                                                loop="true">
                                                 {{-- All services --}}
                                                 @foreach ($service_details as $service_detail)
                                                     <swiper-slide class="p-1">
@@ -438,7 +499,8 @@
                                                                 @if ($enquiry_button != null)
                                                                     @if ($whatsAppNumberExists == true && $whatsAppNumberExists == true && $service_detail->enable_enquiry == 'Enabled')
                                                                         {{-- Enquire --}}
-                                                                        <div class="flex items-start justify-start w-full">
+                                                                        <div
+                                                                            class="flex items-start justify-start w-full">
                                                                             <div
                                                                                 class="flex items-start justify-start w-12 h-12 rounded-full">
                                                                                 <a href="https://wa.me/{{ $enquiry_button }}?text={{ __('Hi, I am interested in your product/service:') }} {{ $service_detail->service_name }}. {{ __('Please provide more details.') }}"
@@ -505,29 +567,29 @@
                                                             <!-- Price -->
                                                             <div class="flex flex-col mb-4">
                                                                 @if ($product_detail->sales_price != 0)
-                                                                <div>
-                                                                    <h4 class="text-[#121212] text-md font-bold">
-                                                                        {{ __('Price:') }}
-                                                                        <span
-                                                                            class="text-gray-500 font-bold text-base ml-1">
-                                                                            {{ formatCurrencyVcard($product_detail->sales_price, $product_detail->currency) }}</span>
-                                                                        {{-- Check regular price is exists --}}
-                                                                        @if ($product_detail->sales_price != $product_detail->regular_price)
+                                                                    <div>
+                                                                        <h4 class="text-[#121212] text-md font-bold">
+                                                                            {{ __('Price:') }}
                                                                             <span
-                                                                                class="line-through ml-1 text-gray-500 text-sm font-normal">
-                                                                                {{ formatCurrencyVcard($product_detail->regular_price, $product_detail->currency) }}</span>
-                                                                        @endif
-                                                                    </h4>
-                                                                </div>
+                                                                                class="text-gray-500 font-bold text-base ml-1">
+                                                                                {{ formatCurrencyVcard($product_detail->sales_price, $product_detail->currency) }}</span>
+                                                                            {{-- Check regular price is exists --}}
+                                                                            @if ($product_detail->sales_price != $product_detail->regular_price)
+                                                                                <span
+                                                                                    class="line-through ml-1 text-gray-500 text-sm font-normal">
+                                                                                    {{ formatCurrencyVcard($product_detail->regular_price, $product_detail->currency) }}</span>
+                                                                            @endif
+                                                                        </h4>
+                                                                    </div>
                                                                 @endif
-                                                                @if ($product_detail->product_status != "null")
-                                                                <div>
-                                                                    <h4 class="text-[#121212] text-md font-bold">
-                                                                        {{ __('Stock:') }}
-                                                                        <span
-                                                                            class="text-{{ $product_detail->product_status == 'instock' ? 'green-500' : 'red-500' }} font-medium">{{ $product_detail->product_status == 'outstock' ? __('Out of Stock') : __('In Stock') }}</span>
-                                                                    </h4>
-                                                                </div>
+                                                                @if ($product_detail->product_status != 'null')
+                                                                    <div>
+                                                                        <h4 class="text-[#121212] text-md font-bold">
+                                                                            {{ __('Stock:') }}
+                                                                            <span
+                                                                                class="text-{{ $product_detail->product_status == 'instock' ? 'green-500' : 'red-500' }} font-medium">{{ $product_detail->product_status == 'outstock' ? __('Out of Stock') : __('In Stock') }}</span>
+                                                                        </h4>
+                                                                    </div>
                                                                 @endif
                                                             </div>
 
@@ -577,9 +639,9 @@
                                                                     src="{{ url($galleries_detail->gallery_image) }}"
                                                                     alt="{{ $galleries_detail->caption }}" />
                                                                 @if ($galleries_detail->caption)
-                                                                <h3
-                                                                    class="py-3 bg-[#5E503F] mt-6 text-white text-lg w-full text-center rounded-2xl">
-                                                                    {{ $galleries_detail->caption }}</h3>
+                                                                    <h3
+                                                                        class="py-3 bg-[#5E503F] mt-6 text-white text-lg w-full text-center rounded-2xl">
+                                                                        {{ $galleries_detail->caption }}</h3>
                                                                 @endif
                                                             </div>
                                                         </swiper-slide>
@@ -590,6 +652,17 @@
                                     </div>
                                 @endif
                                 <!-- End Gallery Section -->
+
+                                <!-- Start Instagram Section -->
+                                @include('templates.includes.instagram-embed', [
+                                    'sectionClass' => 'relative',
+                                    'headerClass'  => 'flex items-center my-12',
+                                    'dividerClass' => 'flex-grow border-t-[4px] border-[#E1D1B8]',
+                                    'titleClass'   => 'mx-4 text-3xl lg:text-4xl font-medium text-[#121212]',
+                                    'cardClass'    => 'overflow-hidden rounded-2xl bg-white shadow-sm',
+                                    'labelClass'   => 'px-5 py-3 bg-[#C6AC8E] text-white font-semibold text-lg text-center'
+                                ])
+                                <!-- End Instagram Section -->
 
                                 <!-- Start Youtube Video Section -->
                                 @if ($feature_details->where('type', 'youtube')->count() > 0)
@@ -614,7 +687,8 @@
                                                                 </div>
                                                             </div>
                                                         @endif
-                                                        <iframe referrerpolicy="strict-origin-when-cross-origin" width="100%" height="270"
+                                                        <iframe referrerpolicy="strict-origin-when-cross-origin"
+                                                            width="100%" height="270"
                                                             src="https://www.youtube.com/embed/{{ $feature->content }}"
                                                             title="{{ $feature->label }}" frameborder="0"
                                                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -642,14 +716,17 @@
                                             @foreach ($feature_details as $feature)
                                                 @if ($feature->type == 'iframe')
                                                     <div class="overflow-hidden rounded-2xl">
-                                                        <iframe referrerpolicy="strict-origin-when-cross-origin" width="100%" height="270" src="{{ $feature->content }}"
+                                                        <iframe referrerpolicy="strict-origin-when-cross-origin"
+                                                            width="100%" height="270"
+                                                            src="{{ $feature->content }}"
                                                             title="{{ $feature->label }}" frameborder="0"
                                                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                                             allowfullscreen></iframe>
                                                         {{-- Add Iframe title --}}
                                                         @if ($feature->label != null)
                                                             <div class="px-5 py-3 bg-[#C6AC8E]">
-                                                                <div class="text-white font-semibold text-lg text-center">
+                                                                <div
+                                                                    class="text-white font-semibold text-lg text-center">
                                                                     {{ $feature->label }}
                                                                 </div>
                                                             </div>
@@ -684,11 +761,13 @@
                                                         {{ __('Please select a valid date and time slot.') }}</div>
 
                                                     {{-- Success Message (hidden by default) --}}
-                                                    <div id="successMessage" class="text-green-500 text-sm my-2 hidden">
+                                                    <div id="successMessage"
+                                                        class="text-green-500 text-sm my-2 hidden">
                                                         {{ __('Appointment booked successfully!') }}</div>
 
                                                     <!-- Error Message (hidden by default) -->
-                                                    <div id="errorSubmitMessage" class="text-red-500 text-sm my-2 hidden">
+                                                    <div id="errorSubmitMessage"
+                                                        class="text-red-500 text-sm my-2 hidden">
                                                         {{ __('Please fill all the fields.') }}</div>
 
                                                     <div
@@ -718,7 +797,7 @@
                                         @endif
                                     </div>
                                 @endif
-                                <!-- End an Application section -->                        
+                                <!-- End an Application section -->
 
                                 {{-- Start Business Hours --}}
                                 @if ($plan_details['business_hours'] == 1)
@@ -741,8 +820,9 @@
                                                                 <!-- Day Icon -->
                                                                 <div
                                                                     class="flex items-center justify-center w-10 h-10 bg-[#C6AC8E] text-[#f8f9fa] rounded-full">
-                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24"
-                                                                        height="24" viewBox="0 0 24 24" fill="none"
+                                                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                                                        width="24" height="24"
+                                                                        viewBox="0 0 24 24" fill="none"
                                                                         stroke="currentColor" stroke-width="2"
                                                                         stroke-linecap="round" stroke-linejoin="round"
                                                                         class="icon icon-tabler icons-tabler-outline icon-tabler-calendar-clock text-[#f8f9fa]">
@@ -753,13 +833,15 @@
                                                                         <path d="M16 3v4" />
                                                                         <path d="M8 3v4" />
                                                                         <path d="M4 11h10" />
-                                                                        <path d="M18 18m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" />
+                                                                        <path
+                                                                            d="M18 18m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" />
                                                                         <path d="M18 16.5v1.5l.5 .5" />
                                                                     </svg>
                                                                 </div>
                                                                 <!-- Day and Hours -->
                                                                 <div>
-                                                                    <p class="text-sm font-semibold text-[#121212] capitalize">
+                                                                    <p
+                                                                        class="text-sm font-semibold text-[#121212] capitalize">
                                                                         {{ __($day) }}</p>
                                                                     <p class="text-base text-gray-500">
                                                                         {{ __($business_hours->$day ?: __('Closed')) }}
@@ -775,7 +857,8 @@
                                                         <div
                                                             class="flex items-center justify-center w-12 h-12 bg-orange-100 text-[#C6AC8E] rounded-full transform hover:scale-110 transition-transform duration-300 ease-in-out">
                                                             <svg class="w-6 h-6 animate-pulse" fill="currentColor"
-                                                                xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                viewBox="0 0 24 24">
                                                                 <path
                                                                     d="M12 2a10 10 0 100 20 10 10 0 000-20zM10 16l6-4-6-4v8z" />
                                                             </svg>
@@ -799,22 +882,25 @@
                                 @if (isset($plan_details['service_booking']) && $plan_details['service_booking'] == 1)
                                     @if (isset($service_booking_details) && $service_booking_details->service_booking == 1)
                                         <div class="relative">
-                                                <div class="flex items-center my-12">
-                                                    <hr class="flex-grow border-t-[4px] border-[#E1D1B8]">
-                                                    <span
-                                                        class="mx-4 text-3xl lg:text-4xl font-medium text-[#121212]">{{ __($service_booking_details->title) }}</span>
-                                                    <hr class="flex-grow border-t-[4px] border-[#E1D1B8]">
-                                                </div>
+                                            <div class="flex items-center my-12">
+                                                <hr class="flex-grow border-t-[4px] border-[#E1D1B8]">
+                                                <span
+                                                    class="mx-4 text-3xl lg:text-4xl font-medium text-[#121212]">{{ __($service_booking_details->title) }}</span>
+                                                <hr class="flex-grow border-t-[4px] border-[#E1D1B8]">
+                                            </div>
 
                                             {{-- Service Booking Form --}}
-                                            <div class="w-full max-w-full border px-6 pt-9 pb-6 rounded-2xl bg-orange-50 border border-[#C6AC8E] relative z-10">
+                                            <div
+                                                class="w-full max-w-full border px-6 pt-9 pb-6 rounded-2xl bg-orange-50 border border-[#C6AC8E] relative z-10">
                                                 <!-- Error Message (hidden by default) -->
                                                 <div id="errorMessage1"
-                                                    class="bg-red-500 text-sm my-2 hidden p-3 text-white rounded-xl"></div>
+                                                    class="bg-red-500 text-sm my-2 hidden p-3 text-white rounded-xl">
+                                                </div>
 
                                                 {{-- Success Message (hidden by default) --}}
                                                 <div id="successMessage1"
-                                                    class="bg-green-500 text-sm my-2 hidden p-3 text-white rounded-xl"></div>
+                                                    class="bg-green-500 text-sm my-2 hidden p-3 text-white rounded-xl">
+                                                </div>
 
                                                 <div class="flex flex-col lg:flex-row lg:gap-4 mb-4">
                                                     {{-- Name --}}
@@ -829,8 +915,8 @@
                                                     <div class="flex flex-col w-full lg:w-1/2">
                                                         <label for="customer_email"
                                                             class="text-gray-800 font-medium mb-2">{{ __('Email') }}</label>
-                                                        <input type="email" name="customer_email" id="customer_email"
-                                                            placeholder="{{ __('Your Email') }}"
+                                                        <input type="email" name="customer_email"
+                                                            id="customer_email" placeholder="{{ __('Your Email') }}"
                                                             class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6AC8E]" />
                                                     </div>
                                                 </div>
@@ -839,7 +925,8 @@
                                                     <div class="flex flex-col w-full lg:w-1/2 mb-4 lg:mb-0">
                                                         <label for="customer_phone"
                                                             class="text-gray-800 font-medium mb-2">{{ __('Mobile Number') }}</label>
-                                                        <input type="tel" name="customer_phone" id="customer_phone"
+                                                        <input type="tel" name="customer_phone"
+                                                            id="customer_phone"
                                                             placeholder="{{ __('Your Mobile Number') }}"
                                                             class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6AC8E]" />
                                                     </div>
@@ -897,13 +984,15 @@
                                                         class="text-gray-800 font-medium mb-2">{{ __('Service End DateTime') }}</label>
                                                     <div class="flex flex-row gap-4">
                                                         <div class="flex flex-col w-1/2">
-                                                            <input type="date" id="service_end_date" name="service_end_date"
+                                                            <input type="date" id="service_end_date"
+                                                                name="service_end_date"
                                                                 placeholder="{{ __('Service End Date') }}"
                                                                 class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6AC8E]" />
                                                         </div>
                                                         {{-- Time --}}
                                                         <div class="flex flex-col w-1/2">
-                                                            <input type="time" name="service_end_time" id="service_end_time"
+                                                            <input type="time" name="service_end_time"
+                                                                id="service_end_time"
                                                                 placeholder="{{ __('Service End Time') }}"
                                                                 class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6AC8E] timepicker" />
                                                         </div>
@@ -949,7 +1038,8 @@
                                                                     stroke="currentColor" stroke-width="2"
                                                                     stroke-linecap="round" stroke-linejoin="round"
                                                                     class="icon icon-tabler icons-tabler-outline icon-tabler-external-link text-[#C6AC8E] h-8 w-8">
-                                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                                                    <path stroke="none" d="M0 0h24v24H0z"
+                                                                        fill="none" />
                                                                     <path
                                                                         d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6" />
                                                                     <path d="M11 13l9 -9" />
@@ -967,7 +1057,8 @@
                                                                     stroke="currentColor" stroke-width="2"
                                                                     stroke-linecap="round" stroke-linejoin="round"
                                                                     class="icon icon-tabler icons-tabler-outline icon-tabler-external-link text-[#C6AC8E] h-8 w-8">
-                                                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                                                    <path stroke="none" d="M0 0h24v24H0z"
+                                                                        fill="none" />
                                                                     <path
                                                                         d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6" />
                                                                     <path d="M11 13l9 -9" />
@@ -1057,9 +1148,10 @@
                                         {{-- Google Maps --}}
                                         @foreach ($feature_details as $feature)
                                             @if ($feature->type == 'map')
-                                                <iframe referrerpolicy="strict-origin-when-cross-origin" src="https://www.google.com/maps/embed?{!! $feature->content !!}"
-                                                    width="100%" height="300" style="border: 0" allowfullscreen=""
-                                                    loading="lazy" class="rounded-t-2xl"></iframe>
+                                                <iframe referrerpolicy="strict-origin-when-cross-origin"
+                                                    src="https://www.google.com/maps/embed?{!! $feature->content !!}"
+                                                    width="100%" height="300" style="border: 0"
+                                                    allowfullscreen="" loading="lazy" class="rounded-t-2xl"></iframe>
                                                 {{-- Map title --}}
                                                 @if ($feature->label != null)
                                                     <div class="px-5 py-3 bg-[#C6AC8E] rounded-b-2xl">
@@ -1076,7 +1168,9 @@
 
                                 <!-- Start Google Wallet section -->
                                 @if (is_dir(base_path('plugins/GoogleWallet')))
-                                    @if (isset($plan_details['google_wallet']) && $plan_details['google_wallet'] == 1 && $business_card_details->is_google_wallet_hidden == 0)
+                                    @if (isset($plan_details['google_wallet']) &&
+                                            $plan_details['google_wallet'] == 1 &&
+                                            $business_card_details->is_google_wallet_hidden == 0)
                                         <div class="relative">
                                             <div class="flex items-center my-12">
                                                 <hr class="flex-grow border-t-[4px] border-[#E1D1B8]">
@@ -1085,7 +1179,8 @@
                                                 <hr class="flex-grow border-t-[4px] border-[#E1D1B8]">
                                             </div>
 
-                                            <div class="w-full max-w-full border px-6 pt-9 pb-6 rounded-2xl bg-orange-50 border border-[#C6AC8E] relative z-10">
+                                            <div
+                                                class="w-full max-w-full border px-6 pt-9 pb-6 rounded-2xl bg-orange-50 border border-[#C6AC8E] relative z-10">
                                                 {{-- Pass/Ticket Description --}}
                                                 @if ($google_wallet_details->wallet_description != null)
                                                     <div class="text-sm">
@@ -1094,13 +1189,16 @@
                                                 @endif
                                                 {{-- Google Wallet Button --}}
                                                 @if ($google_wallet_details->wallet_link != null)
-                                                    <div class="flex justify-center mt-6">                                        
-                                                        <a href="{{ $google_wallet_details->wallet_link }}" class="w-full lg:w-1/2" target="_blank" rel="noopener noreferrer">
-                                                            <img src="{{ url()->to('/') . '/img/google-wallet-btn.png'}}" alt="" class="w-full object-cover">
+                                                    <div class="flex justify-center mt-6">
+                                                        <a href="{{ $google_wallet_details->wallet_link }}"
+                                                            class="w-full lg:w-1/2" target="_blank"
+                                                            rel="noopener noreferrer">
+                                                            <img src="{{ url()->to('/') . '/img/google-wallet-btn.png' }}"
+                                                                alt="" class="w-full object-cover">
                                                         </a>
                                                     </div>
-                                                @endif                                    
-                                            </div>                                
+                                                @endif
+                                            </div>
                                         </div>
                                     @endif
                                 @endif
@@ -1155,15 +1253,19 @@
                                                     <div>
                                                         <label for="name"
                                                             class="text-gray-800 font-semibold mb-2 block">{{ __('Name') }}</label>
-                                                        <input type="text" name="name" placeholder="{{ __('Your Name') }}"
-                                                            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6AC8E]" required />
+                                                        <input type="text" name="name"
+                                                            placeholder="{{ __('Your Name') }}"
+                                                            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6AC8E]"
+                                                            required />
                                                     </div>
                                                     {{-- Email --}}
                                                     <div>
                                                         <label for="email"
                                                             class="text-gray-800 font-semibold mb-2 block">{{ __('Email') }}</label>
-                                                        <input type="email" name="email" placeholder="{{ __('Your Email') }}"
-                                                            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6AC8E]" required />
+                                                        <input type="email" name="email"
+                                                            placeholder="{{ __('Your Email') }}"
+                                                            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6AC8E]"
+                                                            required />
                                                     </div>
                                                     {{-- Mobile Number --}}
                                                     <div>
@@ -1171,18 +1273,21 @@
                                                             class="text-gray-800 font-semibold mb-2 block">{{ __('Mobile Number') }}</label>
                                                         <input type="tel" name="phone"
                                                             placeholder="{{ __('Your Mobile Number') }}"
-                                                            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6AC8E]" required />
+                                                            class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6AC8E]"
+                                                            required />
                                                     </div>
                                                     <div class="h-full pb-4">
                                                         <label for="message"
                                                             class="text-gray-800 font-semibold mb-2 block">{{ __('Message') }}</label>
                                                         <textarea name="message" placeholder="{{ __('Your Message') }}"
-                                                            class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6AC8E]" required
-                                                            style="min-height: 10rem"></textarea>
+                                                            class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#C6AC8E]"
+                                                            required style="min-height: 10rem"></textarea>
                                                     </div>
 
                                                     {{-- ReCaptcha --}}
-                                                    @include('templates.includes.recaptcha', ['recaptchaId' => 'recaptcha-one'])
+                                                    @include('templates.includes.recaptcha', [
+                                                        'recaptchaId' => 'recaptcha-one',
+                                                    ])
 
                                                 </div>
                                                 <!-- Submit Button -->
@@ -1205,7 +1310,8 @@
                                             <div class="mt-2 text-gray-500">
                                                 {{ __('Copyright') }} &copy;
                                                 <a class="text-[#C6AC8E]" href="{{ url()->current() }}">
-                                                    {{ $card_details->title }}</a><span id="year"></span>{{ __('. All Rights Reserved.') }}
+                                                    {{ $card_details->title }}</a><span
+                                                    id="year"></span>{{ __('. All Rights Reserved.') }}
                                             </div>
                                         </div>
                                     </div>
@@ -1234,9 +1340,9 @@
                     <!-- Profile Icon -->
                     <div class="flex-1 flex items-center justify-center">
                         <a class="p-3 rounded-full bg-white border border-[#E1D1B8]" href="#profile">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round"
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round"
                                 class="icon icon-tabler icons-tabler-outline icon-tabler-user text-[#C6AC8E] h-6 w-6">
                                 <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                                 <path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" />
@@ -1249,9 +1355,9 @@
                     <div class="flex-1 flex items-center justify-center">
                         <button class="p-3 rounded-full bg-white border border-[#E1D1B8]"
                             onclick="toggleWhatsAppModal(true)">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round"
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round"
                                 class="icon icon-tabler icons-tabler-outline icon-tabler-send text-[#C6AC8E] h-6 w-6">
                                 <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                                 <path d="M10 14l11 -11" />
@@ -1260,13 +1366,13 @@
                         </button>
                     </div>
 
-                    <!-- Download Icon --> 
+                    <!-- Download Icon -->
                     <div class="flex-1 flex items-center justify-center">
                         <a href="{{ config('app.url') }}/download/{{ $business_card_details->card_id }}"
                             class="p-3 rounded-full bg-white border border-[#E1D1B8]">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round"
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round"
                                 class="icon icon-tabler icons-tabler-outline icon-tabler-download text-[#C6AC8E] h-6 w-6">
                                 <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                                 <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
@@ -1278,10 +1384,11 @@
 
                     <!-- Scan Icon -->
                     <div class="flex-1 flex items-center justify-center">
-                        <button class="p-3 rounded-full bg-white border border-[#E1D1B8]" onclick="toggleScanModal(true)">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round"
+                        <button class="p-3 rounded-full bg-white border border-[#E1D1B8]"
+                            onclick="toggleScanModal(true)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round"
                                 class="icon icon-tabler icons-tabler-outline icon-tabler-line-scan text-[#C6AC8E] h-6 w-6">
                                 <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                                 <path d="M4 8v-2a2 2 0 0 1 2 -2h2" />
@@ -1297,9 +1404,9 @@
                     <div class="flex-1 flex items-center justify-center">
                         <button class="p-3 rounded-full bg-white border border-[#E1D1B8]"
                             onclick="shareToggleModal(true)">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round"
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round"
                                 class="icon icon-tabler icons-tabler-outline icon-tabler-share text-[#C6AC8E] h-6 w-6">
                                 <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                                 <path d="M6 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
@@ -1390,7 +1497,8 @@
                 class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center hidden z-50"
                 onclick="shareToggleModal(false)">
                 <!-- Modal content -->
-                <div class="bg-white rounded-2xl w-full max-w-md p-6 mx-4 space-y-6" onclick="event.stopPropagation()">
+                <div class="bg-white rounded-2xl w-full max-w-md p-6 mx-4 space-y-6"
+                    onclick="event.stopPropagation()">
                     <!-- Modal header -->
                     <div class="flex justify-center items-center">
                         <h2 class="text-2xl text-center font-bold">{{ __('Share on') }}</h2>
@@ -1436,7 +1544,8 @@
                 class="fixed inset-0 bg-gray-800 bg-opacity-60 flex items-center justify-center hidden z-50"
                 onclick="toggleWhatsAppModal(false)">
                 <!-- Modal content (stops propagation to prevent closing when clicking inside) -->
-                <div class="rounded-2xl w-full max-w-md p-6 mx-4 space-y-6 bg-white" onclick="event.stopPropagation()">
+                <div class="rounded-2xl w-full max-w-md p-6 mx-4 space-y-6 bg-white"
+                    onclick="event.stopPropagation()">
                     <!-- Input for WhatsApp number -->
                     <div>
                         <label for="whatsappNumber"
@@ -1473,9 +1582,9 @@
                         <button id="download"
                             onclick="downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500)"
                             class="bg-[#C6AC8E] font-bold p-3 rounded-full">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round"
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round"
                                 class="icon icon-tabler icons-tabler-outline icon-tabler-download text-white h-6 w-6">
                                 <path stroke="none" d="M0 0h24v24H0z" fill="none" />
                                 <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
@@ -1503,7 +1612,8 @@
 
                                 <!-- Modal Content -->
                                 <div class="mt-6 space-y-4">
-                                    <form action="{{ config('app.url') }}/check-password/{{ $business_card_details->card_id }}"
+                                    <form
+                                        action="{{ config('app.url') }}/check-password/{{ $business_card_details->card_id }}"
                                         method="post">
                                         @csrf
                                         <p class="text-lg text-gray-900">{{ __('Enter your vcard Password') }}</p>
@@ -1515,7 +1625,8 @@
 
                                         {{-- Message --}}
                                         @if (Session::has('message'))
-                                            <div class="flex items-center p-4 my-4 text-sm bg-gray-100" role="alert">
+                                            <div class="flex items-center p-4 my-4 text-sm bg-gray-100"
+                                                role="alert">
                                                 <svg class="flex-shrink-0 inline w-4 h-4 mr-3 text-red-500"
                                                     aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
                                                     fill="currentColor" viewBox="0 0 20 20">
@@ -1572,11 +1683,11 @@
                     @endif
                 @endif
             @endif
-            {{-- End Check password protected Modal --}}            
+            {{-- End Check password protected Modal --}}
         </div>
     </div>
 
-    {{-- Jquery --}} 
+    {{-- Jquery --}}
     <script src="{{ url('js/jquery.min.js') }}"></script>
     {{-- Smooth Scroll --}}
     <script src="{{ url('js/smooth-scroll.polyfills.min.js') }}"></script>
@@ -1588,9 +1699,39 @@
     <script src="{{ url('js/swiper-element-bundle.min.js') }}"></script>
     {{-- Custom JS --}}
     @yield('custom-js')
-    
+
     {{-- Flatpickr JS --}}
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/{{ app()->getLocale() }}.js"></script>
+    @php
+        $flatpickrLocales = [
+            'pt_BR' => 'pt',
+            'zh' => 'zh',
+            'ar' => 'ar',
+            'bg' => 'bg',
+            'hr' => 'hr',
+            'nl' => 'nl',
+            'fr' => 'fr',
+            'de' => 'de',
+            'he' => 'he',
+            'hu' => 'hu',
+            'id' => 'id',
+            'it' => 'it',
+            'ja' => 'ja',
+            'lt' => 'lt',
+            'ms' => 'ms',
+            'pl' => 'pl',
+            'ro' => 'ro',
+            'ru' => 'ru',
+            'es' => 'es',
+            'sv' => 'sv',
+            'th' => 'th',
+            'tr' => 'tr',
+            'vi' => 'vn',
+        ];
+
+        $locale = $flatpickrLocales[app()->getLocale()] ?? 'en';
+    @endphp
+
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/{{ $locale }}.js"></script>
     <script>
         // Assuming $appointment_slots contains data like: {"monday": [...], "tuesday": [...], ...}
         const disableSlots = {!! $appointment_slots !!}; // Outputting the time slots
@@ -1617,7 +1758,7 @@
             flatpickr("#appointment-date", {
                 dateFormat: "Y-m-d",
                 minDate: "today",
-                locale: "{{ app()->getLocale() }}",
+                locale: "{{ $locale }}",
                 disable: [
                     function(date) {
                         const day = date.toLocaleString("en-us", {
@@ -1639,7 +1780,7 @@
             flatpickr("#service_start_date", {
                 dateFormat: "Y-m-d",
                 minDate: "today",
-                locale: "{{ app()->getLocale() }}",
+                locale: "{{ $locale }}",
                 disable: [
                     function(date) {
                         return !allowedDays.includes(date.getDay());
@@ -1650,20 +1791,20 @@
             flatpickr("#service_end_date", {
                 dateFormat: "Y-m-d",
                 minDate: "today",
-                locale: "{{ app()->getLocale() }}",
+                locale: "{{ $locale }}",
                 disable: [
                     function(date) {
                         return !allowedDays.includes(date.getDay());
                     }
                 ],
             });
-            
+
             // Flatpickr timepicker
             flatpickr(".timepicker", {
                 enableTime: true,
                 noCalendar: true,
-                dateFormat: "H:i",   // only HH:MM
-                time_24hr: true      // force 24-hour, drop AM/PM
+                dateFormat: "H:i", // only HH:MM
+                time_24hr: true // force 24-hour, drop AM/PM
             });
         });
     </script>
@@ -1726,7 +1867,10 @@
 
                     if (data.success) {
                         // Reset form
-                        ['customer_name', 'customer_email', 'customer_phone', 'no_of_persons', 'customer_address', 'customer_notes', 'service_start_date', 'service_start_time', 'service_end_date', 'service_end_time']
+                        ['customer_name', 'customer_email', 'customer_phone', 'no_of_persons', 'customer_address',
+                            'customer_notes', 'service_start_date', 'service_start_time', 'service_end_date',
+                            'service_end_time'
+                        ]
                         .forEach(id => {
                             document.getElementById(id).value = '';
                         });
@@ -1772,7 +1916,7 @@
                 // If either field is empty, show an error message
                 errorMessage.classList.remove('hidden');
             }
-        } 
+        }
 
         // Show reCAPTCHA widget instances globally
         function onloadCallback() {
@@ -1840,73 +1984,75 @@
             };
 
             // Add reCAPTCHA response if enabled
-            @if(env('RECAPTCHA_ENABLE') == 'on')
+            @if (env('RECAPTCHA_ENABLE') == 'on')
                 formData.g_recaptcha_response = grecaptcha.getResponse(window.recaptchaWidgets['recaptcha-one']);
 
                 if (!formData.g_recaptcha_response) {
                     // Try second reCAPTCHA widget
-                    formData.g_recaptcha_response = grecaptcha.getResponse(window.recaptchaWidgets['recaptcha-two']);
+                    formData.g_recaptcha_response = grecaptcha.getResponse(window.recaptchaWidgets[
+                    'recaptcha-two']);
                 }
             @endif
 
             // Send data via fetch
             fetch("{{ config('app.url') }}/book-appointment", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify(formData)
-            })
-            .then(async response => {
-                const data = await response.json();
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify(formData)
+                })
+                .then(async response => {
+                    const data = await response.json();
 
-                if (response.ok) {
-                    // Reset form
-                    ['name', 'email', 'phone', 'notes', 'appointment-date', 'time-slot-select', 'price'].forEach(id => {
-                        document.getElementById(id).value = '';
-                    });
+                    if (response.ok) {
+                        // Reset form
+                        ['name', 'email', 'phone', 'notes', 'appointment-date', 'time-slot-select', 'price']
+                        .forEach(id => {
+                            document.getElementById(id).value = '';
+                        });
 
-                    generateOption("", "");
+                        generateOption("", "");
 
-                    successMessage.classList.remove('hidden');
-                    errorSubmitMessage.classList.add('hidden');
+                        successMessage.classList.remove('hidden');
+                        errorSubmitMessage.classList.add('hidden');
 
-                    // Reset reCAPTCHA
-                    @if(env('RECAPTCHA_ENABLE') == 'on')
-                        grecaptcha.reset(window.recaptchaWidgets['recaptcha-one']);
-                    @endif
+                        // Reset reCAPTCHA
+                        @if (env('RECAPTCHA_ENABLE') == 'on')
+                            grecaptcha.reset(window.recaptchaWidgets['recaptcha-one']);
+                        @endif
 
-                    toggleModal();
+                        toggleModal();
 
-                    // Redirect to whatsapp url
-                    if (data.success && data.whatsapp_url && data.whatsapp_url !== '#') {
-                        setTimeout(() => {
-                            window.location.href = data.whatsapp_url;
-                        }, 3000);
-                    };
-                } else {
-                    if (data.errors) {
-                        console.error('Validation Errors:', data.errors);
+                        // Redirect to whatsapp url
+                        if (data.success && data.whatsapp_url && data.whatsapp_url !== '#') {
+                            setTimeout(() => {
+                                window.location.href = data.whatsapp_url;
+                            }, 3000);
+                        };
+                    } else {
+                        if (data.errors) {
+                            console.error('Validation Errors:', data.errors);
+                        }
+
+                        successMessage.classList.add('hidden');
+                        errorSubmitMessage.classList.remove('hidden');
+                        errorSubmitMessage.innerHTML = data.message || 'Something went wrong';
+
+                        toggleModal();
                     }
 
-                    successMessage.classList.add('hidden');
-                    errorSubmitMessage.classList.remove('hidden');
-                    errorSubmitMessage.innerHTML = data.message || 'Something went wrong';
-
+                    button.disabled = false;
+                    button.innerHTML = `{{ __('Book Appointment') }}`;
+                })
+                .catch(error => {
+                    console.error('Request failed:', error);
                     toggleModal();
-                }
 
-                button.disabled = false;
-                button.innerHTML = `{{ __('Book Appointment') }}`;
-            })
-            .catch(error => {
-                console.error('Request failed:', error);
-                toggleModal();
-
-                button.disabled = false;
-                button.innerHTML = `{{ __('Book Appointment') }}`;
-            });
+                    button.disabled = false;
+                    button.innerHTML = `{{ __('Book Appointment') }}`;
+                });
         });
     </script>
     <script>
@@ -1975,7 +2121,7 @@
         // Function to toggle WhatsApp modal visibility
         function toggleScanModal(show) {
             "use strict";
- 
+
             document
                 .getElementById("scanModal")
                 .classList.toggle("hidden", !show);
@@ -1993,7 +2139,8 @@
             "use strict";
 
             // From browser url to clipboard
-            navigator.clipboard.writeText(`{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}`);
+            navigator.clipboard.writeText(
+                `{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}`);
             alert("Link copied to clipboard!");
         }
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\StorageHelper;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
@@ -73,16 +74,7 @@ class AssetsController extends Controller
      */
     private function deletePublicFile(?string $path, string $protectedUserId): void
     {
-        if (! $path) {
-            return;
-        }
-
-        // Normalize path
-        $path = ltrim($path, '/');
-        $path = str_replace('storage/', '', $path);
-
-        // Never delete directories
-        if (str_ends_with($path, '/')) {
+        if (!$path) {
             return;
         }
 
@@ -91,9 +83,8 @@ class AssetsController extends Controller
             return;
         }
 
-        if (Storage::disk('public')->exists($path)) {
-            Storage::disk('public')->delete($path);
-        }
+        // Normalize path and delete file using StorageHelper
+        StorageHelper::deleteFile($path);
     }
 
     /**

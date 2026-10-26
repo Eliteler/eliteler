@@ -11,7 +11,7 @@
         <div class="page-header d-print-none border-bottom pb-3">
             <div class="container d-flex align-items-center justify-content-between gap-2">
                 <div class="d-flex align-item-center gap-2">
-                    <a href="{{ url()->previous() }}" class="border rounded-3 p-2 text-white">
+                    <a href="{{ url()->previous() }}" class="border rounded-3 p-2">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                             class="icon icon-tabler icon-tabler-arrow-left">
@@ -22,7 +22,7 @@
                         </svg>
                     </a>
                     <h2 class="page-title">
-                        {{ __('AI Credits Checkout') }}
+                        {{ __('AI Credit Checkout') }}
                     </h2>
                 </div>
 
@@ -30,11 +30,11 @@
                     <a href="{{ route('user.dashboard') }}">
                         @if (file_exists(public_path('img/logo-light.png')))
                             <img src="{{ optional(Auth::user())->choosed_theme == 'light' ? asset($settings->site_logo) : asset('img/logo-light.png') }}"
-                                width="200" height="50" alt="{{ $settings->site_name }}"
+                                width="200" height="50" alt="{{ config('app.name') }}"
                                 class="navbar-brand-image custom-logo">
                         @else
                             <img src="{{ $settings->site_logo }}" width="200" height="50"
-                                alt="{{ $settings->site_name }}" class="navbar-brand-image custom-logo">
+                                alt="{{ config('app.name') }}" class="navbar-brand-image custom-logo">
                         @endif
                     </a>
                 </div>
@@ -46,31 +46,25 @@
                 {{-- Failed --}}
                 @if (Session::has('failed'))
                     <div class="alert alert-important alert-danger alert-dismissible mb-3" role="alert">
-
                         <div class="d-flex">
                             <div>{{ Session::get('failed') }}</div>
                         </div>
-
                         <a class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="close"></a>
-
                     </div>
                 @endif
 
                 {{-- Success --}}
                 @if (Session::has('success'))
                     <div class="alert alert-important alert-success alert-dismissible mb-3" role="alert">
-
                         <div class="d-flex">
                             <div>{{ Session::get('success') }}</div>
                         </div>
-
                         <a class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="close"></a>
-
                     </div>
                 @endif
 
                 <div class="row justify-content-center">
-                    <div class="col-lg-6 col-md-8 col-12">
+                    <div class="col-lg-6 col-md-4 col-12">
                         <div class="card shadow-sm border-0">
                             <div class="card-body p-4">
                                 <div class="text-center mb-4">
@@ -88,11 +82,11 @@
                                     </h2>
 
                                     <p class="text-secondary mb-0">
-                                        {{ __('AI Credits Purchase') }}
+                                        {{ __('AI Credit Purchase') }}
                                     </p>
                                 </div>
 
-                                <div class="border rounded-3 p-3 mb-4 bg-light">
+                                <div class="rounded-3 p-3 mb-4">
                                     <div class="d-flex justify-content-between mb-2">
                                         <span>{{ __('Credits') }}</span>
                                         <strong>
@@ -114,7 +108,7 @@
                                     </div>
                                 </div>
 
-                                <div class="card border-0 shadow-none">
+                                <div class="shadow-none">
                                     <form action="{{ route('ai.credits.stripe.payment.status', $paymentId) }}"
                                         method="post" id="payment-form">
                                         @csrf
@@ -138,54 +132,55 @@
                         </div>
                     </div>
                 </div>
-
-                {{-- Footer --}}
-                @include('user.includes.footer')
             </div>
         </div>
+
+        {{-- Footer --}}
+        @include('user.includes.footer')
     </div>
+@endsection
 
-    @push('custom-js')
-        <script src="https://js.stripe.com/v3/"></script>
-        <script>
-            (async function() {
-                "use strict";
+{{-- Custom JS --}}
+@push('custom-js')
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        (async function() {
+            "use strict";
 
-                const stripe = Stripe('{{ $config[9]->config_value }}');
-                const clientSecret = '{{ $intent }}';
-                const elements = stripe.elements({
-                    clientSecret,
-                    appearance: {
-                        theme: 'stripe',
+            const stripe = Stripe('{{ $config[9]->config_value }}');
+            const clientSecret = '{{ $intent }}';
+            const elements = stripe.elements({
+                clientSecret,
+                appearance: {
+                    theme: 'stripe',
+                },
+            });
+
+            // Payment Element
+            const paymentElement = elements.create('payment');
+            paymentElement.mount('#payment-element');
+
+            // Form
+            const form = document.getElementById('payment-form');
+            const submitButton = document.getElementById('submit-button');
+            const errorContainer = document.getElementById('card-errors');
+
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                submitButton.disabled = true;
+                const {
+                    error
+                } = await stripe.confirmPayment({
+                    elements,
+                    confirmParams: {
+                        return_url: '{{ route('ai.credits.stripe.payment.status', $paymentId) }}',
                     },
                 });
-
-                // Payment Element
-                const paymentElement = elements.create('payment');
-                paymentElement.mount('#payment-element');
-
-                // Form
-                const form = document.getElementById('payment-form');
-                const submitButton = document.getElementById('submit-button');
-                const errorContainer = document.getElementById('card-errors');
-
-                form.addEventListener('submit', async (event) => {
-                    event.preventDefault();
-                    submitButton.disabled = true;
-                    const {
-                        error
-                    } = await stripe.confirmPayment({
-                        elements,
-                        confirmParams: {
-                            return_url: '{{ route('ai.credits.stripe.payment.status', $paymentId) }}',
-                        },
-                    });
-                    if (error) {
-                        errorContainer.textContent = error.message;
-                        submitButton.disabled = false;
-                    }
-                });
-            })();
-        </script>
-    @endpush
-@endsection
+                if (error) {
+                    errorContainer.textContent = error.message;
+                    submitButton.disabled = false;
+                }
+            });
+        })();
+    </script>
+@endpush

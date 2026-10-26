@@ -1,8 +1,15 @@
 {
     "plugin_id": "MaintenanceMode",
     "name": "Maintenance Mode",
-    "description": "Temporarily take your site offline for updates or maintenance while displaying a message to visitors.",
-    "version": "1.0.0",
+    "description": "Show a maintenance page while you update your website.",
+    "version": "1.2.0",
     "img": "maintenance-mode.png",
-    "main_route": "admin.plugin.maintenance-mode"
-}    
+    "main_route": "admin.plugin.maintenance-mode",
+    "requires_admin": "1",
+    "platform": "gobiz-saas",
+    "min_version": "28.0.0",
+    "admin_pages": {
+        "settings": "dist/settings.js"
+    },
+    "documentation_url": "https://gobizsaas.com/docs/gobiz/plugins/how-to-use-maintenance-mode.html"
+}

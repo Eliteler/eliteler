@@ -34,7 +34,7 @@ class TwoFactorAuthentication
             $twoFactorSettings = DB::table('two_factor_auth_settings')->first();
 
             // Check if two-factor authentication is enabled and the user has not completed it
-            if ($twoFactorSettings && isset($twoFactorSettings->status) && $twoFactorSettings->status == 1 && ! session()->get('two_factor_authentication') && File::exists(base_path('plugins/TwoFactorAuthentication/plugin.json')) && ! empty(env('MAIL_USERNAME')) && ! empty(env('MAIL_PASSWORD'))) {
+            if ($twoFactorSettings && isset($twoFactorSettings->status) && $twoFactorSettings->status == 1 && ! session()->get('two_factor_authentication') && plugin_active('TwoFactorAuthentication') && ! empty(env('MAIL_USERNAME')) && ! empty(env('MAIL_PASSWORD'))) {
                 // Redirect to the two-factor authentication page
                 return redirect()->route('send.otp');
             } else {

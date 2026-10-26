@@ -2,47 +2,44 @@
 
 {{-- Custom CSS --}}
 @section('css')
-    <script type="text/javascript" src="{{ asset('js/tom-select.base.min.js') }}"></script>
+    <style>
+        .ts-control>input {
+            display: contents !important;
+        }
+    </style>
 @endsection
 
 @section('content')
     <div class="page-wrapper">
-        <!-- Page title -->
+        <!-- Page Title Header Wrapper (Wraps the inner container-fluid) -->
         <div class="page-header d-print-none">
             <div class="container-fluid">
                 <div class="row g-2 align-items-center">
                     <div class="col">
-                        <div class="page-pretitle">
-                            {{ __('Overview') }}
-                        </div>
-                        <h2 class="page-title mb-2">
-                            {{ __('Update Web Tools') }}
+                        {{-- Breadcrumbs --}}
+                        <x-breadcrumb :items="[
+                            ['title' => 'Dashboard', 'route' => 'admin.dashboard'],
+                            ['title' => 'Plugins', 'route' => 'admin.plugins'],
+                            ['title' => 'Web Tools'],
+                        ]" />
+
+                        <h2 class="page-title">
+                            {{ __('Web Tools') }}
                         </h2>
-                    </div>
-                    <div class="col-auto ms-auto d-print-none">
-                        <div class="btn-list">
-                            <a href="{{ route('admin.plugins') }}" class="btn btn-primary text-white">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    class="icon icon-tabler icons-tabler-outline icon-tabler-arrow-left">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                    <path d="M5 12l14 0" />
-                                    <path d="M5 12l6 6" />
-                                    <path d="M5 12l6 -6" />
-                                </svg>
-                                {{ __('Back') }}
-                            </a>
+
+                        <!-- Helper Subtitle -->
+                        <div class="text-muted mt-1">
+                            {{ __('Manage additional tools for the website.') }}
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Page body -->
+        <!-- Page Body -->
         <div class="page-body">
             <div class="container-fluid">
-                {{-- Failed --}}
+                {{-- Failed Alert --}}
                 @if (Session::has('failed'))
                     <div class="alert alert-important alert-danger alert-dismissible mb-2" role="alert">
                         <div class="d-flex">
@@ -54,7 +51,7 @@
                     </div>
                 @endif
 
-                {{-- Success --}}
+                {{-- Success Alert --}}
                 @if (Session::has('success'))
                     <div class="alert alert-important alert-success alert-dismissible mb-2" role="alert">
                         <div class="d-flex">
@@ -66,39 +63,57 @@
                     </div>
                 @endif
 
-                <div class="alert alert-important alert-info alert-dismissible" role="alert">
+                {{-- Feature Notice Alert --}}
+                <div class="alert alert-important alert-info alert-dismissible mb-3 shadow-sm border-0" role="alert">
                     <div class="d-flex">
                         <div>
-                            {{ __('Note: Disabling this will turn off the website’s Web Tools, making them invisible to visitors.') }}
+                            {{ __('Note: Disabling this module will turn off the website’s Web Tools, hiding them from front-end visitors globally.') }}
                         </div>
                     </div>
                     <a class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="close"></a>
                 </div>
 
                 <div class="row">
-                    <div class="col-12">
-                        <div class="card">
+                    <div class="col-12 col-md-4">
+                        <!-- Upgraded to Borderless Shadowed Card Wrapper -->
+                        <div class="card border-0 shadow-sm">
                             <form action="{{ route('admin.plugin.update.webtools') }}" method="post">
                                 @csrf
                                 <div class="card-body">
                                     <div class="row">
-                                        {{-- Enable/Disable Web Tools --}}
-                                        <div class="col-md-6 col-xl-3 mt-2">
-                                            <label class="row">
-                                                <span class="col">{{ __('Enable Web Tools') }}</span>
-                                                <span class="col-auto">
-                                                    <label class="form-check form-check-single form-switch">
-                                                        <input class="form-check-input" type="checkbox"
-                                                            {{ isset($config[88]->config_value) && $config[88]->config_value == '1' ? 'checked' : '' }}
-                                                            name="enable_webtools" value="1">
-                                                    </label>
-                                                </span>
-                                            </label>
+                                        {{-- Enable/Disable Web Tools Toggle Switch --}}
+                                        <div class="col-12">
+                                            <div class="form-label d-flex justify-content-between align-items-center mb-1">
+                                                <p class="fw-bold fs-4">{{ __('Web Tools') }}</p>
+                                                <label class="form-check form-switch m-0">
+                                                    <input class="form-check-input" type="checkbox" name="enable_webtools"
+                                                        value="1"
+                                                        {{ isset($config[88]->config_value) && $config[88]->config_value == '1' ? 'checked' : '' }}>
+                                                </label>
+                                            </div>
+                                            <small class="text-muted d-block">
+                                                {{ __('Toggle this switch to globally enable or disable website utility tools.') }}
+                                            </small>
                                         </div>
                                     </div>
                                 </div>
+
+                                <!-- Standardized Right-Aligned Form Footer (Omitted Cancel Button) -->
                                 <div class="card-footer text-end">
-                                    <button type="submit" class="btn btn-primary">{{ __(isset($config[88]->config_value) && $config[88]->config_value == '1' ? 'Disable' : 'Enable') }}</button>
+                                    <button type="submit" class="btn btn-primary btn-md d-inline-flex align-items-center">
+                                        <!-- Device Floppy Icon -->
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                            class="icon icon-tabler icon-tabler-device-floppy me-2" width="24"
+                                            height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                            fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                            <path
+                                                d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2" />
+                                            <path d="M12 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+                                            <path d="M14 4l0 4h-6l0 -4" />
+                                        </svg>
+                                        {{ __('Save') }}
+                                    </button>
                                 </div>
                             </form>
                         </div>
@@ -110,4 +125,10 @@
         {{-- Footer --}}
         @include('admin.includes.footer')
     </div>
+@endsection
+
+{{-- Custom JS --}}
+@section('scripts')
+    <!-- Script assets loaded inside the correct scripts section -->
+    <script type="text/javascript" src="{{ asset('js/tom-select.base.min.js') }}"></script>
 @endsection

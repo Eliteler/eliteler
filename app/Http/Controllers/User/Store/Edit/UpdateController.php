@@ -12,13 +12,14 @@
 
 namespace App\Http\Controllers\User\Store\Edit;
 
-use App\Plan;
-use App\Theme;
-use App\Setting;
-use App\Currency;
 use App\BusinessCard;
-use Illuminate\Http\Request;
+use App\Currency;
 use App\Http\Controllers\Controller;
+use App\Plan;
+use App\Setting;
+use App\Theme;
+use App\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
@@ -72,185 +73,258 @@ class UpdateController extends Controller
     public function updateStore(Request $request, $id)
     {
         // Check theme_id is store
-        $themeExists = Theme::where('theme_id', $request->theme_id)->where('theme_description', 'WhatsApp Store')->where('status', 1)->count();
+        $themeExists = Theme::where('theme_id', $request->theme_id)
+            ->where('theme_description', 'WhatsApp Store')
+            ->where('status', 1)
+            ->count();
 
         if ($themeExists == 0) {
             return back()->with('failed', trans('Invalid Theme'));
         }
-        
-        // Queries
-        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
+
+        // Get business card
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)
+            ->where('card_id', $id)
+            ->first();
 
         // Check business card
         if ($business_card == null) {
-            return redirect()->route('user.stores')->with('failed', trans('Store not found!'));
-        } else {
-
-            // Check personalize links
-            if ($request->link) {
-                $personalized_link = $request->link;
-            } else {
-                $personalized_link = $business_card->card_url;
-            }
-
-            // Unique Store URL
-            $personalized_link = strtolower(preg_replace('/\s+/', '-', $personalized_link));
-
-            // Convert accented characters to ASCII
-            $personalized_link = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $personalized_link);
-
-            // Remove all characters except letters, numbers, and hyphens
-            $personalized_link = preg_replace('/[^a-zA-Z0-9-]/', '', $personalized_link);
-
-            // Optionally, convert to lowercase
-            $personalized_link = strtolower($personalized_link);
-
-            // Get current store count
-            $current_card = BusinessCard::where('card_url', $personalized_link)->where('card_status', '!=', 'deleted')->count();
-
-            if ($current_card == 0 || $business_card->card_url == $personalized_link) {
-                // Not upload store banner and logo
-                if ($request->banner == null && $request->logo == null) {
-
-                    // Generate json for store details
-                    $store_details = [];
-
-                    $store_details['whatsapp_no'] = $request->country_code."".$request->whatsapp_no;
-                    $store_details['whatsapp_msg'] = $request->whatsapp_msg;
-                    $store_details['currency'] = $request->currency;
-
-                    // Update
-                    BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->update([
-                        'theme_id' => $request->theme_id,
-                        'card_lang' => $request->card_lang,
-                        'card_url' => $personalized_link,
-                        'title' => $request->title,
-                        'sub_title' => $request->subtitle,
-                        'description' => $store_details,
-                    ]);
-
-                    return redirect()->route('user.edit.store', $id)->with('success', trans('Updated!'));
-                } else if ($request->logo == null) {
-
-                    // Validate
-                    $validator = Validator::make($request->all(), [
-                        'banner' => 'required',
-                    ]);
-
-                    // Validate alert
-                    if ($validator->fails()) {
-                        return back()->with('failed', $validator->messages()->all()[0])->withInput();
-                    }
-
-                    // Generate json for store details
-                    $store_details = [];
-
-                    $store_details['whatsapp_no'] = $request->country_code."".$request->whatsapp_no;
-                    $store_details['whatsapp_msg'] = $request->whatsapp_msg;
-                    $store_details['currency'] = $request->currency;
-
-                    // Update banner images
-                    $arrayBanners = explode(",", $request->banner);
-                    $banner = [];
-                    for ($i = 0; $i < count($arrayBanners); $i++) {
-                        $banner[$i] = $arrayBanners[$i];
-                    }
-
-                    // Remove base url
-                    $banner = str_replace(env('APP_URL'), '', $banner);
-
-                    // Update
-                    BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->update([
-                        'cover' => json_encode($banner),
-                        'theme_id' => $request->theme_id,
-                        'card_lang' => $request->card_lang,
-                        'card_url' => $personalized_link,
-                        'title' => $request->title,
-                        'sub_title' => $request->subtitle,
-                        'description' => $store_details,
-                    ]);
-
-                    return redirect()->route('user.edit.store', $id)->with('success', trans('Updated!'));
-                } else if ($request->banner == null) {
-
-                    // Validate
-                    $validator = Validator::make($request->all(), [
-                        'logo' => 'required',
-                    ]);
-
-                    // Validate alert
-                    if ($validator->fails()) {
-                        return back()->with('failed', $validator->messages()->all()[0])->withInput();
-                    }
-
-                    // Generate json for store details
-                    $store_details = [];
-
-                    $store_details['whatsapp_no'] = $request->country_code."".$request->whatsapp_no;
-                    $store_details['whatsapp_msg'] = $request->whatsapp_msg;
-                    $store_details['currency'] = $request->currency;
-
-                    // Upload store logo image
-                    $logo = $request->logo;
-
-                    // Update
-                    BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->update([
-                        'profile' => $logo,
-                        'theme_id' => $request->theme_id,
-                        'card_lang' => $request->card_lang,
-                        'card_url' => $personalized_link,
-                        'title' => $request->title,
-                        'sub_title' => $request->subtitle,
-                        'description' => $store_details,
-                    ]);
-
-                    return redirect()->route('user.edit.store', $id)->with('success', trans('Updated!'));
-                } else if ($request->banner != null && $request->logo != null) {
-                    // Validate
-                    $validator = Validator::make($request->all(), [
-                        'banner' => 'required',
-                        'logo' => 'required',
-                    ]);
-
-                    // Validate alert
-                    if ($validator->fails()) {
-                        return back()->with('failed', $validator->messages()->all()[0])->withInput();
-                    }
-
-                    // Generate json for store details
-                    $store_details = [];
-
-                    $store_details['whatsapp_no'] = $request->country_code."".$request->whatsapp_no;
-                    $store_details['whatsapp_msg'] = $request->whatsapp_msg;
-                    $store_details['currency'] = $request->currency;
-
-                    // Upload store logo
-                    $logo = $request->logo;
-                    $arrayBanners = explode(",", $request->banner);
-
-                    // Upload store banner
-                    $banner = [];
-                    for ($i = 0; $i < count($arrayBanners); $i++) {
-                        $banner[$i] = $arrayBanners[$i];
-                    }
-
-                    // Update
-                    BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->update([
-                        'profile' => $logo,
-                        'cover' => json_encode($banner),
-                        'theme_id' => $request->theme_id,
-                        'card_lang' => $request->card_lang,
-                        'card_url' => $personalized_link,
-                        'title' => $request->title,
-                        'sub_title' => $request->subtitle,
-                        'description' => $store_details,
-                    ]);
-
-                    return redirect()->route('user.edit.store', $id)->with('success', trans('Updated!'));
-                }
-            } else {
-                return redirect()->route('user.edit.store', $id)->with('failed', trans('Sorry, the personalized link was already registered.'));
-            }
+            return redirect()
+                ->route('user.stores')
+                ->with('failed', trans('Store not found!'));
         }
+
+        // Get user plan details
+        $user_details = User::where('user_id', Auth::user()->user_id)->first();
+        $plan_details = json_decode($user_details->plan_details, true);
+
+        // Personalized Link
+        if (!empty($plan_details['personalized_link'])) {
+            // Personalized Link is available in the plan
+            $personalized_link = $request->link ?: $business_card->card_url;
+        } else {
+            // Personalized Link is not available in the plan
+            // Always keep the existing Store URL
+            $personalized_link = $business_card->card_url;
+        }
+
+        // Clean Personalized Link
+        $personalized_link = trim($personalized_link);
+
+        // Remove https://, http:// and www.
+        $personalized_link = str_replace(
+            ['https://', 'http://', 'www.'],
+            '',
+            $personalized_link
+        );
+
+        // Convert accented characters to ASCII
+        $personalized_link = iconv(
+            'UTF-8',
+            'ASCII//TRANSLIT//IGNORE',
+            $personalized_link
+        );
+
+        // Remove all characters except letters, numbers, and hyphens
+        $personalized_link = preg_replace(
+            '/[^a-zA-Z0-9-]/',
+            '',
+            $personalized_link
+        );
+
+        // Convert to lowercase
+        $personalized_link = strtolower($personalized_link);
+
+        // Check if Store URL already exists
+        // Exclude current store from duplicate check
+        $current_card = BusinessCard::where('card_url', $personalized_link)
+            ->where('card_id', '!=', $id)
+            ->where('card_status', '!=', 'deleted')
+            ->count();
+
+        if ($current_card > 0) {
+            return redirect()
+                ->route('user.edit.store', $id)
+                ->with(
+                    'failed',
+                    trans('Sorry, the personalized link was already registered.')
+                );
+        }
+
+        // App Base URLs to remove
+        $appUrls = array_filter([
+            url('/'),
+            config('app.url'),
+            env('APP_URL'),
+        ]);
+
+        // Generate JSON/array for store details
+        $store_details = [
+            'whatsapp_no'  => $request->country_code . $request->whatsapp_no,
+            'whatsapp_msg' => $request->whatsapp_msg,
+            'currency'     => $request->currency,
+        ];
+
+        // Setup common data for update
+        $updateData = [
+            'theme_id'    => $request->theme_id,
+            'card_lang'   => $request->card_lang,
+            'card_url'    => $personalized_link,
+            'title'       => $request->title,
+            'sub_title'   => $request->subtitle,
+            'description' => $store_details,
+        ];
+
+        // 1. Case: Both Banner and Logo are NOT updated
+        if ($request->banner == null && $request->logo == null) {
+
+            // Keep old assets
+        }
+
+        // 2. Case: Only Banner is updated
+        else if ($request->logo == null) {
+
+            $validator = Validator::make($request->all(), [
+                'banner' => 'required',
+            ]);
+
+            if ($validator->fails()) {
+                return back()
+                    ->with('failed', $validator->messages()->all()[0])
+                    ->withInput();
+            }
+
+            $rawBanners = $request->banner;
+
+            if (is_array($rawBanners)) {
+                $rawBanners = json_encode($rawBanners);
+            }
+
+            $cleanedBannersStr = str_replace(
+                ['\\', '[', ']', '"', "'"],
+                '',
+                $rawBanners
+            );
+
+            $bannerItems = explode(',', $cleanedBannersStr);
+            $cleanBanners = [];
+
+            foreach ($bannerItems as $item) {
+                $item = trim($item);
+
+                if (!empty($item)) {
+                    $cleanPath = str_replace($appUrls, '', $item);
+                    $cleanPath = '/' . ltrim($cleanPath, '/');
+
+                    if (!empty($cleanPath) && $cleanPath !== '/') {
+                        $cleanBanners[] = $cleanPath;
+                    }
+                }
+            }
+
+            $updateData['cover'] = json_encode(
+                array_values(array_unique($cleanBanners)),
+                JSON_UNESCAPED_SLASHES
+            );
+        }
+
+        // 3. Case: Only Logo is updated
+        else if ($request->banner == null) {
+
+            $validator = Validator::make($request->all(), [
+                'logo' => 'required',
+            ]);
+
+            if ($validator->fails()) {
+                return back()
+                    ->with('failed', $validator->messages()->all()[0])
+                    ->withInput();
+            }
+
+            $rawLogo = $request->logo;
+
+            $cleanedLogo = str_replace(
+                ['\\', '[', ']', '"', "'"],
+                '',
+                $rawLogo
+            );
+
+            $logo = trim($cleanedLogo);
+            $logo = str_replace($appUrls, '', $logo);
+
+            $updateData['profile'] = '/' . ltrim($logo, '/');
+        }
+
+        // 4. Case: Both Banner and Logo are updated
+        else {
+
+            $validator = Validator::make($request->all(), [
+                'banner' => 'required',
+                'logo'   => 'required',
+            ]);
+
+            if ($validator->fails()) {
+                return back()
+                    ->with('failed', $validator->messages()->all()[0])
+                    ->withInput();
+            }
+
+            // Clean Logo
+            $rawLogo = $request->logo;
+
+            $cleanedLogo = str_replace(
+                ['\\', '[', ']', '"', "'"],
+                '',
+                $rawLogo
+            );
+
+            $logo = trim($cleanedLogo);
+            $logo = str_replace($appUrls, '', $logo);
+
+            $updateData['profile'] = '/' . ltrim($logo, '/');
+
+            // Clean Banners
+            $rawBanners = $request->banner;
+
+            if (is_array($rawBanners)) {
+                $rawBanners = json_encode($rawBanners);
+            }
+
+            $cleanedBannersStr = str_replace(
+                ['\\', '[', ']', '"', "'"],
+                '',
+                $rawBanners
+            );
+
+            $bannerItems = explode(',', $cleanedBannersStr);
+            $cleanBanners = [];
+
+            foreach ($bannerItems as $item) {
+                $item = trim($item);
+
+                if (!empty($item)) {
+                    $cleanPath = str_replace($appUrls, '', $item);
+                    $cleanPath = '/' . ltrim($cleanPath, '/');
+
+                    if (!empty($cleanPath) && $cleanPath !== '/') {
+                        $cleanBanners[] = $cleanPath;
+                    }
+                }
+            }
+
+            $updateData['cover'] = json_encode(
+                array_values(array_unique($cleanBanners)),
+                JSON_UNESCAPED_SLASHES
+            );
+        }
+
+        // Perform Update
+        BusinessCard::where('user_id', Auth::user()->user_id)
+            ->where('card_id', $id)
+            ->update($updateData);
+
+        return redirect()
+            ->route('user.edit.store', $id)
+            ->with('success', trans('Updated!'));
     }
 }

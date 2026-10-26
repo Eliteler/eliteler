@@ -34,7 +34,7 @@ class GenerateWithAI
         $companyName = $business_card_data['company_name'] ?? 'Business Card';
 
         // sub title
-        $subTitle = $business_card_data['tagline_or_slogan'] ?? 'Business Card';
+        $subTitle = $business_card_data['tagline_or_slogan'] ?? "Business Card";
 
         // get theme
         $themeId = detectTheme($companyName, $subTitle);
@@ -102,8 +102,8 @@ class GenerateWithAI
         $card->card_id = $card_id;
         $card->user_id = $user_id;
         $card->type = 'business';
-        $card->theme_id = $themeId;
-        $card->card_lang = 'EN';
+        $card->theme_id = (string) $themeId;
+        $card->card_lang = 'en';
         $card->cover_type = 'photo';
         $card->cover = $coverImage;
         $card->profile = $profileImage;

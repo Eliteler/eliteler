@@ -89,13 +89,6 @@ class ServiceController extends Controller
                             return '<p>' . $short . '</p>';
                         }
                     })
-                    ->addColumn('service_enquiry', function ($service) {
-                        if ($service->enable_enquiry == "Disabled") {
-                            return '<span class="badge bg-red text-white text-white">' . __('Disabled') . '</span>';
-                        } else {
-                            return '<span class="badge bg-green text-white text-white">' . __('Enabled') . '</span>';
-                        }
-                    })
                     ->addColumn('actions', function ($service) {
                         return '<div class="d-flex">
                             <button type="button" class="btn btn-success btn-icon m-1" onclick="editService(' . $service->id . ')">
@@ -106,7 +99,7 @@ class ServiceController extends Controller
                             </button>
                         </div>';
                     })
-                    ->rawColumns(['service_name', 'service_description', 'service_enquiry', 'actions'])
+                    ->rawColumns(['service_name', 'service_description', 'actions'])
                     ->make(true); 
             }
 

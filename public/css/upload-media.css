@@ -1,0 +1,88 @@
+/* GoBiz vCard SaaS
+|--------------------------------------------------------------------------
+| Developed by NativeCode © 2021 - https://nativecode.in
+| All rights reserved
+| Unauthorized distribution is prohibited
+|--------------------------------------------------------------------------
+*/
+
+/* Card & Surface Overrides */
+.upload-card-wrapper {
+    background-color: var(--tblr-bg-surface);
+    border: 1px solid var(--tblr-border-color-translucent);
+    border-radius: var(--tblr-border-radius-lg);
+    overflow: hidden;
+}
+
+/* Modern Cloud Dropzone Styling */
+.dropzone-modern {
+    border: 2px dashed var(--tblr-primary) !important;
+    border-radius: var(--tblr-border-radius-lg) !important;
+    background-color: var(--tblr-primary-lt) !important;
+    transition: all 0.25s ease-in-out !important;
+    min-height: 320px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    padding: 2.5rem 1.5rem !important;
+}
+
+.dropzone-modern:hover,
+.dropzone-modern.dz-drag-hover {
+    background-color: rgba(var(--tblr-primary-rgb), 0.12) !important;
+    border-color: var(--tblr-primary) !important;
+    transform: scale(1.005);
+}
+
+/* Circular Pulse Icon Wrapper */
+.dz-icon-box {
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    background-color: var(--tblr-bg-surface);
+    color: var(--tblr-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 14px rgba(var(--tblr-primary-rgb), 0.18);
+    margin-bottom: 1.25rem;
+    transition: transform 0.25s ease;
+}
+
+.dropzone-modern:hover .dz-icon-box {
+    transform: translateY(-4px);
+}
+
+/* Dropzone Preview Overrides */
+.dropzone .dz-preview.dz-image-preview {
+    background: transparent !important;
+}
+
+.dropzone .dz-preview .dz-image {
+    border-radius: var(--tblr-border-radius) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Guidelines Card */
+.upload-guideline-card {
+    background-color: var(--tblr-bg-surface);
+    border: 1px solid var(--tblr-border-color-translucent);
+    border-radius: var(--tblr-border-radius-lg);
+}
+
+.guideline-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.guideline-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}

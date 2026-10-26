@@ -1,3 +1,18 @@
+@php
+    $currentHost = request()->getHost();
+    $masterHost = parse_url(config('app.url'), PHP_URL_HOST);
+    $isCustomDomainOrSubdomain = ($currentHost !== $masterHost);
+
+    // Dynamic store base URL and product URL prefix
+    if ($isCustomDomainOrSubdomain) {
+        $storeUrl = url('/');
+        $productUrlPrefix = url('product');
+    } else {
+        $storeUrl = url($business_card_details->card_url);
+        $productUrlPrefix = url($business_card_details->card_url . '/product');
+    }
+@endphp
+
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
@@ -76,22 +91,60 @@
     {{-- Check business details --}}
     @if ($business_card_details != null)
         @php
-            $custom_css = $business_card_details->custom_css;
-            $custom_js = $business_card_details->custom_js;
+            $custom_css = trim($business_card_details->custom_css ?? '');
+            $custom_js  = trim($business_card_details->custom_js ?? '');
 
-            // Ensure <style> tags for custom CSS
-            if (strpos($custom_css, '<style>') === false && strpos($custom_css, '</style>') === false) {
-                $custom_css = "<style>" . $custom_css . "</style>";
+            /*
+            |--------------------------------------------------------------------------
+            | Custom CSS
+            |--------------------------------------------------------------------------
+            */
+
+            if (
+                !empty($custom_css) &&
+                stripos($custom_css, '<style') === false
+            ) {
+                $custom_css = "<style>{$custom_css}</style>";
             }
 
-            // Ensure <script> tags for custom JS
-            if (strpos($custom_js, '<script>') === false && strpos($custom_js, '</script>') === false) {
-                $custom_js = "<script>" . $custom_js . "</script>";
+            /*
+            |--------------------------------------------------------------------------
+            | Split HTML tags and plain JS
+            |--------------------------------------------------------------------------
+            */
+
+            $include_custom_js = '';
+
+            if (!empty($custom_js)) {
+
+                // Extract HTML tags like meta, script, iframe, noscript, etc.
+                preg_match_all(
+                    '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/?>/is',
+                    $custom_js,
+                    $matches
+                );
+
+                $html_tags = implode("\n", $matches[0]);
+
+                // Remove extracted HTML tags from original content
+                $plain_js = trim(preg_replace(
+                    '/<(meta|script|noscript|iframe|link|style|img)[^>]*>.*?<\/script>?|<(meta|link|img)[^>]*\/?>/is',
+                    '',
+                    $custom_js
+                ));
+
+                // Add HTML tags directly
+                $include_custom_js .= $html_tags;
+
+                // Wrap remaining plain JS inside script tag
+                if (!empty($plain_js)) {
+                    $include_custom_js .= "\n<script>{$plain_js}</script>";
+                }
             }
         @endphp
 
         {!! $custom_css !!}
-        {!! $custom_js !!}
+        {!! $include_custom_js !!}
 
         {{-- Theme CSS --}}
         @if(!empty($business_card_details->theme_css))
@@ -199,13 +252,13 @@
                                 @if (is_array(json_decode($business_card_details->cover)) == true)
                                     @foreach (json_decode($business_card_details->cover) as $cover)
                                         <swiper-slide>
-                                            <img class="radius-img w-100 h-100 object-fit-cover"
+                                            <img class="radius-img img-fluid d-block mx-auto"
                                                 alt="{{ $business_card_details->title }}" src="{{ url($cover) }}" />
                                         </swiper-slide>
                                     @endforeach
                                 @else
                                     <swiper-slide>
-                                        <img class="radius-img w-100 h-100 object-fit-cover"
+                                        <img class="radius-img img-fluid d-block mx-auto"
                                             alt="{{ $business_card_details->title }}"
                                             src="{{ $business_card_details->cover ? url($business_card_details->cover) : asset('images/default-cover.png') }}" />
                                     </swiper-slide>
@@ -264,7 +317,7 @@
                                     @foreach ($categories as $category)
                                         <swiper-slide class="cursor-pointer">
                                             <a
-                                                href="{{ url($business_card_details->card_url) . '?category=' . urlencode(strtolower($category->category_name)) }}">
+                                                href="{{ $storeUrl . '?category=' . urlencode(strtolower($category->category_name)) }}">
                                                 <div class="card radius-img">
                                                     <div
                                                         class="card-body d-flex flex-column align-items-center justify-content-center gap-2 p-3">
@@ -296,7 +349,7 @@
                                             <div class="d-flex align-items-center gap-2">
                                                 <img src="{{ asset('img/templates/all-categories.png') }}"
                                                     alt="All" class="rounded-custom"
-                                                    style="width: 40px; height: 40px; object-fit: cover;">
+                                                    style="width: 40px; height: 40px; object-fit: contain;">
                                                 <h3 class="mb-0 text-white fs-3">{{ __('All') }}</h3>
                                             </div>
                                         </a>
@@ -305,13 +358,13 @@
                                     @foreach ($categories as $category)
                                         <div class="py-3 border-top">
                                             <a
-                                                href="{{ url($business_card_details->card_url) . '?category=' . urlencode(strtolower($category->category_name)) }}">
+                                                href="{{ $storeUrl . '?category=' . urlencode(strtolower($category->category_name)) }}">
                                                 <div class="text-decoration-none">
                                                     <div class="d-flex align-items-center gap-2">
                                                         <!-- Thumbnail -->
                                                         <img src="{{ url($category->thumbnail) }}"
                                                             class="rounded-custom"
-                                                            style="width: 40px; height: 40px; object-fit: cover;"
+                                                            style="width: 40px; height: 40px; object-fit: contain;"
                                                             alt="{{ $category->category_name }}" />
                                                         @php
                                                             $category_name = urlencode(
@@ -395,7 +448,7 @@
                                                             $productImages = explode(',', $product->product_image);
                                                         @endphp
                                                         <a
-                                                            href="{{ url($business_card_details->card_url . '/product/' . $product->id) }}">
+                                                            href="{{ $productUrlPrefix . '/' . $product->id }}">
                                                             <div id="carousel-controls" class="carousel slide mb-3"
                                                                 data-bs-ride="carousel">
                                                                 <!-- Carousel Images -->
@@ -403,7 +456,7 @@
                                                                     @foreach ($productImages as $productImage)
                                                                         <div
                                                                             class="carousel-item {{ $loop->index == 0 ? 'active' : '' }} ratio ratio-4x3">
-                                                                            <img class="d-block img-fluid object-fit-cover w-100 rounded"
+                                                                            <img class="d-block img-fluid object-fit-contain w-100 rounded"
                                                                                 id="{{ $product->product_id }}_product_image"
                                                                                 style="object-fit: contain;"
                                                                                 alt="{{ $product->product_name }}"
@@ -503,7 +556,7 @@
                             <span class="text-white">
                                 {{ __('Copyright') }} &copy;
                                 <span id="year"></span>
-                                <a href="{{ url($business_card_details->card_url) }}" class="text-white fw-semibold">
+                                <a href="{{ $storeUrl }}" class="text-white fw-semibold">
                                     {{ $card_details->title }}
                                 </a>.
                                 {{ __('All rights reserved.') }} <br>
@@ -740,11 +793,11 @@
                         </div>
                         <!-- Modal Body -->
                         <div class="modal-body">
-                            <form action="{{ config('app.url') }}/subscribe/store/newsletter" method="post">
+                            <form action="{{ url('subscribe/store/newsletter') }}" method="post">
                                 @csrf
+                                <input type="hidden" id="card_id" name="card_id"
+                                    value="{{ $business_card_details->card_id }}">
                                 <div class="row">
-                                    <input type="hidden" id="card_id" name="card_id"
-                                        value="{{ $business_card_details->card_id }}">
                                     <!-- Full Name -->
                                     <div class="col-8">
                                         <input type="text" class="form-control" id="newsletter_email"
@@ -813,7 +866,7 @@
                                 {{-- Image --}}
                                 <div class="w-25 h-25 mb-2">
                                     <img src="{{ url($img) }}" alt="{{ $title }}"
-                                        class="img-fluid object-fit-cover rounded-4" />
+                                        class="img-fluid object-fit-contain rounded-4" />
                                 </div>
                                 {{-- Title --}}
                                 <div class="mb-2">
@@ -1097,7 +1150,7 @@
                 // LEFT: Image
                 cart_items += `
                 <div class="me-3 flex-shrink-0" style="width: 100px; height: 100px;">
-                    <img src="${item.product_image}" class="img-fluid rounded object-fit-cover h-100 w-100" alt="${item.product_name}" />
+                    <img src="${item.product_image}" class="img-fluid rounded object-fit-contain h-100 w-100" alt="${item.product_name}" />
                 </div>`;
 
                 // RIGHT: Product Info
@@ -1271,7 +1324,7 @@
 
                 // Place order ajax
                 $.ajax({
-                    url: "{{ config('app.url') }}/order/place",
+                    url: "{{ url('order/place') }}",
                     method: "POST",
                     data: {
                         _token: '{{ csrf_token() }}',

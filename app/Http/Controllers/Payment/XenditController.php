@@ -12,24 +12,24 @@
 
 namespace App\Http\Controllers\Payment;
 
-use App\Plan; 
-use App\User;
-use App\Coupon;
-use App\Transaction;
 use App\AppliedCoupon;
 use App\Classes\UpgradePlan;
-use Illuminate\Http\Request;
-use App\Services\XenditService;
-use Illuminate\Support\Facades\DB;
+use App\Coupon;
 use App\Http\Controllers\Controller;
+use App\Plan;
+use App\Services\XenditService;
+use App\Transaction;
+use App\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
 class XenditController extends Controller
 {
     protected $xenditService;
 
-    public function __construct(XenditService $xenditService) 
+    public function __construct(XenditService $xenditService)
     {
         $this->xenditService = $xenditService;
     }
@@ -147,7 +147,7 @@ class XenditController extends Controller
                         'to_billing_state' => $userData->billing_state,
                         'to_billing_zipcode' => $userData->billing_zipcode,
                         'to_billing_country' => $userData->billing_country,
-                        'to_billing_phone' => $userData->billing_phone,
+                        'to_billing_phone' => $userData->billing_country_code . $userData->billing_phone,
                         'to_billing_email' => $userData->billing_email,
                         'to_vat_number' => $userData->vat_number,
                         'subtotal' => $plan_details->plan_price,
@@ -157,7 +157,7 @@ class XenditController extends Controller
                         'tax_amount' => $appliedTaxInTotal,
                         'applied_coupon' => $appliedCoupon,
                         'discounted_price' => $discountPrice,
-                        'invoice_amount' => $amountToBePaid,
+                        'invoice_amount' => round($amountToBePaid, 2),
                     ];
 
                     // Create a new transaction entry in the database
@@ -169,7 +169,7 @@ class XenditController extends Controller
                     $transaction->plan_id = $plan_details->plan_id;
                     $transaction->desciption = $plan_details->plan_name . " Plan";
                     $transaction->payment_gateway_name = "Xendit";
-                    $transaction->transaction_amount = $amountToBePaid;
+                    $transaction->transaction_amount = round($amountToBePaid, 2);
                     $transaction->transaction_currency = $config[1]->config_value;
                     $transaction->invoice_details = json_encode($invoice_details);
                     $transaction->payment_status = "PENDING";
@@ -222,13 +222,13 @@ class XenditController extends Controller
                 // Plan upgrade
                 $upgradePlan = new UpgradePlan;
                 $upgradePlan->upgrade($transaction_details->transaction_id, "PAID");
-                
+
                 return redirect()->route('user.plans')->with('success', trans('Your payment has been successful.'));
             case 'SETTLED':
                 // Plan upgrade
                 $upgradePlan = new UpgradePlan;
                 $upgradePlan->upgrade($transaction_details->transaction_id, "SETTLED");
-                
+
                 return redirect()->route('user.plans')->with('success', trans('Your payment has been successful.'));
             case 'FAILED':
                 // Payment has failed
@@ -256,7 +256,7 @@ class XenditController extends Controller
         if (!$transaction_details) {
             return redirect()->route('user.plans')->with('failed', trans('Transaction not found or already processed.'));
         }
-        
+
         // Get Xendit payment status by passing the correct invoice ID (transactionId in this case)
         $paymentStatus = $this->xenditService->getInvoiceById($transaction_details->transaction_id);
 
@@ -271,13 +271,13 @@ class XenditController extends Controller
                 // Plan upgrade
                 $upgradePlan = new UpgradePlan;
                 $upgradePlan->upgrade($transaction_details->transaction_id, "PAID");
-                
+
                 return redirect()->route('user.plans')->with('success', trans('Your payment has been successful.'));
             case 'SETTLED':
                 // Plan upgrade
                 $upgradePlan = new UpgradePlan;
                 $upgradePlan->upgrade($transaction_details->transaction_id, "SETTLED");
-                
+
                 return redirect()->route('user.plans')->with('success', trans('Your payment has been successful.'));
             case 'FAILED':
                 // Payment has failed
@@ -313,7 +313,7 @@ class XenditController extends Controller
                 Transaction::where('transaction_id', $transaction_details->transaction_id)->update([
                     'payment_status' => 'FAILED',
                 ]);
-                
+
                 // Unknown payment status
                 return redirect()->route('user.plans')->with('failed', trans('Unable to determine payment status.'));
         }

@@ -21,7 +21,7 @@
 
         {{-- Description --}}
         <p class="pwa-desc">
-            {{ __('Install this app on your device for instant access to property listings, tours, and more.') }}
+            {{ __('Add this digital card to your home screen for instant access."') }}
         </p>
 
         {{-- Buttons --}}

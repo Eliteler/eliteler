@@ -12,32 +12,32 @@
 
 namespace Plugins\CookieConsent\Controllers;
 
-use App\Setting;
+use App\Support\Admin\PluginPage;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 
+/**
+ * Cookie consent banner on/off (COOKIE_CONSENT_ENABLED in .env).
+ * Page: plugins/CookieConsent/resources/js/settings.tsx (npm run plugin:build -- CookieConsent).
+ */
 class CookieConsentController extends Controller
 {
-    // Index
     public function index()
     {
-        // Queries
-        $settings = Setting::active()->first();
-        $config   = DB::table('config')->get();
-
-        // return view
-        return view()->file(base_path('plugins/CookieConsent/Views/index.blade.php'), compact('settings', 'config'));
+        return PluginPage::render('CookieConsent', 'settings', [
+            'enabled' => filter_var(env('COOKIE_CONSENT_ENABLED', true), FILTER_VALIDATE_BOOLEAN),
+        ]);
     }
 
-    // Update Cookie Consent
     public function update(Request $request)
     {
-        // update to env
-        $this->updateEnvFile('COOKIE_CONSENT_ENABLED', $request->cookie_consent);
+        $data = $request->validate(['cookie_consent' => 'required|boolean']);
 
-        // return redirect to index
-        return redirect()->route('admin.plugin.cookie-consent')->with('success', trans('Cookie Consent Settings Updated Successfully!'));
+        $this->updateEnvFile('COOKIE_CONSENT_ENABLED', $request->boolean('cookie_consent') ? 'true' : 'false');
+
+        return back()->with('success', $request->boolean('cookie_consent')
+            ? __('The cookie consent banner is on.')
+            : __('The cookie consent banner is off.'));
     }
 
     // update Env File

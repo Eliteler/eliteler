@@ -29,7 +29,9 @@ class CreateUsersTable extends Migration
             $table->string('user_id');
             $table->string('name');
             $table->string('email')->unique();
+            $table->string('country_code')->nullable();
             $table->string('mobile_number')->nullable();
+            $table->string('whatsapp_country_code')->nullable();
             $table->string('whatsapp_number')->nullable();
             $table->bigInteger('role_id')->default(2);
 	        $table->text('permissions')->nullable();
@@ -39,7 +41,7 @@ class CreateUsersTable extends Migration
             $table->longText('profile_image')->nullable();
             $table->string('plan_id')->nullable();
             $table->string('term')->nullable();
-            $table->integer('trial')->default(0);
+            $table->int('trial')->default(0);
             $table->longText('plan_details')->nullable();
             $table->dateTime('plan_validity')->nullable();
             $table->timestamp('plan_activation_date')->nullable();
@@ -51,6 +53,7 @@ class CreateUsersTable extends Migration
             $table->string('billing_state')->nullable();
             $table->string('billing_zipcode')->nullable();
             $table->string('billing_country')->nullable();
+            $table->string('billing_country_code')->nullable();
             $table->string('billing_phone')->nullable();
             $table->string('billing_email')->nullable();
             $table->text('bank_details')->nullable();

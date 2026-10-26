@@ -44,7 +44,7 @@ class FlutterwaveController extends Controller
         $this->baseUrl = "https://api.flutterwave.com/v3";
     }
 
-    public function nfcPrepareFlutterwave(Request $request, $nfcId, $couponId)
+    public function nfcPrepareFlutterwave(Request $request, $nfcId, $couponId, $quantity = 1)
     {
         // Check if user is logged in
         if (Auth::user()) {
@@ -53,6 +53,9 @@ class FlutterwaveController extends Controller
 
             // Get user details
             $userData = User::where('id', Auth::user()->id)->first();
+
+            // Quantity
+            $quantity = max((int) $quantity, 1);
 
             // Get nfc card details
             $nfcDetails = NfcCardDesign::where('nfc_card_id', $nfcId)->where('status', 1)->first();
@@ -77,6 +80,9 @@ class FlutterwaveController extends Controller
                 // Applied coupon
                 $appliedCoupon = null;
 
+                // Price
+                $subtotal = $nfcDetails->nfc_card_price * $quantity;
+
                 // NFC Card Order ID
                 $nfcCardOrderId = "OD" . preg_replace('/\D/', '', Str::uuid());
                 $nfcTransactionId = "TX" . preg_replace('/\D/', '', Str::uuid());
@@ -85,26 +91,26 @@ class FlutterwaveController extends Controller
                 if ($couponDetails != null) {
                     if ($couponDetails->coupon_type == 'fixed') {
                         // Applied tax in total
-                        $appliedTaxInTotal = ((float)($nfcDetails->nfc_card_price) * (float)($config[25]->config_value) / 100);
+                        $appliedTaxInTotal = ((float)($subtotal) * (float)($config[25]->config_value) / 100);
 
                         // Get discount in plan price
                         $discountPrice = $couponDetails->coupon_amount;
 
                         // Total
-                        $amountToBePaid = ($nfcDetails->nfc_card_price + $appliedTaxInTotal) - $discountPrice;
+                        $amountToBePaid = ($subtotal + $appliedTaxInTotal) - $discountPrice;
                         $amountToBePaid = (float)number_format($amountToBePaid, 2, '.', '');
 
                         // Coupon is applied
                         $appliedCoupon = $couponDetails->coupon_code;
                     } else {
                         // Applied tax in total
-                        $appliedTaxInTotal = ((float)($nfcDetails->nfc_card_price) * (float)($config[25]->config_value) / 100);
+                        $appliedTaxInTotal = ((float)($subtotal) * (float)($config[25]->config_value) / 100);
 
                         // Get discount in plan price
-                        $discountPrice = $nfcDetails->nfc_card_price * $couponDetails->coupon_amount / 100;
+                        $discountPrice = $subtotal * $couponDetails->coupon_amount / 100;
 
                         // Total
-                        $amountToBePaid = ($nfcDetails->nfc_card_price + $appliedTaxInTotal) - $discountPrice;
+                        $amountToBePaid = ($subtotal + $appliedTaxInTotal) - $discountPrice;
                         $amountToBePaid = (float)number_format($amountToBePaid, 2, '.', '');
 
                         // Coupon is applied
@@ -112,10 +118,10 @@ class FlutterwaveController extends Controller
                     }
                 } else {
                     // Applied tax in total
-                    $appliedTaxInTotal = ((float)($nfcDetails->nfc_card_price) * (float)($config[25]->config_value) / 100);
+                    $appliedTaxInTotal = ((float)($subtotal) * (float)($config[25]->config_value) / 100);
 
                     // Total
-                    $amountToBePaid = ($nfcDetails->nfc_card_price + $appliedTaxInTotal);
+                    $amountToBePaid = ($subtotal + $appliedTaxInTotal);
                 }
 
                 $amountToBePaidPaise = $amountToBePaid;
@@ -123,7 +129,7 @@ class FlutterwaveController extends Controller
                 $client = new Client();
 
                 $data = [
-                    'tx_ref' => $nfcCardOrderId,
+                    'tx_ref' => $nfcTransactionId,
                     'amount' => $amountToBePaidPaise, // Ex: 59.0
                     'currency' => $config[1]->config_value, // Ex: USD
                     'redirect_url' => route('nfc.flutterwave.payment.status'), // Redirect URL: http://127.0.0.1:8000/nfc/flutterwave-payment-status
@@ -157,7 +163,7 @@ class FlutterwaveController extends Controller
                         $nfcCardOrder->user_id = Auth::id();
                         $nfcCardOrder->nfc_card_id = $nfcId;
                         $nfcCardOrder->nfc_card_order_transaction_id = $nfcTransactionId;
-                        $nfcCardOrder->order_details = json_encode($this->prepareOrderDetails($config, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice));
+                        $nfcCardOrder->order_details = json_encode($this->prepareOrderDetails($config, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice, $quantity));
                         $nfcCardOrder->delivery_address = json_encode($this->prepareDeliveryAddress($userData));
                         $nfcCardOrder->delivery_note = "-";
                         $nfcCardOrder->order_status = 'pending';
@@ -172,7 +178,7 @@ class FlutterwaveController extends Controller
                         $transaction->payment_method = "Flutterwave";
                         $transaction->currency = $config[1]->config_value;
                         $transaction->amount = $amountToBePaid;
-                        $transaction->invoice_details = json_encode($this->prepareInvoiceDetails($config, $userData, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice));
+                        $transaction->invoice_details = json_encode($this->prepareInvoiceDetails($config, $userData, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice, $quantity));
                         $transaction->payment_status = "pending";
                         $transaction->save();
 
@@ -247,7 +253,7 @@ class FlutterwaveController extends Controller
                     return redirect()->route('user.order.nfc.cards')->with('failed', trans('Payment verification failed.'));
                 }
             } else {
-                return redirect()->route('user.order.nfc.cards')->with('failed', trans('Transaction not found.'));  
+                return redirect()->route('user.order.nfc.cards')->with('failed', trans('Transaction not found.'));
             }
         } elseif ($status === 'failed') {
             // Handle failed payment
@@ -314,8 +320,10 @@ class FlutterwaveController extends Controller
     }
 
 
-    private function prepareInvoiceDetails($config, $userData, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice)
+    private function prepareInvoiceDetails($config, $userData, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice, $quantity)
     {
+        $subtotal = $nfcDetails->nfc_card_price * $quantity;
+
         // Prepare invoice details
         $invoiceDetails = [
             'from_billing_name' => $config[16]->config_value,
@@ -333,7 +341,7 @@ class FlutterwaveController extends Controller
             'to_billing_state' => $userData->billing_state,
             'to_billing_zipcode' => $userData->billing_zipcode,
             'to_billing_country' => $userData->billing_country,
-            'to_billing_phone' => $userData->billing_phone,
+            'to_billing_phone' => $userData->billing_country_code . $userData->billing_phone,
             'to_billing_email' => $userData->billing_email,
             'to_vat_number' => $userData->vat_number,
             'tax_name' => $config[24]->config_value,
@@ -342,8 +350,8 @@ class FlutterwaveController extends Controller
             'applied_coupon' => $appliedCoupon,
             'discounted_price' => $discountPrice,
             'invoice_amount' => $amountToBePaid,
-            'subtotal' => $nfcDetails->nfc_card_price,
-            'tax_amount' => (float)($nfcDetails->nfc_card_price) * (float)($config[25]->config_value) / 100
+            'subtotal' => $subtotal,
+            'tax_amount' => (float)($subtotal) * (float)($config[25]->config_value) / 100
         ];
 
         return $invoiceDetails;
@@ -351,23 +359,25 @@ class FlutterwaveController extends Controller
 
 
     // Prepare oder details
-    private function prepareOrderDetails($config, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice)
+    private function prepareOrderDetails($config, $amountToBePaid, $nfcDetails, $appliedCoupon, $discountPrice, $quantity)
     {
+        $subtotal = $nfcDetails->nfc_card_price * $quantity;
+
         // Prepare invoice details
         $invoiceDetails = [
             'nfc_card_id' => $nfcDetails->nfc_card_id,
             'order_item' => $nfcDetails->nfc_card_name,
             'order_description' => $nfcDetails->nfc_card_description,
-            'order_quantity' => 1,
+            'order_quantity' => $quantity,
             'price' => $nfcDetails->nfc_card_price,
             'invoice_amount' => $amountToBePaid,
             'tax_name' => $config[24]->config_value,
             'tax_type' => $config[14]->config_value,
             'tax_value' => $config[25]->config_value,
-            'tax_amount' => (float)($nfcDetails->nfc_card_price) * (float)($config[25]->config_value) / 100,
+            'tax_amount' => (float)($subtotal) * (float)($config[25]->config_value) / 100,
             'applied_coupon' => $appliedCoupon,
             'discounted_price' => $discountPrice,
-            'subtotal' => $nfcDetails->nfc_card_price
+            'subtotal' => $subtotal
         ];
 
         return $invoiceDetails;
@@ -384,7 +394,7 @@ class FlutterwaveController extends Controller
             'billing_state' => $userData->billing_state,
             'billing_zipcode' => $userData->billing_zipcode,
             'billing_country' => $userData->billing_country,
-            'billing_phone' => $userData->billing_phone,
+            'billing_phone' => $userData->billing_country_code . $userData->billing_phone,
             'billing_email' => $userData->billing_email,
             'shipping_name' => $userData->billing_name,
             'shipping_address' => $userData->billing_address,
@@ -392,7 +402,7 @@ class FlutterwaveController extends Controller
             'shipping_state' => $userData->billing_state,
             'shipping_zipcode' => $userData->billing_zipcode,
             'shipping_country' => $userData->billing_country,
-            'shipping_phone' => $userData->billing_phone,
+            'shipping_phone' => $userData->billing_country_code . $userData->billing_phone,
             'shipping_email' => $userData->billing_email,
             'type' => $userData->type,
             'vat_number' => $userData->vat_number

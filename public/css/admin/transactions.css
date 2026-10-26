@@ -1,0 +1,172 @@
+/* Tabler-Native TomSelect Wrapper Styling */
+.ts-wrapper.form-select {
+    border: 1px solid var(--tblr-border-color, #dce1e7) !important;
+    background-color: var(--tblr-bg-surface, #ffffff) !important;
+    border-radius: var(--tblr-border-radius, 8px) !important;
+    padding: 0 !important; /* Removed wrapper padding to eliminate click dead-zones */
+    min-height: 38px;
+    height: 38px;
+    display: inline-flex !important;
+    align-items: center !important;
+    box-shadow: none !important;
+    cursor: pointer;
+    position: relative;
+}
+
+/* Maintain border state when dropdown is clicked / focused / active */
+.ts-wrapper.form-select.focus,
+.ts-wrapper.form-select.dropdown-active,
+.ts-wrapper.form-select:focus-within {
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+/* Inner control spans 100% width and height so entire box including corners is clickable */
+.ts-wrapper.form-select .ts-control {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0.45rem 2.25rem 0.45rem 0.85rem !important; /* Padding moved here */
+    margin: 0 !important;
+    font-weight: 500 !important;
+    font-size: 0.875rem !important;
+    color: var(--tblr-body-color, #1e293b) !important;
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    border-radius: inherit !important; /* Covers the rounded corners perfectly */
+    cursor: pointer !important;
+    box-sizing: border-box !important;
+}
+
+.ts-wrapper.form-select .ts-control > input {
+    display: none !important;
+}
+
+/* TomSelect Dropdown menu box */
+.ts-dropdown {
+    border: 1px solid var(--tblr-border-color, #dce1e7) !important;
+    border-radius: var(--tblr-border-radius, 8px) !important;
+    box-shadow: none !important;
+    margin-top: 4px !important;
+    background-color: var(--tblr-bg-surface, #ffffff) !important;
+    color: var(--tblr-body-color, #1e293b) !important;
+    z-index: 1050 !important;
+}
+
+.ts-dropdown .option {
+    padding: 0.5rem 1rem;
+    color: var(--tblr-body-color, #1e293b);
+}
+
+.ts-dropdown .option.active,
+.ts-dropdown .option.selected,
+.ts-dropdown .option:hover {
+    background-color: var(--tblr-bg-surface-secondary, #f1f5f9) !important;
+    color: var(--tblr-primary) !important;
+}
+
+/* Header Search Bar Wrapper (Height aligned to 38px matching dropdowns) */
+.header-search-wrapper {
+    position: relative;
+    min-width: 240px;
+    height: 38px;
+    border: 1px solid var(--tblr-border-color, #dce1e7) !important;
+    background-color: var(--tblr-bg-surface, #ffffff) !important;
+    border-radius: var(--tblr-border-radius, 8px) !important;
+    display: flex;
+    align-items: center;
+    box-shadow: none !important;
+}
+
+.header-search-wrapper:focus-within {
+    border-color: var(--tblr-primary) !important;
+}
+
+.header-search-wrapper .form-control {
+    background: transparent !important;
+    border: none !important;
+    color: var(--tblr-body-color, #1e293b) !important;
+    box-shadow: none !important;
+    padding-right: 2.5rem;
+    height: 100%;
+}
+
+.header-search-btn {
+    position: absolute;
+    right: 2px;
+    top: 2px;
+    bottom: 2px;
+    border: none;
+    background: transparent;
+    width: 2.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--tblr-secondary, #626976);
+    border-radius: 6px;
+}
+
+.header-search-btn:hover {
+    background-color: var(--tblr-bg-surface-secondary, #f1f5f9);
+    color: var(--tblr-body-color, #1e293b);
+}
+
+/* Responsive Mobile Card View (max-width: 767.98px) */
+@media (max-width: 767.98px) {
+    .responsive-card-table,
+    .responsive-card-table tbody,
+    .responsive-card-table tr,
+    .responsive-card-table td {
+        display: block !important;
+        width: 100% !important;
+    }
+
+    .responsive-card-table thead {
+        display: none !important;
+    }
+
+    .responsive-card-table tbody tr {
+        background-color: var(--tblr-bg-surface, #ffffff);
+        border: 1px solid var(--tblr-border-color, #e6e8eb) !important;
+        border-radius: 12px !important;
+        box-shadow: none !important;
+        margin-bottom: 1.25rem !important;
+        padding: 1rem !important;
+    }
+
+    .responsive-card-table tbody td {
+        display: flex !important;
+        align-items: center;
+        justify-content: space-between;
+        border: none !important;
+        padding: 0.5rem 0 !important;
+        text-align: right !important;
+        white-space: normal !important;
+        font-size: 0.875rem;
+        color: var(--tblr-body-color, #1e293b);
+    }
+
+    .responsive-card-table td.rc-hide {
+        display: none !important;
+    }
+
+    .responsive-card-table td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: var(--tblr-secondary, #626976);
+        text-align: left !important;
+        margin-right: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    #custom-mobile-pagination {
+        border-radius: 0 0 12px 12px;
+    }
+}
+
+/* Dark Mode Specific Adjustments */
+[data-bs-theme="dark"] .header-search-btn:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+}

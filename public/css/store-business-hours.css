@@ -1,0 +1,60 @@
+/* GoBiz vCard SaaS
+|--------------------------------------------------------------------------
+| Developed by NativeCode © 2021 - https://nativecode.in
+| All rights reserved
+| Unauthorized distribution is prohibited
+|--------------------------------------------------------------------------
+*/
+
+/* Business hours single inline row */
+.business-hour-row {
+    padding: 1.1rem 1.5rem;
+    border-bottom: 1px solid var(--tblr-border-color-translucent);
+    background-color: var(--tblr-bg-surface);
+    transition: background-color 0.2s ease;
+}
+
+.business-hour-row:hover {
+    background-color: var(--tblr-bg-surface-secondary);
+}
+
+.business-hour-row:last-child {
+    border-bottom: none;
+}
+
+.day-badge-title {
+    font-weight: 600;
+    color: var(--tblr-body-color);
+    font-size: 0.95rem;
+    min-width: 130px;
+}
+
+.time-separator {
+    color: var(--tblr-muted);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.time-input-field {
+    width: 140px !important;
+    border-radius: var(--tblr-border-radius);
+    border-color: var(--tblr-border-color);
+    background-color: var(--tblr-bg-forms);
+    color: var(--tblr-body-color);
+    text-align: center;
+}
+
+.time-input-field:focus {
+    border-color: var(--tblr-primary) !important;
+    box-shadow: 0 0 0 0.25rem rgba(var(--tblr-primary-rgb), 0.15) !important;
+}
+
+@media (max-width: 575.98px) {
+    .business-hour-row {
+        padding: 1rem;
+    }
+
+    .time-input-field {
+        width: 110px !important;
+    }
+}

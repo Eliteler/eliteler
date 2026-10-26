@@ -13,25 +13,52 @@
 namespace App\Http\Controllers;
 
 use App\BusinessCard;
-use App\Plan;
-use App\Setting;
+use App\Classes\GoBizUpdater2700;
 use App\Currency;
-use Illuminate\Http\Request;
+use App\Http\Controllers\CustomDomainController;
 use App\Mail\ContactFormMail;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\URL;
+use App\Plan;
 use App\Services\GoBizCommonService;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Mail;
+use App\Setting;
 use Artesaos\SEOTools\Facades\JsonLd;
+use Artesaos\SEOTools\Facades\OpenGraph;
 use Artesaos\SEOTools\Facades\SEOMeta;
 use Artesaos\SEOTools\Facades\SEOTools;
-use Artesaos\SEOTools\Facades\OpenGraph;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
-use App\Http\Controllers\CustomDomainController;
 
 class HomeController extends Controller
 {
+    // Helper function to handle redirection when website is disabled
+    private function getWebsiteRedirect()
+    {
+        // Retrieve redirect URL from config table
+        $redirectUrl = DB::table('config')->where('config_key', 'website_redirect_url')->value('config_value');
+
+        // Trim trailing slashes for accurate comparison
+        $trimmedRedirectUrl = rtrim($redirectUrl ?? '', '/');
+        $trimmedBaseUrl     = rtrim(url('/'), '/');
+        $trimmedCurrentUrl  = rtrim(url()->current(), '/');
+
+        // Prevent infinite redirect loop if redirectUrl is empty, matches base URL, or matches current URL
+        if (
+            !empty($trimmedRedirectUrl) &&
+            $trimmedRedirectUrl !== $trimmedBaseUrl &&
+            $trimmedRedirectUrl !== $trimmedCurrentUrl
+        ) {
+            return redirect()->to($redirectUrl);
+        }
+
+        // Default fallback to login to avoid ERR_TOO_MANY_REDIRECTS
+        return redirect('/login');
+    }
+
     // Home page
     public function index(Request $request)
     {
@@ -105,13 +132,13 @@ class HomeController extends Controller
                 OpenGraph::setDescription($pageDescription);
                 OpenGraph::setUrl(URL::full());
                 OpenGraph::addImage([
-                    'url'  => asset($settings->site_logo),
+                    'url'  => asset($settings->favicon),
                     'size' => 300
                 ]);
 
                 JsonLd::setTitle($pageTitle);
                 JsonLd::setDescription($pageDescription);
-                JsonLd::addImage(asset($settings->site_logo));
+                JsonLd::addImage(asset($settings->favicon));
 
                 return view(
                     $web_template . '::Website.pages.index',
@@ -119,7 +146,8 @@ class HomeController extends Controller
                 );
             }
 
-            return redirect('/login');
+            // Redirect if website status is disabled
+            return $this->getWebsiteRedirect();
         }
 
         /* ================= CUSTOM DOMAIN ================= */
@@ -134,7 +162,7 @@ class HomeController extends Controller
 
         // Website enabled check
         if (($config[38]->config_value ?? null) !== 'yes') {
-            return redirect('/login');
+            return $this->getWebsiteRedirect();
         }
 
         $web_template = getConfigData('web_template');
@@ -142,7 +170,17 @@ class HomeController extends Controller
         // Fetch FAQ page once
         $faqPage = GoBizCommonService::templatePageContentGet('faq', $web_template);
 
-        if (! $faqPage) {
+        // Abort if no data found or collection is empty
+        if (blank($faqPage)) {
+            abort(404);
+        }
+
+        // Safely get the first item from array, collection, or object
+        $pageItem = is_iterable($faqPage)
+            ? (is_object($faqPage) && method_exists($faqPage, 'first') ? $faqPage->first() : ($faqPage[0] ?? null))
+            : $faqPage;
+
+        if (! $pageItem) {
             abort(404);
         }
 
@@ -152,9 +190,9 @@ class HomeController extends Controller
         // Settings (single call)
         $settings = GoBizCommonService::settings();
 
-        // SEO
-        $title       = trans($faqPage[0]->title);
-        $description = trans($faqPage[0]->description);
+        // SEO configurations
+        $title       = trans($pageItem->title ?? '');
+        $description = trans($pageItem->description ?? '');
 
         SEOTools::setTitle($title);
         SEOTools::setDescription($description);
@@ -163,23 +201,23 @@ class HomeController extends Controller
         SEOMeta::setDescription($description);
         SEOMeta::addMeta(
             'article:section',
-            ucfirst($faqPage[0]->page_name) . ' - ' . $title,
+            ucfirst($pageItem->page_name ?? '') . ' - ' . $title,
             'property'
         );
-        SEOMeta::addKeyword([trans($faqPage[0]->keywords)]);
+        SEOMeta::addKeyword([trans($pageItem->keywords ?? '')]);
         SEOMeta::setCanonical(url()->current());
 
         OpenGraph::setTitle($title);
         OpenGraph::setDescription($description);
         OpenGraph::setUrl(URL::full());
         OpenGraph::addImage([
-            'url'  => asset($settings->site_logo),
-            'size' => 300
+            'url'  => asset($settings->favicon ?? ''),
+            'size' => 300,
         ]);
 
         JsonLd::setTitle($title);
         JsonLd::setDescription($description);
-        JsonLd::addImage(asset($settings->site_logo));
+        JsonLd::addImage(asset($settings->favicon ?? ''));
 
         return view(
             $web_template . '::Website.pages.faq.index',
@@ -195,7 +233,7 @@ class HomeController extends Controller
 
         // Website enabled check
         if (($config[38]->config_value ?? null) !== 'yes') {
-            return redirect('/login');
+            return $this->getWebsiteRedirect();
         }
 
         $web_template = getConfigData('web_template');
@@ -203,7 +241,17 @@ class HomeController extends Controller
         // Fetch Privacy page once
         $privacyPage = GoBizCommonService::templatePageContentGet('privacy', $web_template);
 
-        if (! $privacyPage) {
+        // Abort if no data found or collection is empty
+        if (blank($privacyPage)) {
+            abort(404);
+        }
+
+        // Safely get the first item from array, collection, or object
+        $pageItem = is_iterable($privacyPage)
+            ? (is_object($privacyPage) && method_exists($privacyPage, 'first') ? $privacyPage->first() : ($privacyPage[0] ?? null))
+            : $privacyPage;
+
+        if (! $pageItem) {
             abort(404);
         }
 
@@ -213,9 +261,9 @@ class HomeController extends Controller
         // Settings (single call)
         $settings = GoBizCommonService::settings();
 
-        // SEO
-        $title       = trans($privacyPage[0]->title);
-        $description = trans($privacyPage[0]->description);
+        // SEO configurations
+        $title       = trans($pageItem->title ?? '');
+        $description = trans($pageItem->description ?? '');
 
         SEOTools::setTitle($title);
         SEOTools::setDescription($description);
@@ -224,23 +272,23 @@ class HomeController extends Controller
         SEOMeta::setDescription($description);
         SEOMeta::addMeta(
             'article:section',
-            ucfirst($privacyPage[0]->page_name) . ' - ' . $title,
+            ucfirst($pageItem->page_name ?? '') . ' - ' . $title,
             'property'
         );
-        SEOMeta::addKeyword([trans($privacyPage[0]->keywords)]);
+        SEOMeta::addKeyword([trans($pageItem->keywords ?? '')]);
         SEOMeta::setCanonical(url()->current());
 
         OpenGraph::setTitle($title);
         OpenGraph::setDescription($description);
         OpenGraph::setUrl(URL::full());
         OpenGraph::addImage([
-            'url'  => asset($settings->site_logo),
-            'size' => 300
+            'url'  => asset($settings->favicon ?? ''),
+            'size' => 300,
         ]);
 
         JsonLd::setTitle($title);
         JsonLd::setDescription($description);
-        JsonLd::addImage(asset($settings->site_logo));
+        JsonLd::addImage(asset($settings->favicon ?? ''));
 
         return view(
             $web_template . '::Website.pages.privacy-policy.index',
@@ -256,7 +304,7 @@ class HomeController extends Controller
 
         // Website enabled check
         if (($config[38]->config_value ?? null) !== 'yes') {
-            return redirect('/login');
+            return $this->getWebsiteRedirect();
         }
 
         $web_template = getConfigData('web_template');
@@ -264,7 +312,17 @@ class HomeController extends Controller
         // Fetch Refund page once
         $refundPage = GoBizCommonService::templatePageContentGet('refund', $web_template);
 
-        if (! $refundPage) {
+        // Abort if no data found or collection is empty
+        if (blank($refundPage)) {
+            abort(404);
+        }
+
+        // Safely get the first item from array, collection, or object
+        $pageItem = is_iterable($refundPage)
+            ? (is_object($refundPage) && method_exists($refundPage, 'first') ? $refundPage->first() : ($refundPage[0] ?? null))
+            : $refundPage;
+
+        if (! $pageItem) {
             abort(404);
         }
 
@@ -274,9 +332,9 @@ class HomeController extends Controller
         // Settings (single call)
         $settings = GoBizCommonService::settings();
 
-        // SEO
-        $title       = trans($refundPage[0]->title);
-        $description = trans($refundPage[0]->description);
+        // SEO configurations
+        $title       = trans($pageItem->title ?? '');
+        $description = trans($pageItem->description ?? '');
 
         SEOTools::setTitle($title);
         SEOTools::setDescription($description);
@@ -285,23 +343,23 @@ class HomeController extends Controller
         SEOMeta::setDescription($description);
         SEOMeta::addMeta(
             'article:section',
-            ucfirst($refundPage[0]->page_name) . ' - ' . $title,
+            ucfirst($pageItem->page_name ?? '') . ' - ' . $title,
             'property'
         );
-        SEOMeta::addKeyword([trans($refundPage[0]->keywords)]);
+        SEOMeta::addKeyword([trans($pageItem->keywords ?? '')]);
         SEOMeta::setCanonical(url()->current());
 
         OpenGraph::setTitle($title);
         OpenGraph::setDescription($description);
         OpenGraph::setUrl(URL::full());
         OpenGraph::addImage([
-            'url'  => asset($settings->site_logo),
-            'size' => 300
+            'url'  => asset($settings->favicon ?? ''),
+            'size' => 300,
         ]);
 
         JsonLd::setTitle($title);
         JsonLd::setDescription($description);
-        JsonLd::addImage(asset($settings->site_logo));
+        JsonLd::addImage(asset($settings->favicon ?? ''));
 
         return view(
             $web_template . '::Website.pages.refund-policy.index',
@@ -317,7 +375,7 @@ class HomeController extends Controller
 
         // Website enabled check
         if (($config[38]->config_value ?? null) !== 'yes') {
-            return redirect('/login');
+            return $this->getWebsiteRedirect();
         }
 
         $web_template = getConfigData('web_template');
@@ -325,7 +383,18 @@ class HomeController extends Controller
         // Fetch Terms page once
         $termsPage = GoBizCommonService::templatePageContentGet('terms', $web_template);
 
-        if (! $termsPage) {
+        // Abort if no data found or collection is empty
+        if (blank($termsPage)) {
+            abort(404);
+        }
+
+        // Safely get the first item from array, collection, or object
+        $pageItem = is_iterable($termsPage)
+            ? (is_object($termsPage) && method_exists($termsPage, 'first') ? $termsPage->first() : ($termsPage[0] ?? null))
+            : $termsPage;
+
+        // Verify page item exists
+        if (! $pageItem) {
             abort(404);
         }
 
@@ -335,9 +404,9 @@ class HomeController extends Controller
         // Settings (single call)
         $settings = GoBizCommonService::settings();
 
-        // SEO
-        $title       = trans($termsPage[0]->title);
-        $description = trans($termsPage[0]->description);
+        // SEO configurations
+        $title       = trans($pageItem->title ?? '');
+        $description = trans($pageItem->description ?? '');
 
         SEOTools::setTitle($title);
         SEOTools::setDescription($description);
@@ -346,27 +415,98 @@ class HomeController extends Controller
         SEOMeta::setDescription($description);
         SEOMeta::addMeta(
             'article:section',
-            ucfirst($termsPage[0]->page_name) . ' - ' . $title,
+            ucfirst($pageItem->page_name ?? '') . ' - ' . $title,
             'property'
         );
-        SEOMeta::addKeyword([trans($termsPage[0]->keywords)]);
+        SEOMeta::addKeyword([trans($pageItem->keywords ?? '')]);
         SEOMeta::setCanonical(url()->current());
 
         OpenGraph::setTitle($title);
         OpenGraph::setDescription($description);
         OpenGraph::setUrl(URL::full());
         OpenGraph::addImage([
-            'url'  => asset($settings->site_logo),
-            'size' => 300
+            'url'  => asset($settings->favicon ?? ''),
+            'size' => 300,
         ]);
 
         JsonLd::setTitle($title);
         JsonLd::setDescription($description);
-        JsonLd::addImage(asset($settings->site_logo));
+        JsonLd::addImage(asset($settings->favicon ?? ''));
 
         return view(
             $web_template . '::Website.pages.terms-and-conditions.index',
             compact('termsPage', 'supportPage', 'settings', 'config')
+        );
+    }
+
+    // Cookie Policy
+    public function cookiePolicy()
+    {
+        // Load config once
+        $config = GoBizCommonService::config();
+
+        // Website enabled check
+        if (($config[38]->config_value ?? null) !== 'yes') {
+            return $this->getWebsiteRedirect();
+        }
+
+        $web_template = getConfigData('web_template');
+
+        // Fetch Cookie page once
+        $cookiePage = GoBizCommonService::templatePageContentGet('cookie', $web_template);
+
+        // Abort if no data found or collection is empty
+        if (blank($cookiePage)) {
+            abort(404);
+        }
+
+        // Safely get the first item from array, collection, or object
+        $pageItem = is_iterable($cookiePage)
+            ? (is_object($cookiePage) && method_exists($cookiePage, 'first') ? $cookiePage->first() : ($cookiePage[0] ?? null))
+            : $cookiePage;
+
+        if (! $pageItem) {
+            abort(404);
+        }
+
+        // Support pages
+        $supportPage = GoBizCommonService::templatePageContentGet('footer', $web_template);
+
+        // Settings (single call)
+        $settings = GoBizCommonService::settings();
+
+        // SEO configurations
+        $title       = trans($pageItem->title ?? '');
+        $description = trans($pageItem->description ?? '');
+
+        SEOTools::setTitle($title);
+        SEOTools::setDescription($description);
+
+        SEOMeta::setTitle($title);
+        SEOMeta::setDescription($description);
+        SEOMeta::addMeta(
+            'article:section',
+            ucfirst($pageItem->page_name ?? '') . ' - ' . $title,
+            'property'
+        );
+        SEOMeta::addKeyword([trans($pageItem->keywords ?? '')]);
+        SEOMeta::setCanonical(url()->current());
+
+        OpenGraph::setTitle($title);
+        OpenGraph::setDescription($description);
+        OpenGraph::setUrl(URL::full());
+        OpenGraph::addImage([
+            'url'  => asset($settings->favicon ?? ''),
+            'size' => 300,
+        ]);
+
+        JsonLd::setTitle($title);
+        JsonLd::setDescription($description);
+        JsonLd::addImage(asset($settings->favicon ?? ''));
+
+        return view(
+            $web_template . '::Website.pages.cookie-policy.index',
+            compact('cookiePage', 'supportPage', 'settings', 'config')
         );
     }
 
@@ -378,7 +518,7 @@ class HomeController extends Controller
 
         // Website enabled check
         if (($config[38]->config_value ?? null) !== 'yes') {
-            return redirect('/login');
+            return $this->getWebsiteRedirect();
         }
 
         $web_template = getConfigData('web_template');
@@ -386,7 +526,17 @@ class HomeController extends Controller
         // Fetch About page once
         $aboutPage = GoBizCommonService::templatePageContentGet('about', $web_template);
 
-        if (! $aboutPage) {
+        // Abort if no data found or collection is empty
+        if (blank($aboutPage)) {
+            abort(404);
+        }
+
+        // Safely get the first item from array, collection, or object
+        $pageItem = is_iterable($aboutPage)
+            ? (is_object($aboutPage) && method_exists($aboutPage, 'first') ? $aboutPage->first() : ($aboutPage[0] ?? null))
+            : $aboutPage;
+
+        if (! $pageItem) {
             abort(404);
         }
 
@@ -396,9 +546,9 @@ class HomeController extends Controller
         // Settings (single call)
         $settings = GoBizCommonService::settings();
 
-        // SEO
-        $title       = trans($aboutPage[0]->title);
-        $description = trans($aboutPage[0]->description);
+        // SEO configurations
+        $title       = trans($pageItem->title ?? '');
+        $description = trans($pageItem->description ?? '');
 
         SEOTools::setTitle($title);
         SEOTools::setDescription($description);
@@ -407,23 +557,23 @@ class HomeController extends Controller
         SEOMeta::setDescription($description);
         SEOMeta::addMeta(
             'article:section',
-            ucfirst($aboutPage[0]->page_name) . ' - ' . $title,
+            ucfirst($pageItem->page_name ?? '') . ' - ' . $title,
             'property'
         );
-        SEOMeta::addKeyword([trans($aboutPage[0]->keywords)]);
+        SEOMeta::addKeyword([trans($pageItem->keywords ?? '')]);
         SEOMeta::setCanonical(url()->current());
 
         OpenGraph::setTitle($title);
         OpenGraph::setDescription($description);
         OpenGraph::setUrl(URL::full());
         OpenGraph::addImage([
-            'url'  => asset($settings->site_logo),
-            'size' => 300
+            'url'  => asset($settings->favicon ?? ''),
+            'size' => 300,
         ]);
 
         JsonLd::setTitle($title);
         JsonLd::setDescription($description);
-        JsonLd::addImage(asset($settings->site_logo));
+        JsonLd::addImage(asset($settings->favicon ?? ''));
 
         return view(
             $web_template . '::Website.pages.about.index',
@@ -439,7 +589,7 @@ class HomeController extends Controller
 
         // Website enabled check
         if (($config[38]->config_value ?? null) !== 'yes') {
-            return redirect('/login');
+            return $this->getWebsiteRedirect();
         }
 
         $web_template = getConfigData('web_template');
@@ -447,7 +597,17 @@ class HomeController extends Controller
         // Fetch Contact page once
         $contactPage = GoBizCommonService::templatePageContentGet('contact', $web_template);
 
-        if (! $contactPage) {
+        // Abort if no data found or collection is empty
+        if (blank($contactPage)) {
+            abort(404);
+        }
+
+        // Safely get the first item from array, collection, or object
+        $pageItem = is_iterable($contactPage)
+            ? (is_object($contactPage) && method_exists($contactPage, 'first') ? $contactPage->first() : ($contactPage[0] ?? null))
+            : $contactPage;
+
+        if (! $pageItem) {
             abort(404);
         }
 
@@ -457,9 +617,9 @@ class HomeController extends Controller
         // Settings (single call)
         $settings = GoBizCommonService::settings();
 
-        // SEO
-        $title       = trans($contactPage[0]->title);
-        $description = trans($contactPage[0]->description);
+        // SEO configurations
+        $title       = trans($pageItem->title ?? '');
+        $description = trans($pageItem->description ?? '');
 
         SEOTools::setTitle($title);
         SEOTools::setDescription($description);
@@ -468,27 +628,85 @@ class HomeController extends Controller
         SEOMeta::setDescription($description);
         SEOMeta::addMeta(
             'article:section',
-            ucfirst($contactPage[0]->page_name) . ' - ' . $title,
+            ucfirst($pageItem->page_name ?? '') . ' - ' . $title,
             'property'
         );
-        SEOMeta::addKeyword([trans($contactPage[0]->keywords)]);
+        SEOMeta::addKeyword([trans($pageItem->keywords ?? '')]);
         SEOMeta::setCanonical(url()->current());
 
         OpenGraph::setTitle($title);
         OpenGraph::setDescription($description);
         OpenGraph::setUrl(URL::full());
         OpenGraph::addImage([
-            'url'  => asset($settings->site_logo),
-            'size' => 300
+            'url'  => asset($settings->favicon ?? ''),
+            'size' => 300,
         ]);
 
         JsonLd::setTitle($title);
         JsonLd::setDescription($description);
-        JsonLd::addImage(asset($settings->site_logo));
+        JsonLd::addImage(asset($settings->favicon ?? ''));
 
         return view(
             $web_template . '::Website.pages.contact.index',
             compact('contactPage', 'supportPage', 'settings', 'config')
+        );
+    }
+
+    // Custom pages
+    public function customPage($id)
+    {
+        // Load config once
+        $config = GoBizCommonService::config();
+
+        // Website enabled check
+        if (($config[38]->config_value ?? null) !== 'yes') {
+            return $this->getWebsiteRedirect();
+        }
+
+        $web_template = getConfigData('web_template');
+
+        // Fetch page once
+        $page = GoBizCommonService::customPageContent($id, $web_template);
+
+        // Abort if custom page does not exist
+        if (blank($page)) {
+            abort(404);
+        }
+
+        // Support pages
+        $supportPage = GoBizCommonService::templatePageContentGet('contact', $web_template);
+
+        // Settings (single call)
+        $settings = GoBizCommonService::settings();
+
+        // SEO configurations
+        $title       = trans($page->title ?? '');
+        $description = trans($page->description ?? '');
+
+        SEOTools::setTitle($title);
+        SEOTools::setDescription($description);
+
+        SEOMeta::setTitle($title);
+        SEOMeta::setDescription($description);
+        SEOMeta::addMeta('article:section', $title, 'property');
+        SEOMeta::addKeyword([trans($page->keywords ?? '')]);
+        SEOMeta::setCanonical(url()->current());
+
+        OpenGraph::setTitle($title);
+        OpenGraph::setDescription($description);
+        OpenGraph::setUrl(URL::full());
+        OpenGraph::addImage([
+            'url'  => asset($settings->favicon ?? ''),
+            'size' => 300,
+        ]);
+
+        JsonLd::setTitle($title);
+        JsonLd::setDescription($description);
+        JsonLd::addImage(asset($settings->favicon ?? ''));
+
+        return view(
+            $web_template . '::Website.pages.custom-page.index',
+            compact('page', 'supportPage', 'settings', 'config')
         );
     }
 
@@ -526,63 +744,6 @@ class HomeController extends Controller
         }
 
         return redirect()->back()->with('success', __('Email sent successfully.'));
-    }
-
-    // Custom pages
-    public function customPage($id)
-    {
-        // Load config once
-        $config = GoBizCommonService::config();
-
-        // Website enabled check
-        if (($config[38]->config_value ?? null) !== 'yes') {
-            return redirect('/login');
-        }
-
-        $web_template = getConfigData('web_template');
-
-        // Fetch page once
-        $page = GoBizCommonService::customPageContent($id, $web_template);
-
-        if (! $page) {
-            abort(404);
-        }
-
-        // Support pages
-        $supportPage = GoBizCommonService::templatePageContentGet('contact', $web_template);
-
-        // Settings (single call)
-        $settings = GoBizCommonService::settings();
-
-        // SEO
-        $title       = trans($page->title);
-        $description = trans($page->description);
-
-        SEOTools::setTitle($title);
-        SEOTools::setDescription($description);
-
-        SEOMeta::setTitle($title);
-        SEOMeta::setDescription($description);
-        SEOMeta::addMeta('article:section', $title, 'property');
-        SEOMeta::addKeyword([trans($page->keywords)]);
-        SEOMeta::setCanonical(url()->current());
-
-        OpenGraph::setTitle($title);
-        OpenGraph::setDescription($description);
-        OpenGraph::setUrl(URL::full());
-        OpenGraph::addImage([
-            'url'  => asset($settings->site_logo),
-            'size' => 300
-        ]);
-
-        JsonLd::setTitle($title);
-        JsonLd::setDescription($description);
-        JsonLd::addImage(asset($settings->site_logo));
-
-        return view(
-            $web_template . '::Website.pages.custom-page.index',
-            compact('page', 'supportPage', 'settings', 'config')
-        );
     }
 
     // Generate Json for manifest.json

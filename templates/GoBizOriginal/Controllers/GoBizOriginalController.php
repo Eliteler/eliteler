@@ -12,649 +12,514 @@
 
 namespace Templates\GoBizOriginal\Controllers;
 
-use App\Page;
-use App\Setting;
-use App\WebPopup;
 use App\Announcement;
-use Illuminate\Support\Str;
-use Illuminate\Http\Request;
-use Yajra\DataTables\DataTables;
-use Illuminate\Support\Facades\DB;
-use Mews\Purifier\Facades\Purifier;
+use App\Helpers\StorageHelper;
 use App\Http\Controllers\Controller;
-use App\Services\GoBizCommonService;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Validator;
+use App\Page;
+use App\Support\Admin\PluginPage;
+use App\WebPopup;
+use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Mews\Purifier\Facades\Purifier;
 
+/**
+ * Admin pages of the GoBiz Original web template. The pages are React:
+ * templates/GoBizOriginal/resources/js/{pages,edit-page,custom-page,config}.tsx
+ * (npm run plugin:build -- GoBizOriginal). The public website (Views/Website) stays Blade.
+ */
 class GoBizOriginalController extends Controller
 {
-    // Pages
-    public function index(Request $request)
+    private const TEMPLATE = 'GoBizOriginal';
+
+    /** Website pages in list order: page_name => [label, public path or null when it's part of another page] */
+    private const PAGES = [
+        'home'    => ['Home', '/'],
+        'about'   => ['About us', '/about-us'],
+        'pricing' => ['Pricing', null],
+        'faq'     => ['FAQ', '/faq'],
+        'contact' => ['Contact us', '/contact-us'],
+        'privacy' => ['Privacy policy', '/privacy-policy'],
+        'refund'  => ['Refund policy', '/refund-policy'],
+        'terms'   => ['Terms & conditions', '/terms-and-conditions'],
+        'footer'  => ['Footer', null],
+    ];
+
+    /** Pages the site can't work without: they can't be turned off */
+    private const LOCKED = ['home', 'footer'];
+
+    /** Colour setting value => swatch (Tailwind 600) */
+    private const COLORS = [
+        'blue' => '#2563eb', 'indigo' => '#4f46e5', 'violet' => '#7c3aed', 'purple' => '#9333ea', 'fuchsia' => '#c026d3',
+        'pink' => '#db2777', 'rose' => '#e11d48', 'red' => '#dc2626', 'orange' => '#ea580c', 'amber' => '#d97706',
+        'yellow' => '#ca8a04', 'lime' => '#65a30d', 'green' => '#16a34a', 'emerald' => '#059669', 'teal' => '#0d9488',
+        'cyan' => '#0891b2', 'sky' => '#0284c7', 'slate' => '#475569', 'gray' => '#4b5563', 'zinc' => '#52525b',
+        'neutral' => '#525252', 'stone' => '#57534e',
+    ];
+
+    private const IMAGE_RULE = 'mimes:jpeg,png,jpg,gif,webp,svg';
+
+    // Website pages and custom pages (two tabs of one page)
+    public function index()
     {
-        // app settings
-        $app_settings = $this->getAppSettings();
-        // Queries
-        $settings = $app_settings['settings'];
-        $config = $app_settings['config'];
-
-        // Static pages
-        if ($request->ajax()) {
-            $pages = DB::table('pages')->whereIn('page_name', ['home', 'about', 'contact', 'faq', 'pricing', 'privacy', 'footer', 'refund', 'terms'])
-                ->where('template_id', 'GoBizOriginal')
-                ->orderBy('created_at', 'desc')
-                ->get()
-                ->groupBy('page_name');
-
-            return DataTables::of($pages)
-                ->addIndexColumn()
-                ->editColumn('page_name', function ($page) {
-                    return match ($page->first()->page_name) {
-                        'home' => __('Home'),
-                        'about' => __('About Us'),
-                        'contact' => __('Contact Us'),
-                        'privacy' => __('Privacy Policy'),
-                        'refund' => __('Refund Policy'),
-                        'terms' => __('Terms & Conditions'),
-                        default => trans(ucfirst($page->first()->page_name)),
-                    };
-                })
-                ->editColumn('url', function ($page) {
-                    $baseUrl = env('APP_URL');
-                    return match ($page->first()->page_name) {
-                        'home' => '<a href="' . $baseUrl . '" target="_blank">/</a>',
-                        'about' => '<a href="' . $baseUrl . '/about-us" target="_blank">' . trans('/about-us') . '</a>',
-                        'contact' => '<a href="' . $baseUrl . '/contact-us" target="_blank">' . trans('/contact-us') . '</a>',
-                        'privacy' => '<a href="' . $baseUrl . '/privacy-policy" target="_blank">' . trans('/privacy-policy') . '</a>',
-                        'refund' => '<a href="' . $baseUrl . '/refund-policy" target="_blank">' . trans('/refund-policy') . '</a>',
-                        'terms' => '<a href="' . $baseUrl . '/terms-and-conditions" target="_blank">' . trans('/terms-and-conditions') . '</a>',
-                        default => '<a href="' . $baseUrl . '/' . $page->first()->page_name . '" target="_blank">/' . trans($page->first()->page_name) . '</a>',
-                    };
-                })
-                ->editColumn('status', function ($page) {
-                    return $page->first()->status == 'active'
-                        ? '<span class="badge bg-green text-white">' . __('Active') . '</span>'
-                        : '<span class="badge bg-red text-white">' . __('Deactive') . '</span>';
-                })
-                ->addColumn('action', function ($page) {
-                    $editUrl = route('admin.web-template.gobiz-original.edit-page', $page->first()->page_name);
-                    $actionBtn = '<a class="dropdown-item" href="' . $editUrl . '">' . __('Edit') . '</a>';
-
-                    if ($page->first()->status == 'inactive') {
-                        $actionBtn .= '<a class="dropdown-item" href="#" onclick="updatePageStatus(\'' . $page->first()->page_name . '\', `activate`, `static`); return false;">' . __('Activate') . '</a>';
-                    } else if (!in_array($page->first()->page_name, ['home', 'footer'])) {
-                        $actionBtn .= '<a class="dropdown-item" href="#" onclick="updatePageStatus(\'' . $page->first()->page_name . '\', `deactivate`, `static`); return false;">' . __('Deactivate') . '</a>';
-                    }
-
-                    return '<a class="btn-action" href="#" data-toggle="dropdown" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
-                                <!-- Download SVG icon from http://tabler-icons.io/i/dots-vertical -->
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24"
-                                    height="24" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    class="icon icon-tabler icons-tabler-outline icon-tabler-dots fw-bold">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                    <path d="M4 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                    <path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                    <path d="M18 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                </svg>
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-end" style="">
-                                <div class="nav-item dropdown">
-                                    ' . $actionBtn . '
-                                </div>
-                            </div>';
-                })
-                ->rawColumns(['url', 'status', 'action'])
-                ->make(true);
-        }
-
-        // return view
-        return view('GoBizOriginal::Admin.index', compact('settings', 'config'));
+        return $this->pagesPage('pages');
     }
 
-    // Custom pages
-    public function customPagesIndex(Request $request)
+    public function customPagesIndex()
     {
-        if ($request->ajax()) {
-            $custom_pages = DB::table('pages')->where('page_name', 'Custom Page')
-                ->where('template_id', 'GoBizOriginal')
-                ->orderBy('created_at', 'desc')
-                ->get();
-
-            return DataTables::of($custom_pages)
-                ->addIndexColumn()
-                ->editColumn('section_name', function ($page) {
-                    return ucwords($page->section_name);
-                })
-                ->editColumn('url', function ($page) {
-                    return '<a href="' . env('APP_URL') . '/p/' . $page->section_title . '" target="_blank">/' . $page->section_title . '</a>';
-                })
-                ->editColumn('status', function ($page) {
-                    return $page->status == 'active'
-                        ? '<span class="badge bg-green text-white">' . __('Active') . '</span>'
-                        : '<span class="badge bg-red text-white">' . __('Deactive') . '</span>';
-                })
-                ->addColumn('action', function ($page) {
-                    $editUrl = route('admin.web-template.gobiz-original.edit-custom-page', $page->id);
-                    $actionBtn = '<a class="dropdown-item" href="' . $editUrl . '">' . __('Edit') . '</a>';
-
-                    if ($page->status == 'inactive') {
-                        $actionBtn .= '<a class="dropdown-item" href="#" onclick="updatePageStatus(\'' . $page->id . '\', `activate`, `custom`); return false;">' . __('Activate') . '</a>';
-                    } else {
-                        $actionBtn .= '<a class="dropdown-item" href="#" onclick="updatePageStatus(\'' . $page->id . '\', `deactivate`, `custom`); return false;">' . __('Deactivate') . '</a>';
-                    }
-
-                    $actionBtn .= '<a class="dropdown-item" href="#" onclick="deletePage(\'' . $page->id . '\', `delete`); return false;">' . __('Delete') . '</a>';
-
-                    return '<a class="btn-action" href="#" data-toggle="dropdown" data-bs-toggle="dropdown"
-                                data-bs-auto-close="outside" aria-expanded="false">
-                                <!-- Download SVG icon from http://tabler-icons.io/i/dots-vertical -->
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24"
-                                    height="24" viewBox="0 0 24 24" fill="none"
-                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    class="icon icon-tabler icons-tabler-outline icon-tabler-dots fw-bold">
-                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                    <path d="M4 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                    <path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                    <path d="M18 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-                                </svg>
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-end" style="">
-                                <div class="nav-item dropdown">
-                                    ' . $actionBtn . '
-                                </div>
-                            </div>';
-                })
-                ->rawColumns(['url', 'status', 'action'])
-                ->make(true);
-        }
+        return $this->pagesPage('custom');
     }
 
-    // Edit page
+    private function pagesPage(string $tab)
+    {
+        $rows = DB::table('pages')->where('template_id', self::TEMPLATE)->whereIn('page_name', array_keys(self::PAGES))
+            ->get(['page_name', 'status'])->keyBy('page_name');
+
+        $staticPages = collect(self::PAGES)
+            ->filter(fn ($page, $key) => $rows->has($key))
+            ->map(fn ($page, $key) => [
+                'key'           => $key,
+                'name'          => __($page[0]),
+                'path'          => $page[1],
+                'active'        => $rows[$key]->status === 'active',
+                'canDeactivate' => ! in_array($key, self::LOCKED, true),
+            ])->values();
+
+        $customPages = DB::table('pages')->where('template_id', self::TEMPLATE)->where('page_name', 'Custom Page')
+            ->orderByDesc('created_at')->get()
+            ->map(fn ($page) => [
+                'id'      => $page->id,
+                'name'    => (string) $page->section_name,
+                'slug'    => (string) $page->section_title,
+                'active'  => $page->status === 'active',
+                'updated' => $page->updated_at ? Carbon::parse($page->updated_at)->toIso8601String() : null,
+            ]);
+
+        return PluginPage::template(self::TEMPLATE, 'pages', [
+            'tab'         => $tab,
+            'siteUrl'     => url('/'),
+            'staticPages' => $staticPages,
+            'customPages' => $customPages,
+        ]);
+    }
+
+    // Page editor: each page is a set of text rows (pages.section_title is the field, section_name the group)
     public function editPage($id)
     {
-        // Get page details
-        $sections = DB::table('pages')->where('template_id', 'GoBizOriginal')->where('page_name', $id)->get();
+        abort_unless(array_key_exists($id, self::PAGES), 404);
 
-        if (count($sections) > 0) {
-            // app settings
-            $app_settings = $this->getAppSettings();
-            // Queries
-            $settings = $app_settings['settings'];
-            $config = $app_settings['config'];
+        $rows = DB::table('pages')->where('template_id', self::TEMPLATE)->where('page_name', $id)->orderBy('id')->get();
+        abort_unless($rows->isNotEmpty(), 404);
 
-            // return view
-            return view('GoBizOriginal::Admin.edit-page', compact('sections', 'settings', 'config'));
-        } else {
-            return redirect()->back()->with('failed', trans('Not Found!'));
-        }
+        $groups = $rows->groupBy(fn ($row) => (string) $row->section_name)->map(fn ($fields, $group) => [
+            'name'   => __(self::label($group)),
+            'fields' => $fields->map(fn ($row) => [
+                'id'      => $row->id,
+                'label'   => __($row->section_title === 'desc' ? 'Description' : self::label((string) $row->section_title)),
+                'content' => (string) $row->section_content,
+            ])->values(),
+        ])->values();
+
+        $first = $rows->first();
+
+        return PluginPage::template(self::TEMPLATE, 'edit-page', [
+            'page'    => ['key' => $id, 'name' => __(self::PAGES[$id][0]), 'path' => self::PAGES[$id][1]],
+            'groups'  => $groups,
+            // The footer is shared by every page, so it has no search engine details
+            'seo'     => $id === 'footer' ? null : [
+                'title'       => (string) $first->title,
+                'description' => (string) $first->description,
+                'keywords'    => (string) $first->keywords,
+            ],
+            'siteUrl' => url('/'),
+        ]);
     }
 
-    // Update page
+    /** "work_card_title_1" → "Work card title 1" */
+    private static function label(string $key): string
+    {
+        return ucfirst(trim(preg_replace('/\s+/', ' ', str_replace(['_', '-'], ' ', $key))));
+    }
+
     public function updatePage(Request $request, $id)
     {
-        // Update page
-        $sections = DB::table('pages')->where('template_id', 'GoBizOriginal')->where('page_name', $id)->get();
-        for ($i = 0; $i < count($sections); $i++) {
-            $safe_section_content = $request->input('section' . $i);
-            DB::table('pages')->where('template_id', 'GoBizOriginal')->where('page_name', $id)->where('id', $sections[$i]->id)->update(['section_content' => $safe_section_content]);
-            DB::table('pages')->where('template_id', 'GoBizOriginal')->where('page_name', $id)->where('id', $sections[$i]->id)->update(['description' => $request->description, 'keywords' => $request->keywords]);
-        }
+        abort_unless(array_key_exists($id, self::PAGES), 404);
 
-        // SEO
-        DB::table('pages')->where('template_id', 'GoBizOriginal')->where('page_name', $id)->update(['title' => $request->title]);
-        DB::table('pages')->where('template_id', 'GoBizOriginal')->where('page_name', $id)->update(['keywords' => $request->keywords]);
-        DB::table('pages')->where('template_id', 'GoBizOriginal')->where('page_name', $id)->update(['description' => $request->description]);
+        $ids = DB::table('pages')->where('template_id', self::TEMPLATE)->where('page_name', $id)->pluck('id')->map(fn ($v) => (string) $v)->all();
+        $seo = $id !== 'footer';
 
-        // Page redirect
-        return redirect()->route('admin.web-template.gobiz-original')->with('success', trans('Updated!'));
+        $request->validate([
+            'sections'    => 'required|array',
+            'sections.*'  => 'nullable|string|max:65000',
+            'title'       => [$seo ? 'required' : 'nullable', 'string', 'max:1000'],
+            'description' => [$seo ? 'required' : 'nullable', 'string', 'max:2000'],
+            'keywords'    => [$seo ? 'required' : 'nullable', 'string', 'max:2000'],
+        ], [], [
+            'title'       => __('meta title'),
+            'description' => __('meta description'),
+            'keywords'    => __('meta keywords'),
+        ]);
+
+        // Only rows of this page can be changed
+        $sections = collect($request->input('sections'))->only($ids);
+
+        DB::transaction(function () use ($sections, $id, $seo, $request) {
+            foreach ($sections as $rowId => $content) {
+                DB::table('pages')->where('template_id', self::TEMPLATE)->where('id', $rowId)->update([
+                    'section_content' => $content === '' ? null : $content,
+                    'updated_at'      => now(),
+                ]);
+            }
+
+            if ($seo) {
+                DB::table('pages')->where('template_id', self::TEMPLATE)->where('page_name', $id)->update([
+                    'title'       => $request->title,
+                    'description' => $request->description,
+                    'keywords'    => $request->keywords,
+                ]);
+            }
+        });
+
+        return back()->with('success', __('Page saved.'));
     }
 
-    // Add page
+    // Custom pages (shown at /p/<slug>)
     public function addCustomPage()
     {
-        // app settings
-        $app_settings = $this->getAppSettings();
-        // Queries
-        $settings = $app_settings['settings'];
-        $config = $app_settings['config'];
-
-        // View
-        return view('GoBizOriginal::Admin.add-custom-page', compact('settings', 'config'));
+        return PluginPage::template(self::TEMPLATE, 'custom-page', ['page' => null, 'siteUrl' => url('/')]);
     }
 
-    // Save page
-    public function saveCustomPage(Request $request)
-    {
-        // Validation
-        $validator = Validator::make($request->all(), [
-            'page_name' => 'required',
-            'slug' => 'required',
-            'body' => 'required',
-            'title' => 'required',
-            'description' => 'required',
-            'keywords' => 'required',
-        ]);
-
-        if ($validator->fails()) {
-            return back()->with('failed', $validator->messages()->first())->withInput();
-        }
-
-        // Step 1: Process base64 <img> tags
-        $updatedBody = preg_replace_callback(
-            '/<img[^>]+src=["\']data:image\/([^;\']+);base64,([^"\']+)["\'][^>]*>/i',
-            function ($matches) {
-                $extension = $matches[1]; // e.g., png, jpeg
-                $decodedData = base64_decode($matches[2]);
-
-                if ($decodedData !== false) {
-                    $filename = Str::random(10) . '.' . $extension;
-                    $relativePath = 'uploads/pages/' . $filename;
-
-                    Storage::disk('public')->put($relativePath, $decodedData);
-
-                    return '<img src="' . asset('storage/' . $relativePath) . '" />';
-                }
-
-                return $matches[0]; // Return original tag if decoding fails
-            },
-            $request->body
-        );
-
-        // Step 2: Ensure <a> tags have target="_blank" and rel="noopener noreferrer"
-        $updatedBody = preg_replace_callback(
-            '/<a\b([^>]*)href=["\'](.*?)["\']([^>]*)>/i',
-            function ($matches) {
-                $beforeHref = $matches[1];
-                $href = $matches[2];
-                $afterHref = $matches[3];
-
-                $tag = "<a{$beforeHref}href=\"{$href}\"{$afterHref}>";
-
-                // If target already exists, don't add again
-                if (!preg_match('/\btarget=["\']?[_a-zA-Z]+["\']?/i', $tag)) {
-                    $tag = rtrim($tag, '>') . ' target="_blank">';
-                }
-
-                // If rel already exists, don't add again
-                if (!preg_match('/\brel=["\']?[^"\']*["\']?/i', $tag)) {
-                    $tag = rtrim($tag, '>') . ' rel="noopener noreferrer">';
-                }
-
-                return $tag;
-            },
-            $updatedBody
-        );
-
-        // Save the page
-        $page = new Page();
-        $page->template_id = 'GoBizOriginal';
-        $page->page_name = "Custom Page";
-        $page->section_name = ucfirst($request->page_name);
-        $page->section_title = $request->slug;
-        $page->section_content = Purifier::clean($updatedBody);
-        $page->title = ucfirst($request->title);
-        $page->description = ucfirst($request->description);
-        $page->keywords = $request->keywords;
-        $page->save();
-
-        return redirect()->route('admin.web-template.gobiz-original')->with('success', trans('Created!'));
-    }
-
-    // Edit custom page
     public function editCustomPage($id)
     {
-        // Get page details
-        $page = DB::table('pages')->where('template_id', 'GoBizOriginal')->where('id', $id)->where('page_name', 'Custom Page')->first();
+        $page = $this->customPages()->where('id', $id)->first();
+        abort_unless($page, 404);
 
-        if ($page) {
-            // app settings
-            $app_settings = $this->getAppSettings();
-            // Queries
-            $settings = $app_settings['settings'];
-            $config = $app_settings['config'];
-
-            // View
-            return view('GoBizOriginal::Admin.edit-custom-page', compact('page', 'settings', 'config'));
-        } else {
-            return redirect()->back()->with('failed', trans('Not Found!'));
-        }
+        return PluginPage::template(self::TEMPLATE, 'custom-page', [
+            'page'    => [
+                'id'          => $page->id,
+                'page_name'   => (string) $page->section_name,
+                'slug'        => (string) $page->section_title,
+                'body'        => (string) $page->section_content,
+                'title'       => (string) $page->title,
+                'description' => (string) $page->description,
+                'keywords'    => (string) $page->keywords,
+            ],
+            'siteUrl' => url('/'),
+        ]);
     }
 
-    // Update custom page
+    public function saveCustomPage(Request $request)
+    {
+        $data = $this->validateCustomPage($request);
+
+        $page = new Page();
+        $page->template_id = self::TEMPLATE;
+        $page->page_name = 'Custom Page';
+        $page->section_name = ucfirst($data['page_name']);
+        $page->section_title = $data['slug'];
+        $page->section_content = $this->cleanBody($data['body']);
+        $page->title = ucfirst($data['title']);
+        $page->description = ucfirst($data['description']);
+        $page->keywords = $data['keywords'];
+        $page->status = 'active';
+        $page->save();
+
+        return redirect()->route('admin.web-template.gobiz-original.custom-pages')->with('success', __('Page created.'));
+    }
+
     public function updateCustomPage(Request $request)
     {
-        // Step 1: Validate input
-        $validator = Validator::make($request->all(), [
-            'page_name'    => 'required|string|max:255',
-            'slug'         => 'required|string|max:255',
-            'body'         => 'required',
-            'title'        => 'required|string|max:255',
-            'description'  => 'required|string',
-            'keywords'     => 'required|string',
-            'page_id'      => 'required|exists:pages,id'
-        ]);
+        $request->validate(['page_id' => 'required|integer']);
+        abort_unless($this->customPages()->where('id', $request->page_id)->exists(), 404);
 
-        if ($validator->fails()) {
-            return back()->with('failed', $validator->messages()->first())->withInput();
-        }
+        $data = $this->validateCustomPage($request, (int) $request->page_id);
 
-        // Step 2: Extract base64 images and replace with stored URLs
-        $bodyContent = $request->body;
-
-        // Step 1: Process base64 <img> tags
-        $updatedBody = preg_replace_callback(
-            '/<img[^>]+src=["\']data:image\/([^;\']+);base64,([^"\']+)["\'][^>]*>/i',
-            function ($matches) {
-                $extension = $matches[1]; // e.g., png, jpeg
-                $decodedData = base64_decode($matches[2]);
-
-                if ($decodedData !== false) {
-                    $filename = Str::random(10) . '.' . $extension;
-                    $relativePath = 'uploads/pages/' . $filename;
-
-                    Storage::disk('public')->put($relativePath, $decodedData);
-
-                    return '<img src="' . asset('storage/' . $relativePath) . '" />';
-                }
-
-                return $matches[0]; // Return original tag if decoding fails
-            },
-            $bodyContent
-        );
-
-        // Step 2: Ensure <a> tags have target="_blank" and rel="noopener noreferrer"
-        $updatedBody = preg_replace_callback(
-            '/<a\b([^>]*)href=["\'](.*?)["\']([^>]*)>/i',
-            function ($matches) {
-                $beforeHref = $matches[1];
-                $href = $matches[2];
-                $afterHref = $matches[3];
-
-                $tag = "<a{$beforeHref}href=\"{$href}\"{$afterHref}>";
-
-                // If target already exists, don't add again
-                if (!preg_match('/\btarget=["\']?[_a-zA-Z]+["\']?/i', $tag)) {
-                    $tag = rtrim($tag, '>') . ' target="_blank">';
-                }
-
-                // If rel already exists, don't add again
-                if (!preg_match('/\brel=["\']?[^"\']*["\']?/i', $tag)) {
-                    $tag = rtrim($tag, '>') . ' rel="noopener noreferrer">';
-                }
-
-                return $tag;
-            },
-            $updatedBody
-        );
-
-        // Step 3: Clean HTML before saving
-        $cleanedBody = Purifier::clean($updatedBody);
-
-        // Step 4: Update the page
-        DB::table('pages')->where('template_id', 'GoBizOriginal')->where('id', $request->page_id)->update([
-            'section_name'    => ucfirst($request->page_name),
-            'section_title'   => $request->slug,
-            'section_content' => $cleanedBody,
-            'title'           => ucfirst($request->title),
-            'description'     => ucfirst($request->description),
-            'keywords'        => $request->keywords,
+        $this->customPages()->where('id', $request->page_id)->update([
+            'section_name'    => ucfirst($data['page_name']),
+            'section_title'   => $data['slug'],
+            'section_content' => $this->cleanBody($data['body']),
+            'title'           => ucfirst($data['title']),
+            'description'     => ucfirst($data['description']),
+            'keywords'        => $data['keywords'],
             'updated_at'      => now(),
         ]);
 
-        return redirect()->route('admin.web-template.gobiz-original')->with('success', trans('Updated!'));
+        return back()->with('success', __('Page saved.'));
     }
 
-    // Status Page
+    private function validateCustomPage(Request $request, ?int $ignoreId = null): array
+    {
+        return $request->validate([
+            'page_name'   => 'required|string|max:255',
+            'slug'        => [
+                'required', 'string', 'max:191', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
+                Rule::unique('pages', 'section_title')->where('template_id', self::TEMPLATE)->where('page_name', 'Custom Page')->ignore($ignoreId),
+            ],
+            'body'        => 'required|string',
+            'title'       => 'required|string|max:255',
+            'description' => 'required|string|max:2000',
+            'keywords'    => 'required|string|max:2000',
+        ], [
+            'slug.regex'  => __('Use only lowercase letters, numbers and hyphens.'),
+            'slug.unique' => __('Another page already uses this address.'),
+        ], [
+            'page_name'   => __('page name'),
+            'slug'        => __('address'),
+            'body'        => __('content'),
+            'title'       => __('meta title'),
+            'description' => __('meta description'),
+            'keywords'    => __('meta keywords'),
+        ]);
+    }
+
+    /** Store base64 images as files, open links in a new tab, then purify */
+    private function cleanBody(string $body): string
+    {
+        $body = preg_replace_callback('/<img[^>]+src=["\']data:image\/([^;\']+);base64,([^"\']+)["\'][^>]*>/i', function ($matches) {
+            $decoded = base64_decode($matches[2]);
+
+            if ($decoded === false) {
+                return $matches[0];
+            }
+
+            return '<img src="' . asset(StorageHelper::uploadImage($decoded, 'uploads/pages', Str::random(10) . '.' . $matches[1])) . '" />';
+        }, $body);
+
+        $body = preg_replace_callback('/<a\b([^>]*)href=["\'](.*?)["\']([^>]*)>/i', function ($matches) {
+            $tag = "<a{$matches[1]}href=\"{$matches[2]}\"{$matches[3]}>";
+
+            if (! preg_match('/\btarget=["\']?[_a-zA-Z]+["\']?/i', $tag)) {
+                $tag = rtrim($tag, '>') . ' target="_blank">';
+            }
+            if (! preg_match('/\brel=["\']?[^"\']*["\']?/i', $tag)) {
+                $tag = rtrim($tag, '>') . ' rel="noopener noreferrer">';
+            }
+
+            return $tag;
+        }, $body);
+
+        return Purifier::clean($body);
+    }
+
+    private function customPages()
+    {
+        return DB::table('pages')->where('template_id', self::TEMPLATE)->where('page_name', 'Custom Page');
+    }
+
+    // Show or hide a website page (type static, id = page key) or a custom page (type custom, id = row id)
     public function updateStatus(Request $request)
     {
-        // check type
-        if ($request->query('type') == 'static') {
-            $page_details = DB::table('pages')->where('template_id', 'GoBizOriginal')->where('page_name', $request->query('id'))->first();
+        $data = $request->validate(['type' => 'required|in:static,custom', 'id' => 'required|string|max:191']);
 
-            // Check status
-            if ($page_details->status == 'inactive') {
-                $status = 'active';
-            } else {
-                $status = 'inactive';
-            }
-
-            // Update status
-            DB::table('pages')->where('template_id', 'GoBizOriginal')->where('page_name', $request->query('id'))->update(['status' => $status]);
+        if ($data['type'] === 'static') {
+            abort_unless(array_key_exists($data['id'], self::PAGES), 404);
+            $query = DB::table('pages')->where('template_id', self::TEMPLATE)->where('page_name', $data['id']);
         } else {
-            $page_details = DB::table('pages')->where('template_id', 'GoBizOriginal')->where('id', $request->query('id'))->first();
-
-            // Check status
-            if ($page_details->status == 'inactive') {
-                $status = 'active';
-            } else {
-                $status = 'inactive';
-            }
-
-            // Update status
-            DB::table('pages')->where('template_id', 'GoBizOriginal')->where('id', $request->query('id'))->update(['status' => $status]);
+            $query = $this->customPages()->where('id', $data['id']);
         }
 
-        return redirect()->route('admin.web-template.gobiz-original')->with('success', trans('Updated!'));
+        $page = (clone $query)->first();
+        abort_unless($page, 404);
+
+        if ($page->status === 'active' && $data['type'] === 'static' && in_array($data['id'], self::LOCKED, true)) {
+            return back()->with('failed', __('Your site needs this page, so it stays on.'));
+        }
+
+        $status = $page->status === 'active' ? 'inactive' : 'active';
+        $query->update(['status' => $status]);
+
+        return back()->with('success', $status === 'active' ? __('Page shown on your site.') : __('Page hidden from your site.'));
     }
 
-    // Delete Page
+    // Delete a custom page
     public function deletePage(Request $request)
     {
-        // Update status
-        DB::table('pages')->where('template_id', 'GoBizOriginal')->where('id', $request->query('id'))->delete();
+        $request->validate(['id' => 'required|integer']);
+        abort_unless($this->customPages()->where('id', $request->id)->delete(), 404);
 
-        return redirect()->route('admin.web-template.gobiz-original')->with('success', trans('Deleted!'));
+        return back()->with('success', __('Page deleted.'));
     }
 
-    // template config
-    public function templateConfig(Request $request)
+    // Template settings
+    public function templateConfig()
     {
-        // app settings
-        $app_settings = $this->getAppSettings();
-        // Queries
-        $settings = $app_settings['settings'];
-        $config = $app_settings['config'];
+        $config = DB::table('gobiz_original_config')->first();
+        $announcement = Announcement::where('template_id', self::TEMPLATE)->first()?->announcement_configuration ?? [];
+        $popup = WebPopup::where('template_id', self::TEMPLATE)->first();
 
-        $template_config = DB::table('gobiz_original_config')->first();
-
-        // Announcements
-        $announcements = Announcement::where('template_id', 'GoBizOriginal')->first();
-
-        // Popup
-        $popups = WebPopup::where('template_id', 'GoBizOriginal')->first();
-
-        // return view
-        return view('GoBizOriginal::Admin.template-config', compact('settings', 'config', 'template_config', 'announcements', 'popups'));
+        return PluginPage::template(self::TEMPLATE, 'config', [
+            'appearance'   => [
+                'template_color' => (string) ($config->template_color ?? 'blue'),
+                'theme_slider'   => (bool) ($config->theme_slider ?? false),
+                'custom_css'     => (string) ($config->custom_css ?? ''),
+                'custom_js'      => (string) ($config->custom_js ?? ''),
+            ],
+            'images'       => [
+                'banner' => ! empty($config->banner_image) ? asset($config->banner_image) : null,
+                'auth'   => ! empty($config->auth_image) ? asset($config->auth_image) : null,
+                'popup'  => ! empty($popup?->image) ? asset($popup->image) : null,
+            ],
+            'colors'       => collect(self::COLORS)->map(fn ($swatch, $value) => ['value' => $value, 'label' => __(ucfirst($value)), 'swatch' => $swatch])->values(),
+            'appBanner'    => [
+                'app_action'             => (bool) ($config->app_action ?? false),
+                'app_heading'            => (string) ($config->app_heading ?? ''),
+                'app_description'        => (string) ($config->app_description ?? ''),
+                'google_play_store_link' => (string) ($config->google_play_store_link ?? ''),
+                'apple_app_store_link'   => (string) ($config->apple_app_store_link ?? ''),
+            ],
+            'announcement' => [
+                'announcement_bg'            => (string) ($announcement['bg_color'] ?? '#000000'),
+                'announcement_text_color'    => (string) ($announcement['text_color'] ?? '#ffffff'),
+                'announcement_marquee'       => (bool) ($announcement['marquee'] ?? false),
+                'announcement_marquee_speed' => (string) ($announcement['marquee_speed'] ?? 90),
+                'announcements'              => collect($announcement['items'] ?? [])->map(fn ($item) => [
+                    'text'   => (string) ($item['text'] ?? ''),
+                    'active' => (bool) ($item['active'] ?? false),
+                ])->values(),
+            ],
+            'popup'        => [
+                'popup_status' => (bool) ($popup->status ?? false),
+                'popup_link'   => (string) ($popup->link ?? ''),
+            ],
+            'maxUploadKb'  => (int) env('SIZE_LIMIT', 2048),
+        ]);
     }
 
-    // update template config
     public function updateConfig(Request $request)
     {
-        // Validate form data
-        $rules = [
-            'template_color' => 'required|in:blue,indigo,green,yellow,red,purple,pink,gray,slate,zinc,neutral,stone,orange,amber,lime,emerald,teal,cyan,sky,violet,fuchsia,rose',
-            'theme_slider' => 'required|in:1,0',
-        ];
-
-        $validator = Validator::make($request->all(), $rules);
-
-        // Check validation
-        if ($validator->fails()) {
-            return back()->with('failed', $validator->messages()->first())->withInput();
-        }
-
-        $updateData = [
-            'template_color' => $request->template_color,
-            'theme_slider'   => $request->theme_slider,
-            'custom_css'     => $request->custom_css,
-            'custom_js'      => $request->custom_js,
-        ];
-
-        // === Primary Image ===
-        if ($request->hasFile('banner_image')) {
-            $validator = Validator::make($request->all(), [
-                'banner_image' => 'mimes:jpeg,png,jpg,gif,webp,svg|max:' . env("SIZE_LIMIT"),
-            ]);
-
-            if ($validator->fails()) {
-                return back()->with('failed', $validator->messages()->first())->withInput();
-            }
-
-            $updateData['banner_image'] = $this->uploadImage($request->file('banner_image'));
-        }
-
-        // === Secondary Image ===
-        if ($request->hasFile('auth_image')) {
-            $validator = Validator::make($request->all(), [
-                'auth_image' => 'mimes:jpeg,png,jpg,gif,webp,svg|max:' . env("SIZE_LIMIT"),
-            ]);
-
-            if ($validator->fails()) {
-                return back()->with('failed', $validator->messages()->first())->withInput();
-            }
-
-            $updateData['auth_image'] = $this->uploadImage($request->file('auth_image'));
-        }
-
-        // Update template config only with available fields
-        DB::table('gobiz_original_config')
-            ->where('id', 1)
-            ->update($updateData);
-
-        // Page redirect
-        return redirect()->route('admin.web-template.gobiz-original.config')->with('success', trans('Updated!'));
-    }
-
-    // Update mobile application action banner
-    public function appActionBanner(Request $request)
-    {
-        // Validate form data
-        $rules = [
-            'app_action' => 'required|in:1,0',
-            'app_heading' => 'required',
-            'app_description' => 'required',
-        ];
-
-        $validator = Validator::make($request->all(), $rules);
-
-        // Check validation
-        if ($validator->fails()) {
-            return back()->with('failed', $validator->messages()->first())->withInput();
-        }
-
-        // Update template config only with available fields
-        DB::table('gobiz_original_config')
-            ->where('id', 1)
-            ->update([
-                'app_action' => $request->app_action,
-                'app_heading' => $request->app_heading,
-                'app_description' => $request->app_description,
-                'google_play_store_link' => $request->google_play_store_link,
-                'apple_app_store_link'   => $request->apple_app_store_link,
-            ]);
-
-        // Page redirect
-        return redirect()->route('admin.web-template.gobiz-original.config')->with('success', trans('Updated!'));
-    }
-
-    // Update announcements
-    public function updateAnnouncement(Request $request)
-    {
-        // Build JSON configuration
-        $config = [
-            'bg_color'        => $request->announcement_bg ?? '#000000',
-            'text_color'      => $request->announcement_text_color ?? '#ffffff',
-            'marquee'         => $request->boolean('announcement_marquee'),
-            'marquee_speed'   => $request->announcement_marquee_speed ?? 90,
-            'items'           => [],
-        ];
-
-        // Collect valid announcements only
-        if ($request->filled('announcements')) {
-            foreach ($request->announcements as $item) {
-                $text = trim(strip_tags($item['text'] ?? ''));
-
-                if ($text !== '') {
-                    $config['items'][] = [
-                        'text'   => $item['text'], // keep original HTML
-                        'active' => isset($item['active']),
-                    ];
-                }
-            }
-        }
-
-        // Check if the announcements exist
-        if (Announcement::where('template_id', 'GoBizOriginal')->count() === 0) {
-            // Create announcements
-            Announcement::create([
-                'announcement_enabled'       => 1,
-                'template_id'                => 'GoBizOriginal',
-                'announcement_configuration' => $config,
-                'status'                     => 1,
-            ]);
-
-            return redirect()->route('admin.web-template.gobiz-original.config')->with('success', trans('Created!'));
-        } else {
-            // Update announcements
-            Announcement::where('template_id', 'GoBizOriginal')->update([
-                'announcement_enabled'       => 1,
-                'template_id'                => 'GoBizOriginal',
-                'announcement_configuration' => $config,
-                'status'                     => 1,
-            ]);
-        }
-
-        return redirect()->route('admin.web-template.gobiz-original.config')->with('success', trans('Updated!'));
-    }
-
-    // Update popup
-    public function updatePopup(Request $request)
-    {
-        $popup = WebPopup::firstOrNew([
-            'template_id' => 'GoBizOriginal',
+        $max = 'max:' . env('SIZE_LIMIT', 2048);
+        $data = $request->validate([
+            'template_color' => ['required', Rule::in(array_keys(self::COLORS))],
+            'theme_slider'   => 'required|boolean',
+            'custom_css'     => 'nullable|string|max:100000',
+            'custom_js'      => 'nullable|string|max:100000',
+            'banner_image'   => ['nullable', 'file', self::IMAGE_RULE, $max],
+            'auth_image'     => ['nullable', 'file', self::IMAGE_RULE, $max],
+        ], [], [
+            'template_color' => __('colour'),
+            'banner_image'   => __('home banner image'),
+            'auth_image'     => __('sign-in and sign-up image'),
         ]);
 
+        $update = [
+            'template_color' => $data['template_color'],
+            'theme_slider'   => $request->boolean('theme_slider'),
+            'custom_css'     => $data['custom_css'] ?? null,
+            'custom_js'      => $data['custom_js'] ?? null,
+        ];
+
+        foreach (['banner_image', 'auth_image'] as $key) {
+            if ($request->hasFile($key)) {
+                $update[$key] = $this->uploadImage($request->file($key));
+            }
+        }
+
+        DB::table('gobiz_original_config')->where('id', 1)->update($update);
+
+        return back()->with('success', __('Template settings saved.'));
+    }
+
+    // Mobile app banner
+    public function appActionBanner(Request $request)
+    {
+        $data = $request->validate([
+            'app_action'             => 'required|boolean',
+            'app_heading'            => 'required_if_accepted:app_action|nullable|string|max:255',
+            'app_description'        => 'required_if_accepted:app_action|nullable|string|max:1000',
+            'google_play_store_link' => 'nullable|url|max:2000',
+            'apple_app_store_link'   => 'nullable|url|max:2000',
+        ], [
+            'app_heading.required_if_accepted'     => __('Add a heading to show the app banner.'),
+            'app_description.required_if_accepted' => __('Add a description to show the app banner.'),
+        ], [
+            'app_heading'            => __('heading'),
+            'app_description'        => __('description'),
+            'google_play_store_link' => __('Google Play link'),
+            'apple_app_store_link'   => __('App Store link'),
+        ]);
+
+        DB::table('gobiz_original_config')->where('id', 1)->update([
+            'app_action'             => $request->boolean('app_action'),
+            'app_heading'            => $data['app_heading'] ?? '',
+            'app_description'        => $data['app_description'] ?? '',
+            'google_play_store_link' => $data['google_play_store_link'] ?? null,
+            'apple_app_store_link'   => $data['apple_app_store_link'] ?? null,
+        ]);
+
+        return back()->with('success', __('App banner saved.'));
+    }
+
+    // Announcement bar
+    public function updateAnnouncement(Request $request)
+    {
+        $request->validate([
+            'announcement_bg'            => ['required', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'announcement_text_color'    => ['required', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'announcement_marquee'       => 'required|boolean',
+            'announcement_marquee_speed' => 'required_if_accepted:announcement_marquee|nullable|integer|min:10|max:500',
+            'announcements'              => 'nullable|array|max:20',
+            'announcements.*.text'       => 'nullable|string|max:5000',
+            'announcements.*.active'     => 'nullable|boolean',
+        ], [
+            'announcement_bg.regex'         => __('Use a colour like #1a2b3c.'),
+            'announcement_text_color.regex' => __('Use a colour like #1a2b3c.'),
+        ], [
+            'announcement_bg'            => __('background colour'),
+            'announcement_text_color'    => __('text colour'),
+            'announcement_marquee_speed' => __('scroll speed'),
+        ]);
+
+        $config = [
+            'bg_color'      => $request->announcement_bg,
+            'text_color'    => $request->announcement_text_color,
+            'marquee'       => $request->boolean('announcement_marquee'),
+            'marquee_speed' => $request->announcement_marquee_speed ?: 90,
+            // Announcements without text are dropped; HTML is kept as written
+            'items'         => collect($request->input('announcements', []))
+                ->filter(fn ($item) => trim(strip_tags($item['text'] ?? '')) !== '')
+                ->map(fn ($item) => ['text' => $item['text'], 'active' => filter_var($item['active'] ?? false, FILTER_VALIDATE_BOOLEAN)])
+                ->values()->all(),
+        ];
+
+        Announcement::updateOrCreate(['template_id' => self::TEMPLATE], [
+            'announcement_enabled'       => 1,
+            'announcement_configuration' => $config,
+            'status'                     => 1,
+        ]);
+
+        return back()->with('success', __('Announcement bar saved.'));
+    }
+
+    // Popup
+    public function updatePopup(Request $request)
+    {
+        $request->validate([
+            'popup_status' => 'required|boolean',
+            'popup_link'   => 'nullable|url|max:191',
+            'popup_image'  => ['nullable', 'file', self::IMAGE_RULE, 'max:' . env('SIZE_LIMIT', 2048)],
+        ], [], [
+            'popup_link'  => __('link'),
+            'popup_image' => __('image'),
+        ]);
+
+        $popup = WebPopup::firstOrNew(['template_id' => self::TEMPLATE]);
         $popup->enabled = 1;
         $popup->link = $request->popup_link ?: null;
 
-        if ($request->hasFile('popup_image') && $request->file('popup_image')->isValid()) {
-            $validator = Validator::make($request->all(), [
-                'popup_image' => 'mimes:jpeg,png,jpg,gif,webp,svg|max:' . env("SIZE_LIMIT"),
-            ]);
-
-            if ($validator->fails()) {
-                return back()->with('failed', $validator->messages()->first())->withInput();
-            }
-
+        if ($request->hasFile('popup_image')) {
             $popup->image = $this->uploadImage($request->file('popup_image'), 'web/popups');
         }
 
-        $popup->status = $request->popup_status == '1' ? 1 : 0;
+        $popup->status = $request->boolean('popup_status') ? 1 : 0;
         $popup->save();
 
-        return redirect()->route('admin.web-template.gobiz-original.config')->with('success', trans('Updated!'));
+        return back()->with('success', __('Popup saved.'));
     }
 
-    // get app settings
-    private function getAppSettings()
+    private function uploadImage($file, $folder = 'images/web/elements')
     {
-        // Queries
-        $settings = GoBizCommonService::settings();
-        $config = GoBizCommonService::config();
-
-        // View
-        return ['settings' => $settings, 'config' => $config];
-    }
-
-    // Helper function to handle file uploads
-    function uploadImage($file, $folder = 'images/web/elements')
-    {
-        $filename = uniqid() . '.' . $file->getClientOriginalExtension();
-        $path = $folder . '/' . $filename;
-        Storage::disk('public')->put($path, file_get_contents($file));
-
-        return 'storage/' . $path; // return public URL path
+        return StorageHelper::uploadImage($file, $folder);
     }
 }

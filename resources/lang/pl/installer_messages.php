@@ -1,63 +1,173 @@
 <?php
 
 return [
-
-    /*
-     *
-     * Shared translations.
-     *
-     */
-    'title' => 'Laravel Instalator',
-    'next' => 'Następny krok',
-
-    /*
-     *
-     * Home page translations.
-     *
-     */
-    'welcome' => [
-        'title'   => 'Instalacja Laravel',
-        'message' => 'Witaj w kreatorze instalacji.',
-    ],
-
-    /*
-     *
-     * Requirements page translations.
-     *
-     */
-    'requirements' => [
-        'title' => 'Wymagania systemowe ',
-    ],
-
-    /*
-     *
-     * Permissions page translations.
-     *
-     */
-    'permissions' => [
-        'title' => 'Uprawnienia',
-    ],
-
-    /*
-     *
-     * Environment page translations.
-     *
-     */
+    'back' => 'Poprzedni',
     'environment' => [
         'title' => 'Ustawnienia środowiska',
         'save' => 'Zapisz .env',
         'success' => 'Plik .env został poprawnie zainstalowany.',
         'errors' => 'Nie można zapisać pliku .env, Proszę utworzyć go ręcznie.',
+        'menu' => [
+            'templateTitle' => 'Krok 3 | ',
+            'title' => 'Instalacja',
+            'desc' => 'Wybierz sposób konfiguracji pliku <code>.env</code> aplikacji.',
+            'wizard-button' => 'Konfiguracja kreatora formularzy',
+            'classic-button' => 'Klasyczny edytor tekstu',
+        ],
+        'wizard' => [
+            'templateTitle' => 'Krok 3 | ',
+            'title' => 'Przewodnik po kreatorze <code>.env</code>',
+            'tabs' => [
+                'environment' => 'Środowisko',
+                'database' => 'Baza danych',
+                'application' => 'Aplikacja',
+            ],
+            'form' => [
+                'name_required' => 'Nazwa środowiska jest wymagana.',
+                'app_name_label' => 'Nazwa aplikacji',
+                'app_name_placeholder' => 'Nazwa aplikacji',
+                'app_environment_label' => 'Środowisko aplikacji',
+                'app_environment_label_local' => 'Lokalny',
+                'app_environment_label_developement' => 'Rozwój',
+                'app_environment_label_qa' => 'Qa',
+                'app_environment_label_production' => 'Produkcja',
+                'app_environment_label_other' => 'Inny',
+                'app_environment_placeholder_other' => 'Wprowadź swoje środowisko...',
+                'app_debug_label' => 'Debugowanie aplikacji',
+                'app_debug_label_true' => 'PRAWDA',
+                'app_debug_label_false' => 'FAŁSZ',
+                'app_log_level_label' => 'Poziom dziennika aplikacji',
+                'app_log_level_label_debug' => 'odpluskwić',
+                'app_log_level_label_info' => 'informacje',
+                'app_log_level_label_notice' => 'ogłoszenie',
+                'app_log_level_label_warning' => 'ostrzeżenie',
+                'app_log_level_label_error' => 'błąd',
+                'app_log_level_label_critical' => 'krytyczny',
+                'app_log_level_label_alert' => 'alarm',
+                'app_log_level_label_emergency' => 'nagły wypadek',
+                'app_url_label' => 'Adres aplikacji',
+                'app_url_placeholder' => 'Adres aplikacji',
+                'db_connection_failed' => 'Nie można połączyć się z bazą danych.',
+                'db_connection_label' => 'Połączenie z bazą danych',
+                'db_connection_label_mysql' => 'mysql',
+                'db_connection_label_sqlite' => 'sqlite',
+                'db_connection_label_pgsql' => 'pgsql',
+                'db_connection_label_sqlsrv' => 'sqlsrv',
+                'db_host_label' => 'Host bazy danych',
+                'db_host_placeholder' => 'Host bazy danych',
+                'db_port_label' => 'Port bazy danych',
+                'db_port_placeholder' => 'Port bazy danych',
+                'db_name_label' => 'Nazwa bazy danych',
+                'db_name_placeholder' => 'Nazwa bazy danych',
+                'db_username_label' => 'Nazwa użytkownika bazy danych',
+                'db_username_placeholder' => 'Nazwa użytkownika bazy danych',
+                'db_password_label' => 'Hasło bazy danych',
+                'db_password_placeholder' => 'Hasło bazy danych',
+                'app_tabs' => [
+                    'more_info' => 'Więcej informacji',
+                    'broadcasting_title' => 'Nadawanie, buforowanie, sesja i kolejka',
+                    'broadcasting_label' => 'Sterownik transmisji',
+                    'broadcasting_placeholder' => 'Sterownik transmisji',
+                    'cache_label' => 'Sterownik pamięci podręcznej',
+                    'cache_placeholder' => 'Sterownik pamięci podręcznej',
+                    'session_label' => 'Sterownik sesji',
+                    'session_placeholder' => 'Sterownik sesji',
+                    'queue_label' => 'Kierowca kolejki',
+                    'queue_placeholder' => 'Kierowca kolejki',
+                    'redis_label' => 'Sterownik Redisa',
+                    'redis_host' => 'Host Redisa',
+                    'redis_password' => 'Hasło Redisa',
+                    'redis_port' => 'Port Redis',
+                    'mail_label' => 'Poczta',
+                    'mail_driver_label' => 'Sterownik poczty',
+                    'mail_driver_placeholder' => 'Sterownik poczty',
+                    'mail_host_label' => 'Host poczty',
+                    'mail_host_placeholder' => 'Host poczty',
+                    'mail_port_label' => 'Port pocztowy',
+                    'mail_port_placeholder' => 'Port pocztowy',
+                    'mail_username_label' => 'Nazwa użytkownika poczty',
+                    'mail_username_placeholder' => 'Nazwa użytkownika poczty',
+                    'mail_password_label' => 'Hasło pocztowe',
+                    'mail_password_placeholder' => 'Hasło pocztowe',
+                    'mail_encryption_label' => 'Szyfrowanie poczty',
+                    'mail_encryption_placeholder' => 'Szyfrowanie poczty',
+                    'pusher_label' => 'Popychacz',
+                    'pusher_app_id_label' => 'Identyfikator aplikacji Pusher',
+                    'pusher_app_id_palceholder' => 'Identyfikator aplikacji Pusher',
+                    'pusher_app_key_label' => 'Klucz aplikacji Pusher',
+                    'pusher_app_key_palceholder' => 'Klucz aplikacji Pusher',
+                    'pusher_app_secret_label' => 'Sekret aplikacji Pusher',
+                    'pusher_app_secret_palceholder' => 'Sekret aplikacji Pusher',
+                ],
+                'buttons' => [
+                    'setup_database' => 'Konfiguracja bazy danych',
+                    'setup_application' => 'Skonfiguruj aplikację',
+                    'install' => 'Zainstalować',
+                ],
+            ],
+        ],
+        'classic' => [
+            'templateTitle' => 'Krok 3 | ',
+            'title' => 'Klasyczny edytor środowiska',
+            'save' => 'Zapisz.env',
+            'back' => 'Skorzystaj z Kreatora formularzy',
+            'install' => 'Zapisz i zainstaluj',
+        ],
     ],
-
-    /*
-     *
-     * Final page translations.
-     *
-     */
     'final' => [
         'title' => 'Instalacja zakończona',
         'finished' => 'Aplikacja została poprawnie zainstalowana.',
         'exit' => 'Kliknij aby zakończyć',
+        'templateTitle' => 'Instalacja zakończona',
+        'migration' => 'Dane wyjściowe z konsoli migracji i nasion:',
+        'console' => 'Dane wyjściowe konsoli aplikacji:',
+        'log' => 'Wpis dziennika instalacji:',
+        'env' => 'Ostateczny plik .env:',
+    ],
+    'finish' => 'Zainstalować',
+    'forms' => [
+        'errorTitle' => 'Wystąpiły następujące błędy:',
+    ],
+    'install' => 'Zainstalować',
+    'installed' => [
+        'success_log_message' => 'Instalator NativeCode został pomyślnie ZAINSTALOWANY',
+    ],
+    'next' => 'Następny krok',
+    'permissions' => [
+        'title' => 'Uprawnienia',
+        'templateTitle' => 'Krok 2 | ',
+        'next' => 'Skonfiguruj środowisko',
+    ],
+    'requirements' => [
+        'title' => 'Wymagania systemowe ',
+        'templateTitle' => 'Krok 1 | ',
+        'next' => 'Sprawdź uprawnienia',
+    ],
+    'title' => 'Laravel Instalator',
+    'updater' => [
+        'title' => 'Aktualizator Laravela',
+        'welcome' => [
+            'title' => 'Witamy w aktualizatorze',
+            'message' => 'Witamy w kreatorze aktualizacji.',
+        ],
+        'overview' => [
+            'title' => 'Przegląd',
+            'message' => 'Jest 1 aktualizacja.|Istnieje :number aktualizacji.',
+            'install_updates' => 'Zainstaluj aktualizacje',
+        ],
+        'final' => [
+            'title' => 'Gotowy',
+            'finished' => 'Baza danych aplikacji została pomyślnie zaktualizowana.',
+            'exit' => 'Kliknij tutaj, aby wyjść',
+        ],
+        'log' => [
+            'success_message' => 'Instalator NativeCode pomyślnie ZAKTUALIZOWANO',
+        ],
+    ],
+    'welcome' => [
+        'title' => 'Instalacja Laravel',
+        'message' => 'Witaj w kreatorze instalacji.',
+        'templateTitle' => 'Powitanie',
+        'next' => 'Sprawdź wymagania',
     ],
 ];

@@ -51,7 +51,7 @@ class PaymentController extends Controller
             $payment_mode = Gateway::where('payment_gateway_id', $request->payment_gateway_id)->first() ?? DB::table('recurring_payment_gateways')->where('payment_gateway_id', $request->payment_gateway_id)->first();
 
             // Get all plugins
-            $plugins = $this->pluginManager->getPlugins();
+            $plugins = $this->pluginManager->active();
 
             // get plugin
             $plugin = collect($plugins)->firstWhere('plugin_id', $payment_mode->plugin_id);
@@ -65,6 +65,10 @@ class PaymentController extends Controller
                 $validator = Validator::make($request->all(), [
                     'billing_name' => 'required',
                     'billing_email' => 'required',
+                    'billing_phone_country_code' => 'required',
+                    'billing_phone' => 'required',
+                    'billing_whatsapp_country_code' => 'required',
+                    'billing_whatsapp' => 'required',
                     'billing_address' => 'required',
                     'billing_city' => 'required',
                     'billing_state' => 'required',
@@ -77,11 +81,14 @@ class PaymentController extends Controller
                 }
 
                 User::where('user_id', Auth::user()->user_id)->update([
-                    'mobile_number' => $request->billing_phone ?? "",
                     'billing_name' => $request->billing_name,
                     'billing_email' => $request->billing_email,
-                    'billing_phone' => $request->billing_phone ?? "",
+                    'country_code' => $request->billing_phone_country_code,
+                    'mobile_number' => $request->billing_phone,
+                    'whatsapp_country_code' => $request->billing_whatsapp_country_code,
                     'whatsapp_number' => $request->billing_whatsapp ?? "",
+                    'billing_country_code' => $request->billing_phone_country_code,
+                    'billing_phone' => $request->billing_phone ?? "",
                     'billing_address' => $request->billing_address,
                     'billing_city' => $request->billing_city,
                     'billing_state' => $request->billing_state,
@@ -278,22 +285,47 @@ class PaymentController extends Controller
         // Transaction ID
         $transactionId = uniqid();
 
-        // Calculate discount
-        $discountPrice = 0;
-        $appliedCouponCode = null;
-        if ($coupon) {
-            $discountPrice = $coupon->coupon_type == 'fixed'
-                ? $coupon->coupon_amount
-                : ($plan->plan_price * $coupon->coupon_amount / 100);
-            $appliedCouponCode = $coupon->coupon_code;
-        }
-
         // Total amount for zero-price plan
         $amountToBePaid = 0;
 
         // Tax rate from config
-        $taxRate = isset($config[25]->config_value) ? (float)$config[25]->config_value : 0;
-        $appliedTax = ($amountToBePaid * $taxRate) / 100; // Tax on final amount
+        $taxRate = isset($config[25]->config_value) ? (float) $config[25]->config_value : 0;
+
+        // Plan price
+        $planPrice = (float) $plan->plan_price;
+
+        // Calculate tax on plan price
+        $taxAmount = ($planPrice * $taxRate) / 100;
+
+        // Total including tax
+        $totalWithTax = $planPrice + $taxAmount;
+
+        // Calculate discount
+        $discountPrice = 0;
+        $appliedCouponCode = null;
+
+        if ($coupon) {
+            if ($coupon->coupon_type == 'fixed') {
+                $discountPrice = (float) $coupon->coupon_amount;
+            } else {
+                // Percentage coupon applies to Plan + GST
+                $discountPrice = ($totalWithTax * (float) $coupon->coupon_amount) / 100;
+            }
+
+            // Prevent discount from exceeding total including tax
+            $discountPrice = min($discountPrice, $totalWithTax);
+
+            $appliedCouponCode = $coupon->coupon_code;
+        }
+
+        // Final amount after coupon
+        $amountToBePaid = $totalWithTax - $discountPrice;
+
+        // Prevent negative amount
+        $amountToBePaid = max($amountToBePaid, 0);
+
+        // Tax amount shown in checkout
+        $appliedTax = $taxAmount;
 
         // Invoice details
         $invoiceDetails = [
@@ -312,7 +344,7 @@ class PaymentController extends Controller
             'to_billing_state' => $request->billing_state,
             'to_billing_zipcode' => $request->billing_zipcode,
             'to_billing_country' => $request->billing_country,
-            'to_billing_phone' => $request->billing_phone,
+            'to_billing_phone' => $request->billing_phone_country_code . $request->billing_phone,
             'to_billing_email' => $request->billing_email,
             'to_vat_number' => $request->vat_number,
             'subtotal' => $plan->plan_price,
@@ -322,7 +354,7 @@ class PaymentController extends Controller
             'tax_amount' => $appliedTax,
             'applied_coupon' => $appliedCouponCode,
             'discounted_price' => $discountPrice,
-            'invoice_amount' => $amountToBePaid,
+            'invoice_amount' => 0,
         ];
 
         // Save applied coupon
@@ -346,7 +378,7 @@ class PaymentController extends Controller
         $transaction->plan_id = $plan->plan_id;
         $transaction->desciption = $plan->plan_name . " Plan"; // fixed typo
         $transaction->payment_gateway_name = $gatewayName;
-        $transaction->transaction_amount = $amountToBePaid;
+        $transaction->transaction_amount = 0;
         $transaction->transaction_currency = $config[1]->config_value ?? 'USD';
         $transaction->invoice_details = json_encode($invoiceDetails);
         $transaction->payment_status = "SUCCESS";
