@@ -117,6 +117,19 @@ class StoreSocialLinkController extends Controller
                                     if (strpos($customContent, '00') === 0) {
                                         $customContent = substr($customContent, 2);
                                     }
+                                } elseif (strpos($customContent, '<iframe') !== false) {
+                                    // Extract src attribute from iframe
+                                    preg_match('/<iframe[^>]+src="([^"]+)"/', $customContent, $matches);
+                                    if (!empty($matches[1])) {
+                                        $customContent = $matches[1];
+                                        // If it's a google maps embed, we only need the query string
+                                        if (strpos($customContent, 'maps/embed') !== false) {
+                                            $parsed = parse_url($customContent);
+                                            if (isset($parsed['query'])) {
+                                                $customContent = $parsed['query'];
+                                            }
+                                        }
+                                    }
                                 } elseif (strpos($customContent, 'http://') === 0 || strpos($customContent, 'https://') === 0) {
                                     $customContent = str_replace('http://', 'https://', $customContent);
                                 } else {

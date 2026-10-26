@@ -102,6 +102,9 @@
                                                             class='textlbl{{ $features[$i]->id }} form-control'
                                                             name='value[]' placeholder='{{ __('URL or username') }}'
                                                             value="{{ $features[$i]->content }}" required>
+                                                        <small class='notelbl{{ $features[$i]->id }} text-danger' style="{{ $features[$i]->type == 'map' ? '' : 'display:none;' }}">
+                                                            {{ __('Please note: You must insert the HTML embed iframe code generated from Google Maps. Standard links will not work.') }}
+                                                        </small>
                                                     </div>
                                                 </div>
                                                 <div class='col-lg-2 col-md-2'>
@@ -230,6 +233,8 @@
                                     <option value='wa'>{{ __('WhatsApp') }}</option>
                                     <option value='discord'>{{ __('Discord') }}</option>
                                     <option value='url'>{{ __('Website Link') }}</option>
+                                    <option value='map'>{{ __('Google Map') }}</option>
+                                    <option value='location_url'>{{ __('Location without Map') }}</option>
                                 </select>
                             </div>
                         </div>
@@ -252,6 +257,7 @@
                             <div class='mb-3 mt-2'>
                                 <label class='form-label required'>{{ __('URL / Username') }}</label>
                                 <input type='text' class='textlbl` + id + ` form-control' name='value[]' placeholder='{{ __('https://facebook.com/yourpage') }}' required>
+                                <small class='notelbl` + id + ` text-danger' style='display:none;'></small>
                             </div>
                         </div>
                         <div class='col-lg-2 col-md-2'>
@@ -344,6 +350,8 @@
                     'wa':        { icon: 'fab fa-whatsapp',     label: 'WhatsApp',    placeholder: '+971500000000' },
                     'discord':   { icon: 'fab fa-discord',      label: 'Discord',     placeholder: 'https://discord.gg/invite' },
                     'url':       { icon: 'fas fa-link',         label: 'Website',     placeholder: 'https://yourwebsite.com' },
+                    'map':       { icon: 'fas fa-location-arrow', label: 'Location', placeholder: '{!! addslashes(__("For ex: <iframe src=\'https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d3924.7798234706065!2d77.98194106479716!3d10.359482142605264!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3b00ab9baf4b4101%3A0x9d6d57a812be5cc6!2sCapsimint%20Technologies%20-%20Web%2C%20Mobile%20App%20and%20Software%20Development%20Company!5e0!3m2!1sen!2sin!4v1638283593135!5m2!1sen!2sin\'></iframe>")) !!}' },
+                    'location_url': { icon: 'fas fa-location-dot', label: 'Location', placeholder: '{{ __("For ex: https://maps.app.goo.gl/...") }}' },
                 };
 
                 if (iconMap[type]) {
@@ -352,6 +360,16 @@
                     lbl.placeholder = iconMap[type].label;
                     textlbl.placeholder = iconMap[type].placeholder;
                     $('#displayIcon' + id).attr('class', iconMap[type].icon);
+
+                    let notelbl = $(".notelbl" + id);
+                    if (notelbl.length) {
+                        if (type === 'map') {
+                            notelbl.text("{{ __('Please note: You must insert the HTML embed iframe code generated from Google Maps. Standard links will not work.') }}");
+                            notelbl.show();
+                        } else {
+                            notelbl.hide();
+                        }
+                    }
                 }
             }
 

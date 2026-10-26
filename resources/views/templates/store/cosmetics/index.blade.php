@@ -557,7 +557,21 @@
                                 @endif
                             </div>
                         </div>
-                        <!-- Footer -->
+                        
+            <!-- Store Map -->
+            @if (isset($storeSocialLinks) && $storeSocialLinks->count() > 0)
+                @foreach ($storeSocialLinks as $socialLink)
+                    @if ($socialLink->type == 'map')
+                        <div class="container-xl mb-4">
+                            <div class="card p-2 shadow-sm rounded">
+                                <iframe referrerpolicy="strict-origin-when-cross-origin" src="https://www.google.com/maps/embed?{!! $socialLink->content !!}" width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+                            </div>
+                        </div>
+                    @endif
+                @endforeach
+            @endif
+
+            <!-- Footer -->
                         <footer class="footer footer-transparent d-print-none mb-7 mb-lg-0">
                             <div class="container-xl">
                                 <!-- First Row: Copyright and Social Links -->
@@ -578,12 +592,14 @@
                                             {{-- Show store social links if added, otherwise show share links --}}
                                             @if (isset($storeSocialLinks) && $storeSocialLinks->count() > 0)
                                                 @foreach ($storeSocialLinks as $socialLink)
+                                                    @if ($socialLink->type != 'map')
                                                     <li class="list-inline-item">
                                                         <a href="{{ $socialLink->type == 'wa' ? 'https://wa.me/' . $socialLink->content : $socialLink->content }}"
                                                             target="_blank" class="link-light" title="{{ $socialLink->label ?: $socialLink->type }}">
                                                             <i class="{{ $socialLink->icon }} fs-3 text-rose"></i>
                                                         </a>
                                                     </li>
+                                                    @endif
                                                 @endforeach
                                             @else
                                                 <li class="list-inline-item">

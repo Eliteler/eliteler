@@ -12,3 +12,5 @@
 <option value='wa' {{ isset($selected) && $selected == 'wa' ? 'selected' : '' }}>{{ __('WhatsApp') }}</option>
 <option value='discord' {{ isset($selected) && $selected == 'discord' ? 'selected' : '' }}>{{ __('Discord') }}</option>
 <option value='url' {{ isset($selected) && $selected == 'url' ? 'selected' : '' }}>{{ __('Website Link') }}</option>
+<option value='map' {{ isset($selected) && $selected == 'map' ? 'selected' : '' }}>{{ __('Google Map') }}</option>
+<option value='location_url' {{ isset($selected) && $selected == 'location_url' ? 'selected' : '' }}>{{ __('Location without Map') }}</option>

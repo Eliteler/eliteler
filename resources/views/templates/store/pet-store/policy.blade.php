@@ -197,7 +197,21 @@
                     </div>
 
 
-                    <!-- Footer -->
+                    
+            <!-- Store Map -->
+            @if (isset($storeSocialLinks) && $storeSocialLinks->count() > 0)
+                @foreach ($storeSocialLinks as $socialLink)
+                    @if ($socialLink->type == 'map')
+                        <div class="container-xl mb-4">
+                            <div class="card p-2 shadow-sm rounded">
+                                <iframe referrerpolicy="strict-origin-when-cross-origin" src="https://www.google.com/maps/embed?{!! $socialLink->content !!}" width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+                            </div>
+                        </div>
+                    @endif
+                @endforeach
+            @endif
+
+            <!-- Footer -->
                     <div class="footer-wave">
                         <svg viewBox="0 0 1440 100" preserveAspectRatio="none">
                             <path d="M0,0 C360,200 1080,-100 1440,100 L1440,0 L0,0 Z" fill="#E96629" />
@@ -223,37 +237,39 @@
                                             {{-- Show store social links if added, otherwise show share links --}}
                                             @if (isset($storeSocialLinks) && $storeSocialLinks->count() > 0)
                                                 @foreach ($storeSocialLinks as $socialLink)
+                                                    @if ($socialLink->type != 'map')
                                                     <li class="list-inline-item">
                                                         <a href="{{ $socialLink->type == 'wa' ? 'https://wa.me/' . $socialLink->content : $socialLink->content }}"
                                                             target="_blank" class="link-light" title="{{ $socialLink->label ?: $socialLink->type }}">
                                                             <i class="{{ $socialLink->icon }} fs-3 text-white"></i>
                                                         </a>
                                                     </li>
+                                                    @endif
                                                 @endforeach
                                             @else
                                                 <li class="list-inline-item">
                                                     <a href="{{ $shareComponent['facebook'] }}" target="_blank" class="link-light">
-                                                        <i class="ti ti-brand-facebook-filled"></i>
+                                                        <i class="ti ti-brand-facebook-filled fs-2"></i>
                                                     </a>
                                                 </li>
                                                 <li class="list-inline-item">
                                                     <a href="{{ $shareComponent['twitter'] }}" target="_blank" class="link-light">
-                                                        <i class="ti ti-brand-twitter-filled"></i>
+                                                        <i class="ti ti-brand-twitter-filled fs-2"></i>
                                                     </a>
                                                 </li>
                                                 <li class="list-inline-item">
                                                     <a href="{{ $shareComponent['linkedin'] }}" target="_blank" class="link-light">
-                                                        <i class="ti ti-brand-linkedin"></i>
+                                                        <i class="ti ti-brand-linkedin fs-2"></i>
                                                     </a>
                                                 </li>
                                                 <li class="list-inline-item">
                                                     <a href="{{ $shareComponent['telegram'] }}" target="_blank" class="link-light">
-                                                        <i class="ti ti-brand-telegram"></i>
+                                                        <i class="ti ti-brand-telegram fs-2"></i>
                                                     </a>
                                                 </li>
                                                 <li class="list-inline-item">
                                                     <a href="{{ $shareComponent['whatsapp'] }}" target="_blank" class="link-light">
-                                                        <i class="ti ti-brand-whatsapp"></i>
+                                                        <i class="ti ti-brand-whatsapp fs-2"></i>
                                                     </a>
                                                 </li>
                                             @endif

@@ -954,7 +954,7 @@ Route::group(['middleware' => 'Installer'], function () {
 
         // Store Social Links
         Route::get('store/social-links/{id}', [StoreSocialLinkController::class, 'editStoreSocialLinks'])->name('edit.store.social.links');
-        Route::post('store/update-social-links/{id}', [StoreSocialLinkController::class, 'updateStoreSocialLinks'])->name('update.store.social.links');
+        Route::post('store/update-social-links/{id}', [StoreSocialLinkController::class, 'updateStoreSocialLinks'])->name('update.store.social.links')->withoutMiddleware(['scriptsanitizer']);
 
         // Policies (Store Refund Policy, Delivery Policy, Terms & Conditions, Privacy Policy)
         Route::get('store/policies/{id}', [EditStorePoliciesController::class, 'editStorePolicies'])->name('edit.store.policies');
