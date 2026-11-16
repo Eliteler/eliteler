@@ -726,4 +726,43 @@ class WebToolsController extends Controller
         shuffle($word);
         return substr(implode($word), 0, $len);
     }
+
+    /**
+     * Download QR Image from Base64 data
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\Response
+     */
+    public function downloadQrImage(Request $request)
+    {
+        $request->validate([
+            'image_data' => 'required|string',
+            'filename' => 'nullable|string|max:100'
+        ]);
+
+        $imageData = $request->image_data;
+        $filename = basename(str_replace(['"', "\\"], '', $request->filename ?? 'qr-code.png'));
+
+        // Check if it is a data URI
+        if (preg_match('/^data:image\/(\w+);base64,/', $imageData, $type)) {
+            $imageData = substr($imageData, strpos($imageData, ',') + 1);
+            $type = strtolower($type[1]); // png, jpg, etc.
+
+            if (!in_array($type, ['png', 'jpg', 'jpeg', 'gif'])) {
+                return response()->json(['error' => 'Invalid image type'], 422);
+            }
+
+            $imageData = base64_decode($imageData, true);
+
+            if ($imageData === false) {
+                return response()->json(['error' => 'Base64 decode failed'], 422);
+            }
+        } else {
+            return response()->json(['error' => 'Invalid image data'], 422);
+        }
+
+        return response($imageData)
+            ->header('Content-Type', 'image/' . $type)
+            ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
+    }
 }

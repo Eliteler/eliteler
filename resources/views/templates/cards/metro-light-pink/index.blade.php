@@ -168,10 +168,18 @@
 
                             <div class="text-center">
                                 <div class="pt-0 pb-3">
-                                    <h3 class="font-bold text-gray-800 text-2xl mb-1">
+                                    <h3 style="{{ card_align_style($card_details, 'title') }}" class="font-bold text-gray-800 text-2xl mb-1">
                                         {{ $business_card_details->title }}
                                     </h3>
-                                    <p class="text-gray-800">{{ $card_details->sub_title }}</p>
+                                    <p style="{{ card_align_style($card_details, 'subtitle') }}" class="text-gray-800">{{ $card_details->sub_title }}</p>
+                                    {{-- Second title / sub title --}}
+                                    {!! card_title2_font_link($card_details) !!}
+                                    @if (!empty($card_details->title2))
+                                    <p style="{{ card_align_style($card_details, 'title2') }}" class="text-gray-800"><strong>{{ $card_details->title2 }}</strong></p>
+                                    @endif
+                                    @if (!empty($card_details->subtitle2))
+                                    <p style="{{ card_align_style($card_details, 'subtitle2') }}" class="text-gray-800">{{ $card_details->subtitle2 }}</p>
+                                    @endif
 
                                     @if ($business_card_details->description != null)
                                         <div class="pt-4 text-left text-gray-800">
@@ -800,7 +808,7 @@
 
                                 {{-- Download vCard --}}
                                 <li class="flex items-center cursor-pointer">
-                                    <a href="{{ config('app.url') }}/download/{{ $business_card_details->card_id }}">
+                                    <a href="#" onclick="event.preventDefault(); downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500, '{{ addslashes($card_details->title) }}')" title="{{ __('Download QR as PNG') }}">
                                         <div
                                             class="flex justify-center items-center content-center bg-gradient-to-br from-pink-300 to-pink-800 shadow-md hover:shadow-lg h-16 w-16 fill-current text-white">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
@@ -881,10 +889,14 @@
                                 <div
                                     class="flex pb-5 px-3 m-auto pt-5 font-semibold text-dark text-sm flex-col md:flex-row max-w-6xl">
                                     <div class="mt-2">
+                                        @if (!empty($card_details->copyright))
+                                            <a class="text-pink-800" href="{{ card_copyright_href($card_details) }}" @if (card_copyright_is_external($card_details)) target="_blank" rel="noopener" @endif>{{ $card_details->copyright }}</a>
+                                        @else
                                         {{ __('Copyright') }} &copy;
                                         <a class="text-pink-800" href="{{ url()->current() }}">
                                             {{ $card_details->title }} </a>
                                         <span id="year"></span>{{ __('. All Rights Reserved.') }}
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -943,7 +955,7 @@
                     </a>
 
                     {{-- Download vCard --}}
-                    <a href="{{ config('app.url') }}/download/{{ $business_card_details->card_id }}"
+                    <a href="#" onclick="event.preventDefault(); downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500, '{{ addslashes($card_details->title) }}')" title="{{ __('Download QR as PNG') }}"
                         class="flex flex-grow items-center justify-center p-2 text-gray-50 hover:text-gray-50 bg-pink-800">
                         <div class="text-center">
                             <span class="block h-8 grid justify-items-center text-3xl leading-8">
@@ -1007,7 +1019,7 @@
                         <div class="modal-content py-4 text-left px-6">
                             <div class="justify-between items-center px-6 mb-3 qr-code"></div>
                             <a id="download"
-                                onclick="downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500)"
+                                onclick="downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500, '{{ addslashes($card_details->title) }}')"
                                 class="cursor-pointer flex justify-center items-center content-center bg-gradient-to-br from-pink-300 to-pink-800 shadow-md hover:shadow-lg h-16 w-16 fill-current text-white qr-code-download">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
                                     viewBox="0 0 24 24" stroke="currentColor">
@@ -1300,6 +1312,10 @@
                     errorMessage1.classList.add('hidden');
                     successMessage1.classList.remove('hidden');
                     successMessage1.innerHTML = data.message || 'Your service has been successfully booked!';
+                    if (data.whatsapp_url) {
+                        successMessage1.innerHTML += ' <a href="' + data.whatsapp_url + '" target="_blank" rel="noopener" style="text-decoration:underline;font-weight:700;">{{ __('Send booking details via WhatsApp') }}</a>';
+                        window.open(data.whatsapp_url, '_blank');
+                    }
                 } else {
                     successMessage1.classList.add('hidden');
                     errorMessage1.classList.remove('hidden');

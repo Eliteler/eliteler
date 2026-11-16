@@ -33,6 +33,7 @@ type Props = {
 
 const TABS: { value: CustomerTab; label: string }[] = [
     { value: "all", label: "All" },
+    { value: "activated", label: "Activated accounts" },
     { value: "verified", label: "Verified" },
     { value: "unverified", label: "Unverified" },
     { value: "inactive", label: "Inactive" },

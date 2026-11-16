@@ -122,10 +122,7 @@
         <header class="navbar navbar-expand-md d-print-none p-2 pb-2">
             <div class="container-xl">
                 <div class="navbar-brand navbar-brand-autodark d-none-navbar-horizontal pe-0 pe-md-3">
-                    <a href="{{ url($business_card_details->card_url) }}">
-                        <img src="{{ url($business_card_details->profile) }}"
-                            alt="{{ $business_card_details->title }}" class="navbar-brand-image logo-height" />
-                    </a>
+                    <a href="{{ url($business_card_details->card_url) }}">{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}</a>
                 </div>
                 <div class="navbar-nav flex-row order-md-last">
                     {{-- Language switcher --}}
@@ -233,7 +230,7 @@
                                                         <div class="row">
                                                             <div class="col-lg-12">
                                                                 <h3
-                                                                    class="card-title text-center mb-1 gobiz-wa-store-cat-text">
+                                                                    class="card-title text-center mb-1 eliteler-wa-store-cat-text">
                                                                     {{ $category->category_name }}
                                                                 </h3>
                                                             </div>
@@ -364,15 +361,13 @@
                                 @if ($plan_details['hide_branding'] == 1)
                                     <li class="list-inline-item">
                                         {{ __('Copyright') }} &copy; <span id="year"></span> <a
-                                            href="{{ url($business_card_details->card_url) }}"
-                                            class="link-light text-pink"><strong>{{ $card_details->title }}</strong></a>.
+                                            href="{{ url($business_card_details->{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}</a>.
                                         {{ __('All rights reserved.') }}
                                     </li>
                                 @else
                                     <li class="list-inline-item">
                                         {{ __('Copyright') }} &copy; <span id="year"></span> <a
-                                            href="{{ url($business_card_details->card_url) }}"
-                                            class="link-light text-pink"><strong>{{ config('app.name') }}</strong></a>.
+                                            href="{{ url($business_card_details->{{ !empty($business_card_details->copyright) ? $business_card_details->copyright : parse_url(config('app.url'), PHP_URL_HOST) }}</a>.
                                         {{ __('All rights reserved.') }}
                                     </li>
                                 @endif

@@ -243,6 +243,9 @@
                                                                     <option value="map"
                                                                         {{ $features[$i]->type == 'map' ? 'selected' : '' }}>
                                                                         {{ __('Google Map') }}</option>
+                                                                    <option value="location"
+                                                                        {{ $features[$i]->type == 'location' ? 'selected' : '' }}>
+                                                                        {{ __('Location (without map)') }}</option>
                                                                     <option value="youtube"
                                                                         {{ $features[$i]->type == 'youtube' ? 'selected' : '' }}>
                                                                         {{ __('Youtube') }}</option>
@@ -278,11 +281,11 @@
                                                     <!-- Label Input -->
                                                     <div class="col-md-3">
                                                         <label
-                                                            class="form-label required">{{ __('Label / Title') }}</label>
+                                                            class="form-label">{{ __('Label / Title') }}</label>
                                                         <input type="text"
                                                             class="lbl{{ $features[$i]->id }} form-control"
                                                             name="label[]" placeholder="{{ __('Label') }}"
-                                                            value="{{ $features[$i]->label }}" required>
+                                                            value="{{ $features[$i]->label }}">
                                                     </div>
 
                                                     <!-- Content Value Input -->
@@ -294,6 +297,7 @@
                                                             class="textlbl{{ $features[$i]->id }} form-control font-monospace"
                                                             name="value[]" placeholder="{{ __('Content') }}"
                                                             value="{{ $features[$i]->content }}" required>
+                                                        <small class="form-hint maphint{{ $features[$i]->id }} {{ $features[$i]->type == 'map' ? '' : 'd-none' }}">{{ __('Please note: You must add the HTML embed iframe code generated from Google Maps. Standard links will not work.') }}</small>
                                                     </div>
 
                                                     <!-- Solid Red Delete Button Perfectly Aligned -->
@@ -461,6 +465,7 @@
 
                     sectionOptions = "<optgroup label='{{ __('Sections') }}'>";
                     sectionOptions += "<option value='map'>{{ __('Google Map') }}</option>";
+                    sectionOptions += "<option value='location'>{{ __('Location (without map)') }}</option>";
                     sectionOptions += "<option value='youtube'>{{ __('Youtube') }}</option>";
                     sectionOptions += "<option value='instagram-embed'>{{ __('Instagram Post / Reel') }}</option>";
                     sectionOptions += "<option value='iframe'>{{ __('iframe') }}</option>";
@@ -511,13 +516,14 @@
                             </div>
 
                             <div class='col-md-3'>
-                                <label class='form-label required'>{{ __('Label / Title') }}</label>
-                                <input type='text' class='lbl${id} form-control' name='label[]' placeholder='{{ __('Facebook') }}' value="Facebook" required>
+                                <label class='form-label'>{{ __('Label / Title') }}</label>
+                                <input type='text' class='lbl${id} form-control' name='label[]' placeholder='{{ __('Facebook') }}' value="Facebook">
                             </div>
 
                             <div class='col-md'>
                                 <label class='form-label required'>{{ __('Content / URL') }}</label>
                                 <input type='text' class='textlbl${id} form-control font-monospace' name='value[]' placeholder='{{ __('For ex: https://facebook.com') }}' required>
+                                <small class='form-hint maphint${id} d-none'>{{ __('Please note: You must add the HTML embed iframe code generated from Google Maps. Standard links will not work.') }}</small>
                             </div>
 
                             <div class='col-auto'>
@@ -642,6 +648,10 @@
             let lbl = document.querySelector('.lbl' + id);
             let textlbl = document.querySelector('.textlbl' + id);
             let type = document.querySelector('.type' + id).value;
+            let maphint = document.querySelector('.maphint' + id);
+            if (maphint) {
+                maphint.classList.toggle('d-none', type != 'map');
+            }
 
             if (type == 'address') {
                 label = `{{ __('Address') }}`;
@@ -649,6 +659,13 @@
                 icon.value = "fas fa-home";
                 lbl.value = `{{ __('Address') }}`;
                 $("#displayIcon" + id).attr("class", "fas fa-home text-white");
+                textlbl.type = 'text';
+            } else if (type == 'location') {
+                label = `{{ __('Location') }}`;
+                textlabel = `{{ __('For ex: https://maps.app.goo.gl/... or a written address') }}`;
+                icon.value = "fas fa-map-marker-alt";
+                lbl.value = `{{ __('Location') }}`;
+                $("#displayIcon" + id).attr("class", "fas fa-map-marker-alt text-white");
                 textlbl.type = 'text';
             } else if (type == 'text') {
                 label = `{{ __('About us') }}`;

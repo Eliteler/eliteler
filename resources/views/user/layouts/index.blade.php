@@ -242,7 +242,7 @@
     @endif
 
     {{-- WhatsApp Chatbot --}}
-    @if (isset($config[100]->config_value) && $config[100]->config_value == '1')
+    @if (isset($config) && $config && (collect($config)->pluck('config_value', 'config_key')['show_whatsapp_chatbot_on_customer_panel'] ?? '0') == '1')
         @include('user.includes.whatsapp-chatbot')
     @endif
 
@@ -411,6 +411,56 @@
 
     @yield('scripts')
     
+    {{-- Image upload validation + SweetAlert error dialogs (cards & stores) --}}
+    <script>
+        window.uploadMaxMb = 10;
+        window.validateImageFile = function(file) {
+            if (!file) return null;
+            var allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            var ext = String(file.name || '').split('.').pop().toLowerCase();
+            var extOk = ['jpg', 'jpeg', 'png', 'gif', 'webp'].indexOf(ext) !== -1;
+            if (allowedTypes.indexOf(file.type) === -1 && !extOk) {
+                return '{{ __('Unsupported file type. Allowed types: JPG, PNG, GIF, WebP.') }}';
+            }
+            if (file.size > window.uploadMaxMb * 1024 * 1024) {
+                return '{{ __('The image is too large. Maximum size is :size MB.') }}'.replace(':size', window.uploadMaxMb);
+            }
+            return null;
+        };
+        window.uploadErrorMessage = function(status, json) {
+            var text = '';
+            if (json) {
+                text = json.message || (json.errors && json.errors.croppedImage && json.errors.croppedImage[0]) || '';
+            }
+            if (status === 413 || /kilobytes|too large|greater than/i.test(text)) {
+                return '{{ __('The image is too large. Maximum size is :size MB.') }}'.replace(':size', window.uploadMaxMb);
+            }
+            if (status === 422 || /must be an image|of type|invalid image/i.test(text)) {
+                return '{{ __('Unsupported file type. Allowed types: JPG, PNG, GIF, WebP.') }}';
+            }
+            return '{{ __('Something went wrong while uploading the image. Please try again.') }}';
+        };
+        window.showUploadError = function(message) {
+            var show = function() {
+                swal({
+                    title: '{{ __('Upload failed') }}',
+                    text: message,
+                    icon: 'error',
+                    button: '{{ __('OK') }}'
+                });
+            };
+            if (typeof swal === 'function') {
+                show();
+                return;
+            }
+            var s = document.createElement('script');
+            s.src = '{{ asset('js/sweetalert.min.js') }}';
+            s.onload = show;
+            s.onerror = function() { alert(message); };
+            document.head.appendChild(s);
+        };
+    </script>
+
     @stack('custom-js')
 </body>
 

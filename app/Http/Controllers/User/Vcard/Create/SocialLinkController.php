@@ -95,11 +95,15 @@ class SocialLinkController extends Controller
                     for ($i = 0; $i < count($request->icon); $i++) {
 
                         // Check dynamic fields
-                        if (isset($request->icon[$i]) && isset($request->label[$i]) && isset($request->value[$i])) {
+                        if (isset($request->icon[$i]) && isset($request->value[$i])) {
 
                             $customContent = $request->value[$i];
                             // Replace http with https
                             $customContent = str_replace('http://', 'https://', $customContent);
+                            // Location (without map): a written address becomes a Google Maps search link
+                            if (($request->type[$i] ?? '') === 'location' && ! preg_match('~^https?://~i', trim((string) $customContent))) {
+                                $customContent = 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode(trim((string) $customContent));
+                            }
 
                             // YouTube (standard, short, shorts)
                             if ($request->type[$i] == 'youtube') {
@@ -184,7 +188,7 @@ class SocialLinkController extends Controller
                             $field->title = 'Social Links';
                             $field->type = $request->type[$i];
                             $field->icon = $request->icon[$i];
-                            $field->label = $request->label[$i];
+                            $field->label = $request->label[$i] ?? '';
                             $field->content = $customContent;
                             $field->position = $i + 1;
                             $field->save();

@@ -120,8 +120,16 @@
                                     </div>
 
                                     <div class="text-center mt-4 relative z-20">
-                                        <h2 class="font-medium text-xl">{{ $business_card_details->title }}</h2>
-                                        <p class="text-sm text-gray-500">{{ $card_details->sub_title }}</p>
+                                        <h2 style="{{ card_align_style($card_details, 'title') }}" class="font-medium text-xl">{{ $business_card_details->title }}</h2>
+                                        <p style="{{ card_align_style($card_details, 'subtitle') }}" class="text-sm text-gray-500">{{ $card_details->sub_title }}</p>
+                                        {{-- Second title / sub title --}}
+                                        {!! card_title2_font_link($card_details) !!}
+                                        @if (!empty($card_details->title2))
+                                        <p style="{{ card_align_style($card_details, 'title2') }}" class="text-sm text-gray-500"><strong>{{ $card_details->title2 }}</strong></p>
+                                        @endif
+                                        @if (!empty($card_details->subtitle2))
+                                        <p style="{{ card_align_style($card_details, 'subtitle2') }}" class="text-sm text-gray-500">{{ $card_details->subtitle2 }}</p>
+                                        @endif
                                     </div>
 
                                     @if ($business_card_details->description != null)
@@ -377,10 +385,14 @@
                                         <div
                                             class="flex pb-3 m-auto pt-5 font-semibold text-sm flex-col md:flex-row max-w-6xl">
                                             <div class="mt-2">
+                                                @if (!empty($card_details->copyright))
+                                                    <a class="text-pink-500" href="{{ card_copyright_href($card_details) }}" @if (card_copyright_is_external($card_details)) target="_blank" rel="noopener" @endif>{{ $card_details->copyright }}</a>
+                                                @else
                                                 {{ __('Copyright') }} &copy; {{ now()->year }} {{ __('by') }}
                                                 <a class="text-pink-500" href="{{ url()->current() }}">
                                                     {{ $card_details->title }} </a>
                                                 <span id="year"></span>{{ __('. All Rights Reserved.') }}
+                                                @endif
                                             </div>
                                         </div>
                                     </div>
@@ -404,7 +416,7 @@
                         <!-- Add to Contact -->
                         <div class="w-full px-2 mb-2 md:mb-0 add-to-contact border-t shadow-lg lg:hidden">
                             <a class="flex px-5 py-3 items-center justify-center bg-pink-500 hover:bg-pink-600 text-sm leading-6 font-bold text-white rounded-xl transition duration-200"
-                                href="{{ config('app.url') }}/download/{{ $business_card_details->card_id }}">
+                                href="#" onclick="event.preventDefault(); downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500, '{{ addslashes($card_details->title) }}')" title="{{ __('Download QR as PNG') }}">
                                 <svg xmlns="http://www.w3.org/2000/svg"
                                     class="icon icon-tabler icon-tabler-address-book mr-3" width="24"
                                     height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
@@ -461,7 +473,7 @@
                     <div class="modal-content py-4 text-left px-6">
                         <div class="justify-between items-center px-6 qr-code"></div>
                         <a id="download"
-                            onclick="downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500)"
+                            onclick="downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500, '{{ addslashes($card_details->title) }}')"
                             class="mt-3 cursor-pointer w-full flex justify-center items-center content-center bg-pink-500 hover:bg-pink-600 shadow-lg hover:shadow-lg h-8 w-8 rounded fill-current text-white qr-code-download">
                             <span>{{ __('Download') }}</span>
                         </a>

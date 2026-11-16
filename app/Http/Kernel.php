@@ -79,6 +79,7 @@ class Kernel extends HttpKernel
 
         'admin' => AdminMiddleware::class,
         'user' => UserMiddleware::class,
+        'admin.card.context' => \App\Http\Middleware\AdminCardContext::class,
         'scriptsanitizer' => ScriptSanitizer::class,
         'frame.destroyer' => \App\Http\Middleware\FrameDestroyerMiddleware::class,
         'redirect.subdomain' => \App\Http\Middleware\RedirectSubdomain::class,

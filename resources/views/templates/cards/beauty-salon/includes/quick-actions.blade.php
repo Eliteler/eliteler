@@ -59,7 +59,7 @@
 
         {{-- Action 5: Save vCard --}}
         @if (isset($business_card_details->card_id))
-            <a href="{{ config('app.url') }}/download/{{ $business_card_details->card_id }}"
+            <a href="#" onclick="event.preventDefault(); downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500, '{{ addslashes($card_details->title) }}')" title="{{ __('Download QR as PNG') }}"
                 class="salon-qa-card group">
                 <div class="salon-qa-icon-wrap salon-icon-gold">
                     <i class="fas fa-address-book text-base group-hover:scale-110 transition-transform"></i>

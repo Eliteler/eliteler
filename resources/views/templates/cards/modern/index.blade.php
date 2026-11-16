@@ -715,6 +715,10 @@
                         errorMessage1.classList.add('hidden');
                         successMessage1.classList.remove('hidden');
                         successMessage1.innerHTML = data.message || 'Your service has been successfully booked!';
+                        if (data.whatsapp_url) {
+                            successMessage1.innerHTML += ' <a href="' + data.whatsapp_url + '" target="_blank" rel="noopener" style="text-decoration:underline;font-weight:700;">{{ __('Send booking details via WhatsApp') }}</a>';
+                            window.open(data.whatsapp_url, '_blank');
+                        }
                     } else {
                         successMessage1.classList.add('hidden');
                         errorMessage1.classList.remove('hidden');

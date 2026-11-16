@@ -277,13 +277,25 @@
                                         class="h-32 w-32 rounded-full object-cover z-20 rtl:ml-4 border-[3px] border-[#505050]" />
                                     <div class="flex flex-col justify-start items-start ml-6 lg:ml:8 z-20">
                                         {{-- Name --}}
-                                        <h1 class="text-xl lg:text-4xl font-extrabold head">
+                                        <h1 style="{{ card_align_style($card_details, 'title') }}" class="text-xl lg:text-4xl font-extrabold head">
                                             {{ $business_card_details->title }}
                                         </h1>
                                         {{-- Job Title --}}
-                                        <p class="text-[#121212] font-semibold text-md text-gray-800">
+                                        <p style="{{ card_align_style($card_details, 'subtitle') }}" class="text-[#121212] font-semibold text-md text-gray-800">
                                             {{ $card_details->sub_title }}
                                         </p>
+                                        {{-- Second title / sub title --}}
+                                        {!! card_title2_font_link($card_details) !!}
+                                        @if (!empty($card_details->title2))
+                                        <p style="{{ card_align_style($card_details, 'title2') }}" class="text-[#121212] font-semibold text-md text-gray-800">
+                                            <strong>{{ $card_details->title2 }}</strong>
+                                        </p>
+                                        @endif
+                                        @if (!empty($card_details->subtitle2))
+                                        <p style="{{ card_align_style($card_details, 'subtitle2') }}" class="text-[#121212] font-semibold text-md text-gray-800">
+                                            {{ $card_details->subtitle2 }}
+                                        </p>
+                                        @endif
                                         {{-- About --}}
                                         @if (isset($business_card_details->description) || isset($business_card_details->address))
                                             <span class="mt-2 text-sm text-gray-600 line-clamp-3">
@@ -1207,10 +1219,14 @@
                                         <div
                                             class="flex pt-5 px-3 m-auto font-semibold text-white text-sm flex-col md:flex-row max-w-6xl">
                                             <div class="mt-2 text-black">
+                                                @if (!empty($card_details->copyright))
+                                                    <a class="text-black" href="{{ card_copyright_href($card_details) }}" @if (card_copyright_is_external($card_details)) target="_blank" rel="noopener" @endif>{{ $card_details->copyright }}</a>
+                                                @else
                                                 {{ __('Copyright') }} &copy;
                                                 <a class="text-black" href="{{ url()->current() }}">
                                                     {{ $card_details->title }}</a>
                                                 <span id="year"></span>{{ __('. All Rights Reserved.') }}
+                                                @endif
                                             </div>
                                         </div>
                                     </div>
@@ -1267,7 +1283,7 @@
 
                     <!-- Download Icon -->
                     <div class="flex-1 flex items-center justify-center">
-                        <a href="{{ config('app.url') }}/download/{{ $business_card_details->card_id }}"
+                        <a href="#" onclick="event.preventDefault(); downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500, '{{ addslashes($card_details->title) }}')" title="{{ __('Download QR as PNG') }}"
                             class="border border-[#121212] p-3 rounded-full bg-gray-50">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -1478,7 +1494,7 @@
                     <!-- Submit Button -->
                     <div class="flex justify-center">
                         <button id="download"
-                            onclick="downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500)"
+                            onclick="downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500, '{{ addslashes($card_details->title) }}')"
                             class="bg-gray-50 border border-gray-200 font-bold p-3 rounded-full">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -1771,6 +1787,10 @@
                         errorMessage1.classList.add('hidden');
                         successMessage1.classList.remove('hidden');
                         successMessage1.innerHTML = data.message || 'Your service has been successfully booked!';
+                        if (data.whatsapp_url) {
+                            successMessage1.innerHTML += ' <a href="' + data.whatsapp_url + '" target="_blank" rel="noopener" style="text-decoration:underline;font-weight:700;">{{ __('Send booking details via WhatsApp') }}</a>';
+                            window.open(data.whatsapp_url, '_blank');
+                        }
                     } else {
                         successMessage1.classList.add('hidden');
                         errorMessage1.classList.remove('hidden');

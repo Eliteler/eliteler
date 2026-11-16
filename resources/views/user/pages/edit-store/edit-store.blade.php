@@ -762,6 +762,18 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-0">
+                    <div class="px-3 pt-3">
+                        <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                            <span class="text-secondary small fw-semibold">{{ __('Aspect ratio') }}:</span>
+                            <div class="btn-group btn-group-sm" role="group" aria-label="{{ __('Aspect ratio') }}">
+                                <button type="button" class="btn btn-outline-secondary banner-ratio active" data-ratio="16:9">16:9</button>
+                                <button type="button" class="btn btn-outline-secondary banner-ratio" data-ratio="4:3">4:3</button>
+                                <button type="button" class="btn btn-outline-secondary banner-ratio" data-ratio="3:1">3:1</button>
+                                <button type="button" class="btn btn-outline-secondary banner-ratio" data-ratio="1:1">1:1</button>
+                                <button type="button" class="btn btn-outline-secondary banner-ratio" data-ratio="free">{{ __('Free ratio') }}</button>
+                            </div>
+                        </div>
+                    </div>
                     <div class="cropper-wrapper w-100"
                         style="max-height: 460px; overflow: hidden; background: var(--tblr-bg-surface-secondary);">
                         <img id="bannerCropperImage" style="max-width: 100%; display: block;" alt="Banner crop image">
@@ -769,6 +781,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-danger" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+                    <button type="button" class="btn btn-outline-primary" id="skipBannerCrop">{{ __('Skip crop (use original size)') }}</button>
                     <button type="button" class="btn btn-primary" id="applyBannerCrop">
                         {{ __('Crop & Add') }}
                     </button>
@@ -868,6 +881,12 @@
         logoInput.addEventListener('change', function(e) {
             const files = e.target.files;
             if (files && files.length > 0) {
+                const fileError = window.validateImageFile(files[0]);
+                if (fileError) {
+                    window.showUploadError(fileError);
+                    e.target.value = '';
+                    return;
+                }
                 const reader = new FileReader();
                 reader.onload = function(event) {
                     const img = document.getElementById('logoCropperImage');
@@ -917,7 +936,7 @@
                         },
                         body: formData
                     })
-                    .then(response => response.json())
+                    .then(response => response.ok ? response.json() : response.json().catch(() => ({})).then(j => Promise.reject(Object.assign({ status: response.status }, j))))
                     .then(data => {
                         document.getElementById('logo_payload').value = data.imageUrl;
                         const previewContainer = document.getElementById('logoPreviewContainer');
@@ -929,7 +948,10 @@
                     `;
                         bootstrap.Modal.getInstance(logoModalEl).hide();
                     })
-                    .catch(err => console.error('Logo upload error:', err))
+                    .catch(err => {
+                        console.error('Logo upload error:', err);
+                        window.showUploadError(window.uploadErrorMessage(err && err.status, err));
+                    })
                     .finally(() => {
                         btn.disabled = false;
                         btn.innerHTML = `{{ __('Crop & Apply') }}`;
@@ -959,6 +981,14 @@
         coverInput.addEventListener('change', function(e) {
             bannerFiles = e.target.files;
             if (bannerFiles && bannerFiles.length > 0) {
+                for (let i = 0; i < bannerFiles.length; i++) {
+                    const fileError = window.validateImageFile(bannerFiles[i]);
+                    if (fileError) {
+                        window.showUploadError(bannerFiles[i].name + ': ' + fileError);
+                        e.target.value = '';
+                        return;
+                    }
+                }
                 bannerIndex = 0;
                 loadNextBannerFile();
             }
@@ -984,6 +1014,7 @@
                 autoCropArea: 1,
                 responsive: true
             });
+            document.querySelectorAll('#cropBannerModal .banner-ratio').forEach(function(x) { x.classList.toggle('active', x.dataset.ratio === '16:9'); });
         });
 
         bannerModalEl.addEventListener('hidden.bs.modal', function() {
@@ -993,59 +1024,99 @@
             }
         });
 
+        function uploadBannerBlob(blob, fileName, btn, label) {
+            const formData = new FormData();
+            formData.append('croppedImage', blob, fileName);
+
+            fetch("{{ route('user.store.cropped.images') }}", {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: formData
+                })
+                .then(response => response.ok ? response.json() : response.json().catch(() => ({})).then(j => Promise.reject(Object.assign({ status: response.status }, j))))
+                .then(data => {
+                                uploadedBanners.push(data.imageUrl);
+                                document.getElementById('banner_payload').value = JSON.stringify(
+                                    uploadedBanners);
+
+                                const previewContainer = document.getElementById('bannerPreviewContainer');
+                                previewContainer.classList.remove('d-none');
+                                previewContainer.insertAdjacentHTML('beforeend', `
+                                    <div class="media-preview-item position-relative" data-path="${data.imageUrl}" style="width: 100px; height: 100px;">
+                                        <img src="${data.imageUrl}" alt="{{ __('Store Banner') }}" class="w-100 h-100 object-cover rounded">
+                                        <button type="button" class="btn btn-sm btn-danger p-0 rounded-circle position-absolute d-flex align-items-center justify-content-center"
+                                            style="top: -5px; right: -5px; width: 22px; height: 22px; z-index: 5;"
+                                            onclick="removeBanner(this, '${data.imageUrl}')">
+                                            &times;
+                                        </button>
+                                    </div>
+                                `);
+
+                                bootstrap.Modal.getInstance(bannerModalEl).hide();
+                                bannerIndex++;
+                                if (bannerIndex < bannerFiles.length) {
+                                    setTimeout(loadNextBannerFile, 350);
+                                }
+                })
+                .catch(err => {
+                    console.error('Banner upload error:', err);
+                    window.showUploadError(window.uploadErrorMessage(err && err.status, err));
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = label;
+                });
+        }
+
+        function bannerBusy(btn) {
+            const label = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status"></span> {{ __('Uploading...') }}`;
+            return label;
+        }
+
+        // Aspect ratio presets (16:9, 4:3, 3:1, 1:1, free)
+        document.querySelectorAll('#cropBannerModal .banner-ratio').forEach(function(b) {
+            b.addEventListener('click', function() {
+                document.querySelectorAll('#cropBannerModal .banner-ratio').forEach(x => x.classList.remove('active'));
+                b.classList.add('active');
+                if (!bannerCropper) return;
+                const r = b.dataset.ratio;
+                if (r === 'free') {
+                    bannerCropper.setAspectRatio(NaN);
+                    return;
+                }
+                const p = r.split(':');
+                bannerCropper.setAspectRatio(parseFloat(p[0]) / parseFloat(p[1]));
+            });
+        });
+
+        // Crop & add (keeps the cropped area at its real resolution, up to 4096px)
         document.getElementById('applyBannerCrop').addEventListener('click', function() {
             if (!bannerCropper) return;
             const btn = this;
-            btn.disabled = true;
-            btn.innerHTML =
-                `<span class="spinner-border spinner-border-sm me-1" role="status"></span> {{ __('Uploading...') }}`;
-
+            const label = bannerBusy(btn);
+            const file = bannerFiles[bannerIndex];
+            const keepPng = file && /png|gif|webp/i.test(file.type);
             const canvas = bannerCropper.getCroppedCanvas({
-                width: 1920,
-                height: 1080
+                maxWidth: 4096,
+                maxHeight: 4096,
+                imageSmoothingQuality: 'high'
             });
             canvas.toBlob(function(blob) {
-                const formData = new FormData();
-                formData.append('croppedImage', blob, `banner_${bannerIndex}.png`);
+                uploadBannerBlob(blob, `banner_${bannerIndex}.${keepPng ? 'png' : 'jpg'}`, btn, label);
+            }, keepPng ? 'image/png' : 'image/jpeg', 0.92);
+        });
 
-                fetch("{{ route('user.store.cropped.images') }}", {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                        },
-                        body: formData
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        uploadedBanners.push(data.imageUrl);
-                        document.getElementById('banner_payload').value = JSON.stringify(
-                            uploadedBanners);
-
-                        const previewContainer = document.getElementById('bannerPreviewContainer');
-                        previewContainer.classList.remove('d-none');
-                        previewContainer.insertAdjacentHTML('beforeend', `
-                            <div class="media-preview-item position-relative" data-path="${data.imageUrl}" style="width: 100px; height: 100px;">
-                                <img src="${data.imageUrl}" alt="{{ __('Store Banner') }}" class="w-100 h-100 object-cover rounded">
-                                <button type="button" class="btn btn-sm btn-danger p-0 rounded-circle position-absolute d-flex align-items-center justify-content-center"
-                                    style="top: -5px; right: -5px; width: 22px; height: 22px; z-index: 5;"
-                                    onclick="removeBanner(this, '${data.imageUrl}')">
-                                    &times;
-                                </button>
-                            </div>
-                        `);
-
-                        bootstrap.Modal.getInstance(bannerModalEl).hide();
-                        bannerIndex++;
-                        if (bannerIndex < bannerFiles.length) {
-                            setTimeout(loadNextBannerFile, 350);
-                        }
-                    })
-                    .catch(err => console.error('Banner upload error:', err))
-                    .finally(() => {
-                        btn.disabled = false;
-                        btn.innerHTML = `{{ __('Crop & Add') }}`;
-                    });
-            }, 'image/png');
+        // Skip crop: upload the original file with its own dimensions
+        document.getElementById('skipBannerCrop').addEventListener('click', function() {
+            const file = bannerFiles[bannerIndex];
+            if (!file) return;
+            const btn = this;
+            const label = bannerBusy(btn);
+            uploadBannerBlob(file, file.name, btn, label);
         });
 
         // Dynamic Banner Removal Handler

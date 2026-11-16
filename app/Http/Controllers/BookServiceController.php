@@ -157,7 +157,32 @@ class BookServiceController extends Controller
             }
 
             if ($bookService) {
-                return response()->json(['success' => true, 'message' => trans('Your service has been successfully booked!')]);
+                // WhatsApp hand-off: send the booking details to the card owner's WhatsApp number (business field type "wa")
+                $whatsappUrl = null;
+                $waField = \App\BusinessField::where('card_id', $serviceDetails->vcard_id)->where('type', 'wa')->first();
+                $waNumber = preg_replace('/[^0-9]/', '', (string) ($serviceDetails->service_booking_whatsapp ?? ''));
+                if ($waNumber === '') {
+                    $waNumber = $waField ? preg_replace('/[^0-9]/', '', (string) $waField->content) : '';
+                }
+                if ($waNumber !== '') {
+                    $lines = [
+                        trans('New service booking request'),
+                        trans('Service') . ': ' . trim((string) ($serviceDetails->title ?? '')),
+                        trans('Name') . ': ' . $request->customer_name,
+                        trans('Mobile Number') . ': ' . $request->customer_phone,
+                        trans('Email') . ': ' . $request->customer_email,
+                        trans('No. of Person(s)') . ': ' . $request->no_of_persons,
+                        trans('From') . ': ' . Carbon::parse($request->service_start_date)->format('d M Y') . ' ' . Carbon::parse($request->service_start_time)->format('H:i'),
+                        trans('To') . ': ' . Carbon::parse($request->service_end_date)->format('d M Y') . ' ' . Carbon::parse($request->service_end_time)->format('H:i'),
+                        trans('Address') . ': ' . $request->customer_address,
+                    ];
+                    if (trim((string) $request->customer_notes) !== '') {
+                        $lines[] = trans('Notes') . ': ' . $request->customer_notes;
+                    }
+                    $whatsappUrl = 'https://wa.me/' . $waNumber . '?text=' . rawurlencode(implode("\n", $lines));
+                }
+
+                return response()->json(['success' => true, 'message' => trans('Your service has been successfully booked!'), 'whatsapp_url' => $whatsappUrl]);
             } else {
                 return response()->json(['success' => false, 'message' => trans('Booking failed. Please check your details and try again.')]);
             }

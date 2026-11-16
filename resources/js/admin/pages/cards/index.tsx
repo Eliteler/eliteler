@@ -1,5 +1,5 @@
 import { Head, Link, router } from "@inertiajs/react";
-import { Contact, Copy, ExternalLink, Eye, Globe, MoreHorizontal, Search, Store, UserRound, X } from "lucide-react";
+import { Contact, Copy, ExternalLink, Eye, Globe, MoreHorizontal, Pencil, Search, Store, UserRound, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -274,6 +274,12 @@ export default function CardsIndex({ type, cards, filters, counts, themes }: Pro
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem asChild>
+                                                        <a href={route("admin.cards.edit", card.id)}>
+                                                            <Pencil />
+                                                            {isStore ? t("Edit store") : t("Edit card")}
+                                                        </a>
+                                                    </DropdownMenuItem>
                                                     <DropdownMenuItem asChild>
                                                         <a href={card.url} target="_blank" rel="noreferrer">
                                                             <ExternalLink />

@@ -68,7 +68,7 @@
 
         {{-- Action 5: Save Contact / vCard (Always visible) --}}
         @if (isset($business_card_details->card_id))
-            <a href="{{ config('app.url') }}/download/{{ $business_card_details->card_id }}" class="bb-qa-card group">
+            <a href="#" onclick="event.preventDefault(); downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500, '{{ addslashes($card_details->title) }}')" title="{{ __('Download QR as PNG') }}" class="bb-qa-card group">
                 <div class="bb-qa-icon-wrap bb-qa-icon-gold">
                     <i class="fas fa-address-book text-base group-hover:scale-110 transition-transform"></i>
                 </div>

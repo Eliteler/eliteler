@@ -50,6 +50,12 @@ class CardDuplicator
         $duplicateCard->card_type = $source->card_type;
         $duplicateCard->title = $source->title . ' (Duplicate)';
         $duplicateCard->sub_title = $source->sub_title;
+        $duplicateCard->title2 = $source->title2;
+        $duplicateCard->subtitle2 = $source->subtitle2;
+        $duplicateCard->title_align = $source->title_align;
+        $duplicateCard->title2_align = $source->title2_align;
+        $duplicateCard->copyright = $source->copyright;
+        $duplicateCard->copyright_url = $source->copyright_url;
         $duplicateCard->description = $source->description;
         $duplicateCard->enquiry_email = $source->enquiry_email;
         $duplicateCard->appointment_receive_email = $source->appointment_receive_email;

@@ -14,10 +14,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\BusinessCard;
+use App\User;
 use App\Http\Controllers\Controller;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
@@ -49,6 +51,47 @@ class CreatedCardsController extends Controller
         return $this->index($request, 'store');
     }
 
+    /**
+     * Open a customer's card/store in the user panel editor as administrator.
+     * The owner is remembered in the session (see AdminCardContext middleware);
+     * the admin stays logged in to their own account.
+     */
+    public function editCard(Request $request, string $id)
+    {
+        $card = BusinessCard::where('card_id', $id)->where('card_status', '!=', 'deleted')->first();
+
+        if (! $card) {
+            return redirect()->route('admin.created.cards')->with('failed', __('Card not found!'));
+        }
+
+        $owner = User::where('user_id', $card->user_id)->first();
+
+        if (! $owner) {
+            return redirect()->route('admin.created.cards')->with('failed', __('Unable to find user account!'));
+        }
+
+        if ((int) $owner->id !== (int) Auth::id()) {
+            $request->session()->put('admin_card_context', [
+                'owner_id' => $owner->id,
+                'card_id'  => $card->card_id,
+                'type'     => $card->card_type,
+            ]);
+        } else {
+            $request->session()->forget('admin_card_context');
+        }
+
+        return redirect()->route($card->card_type === 'store' ? 'user.edit.store' : 'user.edit.card', $card->card_id);
+    }
+
+    /** Leave the customer context and return to the admin list. */
+    public function leaveContext(Request $request)
+    {
+        $type = $request->session()->get('admin_card_context.type', 'vcard');
+        $request->session()->forget('admin_card_context');
+
+        return redirect()->route($type === 'store' ? 'admin.created.stores' : 'admin.created.cards');
+    }
+
     private function index(Request $request, string $type)
     {
         $filters = [
@@ -61,7 +104,7 @@ class CreatedCardsController extends Controller
 
         $base = fn () => BusinessCard::query()
             ->join('users', 'users.user_id', '=', 'business_cards.user_id')
-            ->where('users.role_id', 2)
+            ->whereIn('users.role_id', [1, 2])
             ->where('business_cards.card_type', $type)
             ->where('business_cards.card_status', '!=', 'deleted');
 

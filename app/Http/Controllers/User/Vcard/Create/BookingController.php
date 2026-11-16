@@ -88,6 +88,7 @@ class BookingController extends Controller
                 'service_booking_start_time' => $request->service_booking_start_time ?? '00:00',
                 'service_booking_end_time' => $request->service_booking_end_time ?? '00:00',
                 'service_booking_receive_email' => $request->service_booking_receive_email ?? null,
+                'service_booking_whatsapp' => preg_replace('/[^0-9]/', '', (string) $request->service_booking_whatsapp) ?: null,
                 'status' => 1
             ]);
 

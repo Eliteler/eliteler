@@ -326,16 +326,46 @@
 
                                                 <!-- Subtitle -->
                                                 <div class="col-md-12">
-                                                    <label class="form-label required"
+                                                    <label class="form-label"
                                                         for="subtitle">{{ __('Sub Title') }}</label>
                                                     <input type="text" class="form-control" name="subtitle"
                                                         id="subtitle" value="{{ $business_card->sub_title }}"
-                                                        placeholder="{{ __('Location / Job title') }}" required>
+                                                        placeholder="{{ __('Location / Job title') }}">
+                                                </div>
+
+                                                <!-- Second Title -->
+                                                <div class="col-md-12">
+                                                    <label class="form-label" for="title2">{{ __('Second Title') }}</label>
+                                                    <input type="text" class="form-control" name="title2" id="title2"
+                                                        value="{{ $business_card->title2 }}" placeholder="{{ __('Optional second title') }}" maxlength="191">
+                                                </div>
+                                                
+                                                <!-- Second Subtitle -->
+                                                <div class="col-md-12">
+                                                    <label class="form-label" for="subtitle2">{{ __('Second Sub Title') }}</label>
+                                                    <input type="text" class="form-control" name="subtitle2" id="subtitle2"
+                                                        value="{{ $business_card->subtitle2 }}" placeholder="{{ __('Optional second sub title') }}" maxlength="191">
+                                                </div>
+
+                                                <!-- Custom Copyright Text -->
+                                                <div class="col-md-12">
+                                                    <label class="form-label" for="copyright">{{ __('Custom Copyright Text') }}</label>
+                                                    <input type="text" class="form-control" name="copyright" id="copyright"
+                                                        value="{{ $business_card->copyright }}" placeholder="{{ __('Leave empty to use the default copyright line') }}" maxlength="191">
+                                                    <small class="form-hint">{{ __('Shown in the card footer instead of the default copyright line.') }}</small>
+                                                </div>
+
+                                                <!-- Copyright Link -->
+                                                <div class="col-md-12">
+                                                    <label class="form-label" for="copyright_url">{{ __('Copyright Link (URL)') }}</label>
+                                                    <input type="text" class="form-control" name="copyright_url" id="copyright_url"
+                                                        value="{{ $business_card->copyright_url }}" placeholder="https://example.com" maxlength="191" dir="ltr">
+                                                    <small class="form-hint">{{ __('The copyright text will link to this address. Leave empty to link to the card itself.') }}</small>
                                                 </div>
 
                                                 <!-- Description TinyMCE -->
                                                 <div class="col-12">
-                                                    <label class="form-label required"
+                                                    <label class="form-label"
                                                         for="description">{{ __('Description') }}</label>
                                                     <textarea class="form-control" name="description" id="description" placeholder="{{ __('About business / Bio') }}">{{ $business_card->description }}</textarea>
                                                 </div>
@@ -604,6 +634,16 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-3">
+                    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                        <span class="text-secondary small fw-semibold">{{ __('Aspect ratio') }}:</span>
+                        <div class="btn-group btn-group-sm" role="group" aria-label="{{ __('Aspect ratio') }}">
+                            <button type="button" class="btn btn-outline-secondary cover-ratio active" data-ratio="16:9">16:9</button>
+                            <button type="button" class="btn btn-outline-secondary cover-ratio" data-ratio="4:3">4:3</button>
+                            <button type="button" class="btn btn-outline-secondary cover-ratio" data-ratio="3:1">3:1</button>
+                            <button type="button" class="btn btn-outline-secondary cover-ratio" data-ratio="1:1">1:1</button>
+                            <button type="button" class="btn btn-outline-secondary cover-ratio" data-ratio="free">{{ __('Free ratio') }}</button>
+                        </div>
+                    </div>
                     <div class="cropper-modal-container">
                         <img id="croppedCoverImage" alt="Crop Cover Picture">
                     </div>
@@ -611,6 +651,7 @@
                 <div class="modal-footer border-top py-3 px-4">
                     <button type="button" class="btn btn-danger me-auto text-decoration-none fw-semibold"
                         data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+                    <button type="button" class="btn btn-outline-primary fw-semibold" id="coverSkipCrop">{{ __('Skip crop (use original size)') }}</button>
                     <button type="button" class="btn btn-primary fw-semibold px-4"
                         id="coverCrop">{{ __('Apply Crop') }}</button>
                 </div>
@@ -758,6 +799,12 @@
             $('#logo').change(function(e) {
                 var files = e.target.files;
                 if (files && files.length > 0) {
+                    var fileError = window.validateImageFile(files[0]);
+                    if (fileError) {
+                        window.showUploadError(fileError);
+                        $(this).val('');
+                        return;
+                    }
                     var reader = new FileReader();
                     reader.onload = function(event) {
                         $('#croppedImage').attr('src', event.target.result);
@@ -796,6 +843,9 @@
                             $("#logoPreview").css('background-image', 'url(' + canvas
                                 .toDataURL() + ')');
                         },
+                        error: function(xhr) {
+                            window.showUploadError(window.uploadErrorMessage(xhr.status, xhr.responseJSON));
+                        },
                         complete: function() {
                             $btn.prop('disabled', false).text('Apply Crop');
                         }
@@ -804,9 +854,12 @@
             });
         });
 
-        // Cover Image Cropper
+        // Cover Image Cropper (aspect-ratio presets + "skip crop" = upload original)
         $(document).ready(function() {
-            var cropper;
+            var cropper = null;
+            var coverFile = null;
+            var coverRatioButtons = $('#cropCoverModal .cover-ratio');
+
             $('#cropCoverModal').on('shown.bs.modal', function() {
                 cropper = new Cropper(document.getElementById('croppedCoverImage'), {
                     aspectRatio: 16 / 9,
@@ -815,16 +868,38 @@
                     responsive: true,
                     restore: false
                 });
+                coverRatioButtons.removeClass('active').filter('[data-ratio="16:9"]').addClass('active');
             }).on('hidden.bs.modal', function() {
                 if (cropper) {
                     cropper.destroy();
+                    cropper = null;
                 }
                 $('#cover').val('');
+            });
+
+            coverRatioButtons.on('click', function() {
+                coverRatioButtons.removeClass('active');
+                $(this).addClass('active');
+                if (!cropper) return;
+                var ratio = String($(this).data('ratio'));
+                if (ratio === 'free') {
+                    cropper.setAspectRatio(NaN);
+                    return;
+                }
+                var parts = ratio.split(':');
+                cropper.setAspectRatio(parseFloat(parts[0]) / parseFloat(parts[1]));
             });
 
             $('#cover').change(function(e) {
                 var files = e.target.files;
                 if (files && files.length > 0) {
+                    var fileError = window.validateImageFile(files[0]);
+                    if (fileError) {
+                        window.showUploadError(fileError);
+                        $(this).val('');
+                        return;
+                    }
+                    coverFile = files[0];
                     var reader = new FileReader();
                     reader.onload = function(event) {
                         $('#croppedCoverImage').attr('src', event.target.result);
@@ -834,38 +909,62 @@
                 }
             });
 
-            // Cover Image Crop & Upload
+            function uploadCover(blob, fileName, previewUrl, $btn, label) {
+                var formData = new FormData();
+                formData.append('croppedImage', blob, fileName);
+                $.ajax({
+                    url: '{{ route('user.vcard.cropped.image') }}',
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        $('#cropCoverModal').modal('hide');
+                        $('#cropped_cover_input').val(response.imageUrl);
+                        $('#cover').prop('required', false);
+                        if (document.getElementById('cover')) {
+                            document.getElementById('cover').setCustomValidity('');
+                        }
+                        $("#coverNone").removeClass('d-none').addClass('d-flex');
+                        $("#coverPreview").css('background-image', 'url(' + previewUrl + ')');
+                    },
+                    error: function(xhr) {
+                        window.showUploadError(window.uploadErrorMessage(xhr.status, xhr.responseJSON));
+                    },
+                    complete: function() {
+                        $btn.prop('disabled', false).text(label);
+                    }
+                });
+            }
+
+            // Crop & upload (keeps the cropped area at its real resolution, up to 4096px)
             $('#coverCrop').click(function() {
-                var $btn = $(this).prop('disabled', true).text('Uploading...');
+                if (!cropper) return;
+                var $btn = $(this);
+                var label = $btn.text();
+                $btn.prop('disabled', true).text('{{ __('Uploading...') }}');
+                var keepPng = coverFile && /png|gif|webp/i.test(coverFile.type);
                 var canvas = cropper.getCroppedCanvas({
+                    maxWidth: 4096,
+                    maxHeight: 4096,
                     imageSmoothingQuality: 'high'
                 });
                 canvas.toBlob(function(blob) {
-                    var formData = new FormData();
-                    formData.append('croppedImage', blob);
-                    $.ajax({
-                        url: '{{ route('user.vcard.cropped.image') }}',
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                        },
-                        data: formData,
-                        processData: false,
-                        contentType: false,
-                        success: function(response) {
-                            $('#cropCoverModal').modal('hide');
-                            $('#cropped_cover_input').val(response.imageUrl);
-                            $('#cover').prop('required', false);
+                    uploadCover(blob, keepPng ? 'cover.png' : 'cover.jpg',
+                        canvas.toDataURL(keepPng ? 'image/png' : 'image/jpeg', 0.9), $btn, label);
+                }, keepPng ? 'image/png' : 'image/jpeg', 0.92);
+            });
 
-                            $("#coverNone").removeClass('d-none').addClass('d-flex');
-                            $("#coverPreview").css('background-image', 'url(' + canvas
-                                .toDataURL() + ')');
-                        },
-                        complete: function() {
-                            $btn.prop('disabled', false).text('Apply Crop');
-                        }
-                    });
-                });
+            // Skip crop: upload the original file with its own dimensions
+            $('#coverSkipCrop').click(function() {
+                if (!coverFile) return;
+                var $btn = $(this);
+                var label = $btn.text();
+                $btn.prop('disabled', true).text('{{ __('Uploading...') }}');
+                uploadCover(coverFile, coverFile.name, URL.createObjectURL(coverFile), $btn, label);
             });
         });
 

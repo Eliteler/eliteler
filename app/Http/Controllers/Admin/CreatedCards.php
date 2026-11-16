@@ -2,7 +2,7 @@
 
 /*
  |--------------------------------------------------------------------------
- | GoBiz vCard SaaS
+ | Eliteler vCard SaaS
  |--------------------------------------------------------------------------
  | Developed by NativeCode © 2021 - https://nativecode.in
  | All rights reserved

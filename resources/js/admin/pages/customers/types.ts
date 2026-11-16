@@ -34,7 +34,7 @@ export type PlanOption = {
     stores?: number;
 };
 
-export type CustomerTab = "all" | "verified" | "unverified" | "inactive" | "banned" | "deleted";
+export type CustomerTab = "all" | "activated" | "verified" | "unverified" | "inactive" | "banned" | "deleted";
 
 /** Minimal customer shape the action menu needs. */
 export type ActionTarget = {

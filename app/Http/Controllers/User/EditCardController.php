@@ -119,8 +119,12 @@ class EditCardController extends Controller
             'card_lang'   => 'required',
             'title'       => 'required',
             'cover_type'  => 'required',
-            'subtitle'    => 'required',
-            'description' => 'required',
+            'subtitle'    => 'nullable|string',
+            'title2'      => 'nullable|string|max:191',
+            'subtitle2'   => 'nullable|string|max:191',
+            'copyright'   => 'nullable|string|max:191',
+            'copyright_url' => 'nullable|string|max:191',
+            'description' => 'nullable|string',
         ]);
 
         // Validate alert
@@ -305,6 +309,8 @@ class EditCardController extends Controller
         }
 
         // Update
+        $copyright_url = trim((string) $request->copyright_url) !== '' ? (preg_match('~^(https?://|mailto:|tel:)~i', trim($request->copyright_url)) ? trim($request->copyright_url) : 'https://' . trim($request->copyright_url)) : null;
+
         BusinessCard::where('card_id', $id)->update([
             'profile'     => $request->logo,
             'cover_type'  => $cover_type,
@@ -313,8 +319,12 @@ class EditCardController extends Controller
             'card_lang'   => $request->card_lang,
             'card_url'    => $card_url,
             'title'       => $request->title,
-            'sub_title'   => $request->subtitle,
-            'description' => $request->description,
+            'sub_title'   => $request->subtitle ?? '',
+            'title2'      => $request->title2,
+            'subtitle2'   => $request->subtitle2,
+            'copyright'   => $request->copyright,
+            'copyright_url' => $copyright_url,
+            'description' => $request->description ?? '',
         ]);
 
         return redirect()

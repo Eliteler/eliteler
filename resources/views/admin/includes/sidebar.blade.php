@@ -118,7 +118,7 @@
                     <div class="d-none d-xl-block ps-2">
                         <div>{{ Auth::user()->name }}</div>
                         <div class="mt-1 small text-muted">
-                            {{ Auth::user()->role_id == 4 ? __('Manager') : __('Administrator') }}</div>
+                            {{ \App\Support\Admin\AdminRoles::name(Auth::user()) }}</div>
                     </div>
                 </a>
                 <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">

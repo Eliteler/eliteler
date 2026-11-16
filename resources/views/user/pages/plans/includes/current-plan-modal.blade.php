@@ -3,6 +3,7 @@
     use App\Transaction;
 
     // Current Plan
+    $user = $user ?? \Illuminate\Support\Facades\Auth::user();
     $currentPlan = json_decode($user->plan_details);
 
     // previous transaction

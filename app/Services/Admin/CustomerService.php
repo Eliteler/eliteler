@@ -27,7 +27,7 @@ use Illuminate\Support\Str;
  */
 class CustomerService
 {
-    public const TABS = ['all', 'verified', 'unverified', 'inactive', 'banned', 'deleted'];
+    public const TABS = ['all', 'activated', 'verified', 'unverified', 'inactive', 'banned', 'deleted'];
 
     public const SORTS = ['newest', 'oldest', 'name', 'expiring'];
 
@@ -43,6 +43,7 @@ class CustomerService
     public function applyTab(Builder $query, string $tab): Builder
     {
         return match ($tab) {
+            'activated'  => $query->where('status', 1),
             'verified'   => $query->whereNotNull('email_verified_at')->where('status', 1),
             'unverified' => $query->whereNull('email_verified_at')->where('status', 1),
             'inactive'   => $query->where('status', 0),
@@ -58,6 +59,7 @@ class CustomerService
         $row = ($query ?? $this->query())
             ->reorder()
             ->selectRaw('SUM(status != -1) as `all`')
+            ->selectRaw('SUM(status = 1) as activated')
             ->selectRaw('SUM(status = 1 AND email_verified_at IS NOT NULL) as verified')
             ->selectRaw('SUM(status = 1 AND email_verified_at IS NULL) as unverified')
             ->selectRaw('SUM(status = 0) as inactive')

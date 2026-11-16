@@ -352,7 +352,7 @@ class CreateController extends Controller
     {
         // Validate image 
         $request->validate([
-            'croppedImage' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:' . env('SIZE_LIMIT', 2048),
+            'croppedImage' => 'required|image|mimes:jpeg,png,jpg,gif,svg,webp|max:' . env('SIZE_LIMIT', 10240),
         ]);
 
         // Upload cropped image using StorageHelper and get relative path

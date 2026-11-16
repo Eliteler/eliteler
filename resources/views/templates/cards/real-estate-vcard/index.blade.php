@@ -258,13 +258,21 @@
                                     alt="{{ $business_card_details->title }}" class="profile-img gsap-scale" />
                                 <div class="profile-img-shine"></div>
                             </div>
-                            <h1 class="name gsap-slide-up">{{ $business_card_details->title }}</h1>
+                            <h1 style="{{ card_align_style($card_details, 'title') }}" class="name gsap-slide-up">{{ $business_card_details->title }}</h1>
                             <div class="name-divider gsap-slide-up">
                                 <span class="name-divider__line"></span>
                                 <span class="name-divider__diamond">◆</span>
                                 <span class="name-divider__line"></span>
                             </div>
-                            <p class="title-badge gsap-slide-up">{{ $card_details->sub_title }}</p>
+                            <p style="{{ card_align_style($card_details, 'subtitle') }}" class="title-badge gsap-slide-up">{{ $card_details->sub_title }}</p>
+                            {{-- Second title / sub title --}}
+                            {!! card_title2_font_link($card_details) !!}
+                            @if (!empty($card_details->title2))
+                            <p style="{{ card_align_style($card_details, 'title2') }}" class="title-badge gsap-slide-up"><strong>{{ $card_details->title2 }}</strong></p>
+                            @endif
+                            @if (!empty($card_details->subtitle2))
+                            <p style="{{ card_align_style($card_details, 'subtitle2') }}" class="title-badge gsap-slide-up">{{ $card_details->subtitle2 }}</p>
+                            @endif
                             @if (isset($business_card_details->description))
                                 <div class="desc gsap-slide-up">{!! $business_card_details->description !!}</div>
                             @endif
@@ -898,9 +906,13 @@
                         ============================================================ --}}
                         <div class="section branding-footer">
                             @if ($plan_details['hide_branding'] == 1)
+                                @if (!empty($card_details->copyright))
+                                    <a href="{{ card_copyright_href($card_details) }}" @if (card_copyright_is_external($card_details)) target="_blank" rel="noopener" @endif>{{ $card_details->copyright }}</a>
+                                @else
                                 {{ __('Copyright') }} &copy; <a
                                     href="{{ url()->current() }}">{{ $card_details->title }}</a>
                                 <span id="year"></span>{{ __('. All Rights Reserved.') }}
+                                @endif
                             @else
                                 {{ __('Made with') }} <a href="{{ env('APP_URL') }}">{{ config('app.name') }}</a>
                                 <span id="year"></span>{{ __('. All Rights Reserved.') }}
@@ -921,7 +933,7 @@
                         onclick="document.getElementById('booking-section')?.scrollIntoView({behavior:'smooth'})">
                         <i class="far fa-calendar-check"></i>
                     </button>
-                    <a href="{{ config('app.url') }}/download/{{ $business_card_details->card_id }}"
+                    <a href="#" onclick="event.preventDefault(); downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500, '{{ addslashes($card_details->title) }}')" title="{{ __('Download QR as PNG') }}"
                         class="nav-item">
                         <i class="fas fa-user-plus"></i>
                     </a>

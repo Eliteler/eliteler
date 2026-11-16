@@ -14,6 +14,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Support\Admin\AdminPermissions;
+use App\Support\Admin\AdminRoles;
 use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -31,8 +32,6 @@ use Inertia\Inertia;
  */
 class UserController extends Controller
 {
-    private const STAFF_ROLES = [3, 4];
-
     public function __construct()
     {
         $this->middleware('auth');
@@ -44,7 +43,7 @@ class UserController extends Controller
         $search  = trim((string) $request->query('search', ''));
         $perPage = max(1, (int) $request->query('per_page', 10));
 
-        $query = User::whereIn('role_id', self::STAFF_ROLES)
+        $query = User::whereIn('role_id', AdminRoles::staffIds())
             ->where('id', '!=', $me->id);
 
         // Filter staff by name or email
@@ -82,6 +81,8 @@ class UserController extends Controller
                 ])->values(),
             ])->values(),
             'canLoginAs'       => $this->isSuperAdmin($me),
+            'roles'            => AdminRoles::all(),
+            'canManageRoles'   => true,
             'canToggleRevenue' => ! AdminPermissions::hidesRevenue($me),
             'open'             => $request->query('edit') ?: ($request->boolean('new') ? 'new' : null),
             'search'           => $search,
@@ -207,11 +208,38 @@ class UserController extends Controller
         return Inertia::location(route('admin.dashboard'));
     }
 
+    /** Create a custom staff role. */
+    public function saveRole(Request $request)
+    {
+        $data = $request->validate(['name' => 'required|string|min:2|max:50']);
+        AdminRoles::create($data['name']);
+
+        return back()->with('success', __('Role created.'));
+    }
+
+    /** Rename a custom staff role. */
+    public function updateRole(Request $request)
+    {
+        $data = $request->validate(['id' => 'required|integer', 'name' => 'required|string|min:2|max:50']);
+        AdminRoles::rename((int) $data['id'], $data['name']);
+
+        return back()->with('success', __('Role saved.'));
+    }
+
+    /** Delete a custom staff role that no account uses. */
+    public function deleteRole(Request $request)
+    {
+        $data = $request->validate(['id' => 'required|integer']);
+        AdminRoles::delete((int) $data['id']);
+
+        return back()->with('success', __('Role removed.'));
+    }
+
     /** A staff account other than the signed-in one, or 404. */
     private function staff(Request $request, string $userId): User
     {
         return User::where('user_id', $userId)
-            ->whereIn('role_id', self::STAFF_ROLES)
+            ->whereIn('role_id', AdminRoles::staffIds())
             ->where('id', '!=', $request->user()->id)
             ->firstOrFail();
     }
@@ -219,7 +247,7 @@ class UserController extends Controller
     private function validated(Request $request, ?User $user = null): array
     {
         return $request->validate([
-            'role'     => ['required', Rule::in(self::STAFF_ROLES)],
+            'role'     => ['required', Rule::in(AdminRoles::staffIds())],
             'name'     => 'required|string|min:2|max:191',
             'email'    => ['required', 'email', 'max:191', Rule::unique('users', 'email')->ignore($user?->id)],
             'password' => [$user ? 'nullable' : 'required', 'string', 'min:8', 'max:191'],

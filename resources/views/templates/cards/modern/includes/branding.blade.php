@@ -2,10 +2,14 @@
     <div class="pb-1">
         <div class="flex pt-5 m-auto font-semibold text-white text-sm flex-col md:flex-row max-w-6xl">
             <div class="mt-2 text-gray-500">
+                @if (!empty($card_details->copyright))
+                    <a class="text-green-800" href="{{ card_copyright_href($card_details) }}" @if (card_copyright_is_external($card_details)) target="_blank" rel="noopener" @endif>{{ $card_details->copyright }}</a>
+                @else
                 {{ __('Copyright') }} &copy;
                 <a class="text-green-800" href="{{ url()->current() }}">
                     {{ $card_details->title }} </a>
                 <span id="year"></span>{{ __('. All Rights Reserved.') }}
+                @endif
             </div>
         </div>
     </div>

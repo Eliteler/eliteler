@@ -394,6 +394,7 @@ Route::group(['middleware' => 'Installer'], function () {
 
         // QR code maker
         Route::get('qr-maker', [WebToolsController::class, 'qrMaker'])->name('web.qrcode');
+        Route::post('download-qr-image', [WebToolsController::class, 'downloadQrImage'])->name('web.download.qr.image');
 
         // NFC Card Order System
         Route::get('nfc-cards', [WebsiteNFCCardOrderController::class, 'index'])->name('nfc.cards');
@@ -456,6 +457,9 @@ Route::group(['middleware' => 'Installer'], function () {
         // Customer's vcards and stores
         Route::get('created-cards', [CreatedCardsController::class, 'createdCards'])->name('created.cards')->middleware('user.page.permission:customers');
         Route::get('created-stores', [CreatedCardsController::class, 'createdStores'])->name('created.stores')->middleware('user.page.permission:customers');
+        // Admin edits a customer's card/store in the user panel (no login-as; see AdminCardContext middleware)
+        Route::get('cards/leave-context', [CreatedCardsController::class, 'leaveContext'])->name('cards.leave')->middleware('user.page.permission:customers');
+        Route::get('cards/{id}/edit', [CreatedCardsController::class, 'editCard'])->name('cards.edit')->middleware('user.page.permission:customers');
 
         // Duplicate card / store in one user account to another user account
         Route::post('assign-card', [CustomerController::class, 'assignCard'])->name('assign.card')->middleware(['user.page.permission:customers', 'demo.mode']);
@@ -506,6 +510,10 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::post('update-user-status', [UserController::class, 'updateUserStatus'])->name('update.user.status')->middleware(['user.page.permission:users', 'demo.mode']);
         Route::post('delete-user', [UserController::class, 'deleteUser'])->name('delete.user')->middleware(['user.page.permission:users', 'demo.mode']);
         Route::post('login-as-user/{id}', [UserController::class, 'authAsUser'])->name('login-as.user')->middleware(['user.page.permission:users', 'demo.mode']);
+        // Custom staff roles
+        Route::post('roles/save', [UserController::class, 'saveRole'])->name('roles.save')->middleware(['user.page.permission:users', 'demo.mode']);
+        Route::post('roles/update', [UserController::class, 'updateRole'])->name('roles.update')->middleware(['user.page.permission:users', 'demo.mode']);
+        Route::post('roles/delete', [UserController::class, 'deleteRole'])->name('roles.delete')->middleware(['user.page.permission:users', 'demo.mode']);
 
         // Custom domains
         Route::get('custom-domain-requests/{status}', [CustomDomainRequestsController::class, 'customDomainRequests'])->name('custom.domain.requests')->middleware('user.page.permission:custom_domain');
@@ -725,7 +733,7 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::redirect('check', 'software-update');
     });
 
-    Route::group(['as' => 'user.', 'prefix' => 'user', 'namespace' => 'User', 'middleware' => ['auth', 'user', 'frame.destroyer', 'twofactor', 'scriptsanitizer'], 'where' => ['locale' => '[a-zA-Z]{2}']], function () {
+    Route::group(['as' => 'user.', 'prefix' => 'user', 'namespace' => 'User', 'middleware' => ['auth', 'user', 'frame.destroyer', 'twofactor', 'scriptsanitizer', 'admin.card.context'], 'where' => ['locale' => '[a-zA-Z]{2}']], function () {
 
         // Dashboard
         Route::get('dashboard', [userDashboard::class, 'index'])->name('dashboard');

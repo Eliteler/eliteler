@@ -129,8 +129,12 @@ class CreateController extends Controller
             'logo'        => 'required',
             'title'       => 'required',
             'cover_type'  => 'required',
-            'subtitle'    => 'required',
-            'description' => 'required',
+            'subtitle'    => 'nullable|string',
+            'title2'      => 'nullable|string|max:191',
+            'subtitle2'   => 'nullable|string|max:191',
+            'copyright'   => 'nullable|string|max:191',
+            'copyright_url' => 'nullable|string|max:191',
+            'description' => 'nullable|string',
         ]);
 
         // Validate alert
@@ -269,8 +273,13 @@ class CreateController extends Controller
                     $card->card_url    = $card_url;
                     $card->card_type   = 'vcard';
                     $card->title       = $request->title;
-                    $card->sub_title   = $request->subtitle;
-                    $card->description = $request->description;
+                    $card->sub_title   = $request->subtitle ?? '';
+                    $card->title2      = $request->title2;
+                    $card->subtitle2   = $request->subtitle2;
+                    $card->copyright   = $request->copyright;
+                    $copyright_url = trim((string) $request->copyright_url) !== '' ? (preg_match('~^(https?://|mailto:|tel:)~i', trim($request->copyright_url)) ? trim($request->copyright_url) : 'https://' . trim($request->copyright_url)) : null;
+                    $card->copyright_url = $copyright_url;
+                    $card->description = $request->description ?? '';
 
                     if ($request->type == 'custom') {
                         $card->custom_styles = json_encode([
@@ -336,6 +345,10 @@ class CreateController extends Controller
     // Cropping image
     public function vcardCroppedImage(Request $request)
     {
+        $request->validate([
+            'croppedImage' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:' . env('SIZE_LIMIT', 10240),
+        ]);
+
         // Check if cropped image file is uploaded
         if ($request->hasFile('croppedImage') && $request->file('croppedImage')->isValid()) {
             $croppedImage = $request->file('croppedImage');

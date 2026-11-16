@@ -58,6 +58,22 @@ class EditCustomizationController extends Controller
 
         // Check result
         if (! $validator->fails()) {
+            // Titles: alignment, font sizes and second-titles font (stored on the card itself, not in custom_styles)
+            $titleColumns = ['title_align', 'title2_align', 'title_font_size', 'subtitle_font_size', 'title2_font_size', 'subtitle2_font_size', 'title2_font'];
+            if (in_array($request->type, $titleColumns, true)) {
+                $value = $request->input($request->type);
+                if (str_ends_with($request->type, '_align')) {
+                    $value = in_array($value, ['left', 'center', 'right'], true) ? $value : null;
+                } elseif (str_ends_with($request->type, '_font_size')) {
+                    $value = is_numeric($value) && (int) $value >= 8 && (int) $value <= 120 ? (int) $value : null;
+                } else {
+                    $value = array_key_exists((string) $value, card_title_fonts()) ? $value : null;
+                }
+                BusinessCard::where('card_id', $request->card_id)->update([$request->type => $value]);
+
+                return response()->json(['status' => 'success', 'type' => $request->type]);
+            }
+
             if ($request->type == 'title_color') {
                 $customStyles                = json_decode(BusinessCard::where('card_id', $request->card_id)->first()->custom_styles, true);
                 $customStyles['title_color'] = $request->title_color;

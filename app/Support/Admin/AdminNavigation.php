@@ -24,6 +24,7 @@ class AdminNavigation
         'admin.dashboard',
         'admin.payment.methods',
         'admin.plugins',
+        'admin.plugin.whatsapp_chat_button.settings',
         'admin.account',
         'admin.settings',
         'admin.cron.jobs',
@@ -122,6 +123,7 @@ class AdminNavigation
                 'title' => __('Marketing'),
                 'items' => [
                     $can('coupons') ? self::item(__('Coupons'), 'admin.coupons', [], 'ticket-percent', ['admin/coupons*', 'admin/create-coupon', 'admin/edit-coupon/*', 'admin/statistics-coupon*']) : null,
+                    $can('marketing') ? self::item(__('WhatsApp Chat Button'), 'admin.plugin.whatsapp_chat_button.settings', [], 'message-circle', ['admin/plugin/whatsapp_chat_button*']) : null,
                     $can('marketing') ? self::group(__('Email Marketing'), 'mail', ['admin/marketing/campaigns*', 'admin/marketing/groups*', 'admin/marketing/mailgun*'], [
                         self::item(__('Campaigns'), 'admin.marketing.campaigns'),
                         self::item(__('Contact groups'), 'admin.marketing.groups'),

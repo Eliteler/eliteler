@@ -302,6 +302,11 @@
                                                                 {{ __('Instant alerts will be sent to this email upon customer reservation.') }}
                                                             </small>
                                                         </div>
+                                                        <div class="mb-3">
+                                                            <label class="form-label" for="service_booking_whatsapp">{{ __('WhatsApp number to receive bookings') }}</label>
+                                                            <input type="text" class="form-control" name="service_booking_whatsapp" id="service_booking_whatsapp" value="{{ isset($serviceBooking) ? $serviceBooking->service_booking_whatsapp : '' }}" placeholder="971501234567" dir="ltr" maxlength="20">
+                                                            <small class="text-muted mt-1 d-block">{{ __('After booking, the customer is taken to WhatsApp with the booking details for this number. Include the country code. Leave empty to use the WhatsApp link of the card.') }}</small>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>

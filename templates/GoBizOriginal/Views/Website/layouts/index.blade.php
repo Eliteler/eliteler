@@ -164,13 +164,40 @@
         @endif
     </div>
  
-    {{-- WhatsApp Chatbot --}}
+    {{-- WhatsApp Chatbot (up to 6 contacts, Admin > Plugins > WhatsApp Chat Button) --}}
     @if (isset($config) && $config)
-        @if ($config[40]->config_value == '1')
-            <a href="https://api.whatsapp.com/send?phone={{ $config[41]->config_value }}&text={{ urlencode($config[42]->config_value) }}"
-                class="whatapp-chatbot" target="_blank">
-                <i class="fab fa-whatsapp whatapp-chatbot-icon"></i>
-            </a>
+        @php
+            $waCfg = collect($config)->pluck('config_value', 'config_key');
+            $waContacts = class_exists(\Plugins\WhatsAppChatButton\Controllers\WhatsAppChatButtonController::class)
+                ? \Plugins\WhatsAppChatButton\Controllers\WhatsAppChatButtonController::contacts($config)
+                : [];
+        @endphp
+        @if (($waCfg['show_whatsapp_chatbot'] ?? '0') == '1' && count($waContacts) > 0)
+            @if (count($waContacts) === 1)
+                <a href="https://api.whatsapp.com/send?phone={{ $waContacts[0]['number'] }}&text={{ urlencode($waContacts[0]['message']) }}"
+                    class="whatapp-chatbot" target="_blank" rel="noopener">
+                    <i class="fab fa-whatsapp whatapp-chatbot-icon"></i>
+                </a>
+            @else
+                <div id="whatsappPopup" style="display:none; position:fixed; right:25px; bottom:95px; width:260px; max-width:calc(100vw - 40px); background:#fff; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.18); overflow:hidden; z-index:101; font-family:inherit;">
+                    <div style="background:#25d366; color:#fff; padding:10px 14px; font-weight:600; display:flex; justify-content:space-between; align-items:center;">
+                        <span>{{ __('Chat with us') }}</span>
+                        <button type="button" onclick="document.getElementById('whatsappPopup').style.display='none'" style="background:none; border:0; color:#fff; font-size:18px; line-height:1; cursor:pointer;">&times;</button>
+                    </div>
+                    <div style="max-height:280px; overflow-y:auto; padding:8px;">
+                        @foreach ($waContacts as $contact)
+                            <a href="https://api.whatsapp.com/send?phone={{ $contact['number'] }}&text={{ urlencode($contact['message']) }}" target="_blank" rel="noopener"
+                                style="display:flex; align-items:center; gap:10px; padding:10px; border-radius:8px; color:#1f2937; text-decoration:none; border-bottom:1px solid #f1f1f1;">
+                                <span style="width:32px; height:32px; border-radius:50%; background:#d1fae5; color:#059669; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i class="fab fa-whatsapp"></i></span>
+                                <span style="font-size:14px; font-weight:500;">{{ $contact['name'] !== '' ? $contact['name'] : __('Support') }}</span>
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+                <a href="#" class="whatapp-chatbot" onclick="event.preventDefault(); var el = document.getElementById('whatsappPopup'); el.style.display = el.style.display === 'none' ? 'block' : 'none';" aria-label="WhatsApp">
+                    <i class="fab fa-whatsapp whatapp-chatbot-icon"></i>
+                </a>
+            @endif
         @endif
     @endif
 

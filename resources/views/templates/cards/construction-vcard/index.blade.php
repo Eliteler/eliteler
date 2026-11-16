@@ -237,8 +237,16 @@
                                 <img src="{{ url($business_card_details->profile) }}"
                                     alt="{{ $business_card_details->title }}" class="profile-img">
                             </div>
-                            <h1 class="company-name">{{ $business_card_details->title }}</h1>
-                            <div class="company-subtitle">{{ $card_details->sub_title }}</div>
+                            <h1 style="{{ card_align_style($card_details, 'title') }}" class="company-name">{{ $business_card_details->title }}</h1>
+                            <div style="{{ card_align_style($card_details, 'subtitle') }}" class="company-subtitle">{{ $card_details->sub_title }}</div>
+                            {{-- Second title / sub title --}}
+                            {!! card_title2_font_link($card_details) !!}
+                            @if (!empty($card_details->title2))
+                            <div style="{{ card_align_style($card_details, 'title2') }}" class="company-subtitle"><strong>{{ $card_details->title2 }}</strong></div>
+                            @endif
+                            @if (!empty($card_details->subtitle2))
+                            <div style="{{ card_align_style($card_details, 'subtitle2') }}" class="company-subtitle">{{ $card_details->subtitle2 }}</div>
+                            @endif
                             @if ($business_card_details->description != null)
                                 <div class="company-desc">{!! $business_card_details->description !!}</div>
                             @endif
@@ -884,8 +892,12 @@
                             <div class="gold-rule" style="margin-bottom:16px;"></div>
                             <p>
                                 @if ($plan_details['hide_branding'] == 1)
+                                    @if (!empty($card_details->copyright))
+                                        <a href="{{ card_copyright_href($card_details) }}" @if (card_copyright_is_external($card_details)) target="_blank" rel="noopener" @endif>{{ $card_details->copyright }}</a>
+                                    @else
                                     &copy; <a href="{{ url()->current() }}">{{ $card_details->title }}</a> <span
                                         id="year"></span>. {{ __('All Rights Reserved.') }}
+                                    @endif
                                 @else
                                     {{ __('Powered by') }} <a
                                         href="{{ env('APP_URL') }}">{{ config('app.name') }}</a>
@@ -905,7 +917,7 @@
                         onclick="document.getElementById('booking-section')?.scrollIntoView({behavior:'smooth'})">
                         <i class="fas fa-calendar-alt"></i><span>{{ __('Book') }}</span>
                     </button>
-                    <a href="{{ config('app.url') }}/download/{{ $business_card_details->card_id }}"
+                    <a href="#" onclick="event.preventDefault(); downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500, '{{ addslashes($card_details->title) }}')" title="{{ __('Download QR as PNG') }}"
                         class="nav-item nav-item-center">
                         <i class="fas fa-id-card"></i><span>{{ __('Save') }}</span>
                     </a>

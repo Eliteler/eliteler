@@ -199,6 +199,7 @@
 
                     sectionOptions = "<optgroup label='{{ __('Sections') }}'>";
                     sectionOptions += "<option value='map'>{{ __('Google Map') }}</option>";
+                    sectionOptions += "<option value='location'>{{ __('Location (without map)') }}</option>";
                     sectionOptions += "<option value='youtube'>{{ __('Youtube') }}</option>";
                     sectionOptions += "<option value='iframe'>{{ __('iframe') }}</option>";
                     sectionOptions += "</optgroup>";
@@ -252,8 +253,8 @@
 
                             <div class='col-lg-4 col-md-4'>
                                 <div class='mb-3 mt-2'>
-                                    <label class='form-label required'>{{ __('Label / Title') }}</label>
-                                    <input type='text' class='lbl` + id + ` form-control' name='label[]' placeholder='{{ __('Enter label') }}' value='Facebook' required>
+                                    <label class='form-label'>{{ __('Label / Title') }}</label>
+                                    <input type='text' class='lbl` + id + ` form-control' name='label[]' placeholder='{{ __('Enter label') }}' value='Facebook'>
                                 </div>
                             </div>
 
@@ -262,6 +263,7 @@
                                     <label class='form-label required'>{{ __('Content') }}</label>
                                     <input type='text' class='textlbl` + id +
                     ` form-control' name='value[]' placeholder='{{ __('For ex: https://facebook.com') }}' autofocus required>
+                                    <small class='form-hint maphint` + id + ` d-none'>{{ __('Please note: You must add the HTML embed iframe code generated from Google Maps. Standard links will not work.') }}</small>
                                 </div>
                             </div>
 
@@ -350,6 +352,10 @@
             let lbl = document.querySelector('.lbl' + id);
             let textlbl = document.querySelector('.textlbl' + id);
             let type = document.querySelector('.type' + id).value;
+            let maphint = document.querySelector('.maphint' + id);
+            if (maphint) {
+                maphint.classList.toggle('d-none', type != 'map');
+            }
 
             if (type == 'address') {
                 label = `{{ __('Address') }}`;
@@ -357,6 +363,13 @@
                 icon.value = "fas fa-home";
                 lbl.value = `{{ __('Address') }}`;
                 $("#displayIcon" + id).attr("class", "fas fa-home text-white");
+                textlbl.type = 'text';
+            } else if (type == 'location') {
+                label = `{{ __('Location') }}`;
+                textlabel = `{{ __('For ex: https://maps.app.goo.gl/... or a written address') }}`;
+                icon.value = "fas fa-map-marker-alt";
+                lbl.value = `{{ __('Location') }}`;
+                $("#displayIcon" + id).attr("class", "fas fa-map-marker-alt text-white");
                 textlbl.type = 'text';
             } else if (type == 'text') {
                 label = `{{ __('About us') }}`;

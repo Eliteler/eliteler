@@ -158,10 +158,38 @@
             
             var canvas = document.getElementById("qrCanvas");
             var dataURL = canvas.toDataURL("image/png");
-            var a = document.createElement("a");
-            a.href = dataURL;
-            a.download = "qr_code.png";
-            a.click();
+            
+            // Create a hidden form to trigger the server-side download
+            var form = document.createElement("form");
+            form.method = "POST";
+            form.action = "/download-qr-image";
+            form.style.display = "none";
+            
+            // CSRF Token from meta tag
+            var csrf = document.querySelector('meta[name="csrf-token"]');
+            if (csrf) {
+                var csrfInput = document.createElement("input");
+                csrfInput.type = "hidden";
+                csrfInput.name = "_token";
+                csrfInput.value = csrf.content;
+                form.appendChild(csrfInput);
+            }
+            
+            var dataInput = document.createElement("input");
+            dataInput.type = "hidden";
+            dataInput.name = "image_data";
+            dataInput.value = dataURL;
+            form.appendChild(dataInput);
+            
+            var fileInput = document.createElement("input");
+            fileInput.type = "hidden";
+            fileInput.name = "filename";
+            fileInput.value = "ecard-qr.png";
+            form.appendChild(fileInput);
+            
+            document.body.appendChild(form);
+            form.submit();
+            document.body.removeChild(form);
         }
 
         // Call updateQr function when page loads and when input changes

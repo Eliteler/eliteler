@@ -15,6 +15,17 @@
             'Gloock',
             'Pacifico',
             'Playfair Display',
+            'Cairo',
+            'Tajawal',
+            'Almarai',
+            'Amiri',
+            'Noto Kufi Arabic',
+            'Noto Naskh Arabic',
+            'El Messiri',
+            'Changa',
+            'Readex Pro',
+            'IBM Plex Sans Arabic',
+            'Markazi Text',
         ];
     @endphp
 
@@ -23,6 +34,13 @@
         <link href="https://fonts.googleapis.com/css2?family={{ str_replace(' ', '+', $font) }}&display=swap"
             rel="stylesheet">
     @endforeach
+
+    {{-- Font preview classes (titles font list) --}}
+    <style>
+        @foreach (card_title_fonts() as $fontName => $fontClass)
+            .{{ $fontClass }} { font-family: '{{ $fontName }}', sans-serif; }
+        @endforeach
+    </style>
 
     {{-- Customization CSS --}}
     <link rel="stylesheet" href="{{ asset('css/customizations.css') }}">
@@ -178,22 +196,88 @@
                                         <div class="row g-2">
                                             <div class="col-12 col-md-4 mb-2">
                                                 <label class="form-label"
-                                                    for="colorPickerTitle">{{ __('Title Color') }}</label>
-                                                <input type="text" id="colorPickerTitle"
-                                                    value="{{ $custom_styles['title_color'] ?? '#000000' }}" />
-                                            </div>
-                                            <div class="col-12 col-md-4 mb-2">
-                                                <label class="form-label"
-                                                    for="colorPickerSubTitle">{{ __('Subtitle Color') }}</label>
-                                                <input type="text" id="colorPickerSubTitle"
-                                                    value="{{ $custom_styles['sub_title_color'] ?? '#666666' }}" />
-                                            </div>
-                                            <div class="col-12 col-md-4 mb-2">
-                                                <label class="form-label"
                                                     for="colorPickerDescription">{{ __('Description Color') }}</label>
                                                 <input type="text" id="colorPickerDescription"
                                                     value="{{ $custom_styles['description_color'] ?? '#333333' }}" />
                                             </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Section: Titles --}}
+                                    <div class="customization-section-card">
+                                        <div class="mb-3">
+                                            <h4 class="fw-bold text-dark mb-1">{{ __('Titles') }}</h4>
+                                            <p class="text-muted small mb-0">{{ __('Colors, font sizes, alignment and font of the main and second titles. Leave a size empty to keep the theme default.') }}</p>
+                                        </div>
+
+                                        {{-- Title colors --}}
+                                        <div class="row g-2">
+                                            <div class="col-12 col-md-6 mb-2">
+                                                <label class="form-label" for="colorPickerTitle">{{ __('Title Color') }}</label>
+                                                <input type="text" id="colorPickerTitle" value="{{ $custom_styles['title_color'] ?? '#000000' }}" />
+                                            </div>
+                                            <div class="col-12 col-md-6 mb-2">
+                                                <label class="form-label" for="colorPickerSubTitle">{{ __('Subtitle Color') }}</label>
+                                                <input type="text" id="colorPickerSubTitle" value="{{ $custom_styles['sub_title_color'] ?? '#666666' }}" />
+                                            </div>
+                                        </div>
+
+                                        {{-- Font sizes --}}
+                                        <div class="row g-2 mb-3">
+                                            <div class="col-6 col-md-3">
+                                                <label class="form-label" for="titleFontSize">{{ __('Title 1 Font Size (px)') }}</label>
+                                                <input type="number" min="8" max="120" class="form-control" id="titleFontSize" value="{{ $business_card->title_font_size }}" placeholder="{{ __('Default') }}" onchange="updateCustomStyle('title_font_size')">
+                                            </div>
+                                            <div class="col-6 col-md-3">
+                                                <label class="form-label" for="subtitleFontSize">{{ __('Subtitle 1 Font Size (px)') }}</label>
+                                                <input type="number" min="8" max="120" class="form-control" id="subtitleFontSize" value="{{ $business_card->subtitle_font_size }}" placeholder="{{ __('Default') }}" onchange="updateCustomStyle('subtitle_font_size')">
+                                            </div>
+                                            <div class="col-6 col-md-3">
+                                                <label class="form-label" for="title2FontSize">{{ __('Title 2 Font Size (px)') }}</label>
+                                                <input type="number" min="8" max="120" class="form-control" id="title2FontSize" value="{{ $business_card->title2_font_size }}" placeholder="{{ __('Default') }}" onchange="updateCustomStyle('title2_font_size')">
+                                            </div>
+                                            <div class="col-6 col-md-3">
+                                                <label class="form-label" for="subtitle2FontSize">{{ __('Subtitle 2 Font Size (px)') }}</label>
+                                                <input type="number" min="8" max="120" class="form-control" id="subtitle2FontSize" value="{{ $business_card->subtitle2_font_size }}" placeholder="{{ __('Default') }}" onchange="updateCustomStyle('subtitle2_font_size')">
+                                            </div>
+                                        </div>
+
+                                        {{-- Main title & subtitle alignment --}}
+                                        <div class="mb-3">
+                                            <label class="form-label">{{ __('Main title & subtitle alignment') }}</label>
+                                            <div class="form-selectgroup">
+                                                @foreach (['' => 'Default (theme)', 'right' => 'Right', 'center' => 'Center', 'left' => 'Left'] as $alignValue => $alignLabel)
+                                                    <label class="form-selectgroup-item">
+                                                        <input type="radio" name="title_align" value="{{ $alignValue }}" onclick="updateCustomStyle('title_align')" class="form-selectgroup-input" {{ ($business_card->title_align ?? '') == $alignValue ? 'checked' : '' }}>
+                                                        <span class="form-selectgroup-label">{{ __($alignLabel) }}</span>
+                                                    </label>
+                                                @endforeach
+                                            </div>
+                                        </div>
+
+                                        {{-- Second title & subtitle alignment --}}
+                                        <div class="mb-3">
+                                            <label class="form-label">{{ __('Second title & subtitle alignment') }}</label>
+                                            <div class="form-selectgroup">
+                                                @foreach (['' => 'Default (theme)', 'right' => 'Right', 'center' => 'Center', 'left' => 'Left'] as $alignValue => $alignLabel)
+                                                    <label class="form-selectgroup-item">
+                                                        <input type="radio" name="title2_align" value="{{ $alignValue }}" onclick="updateCustomStyle('title2_align')" class="form-selectgroup-input" {{ ($business_card->title2_align ?? '') == $alignValue ? 'checked' : '' }}>
+                                                        <span class="form-selectgroup-label">{{ __($alignLabel) }}</span>
+                                                    </label>
+                                                @endforeach
+                                            </div>
+                                        </div>
+
+                                        {{-- Second titles font --}}
+                                        <div class="mb-0">
+                                            <label class="form-label" for="title2Font">{{ __('Second title & subtitle font family') }}</label>
+                                            <select class="form-select" id="title2Font" onchange="updateCustomStyle('title2_font')">
+                                                <option value="">{{ __('Default (same as card font)') }}</option>
+                                                @foreach (card_title_fonts() as $fontName => $fontClass)
+                                                    <option value="{{ $fontName }}" class="{{ $fontClass }}" {{ ($business_card->title2_font ?? '') == $fontName ? 'selected' : '' }}>{{ $fontName }}</option>
+                                                @endforeach
+                                            </select>
+                                            <small class="form-hint">{{ __('Arabic fonts: Cairo, Tajawal, Almarai, Amiri, Noto Kufi Arabic, Noto Naskh Arabic, El Messiri, Changa, Readex Pro, IBM Plex Sans Arabic, Markazi Text.') }}</small>
                                         </div>
                                     </div>
 
@@ -226,6 +310,17 @@
                                                         'Saira Stencil One',
                                                         'Gloock',
                                                         'Playfair Display',
+                                                        'Cairo',
+                                                        'Tajawal',
+                                                        'Almarai',
+                                                        'Amiri',
+                                                        'Noto Kufi Arabic',
+                                                        'Noto Naskh Arabic',
+                                                        'El Messiri',
+                                                        'Changa',
+                                                        'Readex Pro',
+                                                        'IBM Plex Sans Arabic',
+                                                        'Markazi Text',
                                                     ];
                                                     $fontClasses = [
                                                         'Pacifico' => 'pacifico',
@@ -242,6 +337,17 @@
                                                         'Saira Stencil One' => 'saira-stencil-one',
                                                         'Gloock' => 'gloock',
                                                         'Playfair Display' => 'playfair-display',
+                                                        'Cairo' => 'cairo',
+                                                        'Tajawal' => 'tajawal',
+                                                        'Almarai' => 'almarai',
+                                                        'Amiri' => 'amiri',
+                                                        'Noto Kufi Arabic' => 'noto-kufi-arabic',
+                                                        'Noto Naskh Arabic' => 'noto-naskh-arabic',
+                                                        'El Messiri' => 'el-messiri',
+                                                        'Changa' => 'changa',
+                                                        'Readex Pro' => 'readex-pro',
+                                                        'IBM Plex Sans Arabic' => 'ibm-plex-sans-arabic',
+                                                        'Markazi Text' => 'markazi-text',
                                                     ];
                                                 @endphp
                                                 @foreach ($fonts as $font)
@@ -545,6 +651,13 @@
             formData.append('sub_title_color', $('#colorPickerSubTitle').val());
             formData.append('description_color', $('#colorPickerDescription').val());
             formData.append('layout', $('input[name="layout"]:checked').val());
+            formData.append('title_align', $('input[name="title_align"]:checked').val());
+            formData.append('title2_align', $('input[name="title2_align"]:checked').val());
+            formData.append('title_font_size', $('#titleFontSize').val());
+            formData.append('subtitle_font_size', $('#subtitleFontSize').val());
+            formData.append('title2_font_size', $('#title2FontSize').val());
+            formData.append('subtitle2_font_size', $('#subtitle2FontSize').val());
+            formData.append('title2_font', $('#title2Font').val());
             formData.append('profile_image_style', $('input[name="profile_image_style"]:checked').val());
             formData.append('font', $('input[name="font"]:checked').val());
             formData.append('bg_style', $('input[name="bg_style"]:checked').val());

@@ -239,14 +239,28 @@ if (!empty($custom_js)) {
                                         {{ __('Clean Beauty & Spa Lounge') }}
                                     </p>
 
-                                    <h1 class="sl-display text-4xl sm:text-5xl font-bold text-[#2E251A]" id="pName">
+                                    <h1 style="{{ card_align_style($card_details, 'title') }}" class="sl-display text-4xl sm:text-5xl font-bold text-[#2E251A]" id="pName">
                                         {{ $business_card_details->title }}
                                     </h1>
 
-                                    <p
+                                    <p style="{{ card_align_style($card_details, 'subtitle') }}"
                                         class="text-[#736756] font-semibold mt-1 text-xs sm:text-sm uppercase tracking-widest">
                                         {{ $card_details->sub_title }}
                                     </p>
+                                    {{-- Second title / sub title --}}
+                                    {!! card_title2_font_link($card_details) !!}
+                                    @if (!empty($card_details->title2))
+                                    <p style="{{ card_align_style($card_details, 'title2') }}"
+                                        class="text-[#736756] font-semibold mt-1 text-xs sm:text-sm uppercase tracking-widest">
+                                        <strong>{{ $card_details->title2 }}</strong>
+                                    </p>
+                                    @endif
+                                    @if (!empty($card_details->subtitle2))
+                                    <p style="{{ card_align_style($card_details, 'subtitle2') }}"
+                                        class="text-[#736756] font-semibold mt-1 text-xs sm:text-sm uppercase tracking-widest">
+                                        {{ $card_details->subtitle2 }}
+                                    </p>
+                                    @endif
 
                                     @if ($business_card_details->description != null)
                                         <div
@@ -957,7 +971,7 @@ if (!empty($custom_js)) {
                     </button>
                 </div>
                 <div class="flex-1 flex items-center justify-center">
-                    <a href="{{ config('app.url') }}/download/{{ $business_card_details->card_id }}"
+                    <a href="#" onclick="event.preventDefault(); downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500, '{{ addslashes($card_details->title) }}')" title="{{ __('Download QR as PNG') }}"
                         class="w-10 h-10 rounded-full flex items-center justify-center text-[#5F6F52] bg-[#F5F2EB] border border-[#5F6F52]/30 shadow-sm">
                         <i class="fas fa-download text-sm"></i>
                     </a>
@@ -1103,7 +1117,7 @@ if (!empty($custom_js)) {
                 <div class="qr-code"></div>
             </div>
             <button id="download"
-                onclick="downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500)"
+                onclick="downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500, '{{ addslashes($card_details->title) }}')"
                 class="sl-btn-primary py-3.5 px-6 rounded-xl w-full text-xs sm:text-sm uppercase tracking-wider font-bold">
                 <i class="fas fa-download mr-1.5"></i> {{ __('Download QR Code') }}
             </button>
@@ -1180,7 +1194,7 @@ if (!empty($custom_js)) {
 
                 if (typeof setBtnLoading === 'function') setBtnLoading(btn, '{{ __('Opening...') }}');
 
-                window.open(`https://wa.me/${phoneNumber}?text={{ rawurlencode($shareContent ?? '') }}`, '_blank',
+                window.open(`https://wa.me/${phoneNumber}?text={{ $shareContent }}`, '_blank',
                     'noopener');
 
                 setTimeout(() => {

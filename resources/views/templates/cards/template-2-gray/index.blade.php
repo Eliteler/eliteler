@@ -182,9 +182,17 @@
                                     <div class="mt-16 text-center mb-4">
                                         <div>
                                             <div class="mb-2">
-                                                <h2 class="font-medium">{{ $business_card_details->title }}</h2>
+                                                <h2 style="{{ card_align_style($card_details, 'title') }}" class="font-medium">{{ $business_card_details->title }}</h2>
                                             </div>
-                                            <p class="text-sm text-gray-500">{{ $card_details->sub_title }}</p>
+                                            <p style="{{ card_align_style($card_details, 'subtitle') }}" class="text-sm text-gray-500">{{ $card_details->sub_title }}</p>
+                                            {{-- Second title / sub title --}}
+                                            {!! card_title2_font_link($card_details) !!}
+                                            @if (!empty($card_details->title2))
+                                            <p style="{{ card_align_style($card_details, 'title2') }}" class="text-sm text-gray-500"><strong>{{ $card_details->title2 }}</strong></p>
+                                            @endif
+                                            @if (!empty($card_details->subtitle2))
+                                            <p style="{{ card_align_style($card_details, 'subtitle2') }}" class="text-sm text-gray-500">{{ $card_details->subtitle2 }}</p>
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -1229,10 +1237,14 @@
                                     <div
                                         class="flex pb-5 m-auto pt-5 font-semibold text-sm flex-col md:flex-row max-w-6xl">
                                         <div class="mt-2">
+                                            @if (!empty($card_details->copyright))
+                                                <a class="text-gray-500" href="{{ card_copyright_href($card_details) }}" @if (card_copyright_is_external($card_details)) target="_blank" rel="noopener" @endif>{{ $card_details->copyright }}</a>
+                                            @else
                                             {{ __('Copyright') }} &copy; {{ now()->year }} {{ __('by') }}
                                             <a class="text-gray-500" href="{{ url()->current() }}">
                                                 {{ $card_details->title }} </a>
                                             <span id="year"></span>{{ __('. All Rights Reserved.') }}
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -1291,7 +1303,7 @@
                     <div class="modal-content py-4 text-left px-6">
                         <div class="justify-between items-center px-6 qr-code"></div>
                         <a id="download"
-                            onclick="downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500)"
+                            onclick="downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500, '{{ addslashes($card_details->title) }}')"
                             class="mt-3 cursor-pointer w-full flex justify-center items-center content-center bg-gray-500 hover:bg-gray-600 shadow-lg hover:shadow-lg h-8 w-8 mr-4 rounded fill-current text-white qr-code-download">
                             <span>{{ __('Download') }}</span>
                         </a>
@@ -1586,6 +1598,10 @@
                         errorMessage1.classList.add('hidden');
                         successMessage1.classList.remove('hidden');
                         successMessage1.innerHTML = data.message || 'Your service has been successfully booked!';
+                        if (data.whatsapp_url) {
+                            successMessage1.innerHTML += ' <a href="' + data.whatsapp_url + '" target="_blank" rel="noopener" style="text-decoration:underline;font-weight:700;">{{ __('Send booking details via WhatsApp') }}</a>';
+                            window.open(data.whatsapp_url, '_blank');
+                        }
                     } else {
                         successMessage1.classList.add('hidden');
                         errorMessage1.classList.remove('hidden');

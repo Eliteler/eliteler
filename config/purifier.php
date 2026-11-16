@@ -31,6 +31,8 @@ return [
             'HTML.SafeIframe'          => true,
             'URI.SafeIframeRegexp'     => '%^(http://|https://|//)(.vimeo.com/video/|api.soundcloud.com/tracks/|www\.youtube\.com/embed/)%',
             'CSS.AllowedProperties'    => 'font,font-size,font-weight,font-style,font-family,text-decoration,padding-left,padding,color,background-color,text-align,line-height,width,margin-left,height,margin-right,margin-top,margin-bottom,display,position,border,border-radius',
+            'CSS.AllowTricky'          => true,  // display, position, visibility, overflow
+            'CSS.Proprietary'          => true,  // border-radius, opacity
             'CSS.MaxImgLength'         => null,
             'AutoFormat.AutoParagraph' => false,
             'AutoFormat.RemoveEmpty'   => true,

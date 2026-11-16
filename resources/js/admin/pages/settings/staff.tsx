@@ -67,7 +67,6 @@ import {
     TableHeader,
     TableRow,
 } from "@admin/components/ui/table";
-import { Tabs, TabsList, TabsTrigger } from "@admin/components/ui/tabs";
 import { formatDate } from "@admin/lib/date";
 import { cn } from "@admin/lib/utils";
 
@@ -76,7 +75,7 @@ type Staff = {
     name: string;
     email: string;
     avatar: string;
-    role: 3 | 4;
+    role: number;
     active: boolean;
     permissions: string[];
     hideRevenue: boolean;
@@ -103,9 +102,18 @@ type Group = {
     }[];
 };
 
+type Role = {
+    id: number;
+    name: string;
+    builtin: boolean;
+    users: number;
+};
+
 type Props = {
     staff: PaginatedResponse<Staff>;
     groups: Group[];
+    roles: Role[];
+    canManageRoles: boolean;
     canLoginAs: boolean;
     canToggleRevenue: boolean;
     open: string | null;
@@ -117,6 +125,8 @@ type Pending = { member: Staff; action: "status" | "delete" | "login" };
 export default function StaffPage({
     staff,
     groups,
+    roles,
+    canManageRoles,
     canLoginAs,
     canToggleRevenue,
     open,
@@ -133,10 +143,11 @@ export default function StaffPage({
     );
     const [pending, setPending] = useState<Pending | null>(null);
     const [processing, setProcessing] = useState(false);
+    const [managingRoles, setManagingRoles] = useState(false);
 
     const total = groups.reduce((sum, group) => sum + group.items.length, 0);
     const roleLabel = (role: number) =>
-        role === 3 ? t("Administrator") : t("Manager");
+        roles.find((item) => item.id === role)?.name ?? t("Administrator");
 
     // Real-time debounced search
     useEffect(() => {
@@ -583,12 +594,24 @@ export default function StaffPage({
                             key={editing === "new" ? "new" : editing.id}
                             member={editing === "new" ? null : editing}
                             groups={groups}
+                            roles={roles}
                             canToggleRevenue={canToggleRevenue}
+                            onManageRoles={
+                                canManageRoles
+                                    ? () => setManagingRoles(true)
+                                    : undefined
+                            }
                             onClose={() => setEditing(null)}
                         />
                     )}
                 </DialogContent>
             </Dialog>
+
+            <RolesDialog
+                open={managingRoles}
+                roles={roles}
+                onOpenChange={setManagingRoles}
+            />
 
             <ConfirmDialog
                 open={pending !== null}
@@ -613,12 +636,16 @@ export default function StaffPage({
 function StaffForm({
     member,
     groups,
+    roles,
     canToggleRevenue,
+    onManageRoles,
     onClose,
 }: {
     member: Staff | null;
     groups: Group[];
+    roles: Role[];
     canToggleRevenue: boolean;
+    onManageRoles?: () => void;
     onClose: () => void;
 }) {
     const { t } = useTranslation();
@@ -731,20 +758,34 @@ function StaffForm({
                     <FieldError message={errors.password} />
                 </div>
                 <div className="flex flex-col gap-2">
-                    <Label>{t("Role")}</Label>
-                    <Tabs
+                    <div className="flex items-center justify-between gap-2">
+                        <Label>{t("Role")}</Label>
+                        {onManageRoles && (
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={onManageRoles}
+                            >
+                                {t("Manage roles")}
+                            </Button>
+                        )}
+                    </div>
+                    <Select
                         value={data.role}
                         onValueChange={(value) => setData("role", value)}
                     >
-                        <TabsList className="w-full">
-                            <TabsTrigger value="3" className="flex-1">
-                                {t("Administrator")}
-                            </TabsTrigger>
-                            <TabsTrigger value="4" className="flex-1">
-                                {t("Manager")}
-                            </TabsTrigger>
-                        </TabsList>
-                    </Tabs>
+                        <SelectTrigger>
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {roles.map((role) => (
+                                <SelectItem key={role.id} value={String(role.id)}>
+                                    {role.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                     <FieldError message={errors.role} />
                 </div>
             </div>
@@ -907,5 +948,197 @@ function StaffForm({
                 </Button>
             </div>
         </form>
+    );
+}
+
+function RolesDialog({
+    open,
+    roles,
+    onOpenChange,
+}: {
+    open: boolean;
+    roles: Role[];
+    onOpenChange: (open: boolean) => void;
+}) {
+    const { t } = useTranslation();
+    const [name, setName] = useState("");
+    const [editingId, setEditingId] = useState<number | null>(null);
+    const [editName, setEditName] = useState("");
+    const [busy, setBusy] = useState(false);
+    const [removing, setRemoving] = useState<Role | null>(null);
+    const [error, setError] = useState<string | null>(null);
+
+    const send = (
+        url: string,
+        payload: Record<string, unknown>,
+        done?: () => void,
+    ) => {
+        setBusy(true);
+        setError(null);
+        router.post(url, payload, {
+            preserveScroll: true,
+            onError: (errors) =>
+                setError(String(Object.values(errors)[0] ?? "")),
+            onSuccess: done,
+            onFinish: () => setBusy(false),
+        });
+    };
+
+    const create = (event: React.FormEvent) => {
+        event.preventDefault();
+        if (!name.trim()) return;
+        send(route("admin.roles.save"), { name: name.trim() }, () =>
+            setName(""),
+        );
+    };
+
+    const save = (role: Role) => {
+        if (!editName.trim()) return;
+        send(
+            route("admin.roles.update"),
+            { id: role.id, name: editName.trim() },
+            () => setEditingId(null),
+        );
+    };
+
+    const remove = () => {
+        if (!removing) return;
+        send(route("admin.roles.delete"), { id: removing.id }, () =>
+            setRemoving(null),
+        );
+    };
+
+    return (
+        <>
+            <Dialog open={open} onOpenChange={onOpenChange}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>{t("Roles")}</DialogTitle>
+                        <DialogDescription>
+                            {t(
+                                "Create your own roles for staff accounts. Permissions are still set per account.",
+                            )}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <form onSubmit={create} className="flex gap-2">
+                        <Input
+                            value={name}
+                            onChange={(event) => setName(event.target.value)}
+                            placeholder={t("New role name")}
+                            maxLength={50}
+                        />
+                        <Button type="submit" disabled={busy || !name.trim()}>
+                            <Plus className="size-4" />
+                            {t("Add")}
+                        </Button>
+                    </form>
+                    {error && (
+                        <p className="text-sm text-destructive">{error}</p>
+                    )}
+
+                    <ul className="divide-y rounded-md border">
+                        {roles.map((role) => (
+                            <li
+                                key={role.id}
+                                className="flex items-center gap-2 px-3 py-2"
+                            >
+                                {editingId === role.id ? (
+                                    <>
+                                        <Input
+                                            value={editName}
+                                            onChange={(event) =>
+                                                setEditName(event.target.value)
+                                            }
+                                            maxLength={50}
+                                            className="h-8"
+                                            autoFocus
+                                        />
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            disabled={busy || !editName.trim()}
+                                            onClick={() => save(role)}
+                                        >
+                                            <Check className="size-4" />
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => setEditingId(null)}
+                                        >
+                                            {t("Cancel")}
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="flex-1 truncate font-medium">
+                                            {role.name}
+                                        </span>
+                                        {role.builtin && (
+                                            <Badge variant="outline">
+                                                {t("Built-in")}
+                                            </Badge>
+                                        )}
+                                        <span className="text-xs text-muted-foreground tabular-nums">
+                                            {t(":count accounts").replace(
+                                                ":count",
+                                                String(role.users),
+                                            )}
+                                        </span>
+                                        {!role.builtin && (
+                                            <>
+                                                <Button
+                                                    type="button"
+                                                    size="icon-sm"
+                                                    variant="ghost"
+                                                    aria-label={t("Rename")}
+                                                    onClick={() => {
+                                                        setEditingId(role.id);
+                                                        setEditName(role.name);
+                                                    }}
+                                                >
+                                                    <Pencil className="size-4" />
+                                                </Button>
+                                                <Button
+                                                    type="button"
+                                                    size="icon-sm"
+                                                    variant="ghost"
+                                                    aria-label={t("Delete")}
+                                                    disabled={role.users > 0}
+                                                    onClick={() =>
+                                                        setRemoving(role)
+                                                    }
+                                                >
+                                                    <Trash2 className="size-4" />
+                                                </Button>
+                                            </>
+                                        )}
+                                    </>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+                </DialogContent>
+            </Dialog>
+
+            <ConfirmDialog
+                open={removing !== null}
+                onOpenChange={(isOpen) => !isOpen && setRemoving(null)}
+                title={t("Delete role")}
+                description={
+                    removing
+                        ? t(
+                              "Delete the role :name? Staff accounts are not affected.",
+                          ).replace(":name", removing.name)
+                        : undefined
+                }
+                confirmLabel={t("Delete")}
+                destructive
+                processing={busy}
+                onConfirm={remove}
+            />
+        </>
     );
 }

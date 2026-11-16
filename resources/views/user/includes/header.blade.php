@@ -3,6 +3,11 @@
     @include('user.includes.impersonate')
 @endif
 
+{{-- Admin editing a customer's cards (see AdminCardContext middleware) --}}
+@if (Session::has('admin_card_context'))
+    @include('user.includes.admin-context')
+@endif
+
 <header class="navbar navbar-expand-md d-none d-lg-flex d-print-none bg-body">
     <div class="container-{{ App::isLocale('ar') || App::isLocale('ur') || App::isLocale('he') ? 'xl' : 'fluid' }}">
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu"

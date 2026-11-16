@@ -384,14 +384,26 @@ if (!empty($custom_js)) {
                                     <p class="bb-eyebrow mb-1">{{ __('Master Barbers') }}</p>
 
                                     {{-- Check title --}}
-                                    <h1 class="bb-display text-6xl bb-gold-text bb-reveal-up" id="pName">
+                                    <h1 style="{{ card_align_style($card_details, 'title') }}" class="bb-display text-6xl bb-gold-text bb-reveal-up" id="pName">
                                         {{ $business_card_details->title }}
                                     </h1>
 
                                     {{-- Check sub title --}}
-                                    <p class="text-[#B7282E] font-semibold mt-1 text-sm uppercase tracking-widest">
+                                    <p style="{{ card_align_style($card_details, 'subtitle') }}" class="text-[#B7282E] font-semibold mt-1 text-sm uppercase tracking-widest">
                                         {{ $card_details->sub_title }}
                                     </p>
+                                    {{-- Second title / sub title --}}
+                                    {!! card_title2_font_link($card_details) !!}
+                                    @if (!empty($card_details->title2))
+                                    <p style="{{ card_align_style($card_details, 'title2') }}" class="text-[#B7282E] font-semibold mt-1 text-sm uppercase tracking-widest">
+                                        <strong>{{ $card_details->title2 }}</strong>
+                                    </p>
+                                    @endif
+                                    @if (!empty($card_details->subtitle2))
+                                    <p style="{{ card_align_style($card_details, 'subtitle2') }}" class="text-[#B7282E] font-semibold mt-1 text-sm uppercase tracking-widest">
+                                        {{ $card_details->subtitle2 }}
+                                    </p>
+                                    @endif
 
                                     {{-- Check description --}}
                                     @if ($business_card_details->description != null)
@@ -1237,10 +1249,14 @@ if (!empty($custom_js)) {
                                         <div
                                             class="flex pt-5 px-3 m-auto font-semibold text-sm flex-col md:flex-row max-w-6xl">
                                             <div class="mt-2 bb-text-muted">
+                                                @if (!empty($card_details->copyright))
+                                                    <a class="bb-gold-text" href="{{ card_copyright_href($card_details) }}" @if (card_copyright_is_external($card_details)) target="_blank" rel="noopener" @endif>{{ $card_details->copyright }}</a>
+                                                @else
                                                 {{ __('Copyright') }} &copy;
                                                 <a class="bb-gold-text" href="{{ url()->current() }}">
                                                     {{ $card_details->title }}</a>
                                                 <span id="year"></span>{{ __('. All Rights Reserved.') }}
+                                                @endif
                                             </div>
                                         </div>
                                     </div>
@@ -1293,7 +1309,7 @@ if (!empty($custom_js)) {
                     </div>
 
                     <div class="flex-1 flex items-center justify-center">
-                        <a href="{{ config('app.url') }}/download/{{ $business_card_details->card_id }}"
+                        <a href="#" onclick="event.preventDefault(); downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500, '{{ addslashes($card_details->title) }}')" title="{{ __('Download QR as PNG') }}"
                             class="bb-icon-btn p-3 rounded-full">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -1633,7 +1649,7 @@ if (!empty($custom_js)) {
             <!-- Download Button -->
             <div class="pt-1">
                 <button id="download"
-                    onclick="downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500)"
+                    onclick="downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500, '{{ addslashes($card_details->title) }}')"
                     class="bb-btn-primary py-3 px-6 rounded-xl w-full flex items-center justify-center text-base">
                     <i class="fas fa-download mr-2"></i> {{ __('Download QR Code') }}
                 </button>
@@ -1711,7 +1727,7 @@ if (!empty($custom_js)) {
                 }
 
                 if (errorBox) errorBox.classList.add('hidden');
-                window.open(`https://wa.me/${phoneNumber}?text={{ rawurlencode($shareContent) }}`, '_blank',
+                window.open(`https://wa.me/${phoneNumber}?text={{ $shareContent }}`, '_blank',
                     'noopener');
                 if (input) input.value = '';
                 window.toggleWhatsAppModal(false);
@@ -2003,6 +2019,10 @@ if (!empty($custom_js)) {
                             successMessage1.classList.remove('hidden');
                             successMessage1.innerHTML = data.message ||
                                 '{{ __('Your service has been successfully booked!') }}';
+                            if (data.whatsapp_url) {
+                                successMessage1.innerHTML += ' <a href="' + data.whatsapp_url + '" target="_blank" rel="noopener" style="text-decoration:underline;font-weight:700;">{{ __('Send booking details via WhatsApp') }}</a>';
+                                window.open(data.whatsapp_url, '_blank');
+                            }
                         }
                     } else {
                         if (successMessage1) successMessage1.classList.add('hidden');
@@ -2160,7 +2180,7 @@ if (!empty($custom_js)) {
 
             setBtnLoading(btn, '{{ __('Opening...') }}');
 
-            window.open(`https://wa.me/${phoneNumber}?text={{ rawurlencode($shareContent ?? '') }}`, '_blank',
+            window.open(`https://wa.me/${phoneNumber}?text={{ $shareContent }}`, '_blank',
                 'noopener');
 
             setTimeout(() => {

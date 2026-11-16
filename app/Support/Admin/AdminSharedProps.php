@@ -55,7 +55,7 @@ class AdminSharedProps
                     'name'   => $user->name,
                     'email'  => $user->email,
                     'avatar' => asset($user->profile_image ?: 'profile.png'),
-                    'role'   => (int) $user->role_id === 4 ? __('Manager') : __('Administrator'),
+                    'role'   => AdminRoles::name($user),
                 ] : null,
             ],
             'permissions' => $permissions,

@@ -17,6 +17,7 @@ class ServiceBooking extends Model
         'service_booking_start_time',
         'service_booking_end_time',
         'service_booking_receive_email',
+        'service_booking_whatsapp',
     ];
 
     // Store times consistently with seconds

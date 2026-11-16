@@ -360,7 +360,7 @@ class ProfileController extends Controller
                         }
 
                         $url          = urlencode($url);
-                        $shareContent = urlencode($shareContent);
+                        $shareContent = rawurlencode($shareContent); // %20 spaces: wa.me shows + literally
 
                         // Set locale if not same as business card locale.
                         $locale = Session::get('locale') ?? $business_card_details->card_lang ?? config('app.locale');
@@ -570,7 +570,7 @@ class ProfileController extends Controller
                         }
 
                         $url          = urlencode($url);
-                        $shareContent = urlencode($shareContent);
+                        $shareContent = rawurlencode($shareContent); // %20 spaces: wa.me shows + literally
 
                         $locale = Session::get('locale') ?? $business_card_details->card_lang ?? config('app.locale');
                         App::setLocale($locale);
@@ -731,7 +731,7 @@ class ProfileController extends Controller
             }
 
             $url          = urlencode($url);
-            $shareContent = urlencode($shareContent);
+            $shareContent = rawurlencode($shareContent); // %20 spaces: wa.me shows + literally
 
             $locale = Session::get('locale') ?? $business_card_details->card_lang ?? config('app.locale');
             App::setLocale($locale);
@@ -853,7 +853,7 @@ class ProfileController extends Controller
             }
 
             $url          = urlencode($url);
-            $shareContent = urlencode($shareContent);
+            $shareContent = rawurlencode($shareContent); // %20 spaces: wa.me shows + literally
 
             // Set locale if not same as business card locale.
             $locale = Session::get('locale') ?? $business_card_details->card_lang ?? config('app.locale');
