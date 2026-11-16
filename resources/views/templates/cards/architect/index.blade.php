@@ -328,7 +328,7 @@
                                         {{-- About --}}
                                         @if (isset($business_card_details->description) || isset($business_card_details->address))
                                             <div
-                                                class="mt-3 text-base text-[#121212] leading-relaxed font-medium tracking-tight text-center line-clamp-3">
+                                                class="mt-3 text-base text-[#121212] leading-relaxed font-medium tracking-tight text-center">
                                                 {!! $business_card_details->description !!}
                                             </div>
                                         @endif

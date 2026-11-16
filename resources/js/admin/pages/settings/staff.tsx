@@ -970,7 +970,7 @@ function RolesDialog({
 
     const send = (
         url: string,
-        payload: Record<string, unknown>,
+        payload: Record<string, string | number>,
         done?: () => void,
     ) => {
         setBusy(true);
