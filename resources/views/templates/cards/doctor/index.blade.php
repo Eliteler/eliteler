@@ -303,7 +303,7 @@
                                 @endif
                                 {{-- About --}}
                                 @if ($business_card_details->description != null)
-                                    <div class="line-clamp-3 text-gray-500 font-normal text-sm mb-1">
+                                    <div class=" text-gray-500 font-normal text-sm mb-1">
                                         {!! $business_card_details->description !!}
                                     </div>
                                 @endif

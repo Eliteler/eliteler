@@ -263,7 +263,7 @@
                                         @endif
                                         {{-- About --}}
                                         @if (isset($business_card_details->description) || isset($business_card_details->address))
-                                            <span class="mt-2 text-md text-gray-300 line-clamp-3">
+                                            <span class="mt-2 text-md text-gray-300">
                                                 {!! $business_card_details->description !!}
                                             </span>
                                         @endif

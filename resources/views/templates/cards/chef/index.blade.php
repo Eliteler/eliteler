@@ -296,7 +296,7 @@
                                         @endif
                                         {{-- About --}}
                                         @if ($business_card_details->description != null)
-                                            <span class="mt-3 pr-6 text-sm leading-relaxed font-medium line-clamp-3">
+                                            <span class="mt-3 pr-6 text-sm leading-relaxed font-medium">
                                                 {!! $business_card_details->description !!}
                                             </span>
                                         @endif

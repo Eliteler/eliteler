@@ -236,7 +236,7 @@
                                     @endif
                                     {{-- About --}}
                                     @if (optional($business_card_details)->description || optional($business_card_details)->address)
-                                        <span class="mt-2 text-md text-gray-500 line-clamp-3">
+                                        <span class="mt-2 text-md text-gray-500">
                                             {!! $business_card_details->description !!}
                                         </span>
                                     @endif
