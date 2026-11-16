@@ -205,8 +205,12 @@ class BookAppointmentController extends Controller
                     'cardId' => $request->card,
                 ];
 
-                Mail::to($request->email)
-                    ->send(new \App\Mail\AppointmentMail($details));
+                try {
+                    Mail::to($request->email)
+                        ->send(new \App\Mail\AppointmentMail($details));
+                } catch (\Throwable $e) {
+                    report($e);
+                }
             }
 
             /*
@@ -230,8 +234,12 @@ class BookAppointmentController extends Controller
                     'cardId' => $request->card,
                 ];
 
-                Mail::to($vcardOwnerEmail)
-                    ->send(new \App\Mail\AppointmentMail($ownerDetails));
+                try {
+                    Mail::to($vcardOwnerEmail)
+                        ->send(new \App\Mail\AppointmentMail($ownerDetails));
+                } catch (\Throwable $e) {
+                    report($e);
+                }
             }
 
             /*
@@ -318,10 +326,9 @@ class BookAppointmentController extends Controller
                 'message' => trans('Appointment booked successfully!'),
                 'whatsapp_url' => $whatsapp_url
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
 
-            // Optional log
-            // \Log::error($e->getMessage());
+            report($e);
 
             return response()->json([
                 'success' => false,

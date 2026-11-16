@@ -181,7 +181,7 @@
                                                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                                                         class="icon icon-tabler icons-tabler-outline icon-tabler-circle-x">
                                                         <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                                        <path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+                                                        <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" />
                                                         <path d="M10 10l4 4m0 -4l-4 4" />
                                                     </svg>
                                                     {{ __('Cancel') }}
@@ -724,20 +724,27 @@
                                                     </li>
                                                 @endif
 
+                                                {{-- Storage: Formatted with asterisk (*) when unlimited --}}
+                                                @php
+                                                    $isUnlimitedStorage =
+                                                        $plan->storage == '999' || $plan->storage == -1;
+                                                    $hasStorage = $plan->storage > 0 || $isUnlimitedStorage;
+                                                @endphp
                                                 <li>
                                                     <div class="feature-left">
                                                         <span
-                                                            class="feature-icon {{ $plan->storage > 0 ? 'is-on' : 'is-off' }}">
+                                                            class="feature-icon {{ $hasStorage ? 'is-on' : 'is-off' }}">
                                                             @include(
                                                                 'user.pages.plans.includes.icon-' .
-                                                                    ($plan->storage > 0 ? 'check' : 'x'))
+                                                                    ($hasStorage ? 'check' : 'x'))
                                                         </span>
                                                         <span>
-                                                            @if ($plan->storage != 0)
-                                                                <span
-                                                                    class="value">{{ $plan->storage == '999' ? __('Unlimited') : $plan->storage . 'MB' }}</span>
+                                                            @if ($hasStorage)
+                                                                <span class="value">
+                                                                    {{ $isUnlimitedStorage ? __('Unlimited*') : formatStorageSize($plan->storage, false) }}
+                                                                </span>
                                                             @endif
-                                                            {{ __('storage limit') }}
+                                                            {{ __('Storage') }}
                                                         </span>
                                                     </div>
                                                     <span
@@ -793,6 +800,20 @@
                                                                     ($plan->hide_branding == 1 ? 'check' : 'x'))
                                                         </span>
                                                         <span>{{ __('Hide Branding') }}</span>
+                                                    </div>
+                                                </li>
+
+                                                <li>
+                                                    <div class="feature-left">
+                                                        <span
+                                                            class="feature-icon {{ $plan->advanced_analytics == 1 ? 'is-on' : 'is-off' }}">
+                                                            @include(
+                                                                'user.pages.plans.includes.icon-' .
+                                                                    ($plan->advanced_analytics == 1
+                                                                        ? 'check'
+                                                                        : 'x'))
+                                                        </span>
+                                                        <span>{{ __('Visitor Analytics') }}</span>
                                                     </div>
                                                 </li>
 
@@ -885,6 +906,13 @@
                                 </div>
                             </div>
                         @endforeach
+
+                        {{-- Footnote disclaimer for unlimited storage asterisk (*) spanning full width --}}
+                        <div class="col-12 text-center mt-4">
+                            <p class="text-muted small">
+                                {{ __('* Note: Unlimited storage is subject to a fair usage policy (maximum 100 GB limit).') }}
+                            </p>
+                        </div>
 
                     </div>
                 </div>

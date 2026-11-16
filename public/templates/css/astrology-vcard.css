@@ -1878,7 +1878,6 @@ h4 {
     background: rgba(11, 19, 43, 0.82);
     backdrop-filter: blur(8px);
     z-index: 50;
-    display: none;
 }
 #pwaModal.show {
     display: block !important;

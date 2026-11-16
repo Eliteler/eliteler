@@ -17,6 +17,7 @@ use App\Plan;
 use App\Services\Admin\CustomerPlanService;
 use App\Services\Admin\CustomerService;
 use App\Support\Admin\AdminPermissions;
+use App\Support\Zapier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -85,22 +86,8 @@ class CreateCustomerController extends Controller
 
         $resetSent = ! $request->boolean('reset_password') || $this->customers->sendPasswordResetEmail($user);
 
-        if (function_exists('zapier_dispatch')) {
-            zapier_dispatch('new_user', [
-                'registered_at'   => now()->toDateTimeString(),
-                'user_id'         => $user->user_id,
-                'name'            => $user->name,
-                'email'           => $user->email,
-                'mobile_number'   => '',
-                'address'         => '',
-                'city'            => '',
-                'state'           => '',
-                'country'         => '',
-                'zipcode'         => '',
-                'user_tax_number' => '',
-                'registered_by'   => 'Admin',
-            ]);
-        }
+        // Zapier: new user (created by an admin)
+        Zapier::newUser($user, 'Admin');
 
         return redirect()->route('admin.view.customer', $user->user_id)->with(
             $resetSent ? 'success' : 'failed',

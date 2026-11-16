@@ -21,6 +21,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class PaymentLinkController extends Controller
 {
@@ -68,7 +69,7 @@ class PaymentLinkController extends Controller
     public function savePaymentLinks(Request $request, $id)
     {
         // Find the business card
-        $business_card = BusinessCard::where('card_id', $id)->first();
+        $business_card = BusinessCard::where('card_id', $id)->where('user_id', Auth::user()->user_id)->first();
         if (!$business_card) {
             return redirect()->route('user.cards')->with('failed', trans('Card not found!'));
         }
@@ -77,12 +78,31 @@ class PaymentLinkController extends Controller
         if ($request->has('icon') && is_array($request->icon)) {
 
             // Fetch user plan
-            $plan = DB::table('users')->where('user_id', Auth::id())->where('status', 1)->first();
+            $plan = DB::table('users')->where('user_id', Auth::user()->user_id)->where('status', 1)->first();
             $plan_details = json_decode($plan->plan_details ?? '{}');
 
             // Check payment limit
-            if (count($request->icon) <= ($plan_details->no_of_payments ?? 0)) {
+            if (count($request->icon) > ($plan_details->no_of_payments ?? 0)) {
                 return redirect()->route('user.payment.links', $id)->with('failed', trans('You have reached the plan limit!'));
+            }
+
+            // Validate uploaded payment images
+            $fileRules = [];
+            $customAttributes = [];
+            if ($request->has('type') && is_array($request->type)) {
+                foreach ($request->type as $i => $type) {
+                    if ($type === 'image' && $request->hasFile("value.$i")) {
+                        $fileRules["value.$i"] = 'required|file|image|mimes:jpeg,png,jpg,gif,svg,webp|max:' . env('SIZE_LIMIT', 2048);
+                        $customAttributes["value.$i"] = trans('Payment image');
+                    }
+                }
+            }
+
+            if (!empty($fileRules)) {
+                $validator = Validator::make($request->all(), $fileRules, [], $customAttributes);
+                if ($validator->fails()) {
+                    return redirect()->route('user.payment.links', $id)->with('failed', $validator->errors()->first());
+                }
             }
 
             // Delete previous payment links

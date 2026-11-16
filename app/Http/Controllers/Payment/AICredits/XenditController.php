@@ -6,6 +6,7 @@ use App\AiCredit;
 use App\AiCreditsPlan;
 use App\AiCreditsTransaction;
 use App\AppliedCoupon;
+use App\Classes\InvoiceNumber;
 use App\Coupon;
 use App\Http\Controllers\Controller;
 use App\Services\XenditService;
@@ -17,7 +18,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
-use Plugins\Zapier\Helpers\ZapierHelper;
 
 class XenditController extends Controller
 {
@@ -241,22 +241,15 @@ class XenditController extends Controller
                 $config = DB::table('config')->get();
 
                 // Invoice Count
-                $invoice_count = AiCreditsTransaction::where(
-                    'invoice_prefix',
-                    $config[15]->config_value
-                )->count();
-
-                $invoice_number = $invoice_count + 1;
-
                 // Update Transaction
-                AiCreditsTransaction::where(
+                $invoice_number = InvoiceNumber::assign('ai_credits_transactions', $config[15]->config_value, fn ($invoice_number) => AiCreditsTransaction::where(
                     'ai_credits_transaction_id',
                     $transactionId
                 )->update([
                     'invoice_prefix' => $config[15]->config_value,
                     'invoice_number' => $invoice_number,
                     'payment_status' => 'paid',
-                ]);
+                ]));
 
                 // Send invoice
                 $encode = json_decode($transaction_details->invoice_details, true);
@@ -288,7 +281,8 @@ class XenditController extends Controller
 
                     Mail::to($encode['to_billing_email'])
                         ->send(new \App\Mail\SendEmailInvoice($details));
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
+                    report($e);
                 }
 
                 // Update AI Credits
@@ -449,22 +443,15 @@ class XenditController extends Controller
                 $config = DB::table('config')->get();
 
                 // Invoice Count
-                $invoice_count = AiCreditsTransaction::where(
-                    'invoice_prefix',
-                    $config[15]->config_value
-                )->count();
-
-                $invoice_number = $invoice_count + 1;
-
                 // Update Transaction
-                AiCreditsTransaction::where(
+                $invoice_number = InvoiceNumber::assign('ai_credits_transactions', $config[15]->config_value, fn ($invoice_number) => AiCreditsTransaction::where(
                     'ai_credits_transaction_id',
                     $request->transactionId
                 )->update([
                     'invoice_prefix' => $config[15]->config_value,
                     'invoice_number' => $invoice_number,
                     'payment_status' => 'paid',
-                ]);
+                ]));
 
                 // Send invoice
                 $encode = json_decode($transaction_details->invoice_details, true);
@@ -496,7 +483,8 @@ class XenditController extends Controller
 
                     Mail::to($encode['to_billing_email'])
                         ->send(new \App\Mail\SendEmailInvoice($details));
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
+                    report($e);
                 }
 
                 // Update AI Credits

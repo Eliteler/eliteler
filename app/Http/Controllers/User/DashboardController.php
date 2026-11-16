@@ -135,13 +135,13 @@ class DashboardController extends Controller
                     } else {
                         $totalStores += 1;
                     }
-                    $cardId[$i] = $cards[$i]->card_url;
+                    $cardId[$i] = $cards[$i]->card_id;
                 }
 
                 // Fetch the top 5 platforms in a single query, ordered by the total count
                 $platforms = Visitor::select('visitors.platform', DB::raw('count(*) as total'))
                     ->whereIn('card_id', $cardId)
-                    ->where('visitors.status', 1)
+                    ->where('visitors.is_bot', 0)
                     ->groupBy('visitors.platform')
                     ->orderByDesc(DB::raw('count(*)')) // Sort by count in descending order
                     ->limit(5) // Limit to top 5
@@ -162,7 +162,7 @@ class DashboardController extends Controller
                 // Fetch the top 5 devices in a single query, ordered by the total count
                 $devices = Visitor::select('visitors.device', DB::raw('count(*) as total'))
                     ->whereIn('card_id', $cardId)
-                    ->where('visitors.status', 1)
+                    ->where('visitors.is_bot', 0)
                     ->groupBy('visitors.device')
                     ->orderByDesc(DB::raw('count(*)')) // Sort by count in descending order
                     ->limit(5) // Limit to top 5
@@ -181,18 +181,19 @@ class DashboardController extends Controller
                 }
 
                 // Fetch the top 20 vCards & Stores
+                $cardUrls = $cards->pluck('card_url', 'card_id');
                 $cards = Visitor::select('visitors.card_id', DB::raw('count(*) as total'))
                     ->whereIn('card_id', $cardId)
-                    ->where('visitors.status', '1')
+                    ->where('visitors.is_bot', 0)
                     ->groupBy('visitors.card_id')
                     ->orderByDesc(DB::raw('count(*)'))
                     ->take(20) // Limit to top 20 results
                     ->get();
 
-                // Prepare the result
-                $highestCards = $cards->map(function ($card) {
+                // Prepare the result (visits are keyed by card_id, the list links to the card URL)
+                $highestCards = $cards->map(function ($card) use ($cardUrls) {
                     return [
-                        'card' => $card->card_id,
+                        'card' => $cardUrls[$card->card_id] ?? $card->card_id,
                         'count' => $card->total,
                     ];
                 })->toArray();
@@ -203,7 +204,7 @@ class DashboardController extends Controller
 
                 // Fetch vCard and store visitors for the entire week in a single query
                 $currentWeekVisitors = Visitor::whereIn('visitors.card_id', $cardId)
-                    ->where('visitors.status', "1")
+                    ->where('visitors.is_bot', 0)
                     ->whereBetween('created_at', [$startOfWeek, $endOfWeek])
                     ->whereIn('visitors.type', ['vcard', 'store'])
                     ->selectRaw('DAYOFWEEK(created_at) as day_of_week, visitors.type, count(*) as total')

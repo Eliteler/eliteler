@@ -34,7 +34,7 @@ class MailgunService
         $this->domain = env('MAIN_DOMAIN');
 
         // Build from address
-        $this->from = env('MAIL_FROM_NAME', config('app.name')) . ' <' . ($mailFrom ?? env('MAIL_FROM_ADDRESS')) . '>';
+        $this->from = (config('mail.from.name') ?: config('app.name')) . ' <' . ($mailFrom ?: config('mail.from.address')) . '>';
     }
 
     /**

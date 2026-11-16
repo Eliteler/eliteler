@@ -1,4 +1,4 @@
-import { Head, router, useForm, usePage } from "@inertiajs/react";
+import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
 import {
     ArrowUpCircle,
     ArrowUpRight,
@@ -55,10 +55,29 @@ type Template = {
     builtIn: boolean;
     pagesUrl: string | null;
     settingsUrl: string | null;
-    legacy: boolean; // old Blade version: admin pages need the new version
+    legacy: boolean;
 };
 
-type Props = { templates: Template[]; maxUploadKb: number };
+type PaginationLinks = {
+    url: string | null;
+    label: string;
+    active: boolean;
+};
+
+type Paginated<T> = {
+    data: T[];
+    links: PaginationLinks[];
+    current_page: number;
+    last_page: number;
+    from: number | null;
+    to: number | null;
+    total: number;
+};
+
+type Props = {
+    templates: Paginated<Template> | Template[];
+    maxUploadKb: number;
+};
 
 type Tab = "installed" | "marketplace";
 
@@ -71,7 +90,18 @@ export default function WebTemplates({ templates, maxUploadKb }: Props) {
     const [uploading, setUploading] = useState(false);
     const [pending, setPending] = useState<Pending | null>(null);
     const [processing, setProcessing] = useState(false);
-    const active = templates.find((template) => template.active);
+
+    // Safely extract templates list whether paginated or plain array
+    const templateList: Template[] = Array.isArray(templates)
+        ? templates
+        : templates && Array.isArray(templates.data)
+          ? templates.data
+          : [];
+
+    // Extract pagination metadata
+    const pagination = Array.isArray(templates) ? null : templates;
+
+    const active = templateList.find((template) => template.active);
     const { flash } = usePage().props;
     const [notice, setNotice] = useState<PluginNotice | null>(null);
 
@@ -85,8 +115,8 @@ export default function WebTemplates({ templates, maxUploadKb }: Props) {
     const [market, setMarket] = useState<MarketItem[] | null>(null);
     const [loadingMarket, setLoadingMarket] = useState(false);
     const installed = useMemo(
-        () => new Map(templates.map((template) => [template.id, template])),
-        [templates],
+        () => new Map(templateList.map((template) => [template.id, template])),
+        [templateList],
     );
 
     // Loaded once per visit; if the list can't be loaded, open the marketplace website instead
@@ -163,7 +193,9 @@ export default function WebTemplates({ templates, maxUploadKb }: Props) {
                         <TabsTrigger value="installed">
                             {t("Installed")}
                             <span className="text-muted-foreground tabular-nums">
-                                {templates.length}
+                                {pagination
+                                    ? pagination.total
+                                    : templateList.length}
                             </span>
                         </TabsTrigger>
                         <TabsTrigger
@@ -200,141 +232,202 @@ export default function WebTemplates({ templates, maxUploadKb }: Props) {
                             />
                         ))}
                     </div>
-                ) : templates.length === 0 ? (
+                ) : templateList.length === 0 ? (
                     <EmptyState
                         icon={LayoutTemplate}
                         title={t("No templates installed")}
                         description={t("Install a template from a .zip file.")}
                     />
                 ) : (
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                        {templates.map((template) => (
-                            <Card
-                                key={template.id}
-                                className={cn(
-                                    "gap-0 overflow-hidden py-0",
-                                    template.active && "ring-2 ring-primary",
-                                )}
-                            >
-                                <div className="relative aspect-[16/10] overflow-hidden border-b bg-muted">
-                                    {template.image ? (
-                                        <img
-                                            src={template.image}
-                                            alt=""
-                                            className="size-full object-cover object-top"
-                                        />
-                                    ) : (
-                                        <div className="flex size-full items-center justify-center">
-                                            <LayoutTemplate className="size-10 text-muted-foreground" />
-                                        </div>
+                    <>
+                        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                            {templateList.map((template) => (
+                                <Card
+                                    key={template.id}
+                                    className={cn(
+                                        "gap-0 overflow-hidden py-0",
+                                        template.active &&
+                                            "ring-2 ring-primary",
                                     )}
-                                    {template.active && (
-                                        <Badge className="absolute start-3 top-3 shadow">
-                                            <CheckCircle2 />
-                                            {t("Live on your website")}
-                                        </Badge>
-                                    )}
-                                </div>
-                                <CardContent className="flex items-start justify-between gap-2 p-4">
-                                    <div className="flex min-w-0 flex-col gap-0.5">
-                                        <div className="flex items-center gap-2">
-                                            <span className="truncate font-medium">
-                                                {template.name}
-                                            </span>
-                                            {template.legacy && (
-                                                <Badge
-                                                    variant="outline"
-                                                    className="border-warning/40 text-warning"
-                                                >
-                                                    {t("Update required")}
-                                                </Badge>
-                                            )}
-                                        </div>
-                                        <span className="text-xs text-muted-foreground">
-                                            {template.version &&
-                                                `v${template.version}`}
-                                            {template.builtIn &&
-                                                ` · ${t("Built-in")}`}
-                                        </span>
-                                        {template.legacy && (
-                                            <p className="mt-1 text-sm text-muted-foreground">
-                                                {t(
-                                                    "A new version is available. Upload the latest version to edit this template.",
-                                                )}
-                                            </p>
+                                >
+                                    <div className="relative aspect-[16/10] overflow-hidden border-b bg-muted">
+                                        {template.image ? (
+                                            <img
+                                                src={template.image}
+                                                alt=""
+                                                className="size-full object-cover object-top"
+                                            />
+                                        ) : (
+                                            <div className="flex size-full items-center justify-center">
+                                                <LayoutTemplate className="size-10 text-muted-foreground" />
+                                            </div>
+                                        )}
+                                        {template.active && (
+                                            <Badge className="absolute start-3 top-3 shadow">
+                                                <CheckCircle2 />
+                                                {t("Live on your website")}
+                                            </Badge>
                                         )}
                                     </div>
-                                    {!template.active && !template.builtIn && (
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
+                                    <CardContent className="flex items-start justify-between gap-2 p-4">
+                                        <div className="flex min-w-0 flex-col gap-0.5">
+                                            <div className="flex items-center gap-2">
+                                                <span className="truncate font-medium">
+                                                    {template.name}
+                                                </span>
+                                                {template.legacy && (
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="border-warning/40 text-warning"
+                                                    >
+                                                        {t("Update required")}
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                            <span className="text-xs text-muted-foreground">
+                                                {template.version &&
+                                                    `v${template.version}`}
+                                                {template.builtIn &&
+                                                    ` · ${t("Built-in")}`}
+                                            </span>
+                                            {template.legacy && (
+                                                <p className="mt-1 text-sm text-muted-foreground">
+                                                    {t(
+                                                        "A new version is available. Upload the latest version to edit this template.",
+                                                    )}
+                                                </p>
+                                            )}
+                                        </div>
+                                        {!template.active &&
+                                            !template.builtIn && (
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger
+                                                        asChild
+                                                    >
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon-sm"
+                                                            aria-label={t(
+                                                                "Actions",
+                                                            )}
+                                                        >
+                                                            <MoreHorizontal />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem
+                                                            variant="destructive"
+                                                            onSelect={() =>
+                                                                setPending({
+                                                                    template,
+                                                                    action: "delete",
+                                                                })
+                                                            }
+                                                        >
+                                                            <Trash2 />
+                                                            {t("Remove")}
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            )}
+                                    </CardContent>
+                                    <CardFooter className="mt-auto flex flex-wrap gap-2 border-t p-3">
+                                        {template.pagesUrl && (
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                asChild
+                                            >
+                                                <a href={template.pagesUrl}>
+                                                    <FileText />
+                                                    {t("Pages")}
+                                                </a>
+                                            </Button>
+                                        )}
+                                        {template.settingsUrl && (
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                asChild
+                                            >
+                                                <a href={template.settingsUrl}>
+                                                    <Settings2 />
+                                                    {t("Settings")}
+                                                </a>
+                                            </Button>
+                                        )}
+                                        {!template.active &&
+                                            !template.legacy && (
                                                 <Button
-                                                    variant="ghost"
-                                                    size="icon-sm"
-                                                    aria-label={t("Actions")}
-                                                >
-                                                    <MoreHorizontal />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem
-                                                    variant="destructive"
-                                                    onSelect={() =>
+                                                    size="sm"
+                                                    className="ms-auto"
+                                                    onClick={() =>
                                                         setPending({
                                                             template,
-                                                            action: "delete",
+                                                            action: "activate",
                                                         })
                                                     }
                                                 >
-                                                    <Trash2 />
-                                                    {t("Remove")}
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    )}
-                                </CardContent>
-                                <CardFooter className="mt-auto flex flex-wrap gap-2 border-t p-3">
-                                    {template.pagesUrl && (
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            asChild
-                                        >
-                                            <a href={template.pagesUrl}>
-                                                <FileText />
-                                                {t("Pages")}
-                                            </a>
-                                        </Button>
-                                    )}
-                                    {template.settingsUrl && (
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            asChild
-                                        >
-                                            <a href={template.settingsUrl}>
-                                                <Settings2 />
-                                                {t("Settings")}
-                                            </a>
-                                        </Button>
-                                    )}
-                                    {!template.active && !template.legacy && (
-                                        <Button
-                                            size="sm"
-                                            className="ms-auto"
-                                            onClick={() =>
-                                                setPending({
-                                                    template,
-                                                    action: "activate",
-                                                })
-                                            }
-                                        >
-                                            {t("Use this template")}
-                                        </Button>
-                                    )}
-                                </CardFooter>
-                            </Card>
-                        ))}
-                    </div>
+                                                    {t("Use this template")}
+                                                </Button>
+                                            )}
+                                    </CardFooter>
+                                </Card>
+                            ))}
+                        </div>
+
+                        {/* Pagination navigation controls */}
+                        {pagination && pagination.last_page > 1 && (
+                            <div className="flex flex-col items-center justify-between gap-4 border-t pt-4 sm:flex-row">
+                                <p className="text-sm text-muted-foreground">
+                                    {t("Showing :from to :to of :total results")
+                                        .replace(
+                                            ":from",
+                                            String(pagination.from ?? 0),
+                                        )
+                                        .replace(
+                                            ":to",
+                                            String(pagination.to ?? 0),
+                                        )
+                                        .replace(
+                                            ":total",
+                                            String(pagination.total),
+                                        )}
+                                </p>
+                                <div className="flex flex-wrap items-center gap-1">
+                                    {pagination.links.map((link, index) => {
+                                        if (!link.url) {
+                                            return (
+                                                <span
+                                                    key={index}
+                                                    className="inline-flex h-9 min-w-9 items-center justify-center rounded-md border border-transparent px-3 text-sm text-muted-foreground/50 opacity-50"
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: link.label,
+                                                    }}
+                                                />
+                                            );
+                                        }
+                                        return (
+                                            <Link
+                                                key={index}
+                                                href={link.url}
+                                                preserveScroll
+                                                className={cn(
+                                                    "inline-flex h-9 min-w-9 items-center justify-center rounded-md border px-3 text-sm font-medium transition-colors",
+                                                    link.active
+                                                        ? "border-primary bg-primary text-primary-foreground"
+                                                        : "border-input bg-background hover:bg-muted text-foreground",
+                                                )}
+                                                dangerouslySetInnerHTML={{
+                                                    __html: link.label,
+                                                }}
+                                            />
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
 

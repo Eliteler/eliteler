@@ -204,6 +204,7 @@
 </head>
 
 <body data-bs-theme="{{ optional(Auth::user())->choosed_theme == 'light' ? 'light' : 'dark' }}">
+    @include('partials.impersonation-banner')
 
     {{-- Preloader --}}
     <div id="nativecode-loader">
@@ -245,6 +246,9 @@
     @if (isset($config) && $config && (collect($config)->pluck('config_value', 'config_key')['show_whatsapp_chatbot_on_customer_panel'] ?? '0') == '1')
         @include('user.includes.whatsapp-chatbot')
     @endif
+
+    {{-- Plugin widgets (plugin.json "widgets"), e.g. a support chat --}}
+    @include('user.includes.plugin-widgets', ['panel' => 'blade'])
 
     {{-- Tawk.to Chat --}}
     @if (isset($settings) && $settings)

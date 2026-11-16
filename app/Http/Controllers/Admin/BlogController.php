@@ -25,6 +25,8 @@ use Inertia\Inertia;
 // Images pasted into the body arrive as base64 and are saved as files.
 class BlogController extends Controller
 {
+    public const PER_PAGE = 10;
+
     public function __construct()
     {
         $this->middleware('auth');
@@ -32,16 +34,22 @@ class BlogController extends Controller
 
     public function index(Request $request)
     {
+        $tab    = in_array($request->query('tab'), ['all', 'published', 'drafts'], true) ? $request->query('tab') : 'all';
         $search = trim((string) $request->query('search', ''));
 
-        // Filter query to only retrieve published blogs (status = 1)
-        $base = Blog::where('status', 1);
+        // Filter query based on active tab and search
+        $query = Blog::where('status', '!=', 2)
+            ->when($tab === 'published', fn($q) => $q->where('status', 1))
+            ->when($tab === 'drafts', fn($q) => $q->where('status', 0))
+            ->when($search !== '', fn($q) => $q->where(
+                fn($q) =>
+                $q->where('heading', 'like', "%{$search}%")->orWhere('tags', 'like', "%{$search}%")
+            ));
 
-        $posts = (clone $base)
-            ->when($search !== '', fn($q) => $q->where(fn($q) => $q->where('heading', 'like', "%{$search}%")->orWhere('tags', 'like', "%{$search}%")))
+        $posts = $query
             ->with('blogCategory')
             ->latest()
-            ->paginate(20)
+            ->paginate(self::PER_PAGE)
             ->withQueryString()
             ->through(fn(Blog $blog) => [
                 'id'        => $blog->blog_id,
@@ -55,14 +63,17 @@ class BlogController extends Controller
                 'createdAt' => $blog->created_at?->toIso8601String(),
             ]);
 
+        $counts = [
+            'all'       => Blog::where('status', '!=', 2)->count(),
+            'published' => Blog::where('status', 1)->count(),
+            'drafts'    => Blog::where('status', 0)->count(),
+        ];
+
         return Inertia::render('website/blogs/index', [
             'posts'  => $posts,
+            'tab'    => $tab,
             'search' => $search,
-            'counts' => [
-                'all'       => (clone $base)->count(),
-                'published' => (clone $base)->count(),
-                'drafts'    => 0,
-            ],
+            'counts' => $counts,
         ]);
     }
 
@@ -73,8 +84,8 @@ class BlogController extends Controller
 
     public function editBlog($id)
     {
-        // Find blog where status is 1
-        $blog = Blog::where('blog_id', $id)->where('status', 1)->first();
+        // Find blog where status is not deleted
+        $blog = Blog::where('blog_id', $id)->where('status', '!=', 2)->first();
 
         return $blog ? $this->form($blog) : redirect()->route('admin.blogs')->with('failed', __('Post not found.'));
     }
@@ -208,7 +219,7 @@ class BlogController extends Controller
     private function prepareBody(string $html): string
     {
         $html = preg_replace_callback(
-            '/<img([^>]*?)src=["\']data:image\/([a-z0-9.+-]+);base64,([^"\']+)["\']([^>]*)>/i',
+            '/<img([^>]*?)src=["\']data:image\/([a-z0-9.+-]+);base64,([^"\']+)["\'][^>]*>/i',
             function ($match) {
                 $extension = strtolower($match[2]) === 'svg+xml' ? null : preg_replace('/[^a-z0-9]/', '', strtolower($match[2]));
                 $binary    = base64_decode($match[3], true);

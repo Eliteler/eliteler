@@ -2,7 +2,7 @@
     data-csrf="{{ csrf_token() }}" data-email-error="{{ __('Please enter your email.') }}" data-vaild-email-error="{{ __('Please enter valid email.') }}">
     <div class="flex items-center justify-center min-h-screen">
         <div
-            class="bg-{{ $primary_color == 'black' ? 'white' : $primary_color . '-50' }} rounded-xl p-8 lg:w-1/4 w-1/4">
+            class="bg-{{ $primary_color == 'black' ? 'white' : $primary_color . '-50' }} rounded-xl p-8 lg:w-1/4 w-full">
             <!-- Modal content -->
             <div>
                 <h1 class="text-xl font-semibold mb-3">{{ __('SUBSCRIBE TO OUR NEWSLETTER') }}</h1>

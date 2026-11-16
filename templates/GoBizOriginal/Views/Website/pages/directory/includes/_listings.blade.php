@@ -18,6 +18,9 @@
                         $coverSrc = !empty($businessCard->cover) ? asset($businessCard->cover) : $defaultCover;
                     } elseif (in_array($coverType, ['youtube', 'youtube-ap', 'vimeo', 'vimeo-ap'])) {
                         $coverSrc = !empty($businessCard->cover) ? $businessCard->cover : null;
+                        if ($coverSrc && str_starts_with($coverType, 'youtube')) {
+                            $coverSrc = youtube_video_id($coverSrc);
+                        }
                         if (empty($coverSrc)) {
                             $coverType = 'none';
                             $coverSrc = $defaultCover;

@@ -59,13 +59,7 @@
             --tblr-table-bg-state: none !important;
         }
 
-        /* Empty State */
-        .dataTables_empty {
-            padding: 3rem 1rem !important;
-            text-align: center !important;
-            background: transparent !important;
-        }
-
+        /* Empty State Icon */
         .empty-state-icon {
             width: 56px;
             height: 56px;
@@ -75,7 +69,43 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 1rem;
+            margin: 0 auto 1rem auto;
+        }
+
+        /* Empty State Centering */
+        #nfc-card-order-table.is-table-empty,
+        #nfc-card-order-table.is-table-empty tbody {
+            display: block !important;
+            width: 100% !important;
+        }
+
+        #nfc-card-order-table tbody tr.empty-table-row {
+            display: block !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+
+        #nfc-card-order-table tbody tr.empty-table-row td.dataTables_empty {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+            text-align: center !important;
+            width: 100% !important;
+            min-height: 380px !important;
+            margin: 0 auto !important;
+            border: none !important;
+            background: transparent !important;
+        }
+
+        #nfc-card-order-table tbody tr.empty-table-row td.dataTables_empty::before,
+        #nfc-card-order-table tbody tr.empty-table-row td.dataTables_empty::after {
+            display: none !important;
+            content: none !important;
         }
 
         /* Desktop: Show entries and search on the same row */
@@ -111,21 +141,39 @@
             .dataTables_filter input {
                 min-width: 260px !important;
             }
-        }
 
-        /* Responsive Mobile Cards Layout */
-        @media (max-width: 767.98px) {
-            .dataTables_filter {
-                width: 100% !important;
-                padding: 0.85rem 1rem !important;
+            .placeholder-row td {
+                vertical-align: middle !important;
+                text-align: center !important;
             }
 
-            .dataTables_filter label,
-            .dataTables_filter input {
-                width: 100% !important;
-                min-width: 100% !important;
+            .skeleton-label {
+                display: none !important;
+            }
+
+            .skeleton-value {
+                display: inline-block !important;
+                width: 80% !important;
+                height: 12px !important;
+                border-radius: 4px !important;
+            }
+        }
+
+        /* Responsive Mobile Layout & Skeleton Fixes */
+        @media (max-width: 767.98px) {
+
+            /* Prevent horizontal overflow on mobile viewports */
+            .table-responsive {
+                overflow-x: hidden !important;
+                overflow-y: visible !important;
+            }
+
+            .responsive-card-table {
                 display: block !important;
-                margin-left: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                white-space: normal !important;
+                /* Critical: Overrides text-nowrap on mobile */
             }
 
             .responsive-card-table thead,
@@ -134,42 +182,49 @@
                 display: none !important;
             }
 
-            .table-responsive {
-                overflow: visible !important;
-            }
-
             .responsive-card-table tbody {
                 display: block !important;
-                padding: 0.5rem 1rem !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
             }
 
-            .responsive-card-table tbody tr {
+            /* Regular Data Cards & Skeleton Cards share identical styling */
+            .responsive-card-table tbody tr:not(.empty-table-row) {
                 display: block !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
                 background-color: var(--tblr-bg-surface) !important;
                 border: 1px solid var(--tblr-border-color-translucent) !important;
                 border-radius: 12px !important;
                 padding: 1.15rem 1.25rem !important;
                 margin-bottom: 1rem !important;
                 box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04) !important;
+                overflow: hidden !important;
             }
 
-            .responsive-card-table tbody td {
+            .responsive-card-table tbody tr:not(.empty-table-row) td {
                 display: flex !important;
                 justify-content: space-between !important;
                 align-items: center !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
                 padding: 0.65rem 0 !important;
                 border: none !important;
                 border-bottom: 1px solid var(--tblr-border-color-translucent) !important;
                 font-size: 0.875rem !important;
                 text-align: right !important;
+                overflow: hidden !important;
             }
 
-            .responsive-card-table tbody td:last-child {
+            .responsive-card-table tbody tr:not(.empty-table-row) td:last-child {
                 border-bottom: none !important;
                 padding-bottom: 0 !important;
             }
 
-            .responsive-card-table tbody td::before {
+            /* Real data labels */
+            .responsive-card-table tbody tr:not(.empty-table-row):not(.placeholder-row) td::before {
                 content: attr(data-label) !important;
                 display: inline-block !important;
                 font-weight: 500 !important;
@@ -179,24 +234,35 @@
                 flex-shrink: 0 !important;
             }
 
-            .responsive-card-table td.rc-hide,
-            .responsive-card-table td.rc-hide::before {
-                display: none !important;
-            }
-
-            .responsive-card-table tbody tr:has(.dataTables_empty),
-            .responsive-card-table tbody td.dataTables_empty {
-                display: block !important;
-                width: 100% !important;
-                background: transparent !important;
-                border: none !important;
-                box-shadow: none !important;
-                padding: 2.5rem 1rem !important;
-            }
-
-            .responsive-card-table tbody td.dataTables_empty::before {
+            /* Disable empty pseudo-element labels on skeleton cards */
+            .responsive-card-table tbody tr.placeholder-row td::before {
                 display: none !important;
                 content: none !important;
+            }
+
+            .responsive-card-table td.rc-hide,
+            .responsive-card-table tbody tr.placeholder-row td.rc-hide {
+                display: none !important;
+            }
+
+            /* Non-overflowing percentage-based Skeleton Bars */
+            .skeleton-label {
+                display: inline-block !important;
+                width: 32% !important;
+                max-width: 120px !important;
+                height: 12px !important;
+                border-radius: 4px !important;
+                flex-shrink: 0 !important;
+            }
+
+            .skeleton-value {
+                display: inline-block !important;
+                width: 48% !important;
+                max-width: 160px !important;
+                height: 12px !important;
+                border-radius: 4px !important;
+                margin-left: auto !important;
+                flex-shrink: 0 !important;
             }
         }
     </style>
@@ -377,6 +443,28 @@
 
             const total_columns = 6;
 
+            // Generate non-overflowing percentage-based mobile skeleton cards
+            function generateSkeletonRows(columnsCount, rowCount) {
+                let rows = '';
+                for (let r = 0; r < rowCount; r++) {
+                    rows += '<tr class="placeholder-row">';
+                    for (let c = 0; c < columnsCount; c++) {
+                        if (c === 0) {
+                            // DT_RowIndex column is hidden on mobile
+                            rows += '<td class="rc-hide"><span class="placeholder skeleton-value"></span></td>';
+                        } else {
+                            // Left span mimics label, right span mimics card value
+                            rows += '<td>' +
+                                '<span class="placeholder skeleton-label"></span>' +
+                                '<span class="placeholder skeleton-value"></span>' +
+                                '</td>';
+                        }
+                    }
+                    rows += '</tr>';
+                }
+                return rows;
+            }
+
             const nfcTable = $('#nfc-card-order-table').DataTable({
                 processing: false,
                 serverSide: true,
@@ -401,8 +489,9 @@
                     sInfoFiltered: `{{ __('(filtered from _MAX_ total entries)') }}`,
                     loadingRecords: `{{ __('Please wait - loading...') }}`,
 
+                    // Centered Empty State HTML
                     emptyTable: `
-                        <div class="text-center py-4">
+                        <div class="d-flex flex-column align-items-center justify-content-center text-center w-100">
                             <div class="empty-state-icon">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icon-tabler-nfc">
                                     <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
@@ -416,7 +505,7 @@
                         </div>
                     `,
                     zeroRecords: `
-                        <div class="text-center py-4">
+                        <div class="d-flex flex-column align-items-center justify-content-center text-center w-100">
                             <div class="empty-state-icon" style="background-color: var(--tblr-danger-lt); color: var(--tblr-danger);">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icon-tabler-nfc">
                                     <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
@@ -470,14 +559,7 @@
                 preDrawCallback: function(settings) {
                     var $tbody = $(settings.nTable).find('tbody');
                     $tbody.closest('.table-responsive').addClass('placeholder-glow');
-
-                    var placeholderRows = '';
-                    for (var i = 0; i < 5; i++) {
-                        placeholderRows += '<tr>' +
-                            '<td class="text-center"><div class="placeholder placeholder-xs col-12"></div></td>'
-                            .repeat(total_columns) + '</tr>';
-                    }
-                    $tbody.html(placeholderRows);
+                    $tbody.html(generateSkeletonRows(total_columns, 4));
                 },
                 drawCallback: function(settings) {
                     var api = new $.fn.dataTable.Api(settings);
@@ -486,13 +568,28 @@
                     $table.closest('.table-responsive').removeClass('placeholder-glow');
                     $table.find('tbody tr td.dataTables_empty').attr('colspan', total_columns);
 
+                    // Check if table is empty
+                    const rowsCount = api.rows({
+                        page: 'current'
+                    }).data().length;
+
+                    if (rowsCount === 0) {
+                        $table.addClass('is-table-empty');
+                        $table.find('tbody tr').addClass('empty-table-row');
+                    } else {
+                        $table.removeClass('is-table-empty');
+                        $table.find('tbody tr').removeClass('empty-table-row');
+                    }
+
                     // Assign data-label attributes for mobile cards
                     var headers = [];
                     $table.find('thead th').each(function() {
                         headers.push($(this).text().trim());
                     });
 
-                    $table.find('tbody tr').each(function() {
+                    // Exclude empty table state and skeleton rows from mobile data-labels
+                    $table.find('tbody tr:not(.empty-table-row):not(.placeholder-row)').each(
+                function() {
                         $(this).find('td').each(function(index) {
                             if (headers[index]) {
                                 $(this).attr('data-label', headers[index]);
@@ -502,9 +599,6 @@
 
                     // Manage mobile pagination state
                     const pageInfo = api.page.info();
-                    const rowsCount = api.rows({
-                        page: 'current'
-                    }).data().length;
 
                     if (pageInfo.pages <= 1 || rowsCount === 0) {
                         $('#custom-mobile-pagination').addClass('d-none').removeClass('d-flex');
@@ -529,6 +623,7 @@
                 var $responsiveWrapper = $(this).closest('.table-responsive');
                 if (processing) {
                     $responsiveWrapper.addClass('placeholder-glow');
+                    $(this).find('tbody').html(generateSkeletonRows(total_columns, 4));
                 } else {
                     $responsiveWrapper.removeClass('placeholder-glow');
                 }

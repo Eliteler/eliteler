@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import { AppSidebar } from "@admin/components/app-sidebar";
 import { ClearCacheDialog } from "@admin/components/clear-cache-dialog";
 import { FlashToaster } from "@admin/components/flash-toaster";
+import { ImpersonationBanner } from "@admin/components/impersonation-banner";
 import { SiteHeader } from "@admin/components/site-header";
 import { SidebarInset, SidebarProvider } from "@admin/components/ui/sidebar";
 
@@ -23,6 +24,7 @@ export default function AdminLayout({
             {/* Use flex column and min-h-screen to ensure full viewport height */}
             <SidebarInset className="flex min-h-screen flex-col overflow-x-clip">
                 <SiteHeader title={title} />
+                <ImpersonationBanner />
                 {/* footer to the bottom */}
                 <div className="flex min-w-0 flex-1 flex-col overflow-x-clip">
                     {children}

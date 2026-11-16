@@ -100,10 +100,6 @@ class ZeroAICreditsOrder
             $amountToBePaid = (float) number_format($amountToBePaid, 2, '.', '');
         }
 
-        // Get invoice number
-        $latestTransaction = AiCreditsTransaction::where('invoice_prefix', $config[15]->config_value)->count();
-        $invoiceNumber = $latestTransaction + 1;
-
         // Store transaction details in ai_credits_transactions
         $aiCreditsTransaction = new AiCreditsTransaction();
         $aiCreditsTransaction->ai_credits_transaction_id = $aiCreditsTransactionId;
@@ -115,11 +111,15 @@ class ZeroAICreditsOrder
         $aiCreditsTransaction->payment_method = "FREE";
         $aiCreditsTransaction->currency = $config[1]->config_value;
         $aiCreditsTransaction->amount = 0;
-        $aiCreditsTransaction->invoice_number = $invoiceNumber;
         $aiCreditsTransaction->invoice_prefix = $config[15]->config_value;
         $aiCreditsTransaction->invoice_details = json_encode($this->prepareInvoiceDetails($config, $userDetails, $amountToBePaid, $planDetails, $appliedCoupon, $discountPrice));
         $aiCreditsTransaction->payment_status = "paid";
-        $aiCreditsTransaction->save();
+
+        // Invoice number is taken and saved in one locked transaction
+        $invoiceNumber = InvoiceNumber::assign('ai_credits_transactions', $config[15]->config_value, function ($invoiceNumber) use ($aiCreditsTransaction) {
+            $aiCreditsTransaction->invoice_number = $invoiceNumber;
+            $aiCreditsTransaction->save();
+        });
 
         // Coupon is not applied
         if ($couponId != " ") {

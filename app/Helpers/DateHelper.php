@@ -13,18 +13,20 @@
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\Auth;
 
 // Special sentinel value used to mark the "human diff" (relative time) option.
-// Store this exact string in the config table when the admin picks
-// "3 days ago" style formatting instead of a real date format string.
 if (!defined('DATE_FORMAT_DIFF_FOR_HUMANS')) {
     define('DATE_FORMAT_DIFF_FOR_HUMANS', 'diffForHumans');
 }
 
 // Get date time formats
 if (!function_exists('getDateTimeFormats')) {
-    function getDateTimeFormats()
+    /**
+     * Get available datetime formats.
+     *
+     * @return array<string, string>
+     */
+    function getDateTimeFormats(): array
     {
         return [
             // Standard International Formats
@@ -62,88 +64,116 @@ if (!function_exists('getDateTimeFormats')) {
     }
 }
 
-// Get date time formats
-if (!function_exists('formatDateForUser')) {
+// The admin's timezone and date format (Settings → General), read once per request
+if (! function_exists('userDateSettings')) {
     /**
-     * Format a date based on the user's locale and timezone.
+     * By key, not by row number: code that reads config rows by position breaks silently
+     * when rows move. Kept on the request, not in a static: Octane and queue workers reuse
+     * the process, and a static would keep the old format after the admin changes it.
      *
-     * @param string|\DateTimeInterface|null $date The date to format.
-     * @param string $format The format type: 'full', 'short', 'time', 'datetime'.
-     * @return string|null
+     * @return array{timezone: string, format: string} format is a PHP date format, or DATE_FORMAT_DIFF_FOR_HUMANS
      */
-    function formatDateForUser($date, $format = 'full')
+    function userDateSettings(): array
     {
-        // Get application timezone
-        $configs = DB::table('config')->get();
+        $memo = 'gobiz_date_settings';
+        if (request()->attributes->has($memo)) {
+            return request()->attributes->get($memo);
+        }
 
-        if (!$date) {
+        $config = DB::table('config')->whereIn('config_key', ['timezone', 'date_time_format'])->pluck('config_value', 'config_key');
+        $format = trim((string) ($config['date_time_format'] ?? '')) ?: 'M d, Y h:i A';
+
+        $settings = [
+            'timezone' => trim((string) ($config['timezone'] ?? '')) ?: (config('app.timezone') ?: 'UTC'),
+            // Some options carry a label, e.g. "d-m-Y H:i (BR)": not part of the format
+            // (its letters would be read as format characters)
+            'format'   => $format === DATE_FORMAT_DIFF_FOR_HUMANS ? $format : (trim(preg_replace('/\s*\([^)]*\)/', '', $format)) ?: 'M d, Y h:i A'),
+        ];
+        request()->attributes->set($memo, $settings);
+
+        return $settings;
+    }
+}
+
+// Older name of userDateSettings()
+if (! function_exists('getDateHelperSettings')) {
+    /** @return array{timezone: string, format: string} */
+    function getDateHelperSettings(): array
+    {
+        return userDateSettings();
+    }
+}
+
+// A date in the admin's timezone and the user's language
+if (! function_exists('userCarbonDate')) {
+    /**
+     * Plain calendar dates ("2025-03-03": bookings, check-in days) stay that day: converting
+     * them from midnight UTC would show the day before in timezones behind UTC.
+     * Null when the value isn't a date.
+     */
+    function userCarbonDate(string|\DateTimeInterface $date): ?Carbon
+    {
+        $timezone = userDateSettings()['timezone'];
+
+        try {
+            $carbonDate = is_string($date) && preg_match('/^\d{4}-\d{2}-\d{2}$/', trim($date))
+                ? Carbon::parse(trim($date), $timezone)
+                : Carbon::parse($date)->setTimezone($timezone);
+        } catch (\Throwable) {
             return null;
         }
 
-        // Get user locale (default to 'en' if not set)
-        $locale = App::getLocale() ?? 'en';
+        return $carbonDate->locale(App::getLocale() ?: 'en');
+    }
+}
 
-        // Get user timezone (default to 'UTC' if not set)
-        $timezone = $configs[2]->config_value ?? 'UTC';
+// Format a date and time the way the admin chose (timezone, format, the user's language)
+if (! function_exists('formatDateForUser')) {
+    /**
+     * @param  string|\DateTimeInterface|null  $date
+     * @param  string  $format  kept for older callers; the admin's setting decides
+     * @param  bool  $absolute  always a real date, also when the admin chose "3 days ago"
+     *                          (invoices, emails, "active until …" messages)
+     */
+    function formatDateForUser(string|\DateTimeInterface|null $date, string $format = 'full', bool $absolute = false): ?string
+    {
+        if (empty($date) || ! ($carbonDate = userCarbonDate($date))) {
+            return null;
+        }
 
-        // Convert date to Carbon instance
-        $carbonDate = Carbon::parse($date)->setTimezone($timezone);
-        $carbonDate->locale($locale); // Set locale for translation
+        $configuredFormat = userDateSettings()['format'];
 
-        // Get the configured format (may be a real PHP date format, or the
-        // special "diffForHumans" sentinel meaning "3 days ago" style output)
-        $configuredFormat = $configs[75]->config_value ?? 'M d, Y h:i A';
-
+        // "3 days ago" style: Carbon translates it into the user's language
         if ($configuredFormat === DATE_FORMAT_DIFF_FOR_HUMANS) {
-            // Carbon's diffForHumans() already respects the locale set above,
-            // so "3 days ago" will be translated automatically when supported.
-            return $carbonDate->diffForHumans();
+            return $absolute ? $carbonDate->translatedFormat('M d, Y h:i A') : $carbonDate->diffForHumans();
         }
 
         return $carbonDate->translatedFormat($configuredFormat);
     }
 }
 
-// format date only for user
+// Format only the date part of the admin's chosen format
 if (! function_exists('formatDateOnlyForUser')) {
     /**
-     * Format a date to return only the date part based on user preferences.
-     *
-     * @param string|\DateTimeInterface|null $date The date to format.
-     * @return string|null
+     * @param  string|\DateTimeInterface|null  $date
+     * @param  bool  $absolute  always a real date, also when the admin chose "3 days ago"
      */
-    function formatDateOnlyForUser($date)
+    function formatDateOnlyForUser(string|\DateTimeInterface|null $date, bool $absolute = false): ?string
     {
-        // Load config values from DB
-        $configs = DB::table('config')->get();
-
-        if (! $date) {
+        if (empty($date) || ! ($carbonDate = userCarbonDate($date))) {
             return null;
         }
 
-        // Get user locale
-        $locale = App::getLocale() ?? 'en';
+        $configuredFormat = userDateSettings()['format'];
 
-        // Get user timezone
-        $timezone = $configs[2]->config_value ?? 'UTC';
-
-        // Get the configured datetime format
-        $dateTimeFormat = $configs[75]->config_value ?? 'M d, Y h:i A';
-
-        // Format the date
-        $carbonDate = Carbon::parse($date)->setTimezone($timezone)->locale($locale);
-
-        // If the admin picked "diff for human" mode, there is no separate
-        // "date only" variant — relative time (e.g. "3 days ago") already
-        // omits a distinct date/time split, so just return it as-is.
-        if ($dateTimeFormat === DATE_FORMAT_DIFF_FOR_HUMANS) {
-            return $carbonDate->diffForHumans();
+        // Relative time has no separate date part
+        if ($configuredFormat === DATE_FORMAT_DIFF_FOR_HUMANS) {
+            return $absolute ? $carbonDate->translatedFormat('M d, Y') : $carbonDate->diffForHumans();
         }
 
-        // Remove time part from format
-        $dateOnlyFormat = preg_replace('/[HhGgisAa:]+/', '', $dateTimeFormat); // remove time components
-        $dateOnlyFormat = trim(preg_replace('/\s+/', ' ', $dateOnlyFormat));   // cleanup extra spaces
+        // The format without its time characters (H h G g i s A a and ":"), tidied up
+        $dateOnlyFormat = trim(preg_replace('/\s+/', ' ', preg_replace('/[HhGgisAa:]+/', '', $configuredFormat)), ' ,');
 
-        return $carbonDate->translatedFormat($dateOnlyFormat);
+        return $carbonDate->translatedFormat($dateOnlyFormat ?: 'M d, Y');
     }
 }

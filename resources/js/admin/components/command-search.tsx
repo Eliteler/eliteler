@@ -119,7 +119,7 @@ export function CommandSearch() {
                                 value={`${page.section} ${page.title}`}
                                 onSelect={() => go(page.href, page.inertia, page.action)}
                             >
-                                <NavIcon name={page.icon} />
+                                <NavIcon name={page.icon} svg={page.svg} />
                                 <span>{page.title}</span>
                                 <span className="ms-auto text-xs text-muted-foreground">{page.section}</span>
                             </CommandItem>

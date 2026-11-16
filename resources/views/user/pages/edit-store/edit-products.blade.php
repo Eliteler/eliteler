@@ -751,7 +751,7 @@
                                 </svg>
                                 <span class="small text-muted">{{ __('Need sample CSV template?') }}</span>
                             </div>
-                            <a href="{{ asset('storage/import/store/store_products.csv') }}"
+                            <a href="{{ route('user.sample.products', $business_card->card_id) }}"
                                 class="btn btn-primary d-inline-flex align-items-center gap-1"
                                 download="sample_import_data_products.csv">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-download"
@@ -1501,8 +1501,9 @@
                         $('#productsTable').DataTable().ajax.reload(null, false);
                     } else {
                         $('#modal-import').modal('hide');
-                        $('#errorMessage').text(response.message || "{{ __('Import failed.') }}").show();
-                        $('#errorMessage').delay(2500).fadeOut(500);
+                        // One problem per line; stays until closed so the rows can be fixed
+                        $('#errorMessage').css('white-space', 'pre-line')
+                            .text(response.message || "{{ __('Import failed.') }}").show();
                     }
                 },
                 error: function() {

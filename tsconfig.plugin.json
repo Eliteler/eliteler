@@ -7,5 +7,6 @@
       "@gobiz/admin": ["./resources/js/admin/plugin-sdk/admin.ts"]
     }
   },
-  "include": ["resources/js/admin/types", "resources/js/admin/plugin-sdk", "plugins/*/resources/js", "templates/*/resources/js"]
+  "include": ["resources/js/admin/types", "resources/js/admin/plugin-sdk", "plugins/*/resources/js", "templates/*/resources/js"],
+  "exclude": ["plugins/*/resources/js/user", "plugins/*/resources/js/widgets"]
 }

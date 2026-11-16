@@ -4,7 +4,7 @@
 <?php
 use Illuminate\Support\Facades\Session;
 use App\BusinessCardIntro;
-
+ 
 if (isset($service_booking_details) && $service_booking_details->service_booking == 1) {
     $service_booking_available_days = json_decode($service_booking_details->service_booking_available_days);
 }
@@ -675,7 +675,7 @@ if (!empty($custom_js)) {
                                                     class="flex items-center gap-4 p-4 rounded-xl bg-[#F5F2EB] border border-[#5F6F52]/20">
                                                     <div
                                                         class="w-10 h-10 rounded-full flex items-center justify-center text-[#5F6F52] bg-[#5F6F52]/10 flex-shrink-0">
-                                                        <i class="fas fa-sparkles text-sm"></i>
+                                                        <i class="fas fa-business-time text-sm"></i>
                                                     </div>
                                                     <div>
                                                         <p class="text-sm font-bold text-[#5F6F52]">

@@ -4,7 +4,7 @@
 @php
     use Illuminate\Support\Facades\Session;
     use App\BusinessCardIntro;
-
+ 
     if (isset($service_booking_details) && $service_booking_details->service_booking == 1) {
         $service_booking_available_days = json_decode($service_booking_details->service_booking_available_days);
     }
@@ -1618,7 +1618,7 @@
                 @if ($business_card_details != null)
                     {{-- Check Newsletter --}}
                     @if (!empty($business_card_details->is_newsletter_pop_active) && $business_card_details->is_newsletter_pop_active == 1)
-                        @include('templates.cards.includes.old_theme_newsletter_modal', [
+                        @include('templates.cards.includes.newsletter_modal', [
                             'primary_color' => 'black'
                         ])
                     @endif

@@ -13,6 +13,7 @@
 namespace App\Http\Controllers\User\Vcard\Create;
 
 use App\BusinessCard;
+use App\Services\ReservedLinks;
 use App\Helpers\StorageHelper;
 use App\Http\Controllers\Controller;
 use App\Setting;
@@ -196,6 +197,11 @@ class CreateController extends Controller
         // Card URL
         $card_url = $personalized_link;
 
+        // a page of the site already uses this link (login, user, admin, ...)
+        if (ReservedLinks::contains($card_url)) {
+            return redirect()->back()->with('failed', trans(ReservedLinks::MESSAGE))->withInput();
+        }
+
         // Queries
         $cards = BusinessCard::where('user_id', Auth::user()->user_id)
             ->where('card_type', 'vcard')
@@ -332,8 +338,8 @@ class CreateController extends Controller
         $resp           = [];
         $resp['status'] = 'failed';
 
-        // Check
-        if ($is_present == 0) {
+        // Check (a link used by one of the site's own pages can't be taken either)
+        if ($is_present == 0 && ! ReservedLinks::contains($link)) {
             $resp['status'] = 'success';
         } else {
             $resp['status'] = 'failed';

@@ -15,9 +15,7 @@ use Tighten\Ziggy\Ziggy;
 class AdminSharedProps
 {
     /**
-     * Admin accent colour. Single source for now; this is where the upcoming
-     * per-admin colour preference will plug in. Must match a
-     * [data-accent="..."] block in resources/css/admin.css.
+     * Default admin accent colour fallback.
      */
     public const ACCENT = 'blue';
 
@@ -46,7 +44,8 @@ class AdminSharedProps
                 'favicon'   => asset($settings->favicon),
             ],
             'ui' => [
-                'accent'     => self::ACCENT,
+                // Fetch theme from database config (id: 12) with fallback to default
+                'accent'     => $config['app_theme'] ?? self::ACCENT,
                 'appearance' => self::appearance($user),
             ],
             'auth' => [
@@ -64,15 +63,15 @@ class AdminSharedProps
             'currency'    => self::currency($config),
             'locale'      => self::locale(),
             'flash'       => [
-                'success'                => fn () => $request->session()->get('success'),
-                'failed'                 => fn () => $request->session()->get('failed'),
+                'success'                => fn() => $request->session()->get('success'),
+                'failed'                 => fn() => $request->session()->get('failed'),
                 // Why an uploaded plugin wasn't installed (old Blade version, or older than installed)
-                'plugin_notice'          => fn () => $request->session()->get('plugin_notice'),
-                'template_notice'        => fn () => $request->session()->get('template_notice'),
-                'stock_message'          => fn () => $request->session()->get('stock_message'),
-                'stock_url'              => fn () => $request->session()->get('stock_url'),
+                'plugin_notice'          => fn() => $request->session()->get('plugin_notice'),
+                'template_notice'        => fn() => $request->session()->get('template_notice'),
+                'stock_message'          => fn() => $request->session()->get('stock_message'),
+                'stock_url'              => fn() => $request->session()->get('stock_url'),
             ],
-            'ziggy' => fn () => [
+            'ziggy' => fn() => [
                 ...(new Ziggy)->toArray(),
                 'location' => $request->url(),
             ],
@@ -115,7 +114,7 @@ class AdminSharedProps
             'current'   => app()->getLocale(),
             'dir'       => self::isRtl() ? 'rtl' : 'ltr',
             'languages' => collect(config('app.languages', []))
-                ->map(fn ($name, $code) => ['code' => $code, 'name' => $name, 'flag' => $flags[$code] ?? null])
+                ->map(fn($name, $code) => ['code' => $code, 'name' => $name, 'flag' => $flags[$code] ?? null])
                 ->values()
                 ->all(),
         ];

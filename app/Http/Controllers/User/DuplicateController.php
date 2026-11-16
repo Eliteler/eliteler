@@ -247,7 +247,7 @@ class DuplicateController extends Controller
                         $duplicateTestimonial->card_id = $duplicateCard->card_id;
                         $duplicateTestimonial->reviewer_image = $testimonial->reviewer_image;
                         $duplicateTestimonial->reviewer_name = $testimonial->reviewer_name;
-                        $duplicateTestimonial->review_subtext = $testimonial->reviewer_subtext;
+                        $duplicateTestimonial->review_subtext = $testimonial->review_subtext;
                         $duplicateTestimonial->review = $testimonial->review;
                         $duplicateTestimonial->status = 1;
                         $duplicateTestimonial->save();

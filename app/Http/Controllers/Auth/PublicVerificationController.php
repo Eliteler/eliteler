@@ -46,6 +46,10 @@ class PublicVerificationController extends Controller
         // Get Welcome email template
         $emailTemplateDetails = EmailTemplate::where('email_template_id', '584922675213')->first();
 
+        if (!$emailTemplateDetails) {
+            return back()->with('error', trans('Unable to send verification email. Please try again later.'));
+        }
+
         $message = [
             'status' => "",
             'emailSubject' => $emailTemplateDetails->email_template_subject,
@@ -54,7 +58,13 @@ class PublicVerificationController extends Controller
         ];
 
         // Send email (using built-in Mailable or custom one)
-        Mail::to($user->email)->send(new \App\Mail\AppointmentMail($message));
+        try {
+            Mail::to($user->email)->send(new \App\Mail\AppointmentMail($message));
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->with('error', trans('Unable to send verification email. Please try again later.'));
+        }
 
         return back()->with('status', trans('Verification link sent to your email!'));
     }
@@ -74,6 +84,9 @@ class PublicVerificationController extends Controller
 
         $user->email_verified_at = Carbon::now();
         $user->save();
+
+        // Welcome email is held back until the address is verified
+        $user->sendWelcomeEmail();
 
         return redirect('/login')->with('status', trans('Your email has been verified successfully!'));
     }

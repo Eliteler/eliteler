@@ -12,6 +12,7 @@
 
 namespace App\Http\Controllers\Payment;
 
+use App\Classes\InvoiceNumber;
 use App\Plan;
 use App\User;
 use App\Coupon;
@@ -382,7 +383,13 @@ class PaymentController extends Controller
         $transaction->transaction_currency = $config[1]->config_value ?? 'USD';
         $transaction->invoice_details = json_encode($invoiceDetails);
         $transaction->payment_status = "SUCCESS";
-        $transaction->save();
+
+        // Invoice number is taken and saved in one locked transaction
+        $invoiceNumber = InvoiceNumber::assign('transactions', $config[15]->config_value ?? '', function ($invoiceNumber) use ($transaction, $config) {
+            $transaction->invoice_prefix = $config[15]->config_value ?? '';
+            $transaction->invoice_number = $invoiceNumber;
+            $transaction->save();
+        });
 
         // Update plan validity
         $currentValidity = $user->plan_id == $plan->plan_id && $user->plan_validity
@@ -408,8 +415,7 @@ class PaymentController extends Controller
         $user->save();
 
         // Invoice email
-        $invoiceCount = Transaction::where("invoice_prefix", $config[15]->config_value ?? '')->count();
-        $invoiceNumber = ($config[15]->config_value ?? '') . ($invoiceCount + 1);
+        $invoiceNumber = ($config[15]->config_value ?? '') . $invoiceNumber;
 
         $details = [
             'from_billing_name' => $invoiceDetails['from_billing_name'],
@@ -436,7 +442,8 @@ class PaymentController extends Controller
 
         try {
             Mail::to($invoiceDetails['to_billing_email'])->send(new \App\Mail\SendEmailInvoice($details));
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            report($e);
         }
 
         // Redirect to plans with success

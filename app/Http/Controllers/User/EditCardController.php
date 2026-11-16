@@ -13,6 +13,7 @@
 namespace App\Http\Controllers\User;
 
 use App\BusinessCard;
+use App\Services\ReservedLinks;
 use App\Http\Controllers\Controller;
 use App\Plan;
 use App\Setting;
@@ -46,7 +47,7 @@ class EditCardController extends Controller
     public function editCard(Request $request, $id)
     {
         // Queries
-        $business_card = BusinessCard::where('card_id', $id)->first();
+        $business_card = BusinessCard::where('card_id', $id)->where('user_id', Auth::user()->user_id)->first();
 
         // Check business card
         if ($business_card == null) {
@@ -145,7 +146,7 @@ class EditCardController extends Controller
         }
 
         // Check card exists
-        $business_card = BusinessCard::where('card_id', $id)->first();
+        $business_card = BusinessCard::where('card_id', $id)->where('user_id', Auth::user()->user_id)->first();
 
         if ($business_card == null) {
             return redirect()
@@ -200,6 +201,11 @@ class EditCardController extends Controller
         // Card URL
         $card_url = $personalized_link;
 
+        // a page of the site already uses this link (login, user, admin, ...)
+        if ($card_url !== $business_card->card_url && ReservedLinks::contains($card_url)) {
+            return redirect()->route('user.edit.card', $id)->with('failed', trans(ReservedLinks::MESSAGE));
+        }
+
         // Check if card URL already exists
         // Exclude the current card from the check
         $current_card = BusinessCard::where('card_url', $card_url)
@@ -230,34 +236,8 @@ class EditCardController extends Controller
                         $request->cover_type == 'youtube' ||
                         $request->cover_type == 'youtube-ap'
                     ) {
-                        try {
-                            // Without www
-                            $cover = str_replace(
-                                'https://youtube.com/watch?v=',
-                                '',
-                                $request->cover_url
-                            );
-
-                            // With www
-                            $cover = str_replace(
-                                'https://www.youtube.com/watch?v=',
-                                '',
-                                $cover
-                            );
-                        } catch (\Exception $e) {
-                            $cover = str_replace(
-                                'https://youtu.be/',
-                                '',
-                                $request->cover_url
-                            );
-
-                            // With www
-                            $cover = str_replace(
-                                'https://www.youtu.be/',
-                                '',
-                                $cover
-                            );
-                        }
+                        // YouTube video ID from any watch / youtu.be / shorts / embed URL (kept as typed when none is found)
+                        $cover = youtube_video_id($request->cover_url) ?? (string) $request->cover_url;
                     }
 
                     // Vimeo URL

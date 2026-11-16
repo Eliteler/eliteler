@@ -8,12 +8,13 @@
         height: 100%;
         background: rgba(31, 41, 55, 0.7);
         backdrop-filter: blur(4px);
-        z-index: 50;
+        z-index: 999999;
+        /* Increased z-index to stay on top */
         display: none;
     }
 
     #pwaModal.show {
-        display: block;
+        display: block !important;
     }
 
     #pwaModal .pwa-box {
@@ -50,25 +51,7 @@
 
         to {
             transform: scale(1);
-            opacity: 1;
         }
-    }
-
-    /* Close icon */
-    #pwaModal .pwa-close {
-        position: absolute;
-        top: 15px;
-        right: 18px;
-        font-size: 18px;
-        color: #6b7280;
-        cursor: pointer;
-        background: none;
-        border: none;
-        line-height: 1;
-    }
-
-    #pwaModal .pwa-close:hover {
-        color: #1f2937;
     }
 
     /* Icon badge */
@@ -150,10 +133,10 @@
         opacity: 0.9;
     }
 </style>
- 
-<div id="pwaModal">
+
+<div id="pwaModal" onclick="window.hidePwaPrompt()">
     <div class="pwa-box" onclick="event.stopPropagation()">
-  
+
         <div class="pwa-icon-wrap">
             <i class="fas fa-mobile-alt"></i>
         </div>
@@ -163,31 +146,75 @@
         </p>
 
         <div class="pwa-btn-row">
-            <button class="pwa-btn-cancel" id="closeModal">{{ __('Cancel') }}</button>
-            <button class="pwa-btn-install" id="addToHomeScreenButton">{{ __('Install') }}</button>
+            <button type="button" class="pwa-btn-cancel" id="closeModal"
+                onclick="window.hidePwaPrompt()">{{ __('Cancel') }}</button>
+            <button type="button" class="pwa-btn-install" id="addToHomeScreenButton"
+                onclick="window.installPwa()">{{ __('Install') }}</button>
         </div>
 
     </div>
 </div>
 
 <script>
-    // Show modal
-    function showPwaPrompt() {
-        document.getElementById('pwaModal').classList.add('show');
-    }
+    "use strict";
 
-    // Hide modal
-    function hidePwaPrompt() {
-        document.getElementById('pwaModal').classList.remove('show');
-    }
+    (function() {
+        let deferredPrompt = null;
 
-    // Close on X and Cancel
-    document.getElementById('closePwaModal').addEventListener('click', hidePwaPrompt);
-    document.getElementById('closeModal').addEventListener('click', hidePwaPrompt);
+        // Show modal function
+        window.showPwaPrompt = function() {
+            const modal = document.getElementById('pwaModal');
+            if (modal) {
+                // Attach directly to body to avoid overflow issues
+                if (modal.parentElement !== document.body) {
+                    document.body.appendChild(modal);
+                }
+                modal.classList.add('show');
+            }
+        };
 
-    // Close on backdrop click
-    document.getElementById('pwaModal').addEventListener('click', function(e) {
-        if (e.target === this) hidePwaPrompt();
-    });
+        // Hide modal function
+        window.hidePwaPrompt = function() {
+            const modal = document.getElementById('pwaModal');
+            if (modal) {
+                modal.classList.remove('show');
+            }
+        };
+
+        // 1. Capture browser PWA prompt event
+        window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            deferredPrompt = e;
+            window.showPwaPrompt();
+        });
+
+        // 2. Fallback: Automatically show modal after 1.5 seconds so you can preview it
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                window.showPwaPrompt();
+            }, 1500);
+        });
+
+        // 3. Trigger native install dialog
+        window.installPwa = async function() {
+            if (!deferredPrompt) {
+                alert("PWA is already installed or not supported in this browser.");
+                return;
+            }
+
+            deferredPrompt.prompt();
+            const {
+                outcome
+            } = await deferredPrompt.userChoice;
+            deferredPrompt = null;
+            window.hidePwaPrompt();
+        };
+
+        // Hide after installation
+        window.addEventListener('appinstalled', function() {
+            window.hidePwaPrompt();
+            deferredPrompt = null;
+        });
+    })();
 </script>
 {{-- End Custom PWA Install Prompt Modal --}}

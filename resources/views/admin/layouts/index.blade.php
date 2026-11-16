@@ -194,6 +194,7 @@
 </head>
 
 <body data-bs-theme="{{ optional(Auth::user())->choosed_theme == 'light' ? 'light' : 'dark' }}">
+    @include('partials.impersonation-banner')
 
     {{-- Preloader --}}
     <div id="nativecode-loader">

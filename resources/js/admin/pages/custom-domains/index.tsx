@@ -284,7 +284,7 @@ export default function CustomDomains({ requests, tab, search: initialSearch, co
                                             </div>
                                         </TableCell>
                                         <TableCell className="hidden lg:table-cell">
-                                            <span className="text-sm" title={formatDate(request.created, "dd MMM yyyy, HH:mm")}>
+                                            <span className="text-sm" title={formatDate(request.created)}>
                                                 {fromNow(request.created)}
                                             </span>
                                         </TableCell>

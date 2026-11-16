@@ -3,7 +3,7 @@
 /*
  |--------------------------------------------------------------------------
  | GoBiz vCard SaaS
- |--------------------------------------------------------------------------
+ |-------------------------------------------------------------------------- 
  | Developed by NativeCode © 2021 - https://nativecode.in
  | All rights reserved
  | Unauthorized distribution is prohibited
@@ -21,6 +21,7 @@ use Inertia\Inertia;
 
 class PlanController extends Controller
 {
+    public const PER_PAGE = 9;
     private const TABS = ['all' => null, 'active' => 1, 'disabled' => 0];
 
     public function __construct(private PlanService $plans)
@@ -36,18 +37,22 @@ class PlanController extends Controller
 
         $subscribers = $this->plans->activeSubscribers();
 
+        // Paginate plans query
         $plans = Plan::query()
             ->when($tab === 'all', fn($q) => $q->where('status', '!=', 2))
             ->when($tab !== 'all', fn($q) => $q->where('status', self::TABS[$tab]))
             ->when($search !== '', fn($q) => $q->where('plan_name', 'like', "%{$search}%"))
             ->orderByRaw('status = 1 DESC')
             ->orderBy('plan_price')
-            ->get()
-            ->map(fn(Plan $plan) => $this->plans->present($plan, $subscribers[$plan->plan_id] ?? 0));
+            ->paginate(self::PER_PAGE)
+            ->through(fn(Plan $plan) => $this->plans->present($plan, $subscribers[$plan->plan_id] ?? 0))
+            ->withQueryString();
 
         $counts = Plan::query()
             ->where('status', '!=', 2)
-            ->when($search !== '', fn($q) =>
+            ->when(
+                $search !== '',
+                fn($q) =>
                 $q->where('plan_name', 'like', "%{$search}%")
             )
             ->selectRaw('

@@ -345,7 +345,7 @@
                                         {{-- AI Credits --}}
                                         @if ($aibuilder_settings->aibuilder == 1)
                                             <li class="flex items-center font-heading font-medium text-base text-gray-400">
-                                                <i class="ti ti-{{ ($plan->ai_credits > 0 || $plan->ai_credits == -1) ? 'check' : 'x' }} mr-2.5 text-{{ ($plan->ai_credits > 0 || $plan->ai_credits == -1) ? 'green-500' : 'gray-400' }}"
+                                                <i class="ti ti-{{ $plan->ai_credits > 0 || $plan->ai_credits == -1 ? 'check' : 'x' }} mr-2.5 text-{{ $plan->ai_credits > 0 || $plan->ai_credits == -1 ? 'green-500' : 'gray-400' }}"
                                                     style="font-size: 20px;"></i>
 
                                                 <p class="text-{{ $plan->recommended == 1 ? 'white' : 'black' }}">
@@ -517,16 +517,21 @@
                                                 class="bg-green-100 text-green-800 text-xs font-medium mx-1 me-2 px-2 py-0.5 rounded dark:bg-green-900 dark:text-green-300">{{ __('New') }}</span>
                                         </li>
                                     @endif
-                                    {{-- Storage --}}
+
+                                    {{-- Storage: Formatted with asterisk (*) when unlimited --}}
+                                    @php
+                                        $isUnlimitedStorage = $plan->storage == '999' || $plan->storage == -1;
+                                    @endphp
                                     <li class="flex items-center font-heading font-medium text-base text-gray-400">
-                                        <i class="ti ti-{{ __($plan->storage > 0 ? 'check' : 'x') }} mr-2.5 text-{{ $plan->recommended == 1 ? 'green-500' : 'green-500' }}"
+                                        <i class="ti ti-{{ $plan->storage > 0 || $isUnlimitedStorage ? 'check' : 'x' }} mr-2.5 text-{{ $plan->recommended == 1 ? 'green-500' : 'green-500' }}"
                                             style="font-size: 20px;"></i>
                                         <p class="text-{{ $plan->recommended == 1 ? 'white' : 'black' }}">
-                                            {{ __($plan->storage == '999' ? 'Unlimited' : ($plan->storage != 0 ? $plan->storage . 'MB' : '')) }}
-                                            {{ __('storage limit') }}</p>
+                                            {{ $isUnlimitedStorage ? __('Unlimited Storage*') : formatStorageSize($plan->storage, false) . ' ' . __('Storage') }}
+                                        </p>
                                         <span
                                             class="bg-green-100 text-green-800 text-xs font-medium mx-1 me-2 px-2 py-0.5 rounded dark:bg-green-900 dark:text-green-300">{{ __('New') }}</span>
                                     </li>
+
                                     {{-- Advanced Settings --}}
                                     <li class="flex items-center font-heading font-medium text-base text-gray-400">
                                         <i class="ti ti-{{ __($plan->advanced_settings == '1' ? 'check' : 'x') }} mr-2.5 text-{{ $plan->advanced_settings == '1' || $plan->recommended == 1 ? 'green-500' : 'gray-400' }}"
@@ -551,6 +556,12 @@
                                             style="font-size: 20px;"></i>
                                         <p class="text-{{ $plan->recommended == 1 ? 'white' : 'black' }}">
                                             {{ __('Hide Branding') }}</p>
+                                    </li>
+                                    <li class="flex items-center font-heading font-medium text-base text-gray-400">
+                                        <i class="ti ti-{{ __($plan->advanced_analytics == '1' ? 'check' : 'x') }} mr-2.5 text-{{ $plan->advanced_analytics == '1' || $plan->recommended == 1 ? 'green-500' : 'gray-400' }}"
+                                            style="font-size: 20px;"></i>
+                                        <p class="text-{{ $plan->recommended == 1 ? 'white' : 'black' }}">
+                                            {{ __('Visitor Analytics') }}</p>
                                     </li>
                                     <li class="flex items-center font-heading font-medium text-base text-gray-400">
                                         <i class="ti ti-{{ __($plan->free_setup == '1' ? 'check' : 'x') }} mr-2.5 text-{{ $plan->free_setup == '1' || $plan->recommended == 1 ? 'green-500' : 'gray-400' }}"
@@ -593,6 +604,13 @@
                             </div>
                         </div>
                     @endforeach
+
+                    {{-- Footnote disclaimer for unlimited storage asterisk (*) across full width --}}
+                    <div class="w-full p-3 mt-8 text-center" style="width: 100%; flex-basis: 100%;">
+                        <p class="text-xs text-gray-500">
+                            {{ __('* Note: Unlimited storage is subject to a fair usage policy (maximum 100 GB limit).') }}
+                        </p>
+                    </div>
                 @else
                     <div class="w-full p-3">
                         <div class="py-5 px-3 rounded-xl text-center">

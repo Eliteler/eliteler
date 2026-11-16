@@ -16,6 +16,18 @@
         </button>
 
         <div class="d-flex align-items-center justify-content-end w-100">
+            {{-- Plugin icons (plugin.json "header") --}}
+            @foreach (\App\Support\Plugins\PluginExtensions::headerItems() as $pluginItem)
+                <a href="{{ $pluginItem['href'] }}" class="border rounded-3 p-2 me-2 position-relative"
+                    title="{{ $pluginItem['title'] }}" aria-label="{{ $pluginItem['title'] }}"
+                    data-plugin-header="{{ $pluginItem['plugin'] }}">
+                    {!! preg_replace('/^<svg\b/', '<svg class="icon"', $pluginItem['svg']) !!}
+                    @if ($pluginItem['badge'] > 0)
+                        <span class="badge bg-red text-red-fg position-absolute top-0 start-100 translate-middle rounded-pill px-1" style="font-size: .65rem; min-width: 1.1rem;">{{ $pluginItem['badge'] > 99 ? '99+' : $pluginItem['badge'] }}</span>
+                    @endif
+                </a>
+            @endforeach
+
             {{-- Light / Dark Mode --}}
             <a href="{{ route('user.change.theme', 'dark') }}" class="hide-theme-dark border rounded-3 p-2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"

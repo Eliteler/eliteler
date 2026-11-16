@@ -133,6 +133,8 @@
         @include('user.includes.footer')
     </div>
 
+    @include('user.pages.cards.includes.upgrade-analytics-modal')
+
     {{-- Status Toggle Confirmation Modal --}}
     <div class="modal modal-blur fade" id="deleteModal" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
@@ -162,7 +164,8 @@
                                     data-bs-dismiss="modal">{{ __('Cancel') }}</button>
                             </div>
                             <div class="col">
-                                <a data-method="post" class="btn btn-primary w-100" id="plan_id">{{ __('Yes, Proceed') }}</a>
+                                <a data-method="post" class="btn btn-primary w-100"
+                                    id="plan_id">{{ __('Yes, Proceed') }}</a>
                             </div>
                         </div>
                     </div>
@@ -220,7 +223,8 @@
                                     data-bs-dismiss="modal">{{ __('Cancel') }}</button>
                             </div>
                             <div class="col">
-                                <a data-method="post" class="btn btn-primary w-100" id="duplicate_id">{{ __('Yes, Duplicate') }}</a>
+                                <a data-method="post" class="btn btn-primary w-100"
+                                    id="duplicate_id">{{ __('Yes, Duplicate') }}</a>
                             </div>
                         </div>
                     </div>
@@ -258,7 +262,8 @@
                                     data-bs-dismiss="modal">{{ __('Cancel') }}</button>
                             </div>
                             <div class="col">
-                                <a data-method="post" class="btn btn-danger w-100" id="delete_id">{{ __('Yes, Delete') }}</a>
+                                <a data-method="post" class="btn btn-danger w-100"
+                                    id="delete_id">{{ __('Yes, Delete') }}</a>
                             </div>
                         </div>
                     </div>
@@ -297,39 +302,39 @@
                     sInfoFiltered: `{{ __('(filtered from _MAX_ total entries)') }}`,
                     loadingRecords: `{{ __('Please wait - loading...') }}`,
 
-                    // Rich Modern Empty State HTML
+                    // Centered Empty State HTML
                     emptyTable: `
-        <div class="text-center py-4">
-            <div class="empty-state-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-building-store">
-                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                    <path d="M3 21l18 0" />
-                    <path d="M3 7v1a3 3 0 0 0 6 0v-1m0 1a3 3 0 0 0 6 0v-1m0 1a3 3 0 0 0 6 0v-1h-18l2 -4h14l2 4" />
-                    <path d="M5 21l0 -10.15" />
-                    <path d="M19 21l0 -10.15" />
-                    <path d="M9 21v-4a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v4" />
-                </svg>
-            </div>
-            <h4 class="fw-bold mb-1 text-reset">{{ __('No Stores Created Yet') }}</h4>
-            <p class="text-muted small mb-0">{{ __('Create your first online store to start accepting orders.') }}</p>
-        </div>
-    `,
+                        <div class="d-flex flex-column align-items-center justify-content-center text-center w-100">
+                            <div class="empty-state-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-building-store">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M3 21l18 0" />
+                                    <path d="M3 7v1a3 3 0 0 0 6 0v-1m0 1a3 3 0 0 0 6 0v-1m0 1a3 3 0 0 0 6 0v-1h-18l2 -4h14l2 4" />
+                                    <path d="M5 21l0 -10.15" />
+                                    <path d="M19 21l0 -10.15" />
+                                    <path d="M9 21v-4a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v4" />
+                                </svg>
+                            </div>
+                            <h4 class="fw-bold mb-1 text-reset">{{ __('No Stores Created Yet') }}</h4>
+                            <p class="text-muted small mb-0">{{ __('Create your first online store to start accepting orders.') }}</p>
+                        </div>
+                    `,
                     zeroRecords: `
-        <div class="text-center py-4">
-            <div class="empty-state-icon" style="background-color: var(--tblr-danger-lt); color: var(--tblr-danger);">
-                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-building-store">
-                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                    <path d="M3 21l18 0" />
-                    <path d="M3 7v1a3 3 0 0 0 6 0v-1m0 1a3 3 0 0 0 6 0v-1m0 1a3 3 0 0 0 6 0v-1h-18l2 -4h14l2 4" />
-                    <path d="M5 21l0 -10.15" />
-                    <path d="M19 21l0 -10.15" />
-                    <path d="M9 21v-4a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v4" />
-                </svg>
-            </div>
-            <h4 class="fw-bold mb-1 text-reset">{{ __('No Matching Stores Found') }}</h4>
-            <p class="text-muted small mb-0">{{ __('We could not find any stores matching your search keyword.') }}</p>
-        </div>
-    `
+                        <div class="d-flex flex-column align-items-center justify-content-center text-center w-100">
+                            <div class="empty-state-icon" style="background-color: var(--tblr-danger-lt); color: var(--tblr-danger);">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-building-store">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M3 21l18 0" />
+                                    <path d="M3 7v1a3 3 0 0 0 6 0v-1m0 1a3 3 0 0 0 6 0v-1m0 1a3 3 0 0 0 6 0v-1h-18l2 -4h14l2 4" />
+                                    <path d="M5 21l0 -10.15" />
+                                    <path d="M19 21l0 -10.15" />
+                                    <path d="M9 21v-4a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v4" />
+                                </svg>
+                            </div>
+                            <h4 class="fw-bold mb-1 text-reset">{{ __('No Matching Stores Found') }}</h4>
+                            <p class="text-muted small mb-0">{{ __('We could not find any stores matching your search keyword.') }}</p>
+                        </div>
+                    `
                 },
                 columns: [{
                         data: 'DT_RowIndex',
@@ -363,7 +368,6 @@
                     }
                 ],
                 preDrawCallback: function(settings) {
-                    var api = new $.fn.dataTable.Api(settings);
                     var $tbody = $(settings.nTable).find('tbody');
                     $tbody.closest('.table-responsive').addClass('placeholder-glow');
 
@@ -390,13 +394,27 @@
                     $table.closest('.table-responsive').removeClass('placeholder-glow');
                     $table.find('tbody tr td.dataTables_empty').attr('colspan', total_columns);
 
+                    // Handle empty table states
+                    const rowsCount = api.rows({
+                        page: 'current'
+                    }).data().length;
+
+                    if (rowsCount === 0) {
+                        $table.addClass('is-table-empty');
+                        $table.find('tbody tr').addClass('empty-table-row');
+                    } else {
+                        $table.removeClass('is-table-empty');
+                        $table.find('tbody tr').removeClass('empty-table-row');
+                    }
+
                     // Dynamic attribute assignment for mobile key-value mapping
                     var headers = [];
                     $table.find('thead th').each(function() {
                         headers.push($(this).text().trim());
                     });
 
-                    $table.find('tbody tr').each(function() {
+                    // Exclude empty state rows from receiving mobile data labels
+                    $table.find('tbody tr:not(.empty-table-row)').each(function() {
                         $(this).find('td').each(function(index) {
                             if (headers[index]) {
                                 $(this).attr('data-label', headers[index]);
@@ -406,9 +424,6 @@
 
                     // Manage Mobile Pagination Controls State
                     const pageInfo = api.page.info();
-                    const rowsCount = api.rows({
-                        page: 'current'
-                    }).data().length;
 
                     if (pageInfo.pages <= 1 || rowsCount === 0) {
                         $('#custom-mobile-pagination').addClass('d-none').removeClass('d-flex');
@@ -472,6 +487,8 @@
         // Trigger QR Code Modal
         function updateQr(url) {
             "use strict";
+            // Scans of this code are counted as "QR" in visitor analytics
+            url = url + (url.indexOf('?') === -1 ? '?' : '&') + 'src=qr';
             $("#openQR").modal("show");
             if ($.fn.qrcode) {
                 $("#status_message_qr").empty().qrcode({

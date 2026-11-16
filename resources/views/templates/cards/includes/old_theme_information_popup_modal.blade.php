@@ -16,7 +16,7 @@
 <div id="infoPopModal" class="fixed inset-x-0 bottom-0 z-50 p-3 overflow-auto bg-black bg-opacity-50">
     <div class="flex items-end justify-center min-h-screen">
         <div
-            class="bg-{{ $primary_color == 'black' ? 'white' : $primary_color . '-50' }} rounded-[32px] p-6 lg:w-1/4 w-full">
+            class="bg-{{ $primary_color == 'black' ? 'white' : $primary_color . '-50' }} rounded-2xl p-6 lg:w-2/5 w-full">
             <div class="flex justify-end items-center">
                 <button id="closeInfoPopModal" class="text-gray-700 text-3xl">&times;</button>
             </div>
@@ -34,7 +34,7 @@
                         class="px-4 py-2 text-white text-center bg-[#121212] rounded-xl focus:outline-none">{{ $button_text }}</a>
                 @else
                     <a href="{{ $button_url }}" target="_blank"
-                        class="px-4 py-2 text-{{ $primary_color }}-600 text-center bg-{{ $primary_color }}-100 hover:bg-{{ $primary_color }}-200 rounded-xl focus:outline-none">{{ $button_text }}</a>
+                        class="px-4 py-2 text-{{ $primary_color }}-100 text-center bg-{{ $primary_color }}-800 hover:bg-{{ $primary_color }}-600 rounded-xl focus:outline-none">{{ $button_text }}</a>
                 @endif
             </div>
         </div>
@@ -50,10 +50,12 @@
         function getRandomColor() {
             return '#' + Math.floor(Math.random() * 16777215).toString(16);
         }
-    
+
         // Generate an array of random colors
-        const randomColors = Array.from({ length: 7 }, getRandomColor);
-    
+        const randomColors = Array.from({
+            length: 7
+        }, getRandomColor);
+
         // Check the screen width and set values for confetti
         if (window.innerWidth > 768) {
             // Desktop settings
@@ -61,7 +63,10 @@
                 particleCount: 200,
                 spread: 120,
                 colors: randomColors,
-                origin: { x: 0.5, y: 0.75 }  // Center of the screen (50% from the left and 50% from the top)
+                origin: {
+                    x: 0.5,
+                    y: 0.75
+                } // Center of the screen (50% from the left and 50% from the top)
             });
         } else {
             // Mobile settings
@@ -69,8 +74,11 @@
                 particleCount: 100,
                 spread: 100,
                 colors: randomColors,
-                origin: { x: 0.5, y: 0.72 }  // For mobile, make it start higher up on the screen
+                origin: {
+                    x: 0.5,
+                    y: 0.72
+                } // For mobile, make it start higher up on the screen
             });
         }
-    </script>        
+    </script>
 @endif

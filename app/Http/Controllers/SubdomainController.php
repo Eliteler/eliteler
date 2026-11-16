@@ -21,12 +21,12 @@ use App\Currency;
 use App\Helpers\StorageHelper;
 use App\Plan;
 use App\ServiceBooking;
+use App\Services\Analytics\VisitTracker;
 use App\Setting;
 use App\StoreBusinessHour;
 use App\StoreCategory;
 use App\StoreProduct;
 use App\Testimonial;
-use App\Visitor;
 use Artesaos\SEOTools\Facades\JsonLd;
 use Artesaos\SEOTools\Facades\OpenGraph;
 use Artesaos\SEOTools\Facades\SEOMeta;
@@ -40,7 +40,6 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
-use Jenssegers\Agent\Agent;
 use App\Support\Store\StoreTheme;
 
 class SubdomainController extends Controller
@@ -135,33 +134,7 @@ class SubdomainController extends Controller
             $whatsAppNumberExists = BusinessField::where('card_id', $card_details->card_id)->where('type', 'wa')->exists();
 
             // Save visitor
-            $clientIP = \Request::getClientIp(true);
-
-            $agent     = new Agent();
-            $userAgent = $request->header('user_agent');
-            $agent->setUserAgent($userAgent);
-
-            // Device
-            $device = $agent->device();
-            if ($device == "" || $device == "0") {
-                $device = "Others";
-            }
-
-            // Language
-            $language = "en";
-            if ($agent->languages()) {
-                $language = $agent->languages()[0];
-            }
-
-            $visitor             = new Visitor();
-            $visitor->card_id    = $card_details->card_url;
-            $visitor->type       = $card_details->card_type;
-            $visitor->ip_address = $clientIP;
-            $visitor->platform   = $agent->platform();
-            $visitor->device     = $agent->device();
-            $visitor->language   = $language;
-            $visitor->user_agent = $userAgent;
-            $visitor->save();
+            app(VisitTracker::class)->record($request, $card_details);
 
             if (isset($card_details)) {
                 if ($card_details->card_type == "store") {
@@ -612,6 +585,9 @@ class SubdomainController extends Controller
                         $shareComponent['linkedin'] = "https://www.linkedin.com/shareArticle?mini=true&url=$url";
                         $shareComponent['telegram'] = "https://telegram.me/share/url?text=$shareContent&url=$url";
                         $shareComponent['whatsapp'] = "https://api.whatsapp.com/send/?phone&text=$shareContent";
+
+                        // Old YouTube values (full URLs, channel links) render as embeds or link buttons
+                        $feature_details = normalize_card_youtube($business_card_details, $feature_details);
 
                         // Datas
                         $datas = compact('card_details', 'plan_details', 'business_card_details', 'feature_details', 'service_details', 'product_details', 'galleries_details', 'testimonials', 'payment_details', 'appointmentEnabled', 'appointment_slots', 'business_hours', 'settings', 'shareComponent', 'shareContent', 'config', 'enquiry_button', 'iframes', 'customTexts', 'manifest', 'whatsAppNumberExists', 'service_booking_details');

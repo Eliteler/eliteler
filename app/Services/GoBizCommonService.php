@@ -186,7 +186,7 @@ class GoBizCommonService
                 'users.user_id',
                 'users.plan_validity',
                 'themes.theme_code',
-                DB::raw('(SELECT COUNT(*) FROM visitors WHERE visitors.card_id = business_cards.card_url) as views_count')
+                DB::raw('(SELECT COUNT(*) FROM visitors WHERE visitors.card_id = business_cards.card_id AND visitors.is_bot = 0) as views_count')
             )
             ->where('business_cards.status', 1)
             ->whereIn('business_cards.card_type', $type)

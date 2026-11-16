@@ -29,6 +29,8 @@ use Inertia\Inertia;
  */
 class CampaignController extends Controller
 {
+    public const PER_PAGE = 10;
+
     public function __construct()
     {
         $this->middleware('auth');
@@ -38,14 +40,15 @@ class CampaignController extends Controller
     {
         $search = trim((string) $request->query('search', ''));
 
+        // Paginate campaigns with 10 records per page
         $campaigns = Campaign::where('campaigns.status', '!=', -1)
             ->leftJoin('campaign_emails', 'campaign_emails.campaign_id', '=', 'campaigns.campaign_id')
             ->leftJoin('groups', 'groups.group_id', '=', 'campaign_emails.group_id')
-            ->when($search !== '', fn ($q) => $q->where(fn ($q) => $q->where('campaigns.campaign_name', 'like', "%{$search}%")->orWhere('campaign_emails.subject', 'like', "%{$search}%")))
+            ->when($search !== '', fn($q) => $q->where(fn($q) => $q->where('campaigns.campaign_name', 'like', "%{$search}%")->orWhere('campaign_emails.subject', 'like', "%{$search}%")))
             ->orderByDesc('campaigns.updated_at')
-            ->paginate(20, ['campaigns.campaign_id', 'campaigns.campaign_name', 'campaigns.campaign_desc', 'campaigns.updated_at', 'campaign_emails.subject', 'groups.group_name', 'groups.emails'])
+            ->paginate(self::PER_PAGE, ['campaigns.campaign_id', 'campaigns.campaign_name', 'campaigns.campaign_desc', 'campaigns.updated_at', 'campaign_emails.subject', 'groups.group_name', 'groups.emails'])
             ->withQueryString()
-            ->through(fn ($row) => [
+            ->through(fn($row) => [
                 'id'          => $row->campaign_id,
                 'name'        => $row->campaign_name,
                 'description' => $row->campaign_desc,
@@ -152,7 +155,7 @@ class CampaignController extends Controller
                 'subject'     => $campaign->subject,
                 'body'        => $campaign->body,
             ] : null,
-            'groups'     => Group::where('status', 1)->orderBy('group_name')->get(['group_id', 'group_name', 'emails'])->map(fn ($g) => [
+            'groups'     => Group::where('status', 1)->orderBy('group_name')->get(['group_id', 'group_name', 'emails'])->map(fn($g) => [
                 'id'      => $g->group_id,
                 'name'    => $g->group_name,
                 'members' => count(json_decode($g->emails ?? '[]', true) ?: []),

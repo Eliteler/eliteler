@@ -66,10 +66,10 @@
     </div>
 
     <style>
-        /* Direct Dark Backdrop on PWA Modal */
+        /* Direct Dark Backdrop on PWA Modal with High z-index */
         #pwaModal {
             background-color: rgba(15, 23, 42, 0.75) !important;
-            z-index: 1060 !important;
+            z-index: 999998 !important;
         }
 
         /* Force blur on the entire store behind PWA modal via multiple selectors */
@@ -91,7 +91,7 @@
             display: flex;
             align-items: flex-end;
             min-height: calc(100% - 1rem);
-            z-index: 1070 !important;
+            z-index: 999999 !important;
         }
 
         @media (min-width: 576px) {
@@ -267,15 +267,46 @@
     </style>
 
     <script>
-        // Universal Safe Dismiss Function
-        function closePwaModal() {
+        // Universal Open Function
+        window.openPwaModal = function() {
             const pwaEl = document.getElementById('pwaModal');
             if (!pwaEl) return;
 
             // Try Bootstrap 5
             try {
-                const bsModal = bootstrap.Modal.getInstance(pwaEl) || bootstrap.Modal.getOrCreateInstance(pwaEl);
-                if (bsModal) bsModal.hide();
+                if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                    const bsModal = bootstrap.Modal.getOrCreateInstance(pwaEl);
+                    bsModal.show();
+                    return;
+                }
+            } catch (e) {}
+
+            // Try jQuery Bootstrap Modal
+            try {
+                if (window.jQuery && $(pwaEl).modal) {
+                    $(pwaEl).modal('show');
+                    return;
+                }
+            } catch (e) {}
+
+            // Direct Fallback
+            pwaEl.classList.add('show');
+            pwaEl.style.setProperty('display', 'block', 'important');
+            pwaEl.removeAttribute('aria-hidden');
+            document.body.classList.add('modal-open', 'pwa-modal-active');
+        };
+
+        // Universal Safe Dismiss Function
+        window.closePwaModal = function() {
+            const pwaEl = document.getElementById('pwaModal');
+            if (!pwaEl) return;
+
+            // Try Bootstrap 5
+            try {
+                if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                    const bsModal = bootstrap.Modal.getInstance(pwaEl);
+                    if (bsModal) bsModal.hide();
+                }
             } catch (e) {}
 
             // Try jQuery
@@ -285,14 +316,12 @@
 
             // Force cleanup
             pwaEl.classList.remove('show');
-            pwaEl.style.display = 'none';
+            pwaEl.style.setProperty('display', 'none', 'important');
             pwaEl.setAttribute('aria-hidden', 'true');
             document.body.classList.remove('modal-open', 'pwa-modal-active');
             document.body.style.removeProperty('overflow');
             document.body.style.removeProperty('padding-right');
-
-            sessionStorage.setItem('pwa_dismissed', 'true');
-        }
+        };
 
         document.addEventListener("DOMContentLoaded", function() {
             "use strict";
@@ -301,56 +330,49 @@
             const pwaModalEl = document.getElementById('pwaModal');
             const installBtn = document.getElementById('pwaInstallAppBtn');
 
-            // Automatically activate blur whenever PWA modal enters the screen
+            // Setup modal blur events
             if (pwaModalEl) {
                 pwaModalEl.addEventListener('show.bs.modal', function() {
-                    document.body.classList.add('modal-open', 'pwa-modal-active');
-                });
-                pwaModalEl.addEventListener('shown.bs.modal', function() {
                     document.body.classList.add('modal-open', 'pwa-modal-active');
                 });
                 pwaModalEl.addEventListener('hidden.bs.modal', function() {
                     document.body.classList.remove('pwa-modal-active');
                 });
 
-                // MutationObserver: Guarantees blur even if triggered by external scripts
-                const observer = new MutationObserver(function() {
-                    const isShown = pwaModalEl.classList.contains('show') || pwaModalEl.style.display ===
-                        'block';
-                    if (isShown) {
-                        document.body.classList.add('modal-open', 'pwa-modal-active');
-                    } else {
-                        document.body.classList.remove('pwa-modal-active');
-                    }
-                });
-                observer.observe(pwaModalEl, {
-                    attributes: true,
-                    attributeFilter: ['class', 'style']
-                });
-
-                // Close when clicking directly on the dark outer background
+                // Backdrop click listener
                 pwaModalEl.addEventListener('click', function(e) {
                     if (e.target === pwaModalEl) {
-                        closePwaModal();
+                        window.closePwaModal();
                     }
                 });
             }
 
+            // 1. Trigger modal when browser is ready
             window.addEventListener('beforeinstallprompt', function(e) {
                 e.preventDefault();
                 deferredPwaPrompt = e;
+                // Open modal immediately when browser prompt is available
+                window.openPwaModal();
             });
 
+            // 2. Fallback: Automatically show modal after 1.5s for testing/preview
+            setTimeout(function() {
+                window.openPwaModal();
+            }, 1500);
+
+            // Install button logic
             if (installBtn) {
-                installBtn.addEventListener('click', function() {
+                installBtn.addEventListener('click', async function() {
                     if (deferredPwaPrompt) {
                         deferredPwaPrompt.prompt();
-                        deferredPwaPrompt.userChoice.then(function() {
-                            deferredPwaPrompt = null;
-                            closePwaModal();
-                        });
+                        const {
+                            outcome
+                        } = await deferredPwaPrompt.userChoice;
+                        deferredPwaPrompt = null;
+                        window.closePwaModal();
                     } else {
-                        closePwaModal();
+                        alert("PWA is already installed or your browser does not support it.");
+                        window.closePwaModal();
                     }
                 });
             }

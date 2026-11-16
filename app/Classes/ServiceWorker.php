@@ -13,7 +13,9 @@
 namespace App\Classes;
 
 use App\Helpers\StorageHelper;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Throwable;
 
 class ServiceWorker
 {
@@ -62,21 +64,33 @@ class ServiceWorker
         ]);
     }
 
+
     /**
      * Generate service worker JavaScript.
+     *
+     * @param array<int|string, mixed> $assets
      */
-    private function generateServiceWorkerScript(array $assets)
+    private function generateServiceWorkerScript(array $assets): string
     {
-        $assetsJson = json_encode(array_values(array_filter($assets)), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        // Filter out non-string/empty values to prevent serialization issues
+        $filteredAssets = array_values(array_filter($assets, static fn(mixed $item): bool => is_string($item) && trim($item) !== ''));
 
-        /*
-         * Use application version as cache version.
-         */
-        $appVersion = config('app.version', env('APP_VERSION', '1.0.0'));
+        // Prevent JS syntax error if json_encode returns false
+        $assetsJson = json_encode($filteredAssets, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '[]';
 
-        /*
-         * Create a unique cache name based on application version.
-         */
+        // Safely retrieve application version from database with exception handling
+        try {
+            $dbVersion = DB::table('config')->where('config_key', 'app_version')->value('config_value');
+        } catch (Throwable) {
+            $dbVersion = null;
+        }
+
+        // Ensure strictly typed string for PHP 8.4 to prevent TypeError in md5()
+        $appVersion = is_string($dbVersion) && trim($dbVersion) !== ''
+            ? trim($dbVersion)
+            : (string) (config('app.version') ?? env('APP_VERSION') ?? '1.0.0');
+
+        // Create a unique cache name based on application version
         $cacheName = 'pwa-' . md5($appVersion);
 
         return <<<EOL

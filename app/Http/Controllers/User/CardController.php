@@ -64,7 +64,8 @@ class CardController extends Controller
                 // Compiled visitor count subquery to prevent N+1 performance blocks
                 $viewsSubquery = DB::table('visitors')
                     ->select(DB::raw('count(*)'))
-                    ->whereColumn('visitors.card_id', 'business_cards.card_url');
+                    ->whereColumn('visitors.card_id', 'business_cards.card_id')
+                    ->where('visitors.is_bot', 0);
 
                 $businessCards = DB::table('business_cards')
                     ->join('users', 'business_cards.user_id', '=', 'users.user_id')
@@ -128,9 +129,18 @@ class CardController extends Controller
                             : '<span class="badge bg-success-lt px-2 py-1">' . __('Enabled') . '</span>';
                     })
                     ->addColumn('action', function ($card) use ($config, $active_plan) {
-                        $profileUrl = ($card->custom_domain == null)
-                            ? (($config[46]->config_value == '1') ? route('subdomain.profile', $card->card_url) : route('profile', $card->card_url))
-                            : 'https://' . $card->custom_domain;
+                        // Fallback to card_id if card_url is null or empty
+                        $cardSlug = !empty($card->card_url) ? $card->card_url : $card->card_id;
+
+                        $profileUrl = '#';
+                        if (!empty($card->custom_domain)) {
+                            $profileUrl = 'https://' . $card->custom_domain;
+                        } elseif (!empty($cardSlug)) {
+                            $isSubdomain = isset($config[46]) && $config[46]->config_value == '1';
+                            $profileUrl = $isSubdomain
+                                ? route('subdomain.profile', ['cardname' => $cardSlug])
+                                : route('profile', ['id' => $cardSlug]);
+                        }
 
                         $actionBtn = '';
 
@@ -159,7 +169,7 @@ class CardController extends Controller
                     </a>';
 
                         // Visitors / Analytics
-                        $actionBtn .= '<a class="dropdown-item" href="' . route('user.visitors', $card->card_url) . '">
+                        $actionBtn .= '<a class="dropdown-item" ' . (plan_has_analytics() ? 'href="' . route('user.visitors', $card->card_id) . '"' : 'href="#" data-bs-toggle="modal" data-bs-target="#upgradeAnalyticsModal"') . '>
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon dropdown-item-icon text-muted" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 13a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"/><path d="M15 9a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"/><path d="M9 5a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"/><path d="M4 20h14"/></svg>
                         ' . __('Analytics') . '
                     </a>';

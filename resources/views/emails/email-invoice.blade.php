@@ -479,7 +479,7 @@
                                                         <h3>{{ __('Invoice Number :') }} {{ $details['invoice_id'] }}</h3>
                                                     </td>
                                                     <td>
-                                                        <h3 class="align-right">{{ __('Invoice Date :') }} {{ $details['invoice_date'] }}</h3>
+                                                        <h3 class="align-right">{{ __('Invoice Date :') }} {{ formatDateOnlyForUser($details['invoice_date'], true) }}</h3>
                                                     </td>
                                                 </tr>
                                                 <tr>

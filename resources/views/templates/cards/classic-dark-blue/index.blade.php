@@ -1040,7 +1040,7 @@
                             </a>
                         </div>
                     </div>
-                </div>
+                </div> 
             @else
                 <div id="profile" class="leading-tight min-h-screen bg-grey-lighter p-1">
                     <br>
@@ -1063,7 +1063,7 @@
     @if ($business_card_details != null)
         {{-- Check Newsletter --}}
         @if (!empty($business_card_details->is_newsletter_pop_active) && $business_card_details->is_newsletter_pop_active == 1)
-            @include('templates.cards.includes.newsletter_modal', [
+            @include('templates.cards.includes.old_theme_newsletter_modal', [
                 'primary_color' => 'blue'
             ])
         @endif
@@ -1073,7 +1073,7 @@
     @if ($business_card_details != null)
         {{-- Check Information Popup --}}
         @if (!empty($business_card_details->is_info_pop_active) && $business_card_details->is_info_pop_active == 1)
-            @include('templates.cards.includes.information_popup_modal', [
+            @include('templates.cards.includes.old_theme_information_popup_modal', [
                 'primary_color' => 'blue'
             ])
         @endif

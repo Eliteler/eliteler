@@ -1029,7 +1029,7 @@
                         </form>
                     </div>
                 </div>
-            @else
+            @else 
                 {{-- ── PWA Modal ── --}}
                 @if ($plan_details != null && $plan_details['pwa'] == 1 && $business_card_details->is_enable_pwa == 1)
                     @include('vendor.laravelpwa.mechanic-vcard')

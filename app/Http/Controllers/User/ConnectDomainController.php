@@ -13,7 +13,7 @@
 namespace App\Http\Controllers\User;
 
 use App\BusinessCard;
-use App\Currency;
+use App\Support\Zapier;
 use App\CustomDomainRequest;
 use App\EmailTemplate;
 use App\Http\Controllers\Controller;
@@ -23,9 +23,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Plugins\Zapier\Helpers\ZapierHelper;
 
 class ConnectDomainController extends Controller
 {
@@ -61,16 +59,21 @@ class ConnectDomainController extends Controller
 
         // Check number of stores
         if ($validity == 1) {
-            // Check business card
-            $business_card = BusinessCard::where('card_id', $id)->count();
+            // Check business card belongs to authenticated user
+            $business_card = BusinessCard::where('card_id', $id)
+                ->where('user_id', Auth::user()->user_id)
+                ->count();
 
             // Check valid business card
             if ($business_card != 1) {
                 return redirect()->back()->with('failed', trans('Business card / Store not found!'));
             } else {
                 if ($plan_details->custom_domain == 1) {
-                    // Previous connected domain list
-                    $previous_domains = CustomDomainRequest::where('card_id', $id)->orderBy('id', 'desc')->get();
+                    // Previous connected domain list for authenticated user
+                    $previous_domains = CustomDomainRequest::where('card_id', $id)
+                        ->where('user_id', Auth::user()->user_id)
+                        ->orderBy('id', 'desc')
+                        ->get();
 
                     return view('user.pages.connect-domain.index', compact('previous_domains', 'config', 'settings'));
                 } else {
@@ -90,8 +93,14 @@ class ConnectDomainController extends Controller
         $domain = $request->domain;
         $card_id = $request->card_id;
 
-        // Check if the business card exists
-        $card = BusinessCard::where('card_id', $card_id)->first();
+        // Check if the business card exists and belongs to the authenticated user
+        $card = BusinessCard::where('card_id', $card_id)
+            ->where('user_id', Auth::user()->user_id)
+            ->first();
+
+        if (! $card) {
+            return redirect()->back()->with('failed', trans('Business card not found!'));
+        }
 
         // Check domain is exists in the system
         $domain_exists = CustomDomainRequest::where('current_domain', $domain)->count();
@@ -105,65 +114,52 @@ class ConnectDomainController extends Controller
             return redirect()->back()->with('failed', trans('Domain already requested.'));
         }
 
-        // Check card
-        if ($card) {
-            // Get previous domain in CustomDomainRequest
-            $previousDomainDetails = CustomDomainRequest::where('card_id', $card_id)->first();
-            $previous_domain = "";
-            if ($previousDomainDetails && $previousDomainDetails->current_domain != '-') {
-                $previous_domain = $previousDomainDetails->current_domain;
-            }
-
-            // Request ID
-            $requestId = "REQ_" . rand(1000, 9999);
-
-            // Save domain request as CNAME is verified
-            $domain_request = new CustomDomainRequest();
-            $domain_request->custom_domain_request_id = $requestId;
-            $domain_request->user_id = Auth::user()->user_id;
-            $domain_request->card_id = $card_id;
-            $domain_request->previous_domain = $previous_domain;
-            $domain_request->current_domain = $domain;
-            $domain_request->transfer_status = 0;
-            $domain_request->save();
-
-            // 1. Dispatch custom domain request event to Zapier (Guaranteed execution outside email check)
-            if (function_exists('zapier_dispatch')) {
-                zapier_dispatch('custom_domain', [
-                    'request_id'      => $requestId,
-                    'user_name'       => Auth::user()->name ?? 'Customer',
-                    'user_email'      => Auth::user()->email ?? '',
-                    'card_name'       => $card->title ?? 'Business Card',
-                    'previous_domain' => $previous_domain,
-                    'current_domain'  => $domain,
-                    'status'          => 'Pending Approval',
-                    'requested_at'    => now()->toDateTimeString(),
-                ]);
-            }
-
-            // 2. Send email notification to Admin
-            $emailTemplateDetails = EmailTemplate::where('email_template_id', '584922675214')->first();
-
-            if ($emailTemplateDetails && $emailTemplateDetails->is_enabled == 1) {
-                try {
-                    $customDomainRequestDetails = [
-                        'status' => "",
-                        'emailSubject' => $emailTemplateDetails->email_template_subject,
-                        'emailContent' => $emailTemplateDetails->email_template_content,
-                        'actionlink' => route('admin.custom.domain.requests'),
-                        'appname' => config('app.name'),
-                    ];
-
-                    Mail::to(env('MAIL_FROM_ADDRESS'))->send(new \App\Mail\AppointmentMail($customDomainRequestDetails));
-                } catch (\Exception $e) {
-                    // Email failed silently, but domain request was saved and Zapier was triggered
-                }
-            }
-
-            return redirect()->back()->with('success', trans('CNAME record is correctly pointing to ') . str_replace(['http://', 'https://'], '', config('app.url')) . (', and your domain request is successfully submitted.'));
-        } else {
-            return redirect()->back()->with('failed', trans('Business card not found!'));
+        // Get previous domain in CustomDomainRequest
+        $previousDomainDetails = CustomDomainRequest::where('card_id', $card_id)
+            ->where('user_id', Auth::user()->user_id)
+            ->first();
+        $previous_domain = "";
+        if ($previousDomainDetails && $previousDomainDetails->current_domain != '-') {
+            $previous_domain = $previousDomainDetails->current_domain;
         }
+
+        // Request ID
+        $requestId = "REQ_" . rand(1000, 9999);
+
+        // Save domain request as CNAME is verified
+        $domain_request = new CustomDomainRequest();
+        $domain_request->custom_domain_request_id = $requestId;
+        $domain_request->user_id = Auth::user()->user_id;
+        $domain_request->card_id = $card_id;
+        $domain_request->previous_domain = $previous_domain;
+        $domain_request->current_domain = $domain;
+        $domain_request->transfer_status = 0;
+        $domain_request->save();
+
+        // 1. Zapier: new custom domain request
+        Zapier::customDomain(Auth::user(), $requestId, $card->title ?? null, $previous_domain, $domain);
+
+        // 2. Send email notification to Admin
+        $emailTemplateDetails = EmailTemplate::where('email_template_id', '584922675214')->first();
+
+        if ($emailTemplateDetails && $emailTemplateDetails->is_enabled == 1) {
+            try {
+                $customDomainRequestDetails = [
+                    'status' => "",
+                    'emailSubject' => $emailTemplateDetails->email_template_subject,
+                    'emailContent' => $emailTemplateDetails->email_template_content,
+                    'actionlink' => route('admin.custom.domain.requests'),
+                    'appname' => config('app.name'),
+                ];
+
+                Mail::to(config('mail.from.address'))->send(new \App\Mail\AppointmentMail($customDomainRequestDetails));
+            } catch (\Throwable $e) {
+                report($e);
+                // Email failed silently, but domain request was saved and Zapier was triggered
+            }
+        }
+
+        return redirect()->back()->with('success', trans('CNAME record is correctly pointing to ') . str_replace(['http://', 'https://'], '', config('app.url')) . (', and your domain request is successfully submitted.'));
     }
 
     // Unlink domain
@@ -173,21 +169,21 @@ class ConnectDomainController extends Controller
         $domain_request_id = $request->query('id');
         $card_id = $request->query('card_id');
 
-        // Check if the domain request exists
-        $domain_request = CustomDomainRequest::where('card_id', $card_id)->where('custom_domain_request_id', $domain_request_id)->first();
+        // Check if the domain request exists and belongs to the authenticated user
+        $domain_request = CustomDomainRequest::where('card_id', $card_id)
+            ->where('custom_domain_request_id', $domain_request_id)
+            ->where('user_id', Auth::user()->user_id)
+            ->first();
 
-        // Check domain is exists in the system
-        $domain_exists = CustomDomainRequest::where('card_id', $card_id)->where('custom_domain_request_id', $domain_request_id)->count();
-        if ($domain_exists) {
-            // Check custom domain exists in business cards table
-            $business_card = BusinessCard::where('custom_domain', $domain_request->current_domain)->count();
+        if ($domain_request) {
+            // Check if the business card exists and belongs to the authenticated user
+            $business_card = BusinessCard::where('card_id', $card_id)
+                ->where('user_id', Auth::user()->user_id)
+                ->where('custom_domain', $domain_request->current_domain)
+                ->first();
 
-            // Check if the business card exists
-            if ($business_card != 0) {
+            if ($business_card) {
                 try {
-                    // Delete business card
-                    $business_card = BusinessCard::where('card_id', $card_id)->where('custom_domain', $domain_request->current_domain)->first();
-
                     // Nullify custom domain
                     $business_card->custom_domain = null;
                     $business_card->save();

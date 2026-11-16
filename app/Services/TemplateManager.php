@@ -82,6 +82,8 @@ class TemplateManager
                 $templatePath = $this->templates[$i]['path'];
                 // Delete the template directory
                 File::deleteDirectory($templatePath);
+                // Its admin page files copied to public/ (App\Support\Admin\PluginPage)
+                File::deleteDirectory(\App\Support\Admin\PluginPage::publicPath('template', basename($templatePath)));
                 unset($this->templates[$i]);
                 return true;
             }

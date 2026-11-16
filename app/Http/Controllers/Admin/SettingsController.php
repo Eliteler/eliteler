@@ -53,6 +53,7 @@ class SettingsController extends Controller
         'share_content',
         'site_name',
         'activate_plan_during_registeration',
+        'app_theme',
     ];
 
     private const CURRENCY_FORMATS = ['1,234,567.89', '12,34,567.89', '1.234.567,89', '1 234 567,89', "1'234'567.89"];
@@ -67,6 +68,7 @@ class SettingsController extends Controller
 
         return Inertia::render('settings/general', [
             'values' => [
+                'app_theme'               => (string) ($config['app_theme'] ?? 'blue'),
                 'site_name'               => (string) ($config['site_name'] ?? ''),
                 'show_website'            => ($config['show_website'] ?? 'yes') === 'yes',
                 'website_redirect_url'    => (string) ($config['website_redirect_url'] ?? ''),
@@ -110,6 +112,7 @@ class SettingsController extends Controller
         $languages = array_keys(config('app.availableLanguages', []));
 
         $data = $request->validate([
+            'app_theme'               => 'required|string|max:50',
             'site_name'               => 'required|string|max:100',
             'show_website'            => 'required|boolean',
             'website_redirect_url'    => 'nullable|url|max:500',
@@ -131,6 +134,7 @@ class SettingsController extends Controller
         ], [
             'default_language.in'              => __('The default language must be one of the enabled languages.'),
         ], [
+            'app_theme'               => __('accent colour'),
             'site_name'               => __('website name'),
             'website_redirect_url'    => __('redirect URL'),
             'date_time_format'        => __('date format'),
@@ -152,6 +156,7 @@ class SettingsController extends Controller
         }
 
         $updates = [
+            'app_theme'                          => $data['app_theme'],
             'show_website'                       => $showWebsite ? 'yes' : 'no',
             'website_redirect_url'               => $data['website_redirect_url'] ?? '',
             'registration_page'                  => $request->boolean('allow_registration') ? '0' : '1',
@@ -243,14 +248,6 @@ class SettingsController extends Controller
     }
 
     // Clear cache
-    /**
-     * server:   every Laravel cache in one go: application cache, compiled
-     *           services/packages, config, events, routes and compiled views.
-     *           Caches are not rebuilt because the app reads env() outside config files.
-     * browser:  Clear-Site-Data tells this browser to drop its HTTP cache for the site.
-     * sessions: sign everyone out, including the admin who asked.
-     * A plain POST (old Blade sidebar) clears the server cache only.
-     */
     public function clearCache(Request $request)
     {
         $browser = $request->boolean('browser');

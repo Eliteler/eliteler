@@ -50,6 +50,7 @@ use App\Http\Controllers\Admin\ReferralSystemConfigurationController;
 use App\Http\Controllers\Admin\ReferralWithdrawalRequestController;
 use App\Http\Controllers\Admin\SearchController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\VisitorAnalyticsController;
 use App\Http\Controllers\Admin\SitemapController;
 use App\Http\Controllers\Admin\SubdomainSettingController;
 use App\Http\Controllers\Admin\TaxSettingController;
@@ -275,8 +276,8 @@ Route::group(['middleware' => 'Installer'], function () {
         // Every template keeps serving the public website, but a legacy (Blade
         // admin) template's admin pages show the "new version available" page
         $legacyTemplates = collect(app(\App\Services\TemplateManager::class)->getTemplates())
-            ->filter(fn ($template) => $template['legacy'])
-            ->keyBy(fn ($template) => realpath($template['path']));
+            ->filter(fn($template) => $template['legacy'])
+            ->keyBy(fn($template) => realpath($template['path']));
 
         foreach (File::directories($templatesPath) as $template) {
             $routeFile = $template . '/routes.php';
@@ -304,6 +305,9 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::get('/', [HomeController::class, 'index'])->name('home-locale');
 
         Auth::routes(['verify' => true]);
+
+        // "Back to admin" while signed in as a customer or staff member (any role, so outside the admin/user groups)
+        Route::post('impersonate/leave', [\App\Http\Controllers\ImpersonationController::class, 'leave'])->name('impersonate.leave')->middleware('auth');
 
         // Public Email Verification
         Route::get('/verify-email-address', [PublicVerificationController::class, 'show'])->name('verify.public');
@@ -448,7 +452,7 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::post('customer-verified', [CustomerController::class, 'customerVerified'])->name('customer.verified')->middleware(['user.page.permission:customers', 'demo.mode']);
         Route::post('undelete-customer', [CustomerController::class, 'undeleteCustomer'])->name('undelete.customer')->middleware(['user.page.permission:customers', 'demo.mode']);
         Route::post('delete-customer', [CustomerController::class, 'deleteCustomer'])->name('delete.customer')->middleware(['user.page.permission:customers', 'demo.mode']);
-        Route::get('login-as/{id}', [CustomerController::class, 'authAs'])->name('login-as.customer')->middleware('user.page.permission:customers');
+        Route::post('login-as/{id}', [CustomerController::class, 'authAs'])->name('login-as.customer')->middleware('user.page.permission:customers');
 
         // Create Customer
         Route::get('create-customer', [CreateCustomerController::class, 'createCustomer'])->name('create.customer')->middleware('user.page.permission:customers');
@@ -712,6 +716,17 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::post('cron/run-cronjob', [CronJobController::class, 'runCronjob'])->name('set.cronjob')->middleware(['user.page.permission:general_settings', 'demo.mode']);
 
         // Clear cache
+        // Visitor analytics (MaxMind GeoLite2)
+        Route::get('visitor-analytics', [VisitorAnalyticsController::class, 'index'])->name('visitor.analytics')->middleware('user.page.permission:general_settings');
+        Route::post('visitor-analytics/update', [VisitorAnalyticsController::class, 'update'])->name('visitor.analytics.update')->middleware(['user.page.permission:general_settings', 'demo.mode']);
+        Route::post('visitor-analytics/download', [VisitorAnalyticsController::class, 'download'])->name('visitor.analytics.download')->middleware(['user.page.permission:general_settings', 'demo.mode']);
+        Route::post('visitor-analytics/backfill', [VisitorAnalyticsController::class, 'backfill'])->name('visitor.analytics.backfill')->middleware(['user.page.permission:general_settings', 'demo.mode']);
+        Route::post('visitor-analytics/tracks', [VisitorAnalyticsController::class, 'storeTrack'])->name('visitor.analytics.tracks.store')->middleware(['user.page.permission:general_settings', 'demo.mode']);
+        Route::post('visitor-analytics/tracks/{track}', [VisitorAnalyticsController::class, 'updateTrack'])->name('visitor.analytics.tracks.update')->middleware(['user.page.permission:general_settings', 'demo.mode']);
+        Route::post('visitor-analytics/tracks/{track}/toggle', [VisitorAnalyticsController::class, 'toggleTrack'])->name('visitor.analytics.tracks.toggle')->middleware(['user.page.permission:general_settings', 'demo.mode']);
+        Route::post('visitor-analytics/tracks/{track}/move', [VisitorAnalyticsController::class, 'moveTrack'])->name('visitor.analytics.tracks.move')->middleware(['user.page.permission:general_settings', 'demo.mode']);
+        Route::post('visitor-analytics/tracks/{track}/delete', [VisitorAnalyticsController::class, 'deleteTrack'])->name('visitor.analytics.tracks.delete')->middleware(['user.page.permission:general_settings', 'demo.mode']);
+
         Route::post('clear/cache', [SettingsController::class, 'clearCache'])->name('clear.cache')->middleware(['user.page.permission:general_settings', 'demo.mode']);
 
         // Generating a sitemap
@@ -734,6 +749,9 @@ Route::group(['middleware' => 'Installer'], function () {
     });
 
     Route::group(['as' => 'user.', 'prefix' => 'user', 'namespace' => 'User', 'middleware' => ['auth', 'user', 'frame.destroyer', 'twofactor', 'scriptsanitizer', 'admin.card.context'], 'where' => ['locale' => '[a-zA-Z]{2}']], function () {
+
+        // Plugin customer pages and widgets (dist/user, dist/widgets) when they couldn't be copied to public/
+        Route::get('plugin-assets/{plugin}/{path}', [\App\Http\Controllers\Admin\PluginAssetController::class, '__invoke'])->where('path', '(user|widgets)/.*')->name('plugin.assets');
 
         // Dashboard
         Route::get('dashboard', [userDashboard::class, 'index'])->name('dashboard');
@@ -948,7 +966,6 @@ Route::group(['middleware' => 'Installer'], function () {
         // Edit Store products
         Route::get('store/get-products/{id}', [UpdateStoreProductController::class, 'getProducts']);
         Route::get('store/edit-products/{id}', [UpdateStoreProductController::class, 'editProducts'])->name('edit.products');
-        Route::post('update-products/{id}', [UpdateStoreProductController::class, 'updateProducts'])->name('update.products');
         Route::post('save-product', [UpdateStoreProductController::class, 'saveProduct'])->name('save.product');
         Route::post('update-product', [UpdateStoreProductController::class, 'updateProduct'])->name('update.product')->withoutMiddleware('scriptsanitizer');
         Route::delete('delete-product/{id}', [UpdateStoreProductController::class, 'deleteProduct'])->name('delete.product');
@@ -956,6 +973,7 @@ Route::group(['middleware' => 'Installer'], function () {
         // Import store products
         Route::post('import-products', [UpdateStoreProductImportController::class, 'importProducts'])->name('import.products');
         Route::get('export-products/{id}', [UpdateStoreProductImportController::class, 'exportProducts'])->name('export.products');
+        Route::get('sample-products/{id}', [UpdateStoreProductImportController::class, 'sampleProducts'])->name('sample.products');
 
         // Update store settings
         Route::get('store/settings/{id}', [UpdateStoreSettingsController::class, 'editSettings'])->name('edit.store.settings');
@@ -1478,15 +1496,4 @@ Route::group(['middleware' => 'Installer'], function () {
     Route::get('public/activate-theme/{theme_id}', [PublicThemeController::class, 'publicActivateTheme'])->name('public.activate.theme');
 });
 
-// Smart fallback: Serves from VPS if exists, otherwise redirects to Cloudflare R2
-Route::get('/storage/{path}', function ($path) {
-    $localFilePath = storage_path('app/public/' . $path);
 
-    // 1. Check if the image exists locally on VPS server
-    if (File::exists($localFilePath)) {
-        return response()->file($localFilePath);
-    }
-
-    // 2. If not found on VPS, redirect to Cloudflare R2
-    return redirect(rtrim(env('AWS_URL'), '/') . '/' . $path, 302);
-})->where('path', '.*');

@@ -24,11 +24,12 @@ use App\Services\Admin\CustomerPlanService;
 use App\Services\Admin\CustomerService;
 use App\Support\Admin\AdminPermissions;
 use App\Support\Admin\AdminSharedProps;
+use App\Support\Impersonation;
 use App\Transaction;
 use App\User;
 use Illuminate\Http\Request;
+use RuntimeException;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
@@ -571,7 +572,7 @@ class CustomerController extends Controller
 
         $message = __('Plan changed to :plan, valid until :date.', [
             'plan' => $plan->plan_name,
-            'date' => $result['validUntil']->format('d M Y'),
+            'date' => formatDateOnlyForUser($result['validUntil'], true),
         ]);
 
         if ($result['cardsDeactivated']) {
@@ -650,8 +651,8 @@ class CustomerController extends Controller
         return redirect()->route('admin.customers', ['status' => 'all'])->with('success', __('Customer deleted.'));
     }
 
-    // Login as customer (ends the admin session)
-    public function authAs($id)
+    // Sign in as the customer; the banner in their dashboard leads back here
+    public function authAs(Request $request, $id)
     {
         $user = User::where('role_id', 2)->where('user_id', $id)->where('status', 1)->first();
 
@@ -659,9 +660,13 @@ class CustomerController extends Controller
             return redirect()->route('admin.customers', ['status' => 'all'])->with('failed', __('Unable to find user account!'));
         }
 
-        Auth::loginUsingId($user->id);
+        try {
+            Impersonation::start($request, $user, route('admin.customers', ['status' => 'all']));
+        } catch (RuntimeException $e) {
+            return back()->with('failed', $e->getMessage());
+        }
 
-        return redirect()->route('user.dashboard');
+        return Impersonation::redirect($request, route('user.dashboard'));
     }
 
     // Copy a business card / store to another customer

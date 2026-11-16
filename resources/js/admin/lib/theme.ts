@@ -1,11 +1,7 @@
 import type { Appearance } from "@admin/types";
 
 /*
- | Accent colours available to the admin panel (shadcn themes). Each entry
- | except "neutral" needs [data-accent="..."] blocks in resources/css/admin.css.
- | The default comes from the `ui.accent` shared prop; an admin can pick
- | another in General settings, which is kept in this browser only
- | (localStorage) and applied before paint by the script in admin/app.blade.php.
+ | Accent colours available to the admin panel (shadcn themes).
  */
 export const ACCENTS = [
     { value: "neutral", label: "Neutral", swatch: "oklch(0.205 0 0)" },
@@ -20,34 +16,48 @@ export const ACCENTS = [
 
 export type Accent = (typeof ACCENTS)[number]["value"];
 
-/** Keep in sync with the inline script in resources/views/admin/app.blade.php. */
 export const ACCENT_STORAGE_KEY = "gobiz.admin.accent";
 
-const isAccent = (value: unknown): value is Accent => ACCENTS.some((accent) => accent.value === value);
+const isAccent = (value: unknown): value is Accent =>
+    ACCENTS.some((accent) => accent.value === value);
 
+// Read current accent directly from the server-rendered HTML dataset attribute
 export function storedAccent(): Accent | null {
-    try {
-        const value = window.localStorage.getItem(ACCENT_STORAGE_KEY);
-        return isAccent(value) ? value : null;
-    } catch {
-        return null;
+    if (typeof document !== "undefined") {
+        const domAccent = document.documentElement.dataset.accent;
+        if (isAccent(domAccent)) {
+            return domAccent;
+        }
+    }
+    return null;
+}
+
+// Apply accent directly to the HTML tag
+export function applyAccent(accent: string) {
+    if (typeof document !== "undefined") {
+        document.documentElement.dataset.accent = isAccent(accent)
+            ? accent
+            : "blue";
     }
 }
 
-export function applyAccent(accent: string) {
-    document.documentElement.dataset.accent = isAccent(accent) ? accent : "blue";
-}
-
-/** Apply an accent and remember it in this browser. */
+// Apply accent instantly for live preview while picking colors
 export function saveAccent(accent: Accent) {
     applyAccent(accent);
+
+    // Clean up any stale localStorage override so database config takes priority
     try {
-        window.localStorage.setItem(ACCENT_STORAGE_KEY, accent);
+        window.localStorage.removeItem(ACCENT_STORAGE_KEY);
     } catch {
-        // Storage blocked (private mode); the choice lasts until reload
+        // Ignore storage errors in private browsing
     }
 }
 
 export function applyAppearance(appearance: Appearance) {
-    document.documentElement.classList.toggle("dark", appearance === "dark");
+    if (typeof document !== "undefined") {
+        document.documentElement.classList.toggle(
+            "dark",
+            appearance === "dark",
+        );
+    }
 }

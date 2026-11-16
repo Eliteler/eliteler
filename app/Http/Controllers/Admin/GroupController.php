@@ -24,6 +24,8 @@ use Inertia\Inertia;
  */
 class GroupController extends Controller
 {
+    public const PER_PAGE = 9;
+
     public function __construct()
     {
         $this->middleware('auth');
@@ -31,18 +33,23 @@ class GroupController extends Controller
 
     public function index(Request $request)
     {
-        $groups = Group::where('status', '!=', -1)->orderByDesc('created_at')->get()->map(fn (Group $g) => [
-            'id'          => $g->group_id,
-            'name'        => $g->group_name,
-            'description' => $g->group_desc,
-            'emails'      => array_values(json_decode($g->emails ?? '[]', true) ?: []),
-            'created'     => $g->created_at?->toIso8601String(),
-        ]);
+        // Paginate groups with 9 records per page
+        $groups = Group::where('status', '!=', -1)
+            ->orderByDesc('created_at')
+            ->paginate(self::PER_PAGE)
+            ->through(fn(Group $g) => [
+                'id'          => $g->group_id,
+                'name'        => $g->group_name,
+                'description' => $g->group_desc,
+                'emails'      => array_values(json_decode($g->emails ?? '[]', true) ?: []),
+                'created'     => $g->created_at?->toIso8601String(),
+            ])
+            ->withQueryString();
 
         return Inertia::render('marketing/groups', [
             'groups'    => $groups,
             'customers' => User::where('role_id', 2)->where('status', '!=', -1)->orderBy('name')->get(['name', 'email', 'plan_id'])
-                ->map(fn ($u) => ['name' => $u->name, 'email' => $u->email, 'hasPlan' => (bool) $u->plan_id]),
+                ->map(fn($u) => ['name' => $u->name, 'email' => $u->email, 'hasPlan' => (bool) $u->plan_id]),
             'open'      => $request->query('edit') ?: ($request->boolean('new') ? 'new' : null),
         ]);
     }
@@ -92,7 +99,7 @@ class GroupController extends Controller
     private function validated(Request $request): array
     {
         // Older forms send an "all" option along with the addresses
-        $request->merge(['emails' => array_values(array_filter((array) $request->input('emails', []), fn ($e) => $e !== 'all'))]);
+        $request->merge(['emails' => array_values(array_filter((array) $request->input('emails', []), fn($e) => $e !== 'all'))]);
 
         return $request->validate([
             'group_name' => 'required|string|max:191',
@@ -110,7 +117,7 @@ class GroupController extends Controller
         $group->group_name = ucfirst($data['group_name']);
         $group->group_desc = ucfirst($data['group_desc']);
         // array_values: always store a JSON list, never an object
-        $group->emails     = json_encode(array_values(array_unique(array_filter($data['emails'], fn ($e) => $e !== 'all'))));
+        $group->emails     = json_encode(array_values(array_unique(array_filter($data['emails'], fn($e) => $e !== 'all'))));
 
         return $group;
     }

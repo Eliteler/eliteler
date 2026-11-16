@@ -15,7 +15,7 @@
     data-vaild-email-error="{{ __('Please enter valid email.') }}" class="hidden">
 
     <div id="customNewsBox">
- x
+ 
         {{-- Close Button --}}
         <button class="custom-news-close" type="button" onclick="window.closeNewsModal()">
             <i class="fas fa-times"></i>

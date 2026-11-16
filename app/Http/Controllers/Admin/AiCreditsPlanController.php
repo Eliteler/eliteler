@@ -23,6 +23,8 @@ use Inertia\Inertia;
  */
 class AiCreditsPlanController extends Controller
 {
+    public const PER_PAGE = 9;
+
     public function __construct()
     {
         $this->middleware('auth');
@@ -37,8 +39,12 @@ class AiCreditsPlanController extends Controller
             ->get()
             ->keyBy('ai_credits_plan_id');
 
-        $plans = AiCreditsPlan::where('status', '!=', 'deleted')->orderByRaw("status = 'active' DESC")->orderBy('plan_price')->get()
-            ->map(fn (AiCreditsPlan $plan) => [
+        // Paginate AI credit plans
+        $plans = AiCreditsPlan::where('status', '!=', 'deleted')
+            ->orderByRaw("status = 'active' DESC")
+            ->orderBy('plan_price')
+            ->paginate(self::PER_PAGE)
+            ->through(fn(AiCreditsPlan $plan) => [
                 'id'          => $plan->ai_credits_plan_id,
                 'name'        => $plan->plan_name,
                 'description' => $plan->plan_description,
@@ -48,7 +54,8 @@ class AiCreditsPlanController extends Controller
                 'active'      => $plan->status === 'active',
                 'orders'      => (int) ($sales[$plan->ai_credits_plan_id]->orders ?? 0),
                 'revenue'     => round((float) ($sales[$plan->ai_credits_plan_id]->revenue ?? 0), 2),
-            ]);
+            ])
+            ->withQueryString();
 
         return Inertia::render('ai-credits/plans', [
             'plans' => $plans,

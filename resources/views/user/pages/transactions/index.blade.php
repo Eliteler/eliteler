@@ -225,11 +225,11 @@
                     </div>
                 @endif
 
-                <div class="row row-deck row-cards">
+                <div class="row">
                     <div class="col-12">
                         <!-- Card Table Wrapper -->
-                        <div class="card border-0 shadow-sm">
-                            <div class="table-responsive px-3 pt-2">
+                        <div class="border-0 shadow-sm">
+                            <div class="table-responsive pt-2">
                                 <table class="table card-table table-vcenter text-nowrap responsive-card-table"
                                     id="transactions-table">
                                     <thead>

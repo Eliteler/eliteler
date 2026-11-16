@@ -1352,7 +1352,7 @@
 
                 <!-- Start Floating icon button bar section -->
                 <div
-                    class="fixed w-11/12 left-1/2 bottom-4 bg-orange-100/60 border border-[#C6AC8E]  rounded-full backdrop-blur-md py-4 px-3 flex lg:hidden md:hidden transform -translate-x-1/2">
+                    class="fixed w-11/12 left-1/2 bottom-4 z-50 bg-orange-100/60 border border-[#C6AC8E]  rounded-full backdrop-blur-md py-4 px-3 flex lg:hidden md:hidden transform -translate-x-1/2">
                     <!-- Profile Icon -->
                     <div class="flex-1 flex items-center justify-center">
                         <a class="p-3 rounded-full bg-white border border-[#E1D1B8]" href="#profile">
@@ -1673,7 +1673,7 @@
                     {{-- Check PWA --}}
                     @if ($plan_details['pwa'] == 1 && $business_card_details->is_enable_pwa == 1)
                         @include('vendor.laravelpwa.new_pwa_modal', [
-                            'primary_color' => 'orange',
+                            'primary_color' => 'orange', 
                             'img' => $business_card_details->profile,
                         ])
                     @endif
@@ -1683,7 +1683,7 @@
                 @if ($business_card_details != null)
                     {{-- Check Newsletter --}}
                     @if (!empty($business_card_details->is_newsletter_pop_active) && $business_card_details->is_newsletter_pop_active == 1)
-                        @include('templates.cards.includes.old_theme_newsletter_modal', [
+                        @include('templates.cards.includes.newsletter_modal', [
                             'primary_color' => 'orange',
                         ])
                     @endif

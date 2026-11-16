@@ -7,9 +7,7 @@
     $currentPlan = json_decode($user->plan_details);
 
     // previous transaction
-    $previousTransaction = Transaction::where('user_id', Auth::user()->id)
-        ->latest()
-        ->first();
+    $previousTransaction = Transaction::where('user_id', Auth::user()->id)->latest()->first();
 
     // is trial
     $is_trial = optional($previousTransaction)->payment_gateway_name == 'TRIAL';
@@ -21,24 +19,27 @@
     $fmt = fn($val) => $val == '999' || $val == '9999' ? __('Unlimited') : $val;
 
     // Lighten a hex color by a percentage (0–100) for the gradient's second stop
-function lightenColor($hex, $percent = 25)
-{
-    $hex = ltrim($hex, '#');
-    if (strlen($hex) == 3) {
-        $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+    function lightenColor($hex, $percent = 25)
+    {
+        $hex = ltrim($hex, '#');
+        if (strlen($hex) == 3) {
+            $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+        }
+        if (strlen($hex) != 6) {
+            return '#4299e1'; // fallback
+        }
+        [$r, $g, $b] = [hexdec(substr($hex, 0, 2)), hexdec(substr($hex, 2, 2)), hexdec(substr($hex, 4, 2))];
+        $r = min(255, $r + (255 - $r) * ($percent / 100));
+        $g = min(255, $g + (255 - $g) * ($percent / 100));
+        $b = min(255, $b + (255 - $b) * ($percent / 100));
+        return sprintf('#%02x%02x%02x', $r, $g, $b);
     }
-    if (strlen($hex) != 6) {
-        return '#4299e1'; // fallback
-    }
-    [$r, $g, $b] = [hexdec(substr($hex, 0, 2)), hexdec(substr($hex, 2, 2)), hexdec(substr($hex, 4, 2))];
-    $r = min(255, $r + (255 - $r) * ($percent / 100));
-    $g = min(255, $g + (255 - $g) * ($percent / 100));
-    $b = min(255, $b + (255 - $b) * ($percent / 100));
-    return sprintf('#%02x%02x%02x', $r, $g, $b);
-}
 
-$templateColor = $template_config->template_color ?? '#206bc4';
+    $templateColor = $template_config->template_color ?? '#206bc4';
     $templateColorLight = lightenColor($templateColor, 30);
+
+    // Check if current plan has unlimited storage
+    $isUnlimitedStorage = ($currentPlan->storage ?? null) == '999' || ($currentPlan->storage ?? null) == -1;
 @endphp
 
 <style>
@@ -301,7 +302,7 @@ $templateColor = $template_config->template_color ?? '#206bc4';
                 @endif
 
                 <!-- Additional Features -->
-                <div class="card">
+                <div class="card mb-3">
                     <div class="card-header">
                         <span class="section-icon bg-orange-lt text-orange me-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="18" height="18"
@@ -315,12 +316,16 @@ $templateColor = $template_config->template_color ?? '#206bc4';
                     </div>
                     <div class="card-body">
                         @php
+                            // Formatted storage representation
+                            $storageDisplay = $isUnlimitedStorage
+                                ? __('Unlimited*')
+                                : (isset($currentPlan->storage) && $currentPlan->storage > 0
+                                    ? formatStorageSize($currentPlan->storage, false)
+                                    : '-');
+
                             $extras = [
                                 __('Custom Domain') => ($currentPlan->custom_domain ?? null) == 1,
-                                __('Storage') =>
-                                    ($currentPlan->storage ?? null) == '999'
-                                        ? __('Unlimited')
-                                        : ($currentPlan->storage ?? '-') . ' MB',
+                                __('Storage') => $storageDisplay,
                                 __('Advanced Settings') => ($currentPlan->advanced_settings ?? null) == 1,
                                 __('Progressive Web App (PWA)') => ($currentPlan->pwa ?? null) == 1,
                                 __('Personalized Link') => ($currentPlan->personalized_link ?? null) == 1,
@@ -351,6 +356,13 @@ $templateColor = $template_config->template_color ?? '#206bc4';
                             @endforeach
                         </div>
                     </div>
+                </div>
+
+                {{-- Footnote disclaimer for unlimited storage asterisk (*) --}}
+                <div class="text-center pt-2">
+                    <small class="text-muted">
+                        {{ __('* Note: Unlimited storage is subject to a fair usage policy (maximum 100 GB limit).') }}
+                    </small>
                 </div>
 
             </div>

@@ -613,7 +613,7 @@
     @include('templates.stores.jewellery-shop.includes.bottom-bar')
 
     {{-- PWA Bottom Sheet Modal --}}
-    @include('templates.stores.jewellery-shop.includes.pwa-modal')
+    @include('templates.stores.jewellery-shop.includes.pwa-modal') 
 
     {{-- VIP Promo & Newsletter Popups --}}
     @include('templates.stores.jewellery-shop.includes.popups')

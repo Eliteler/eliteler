@@ -54,8 +54,13 @@ export function NavMain({ sections }: { sections: NavSection[] }) {
                                 <SidebarMenuItem key={entry.href}>
                                     <SidebarMenuButton asChild tooltip={entry.title} isActive={entry.isActive}>
                                         <NavLink href={entry.href} inertia={entry.inertia} action={entry.action}>
-                                            <NavIcon name={entry.icon} />
+                                            <NavIcon name={entry.icon} svg={entry.svg} />
                                             <span>{entry.title}</span>
+                                            {!!entry.badge && (
+                                                <span className="ms-auto rounded-full bg-primary px-1.5 text-[0.68rem] leading-5 font-medium text-primary-foreground tabular-nums group-data-[collapsible=icon]:hidden">
+                                                    {entry.badge > 99 ? "99+" : entry.badge}
+                                                </span>
+                                            )}
                                         </NavLink>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>

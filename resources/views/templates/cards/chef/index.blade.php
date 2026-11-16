@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
-@php
+@php 
     use Illuminate\Support\Facades\Session;
     use App\BusinessCardIntro;
 

@@ -16,6 +16,7 @@ yarn-error.log
 .gitignore
 /plugins/ModernDashboard/Views/js/build
 
+
 # Ignore everything inside vendor
 /vendor/*
 
@@ -26,6 +27,7 @@ yarn-error.log
 
 /public/build
 /public/build-admin
+/public/admin-assets
 /public/gobiz_modern_assets
 /public/gobiz_original_assets
 /public/gobiz_rich_assets
@@ -36,3 +38,6 @@ yarn-error.log
 __MACOSX/
 new-en.json
 package-lock.json
+
+# SQL file
+migrate.sql

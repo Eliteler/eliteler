@@ -15,14 +15,15 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Support\Admin\AdminPermissions;
 use App\Support\Admin\AdminRoles;
+use App\Support\Impersonation;
 use App\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
+use RuntimeException;
 
 /**
  * Admin staff accounts: role 3 Administrator, role 4 Manager. The super admin
@@ -71,7 +72,7 @@ class UserController extends Controller
 
         return Inertia::render('settings/staff', [
             'staff'            => $staff,
-            'groups'           => collect(AdminPermissions::GROUPS)->map(fn($items, $group) => [
+            'groups'           => collect(AdminPermissions::groups())->map(fn($items, $group) => [
                 'title' => __($group),
                 'items' => collect($items)->map(fn($label, $key) => [
                     'key'       => $key,
@@ -80,7 +81,7 @@ class UserController extends Controller
                     'revenue'   => in_array($key, AdminPermissions::REVENUE_AREAS, true),
                 ])->values(),
             ])->values(),
-            'canLoginAs'       => $this->isSuperAdmin($me),
+            'canLoginAs'       => $this->isSuperAdmin($me) && ! Impersonation::active(),
             'roles'            => AdminRoles::all(),
             'canManageRoles'   => true,
             'canToggleRevenue' => ! AdminPermissions::hidesRevenue($me),
@@ -201,10 +202,13 @@ class UserController extends Controller
             return back()->with('failed', __(':name is deactivated.', ['name' => $user->name]));
         }
 
-        Auth::login($user);
-        $request->session()->regenerate();
+        try {
+            Impersonation::start($request, $user, route('admin.users'));
+        } catch (RuntimeException $e) {
+            return back()->with('failed', $e->getMessage());
+        }
 
-        // Force a full browser reload so <meta name="csrf-token"> gets refreshed
+        // Full browser reload so <meta name="csrf-token"> gets refreshed
         return Inertia::location(route('admin.dashboard'));
     }
 

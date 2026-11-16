@@ -13,6 +13,7 @@
 namespace App\Http\Controllers\User\Store\Edit;
 
 use App\BusinessCard;
+use App\Services\ReservedLinks;
 use App\Currency;
 use App\Http\Controllers\Controller;
 use App\Plan;
@@ -134,6 +135,11 @@ class UpdateController extends Controller
 
         // Convert to lowercase
         $personalized_link = strtolower($personalized_link);
+
+        // a page of the site already uses this link (login, user, admin, ...)
+        if ($personalized_link !== $business_card->card_url && ReservedLinks::contains($personalized_link)) {
+            return redirect()->route('user.edit.store', $id)->with('failed', trans(ReservedLinks::MESSAGE));
+        }
 
         // Check if Store URL already exists
         // Exclude current store from duplicate check

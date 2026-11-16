@@ -387,8 +387,7 @@ export default function Backups({
                                             </TableCell>
                                             <TableCell className="text-muted-foreground">
                                                 {formatDate(
-                                                    backup.createdAt,
-                                                    "dd MMM yyyy, HH:mm",
+                                                    backup.createdAt
                                                 )}
                                             </TableCell>
                                             <TableCell className="pe-6">

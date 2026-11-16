@@ -40,9 +40,9 @@ class TwoFactorOtpMail extends Mailable
         return new Envelope(
             subject: __(strtr($this->details['emailSubject'], [
                 ':appname' => config('app.name'),               
-                ':receivername' => $details['receiverName'] ?? '',
-                ':receiveremail' => $details['receiverEmail'] ?? '',
-                ':otpnumber' => $details['otpNumber'] ?? '',
+                ':receivername' => $this->details['receiverName'] ?? '',
+                ':receiveremail' => $this->details['receiverEmail'] ?? '',
+                ':otpnumber' => $this->details['otpNumber'] ?? '',
             ])),
         );
     }

@@ -101,7 +101,7 @@ class WebToolsController extends Controller
         $config = GoBizCommonService::config();
 
         // Check website
-        if ($config[38]->config_value == "yes") {
+        if ($config[38]->config_value == "yes") { 
             $settings = GoBizCommonService::settings();
             $web_template = getConfigData('web_template');
             $supportPage = GoBizCommonService::templatePageContentGet('contact', $web_template);

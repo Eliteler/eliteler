@@ -89,6 +89,7 @@ class CreateStoreController extends Controller
                     'additional_tools' => 0,
                     'personalized_link' => 1,
                     'hide_branding' => 1,
+                    'advanced_analytics' => 1,
                     'free_setup' => 1,
                     'free_support' => 1,
                     'recommended' => 0,

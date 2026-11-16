@@ -9,6 +9,7 @@ import { PageHeader } from "@admin/components/page-header";
 import { Button } from "@admin/components/ui/button";
 import { Input } from "@admin/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@admin/components/ui/tabs";
+import { cn } from "@admin/lib/utils";
 
 import { PlanCard } from "./components/plan-card";
 import type { Plan, PlanStatus, Plugins } from "./types";
@@ -16,8 +17,24 @@ import type { Plan, PlanStatus, Plugins } from "./types";
 type Tab = "all" | PlanStatus;
 type Pending = { plan: Plan; action: "enable" | "disable" | "delete" };
 
+type PaginationLinks = {
+    url: string | null;
+    label: string;
+    active: boolean;
+};
+
+type Paginated<T> = {
+    data: T[];
+    links: PaginationLinks[];
+    current_page: number;
+    last_page: number;
+    from: number | null;
+    to: number | null;
+    total: number;
+};
+
 type Props = {
-    plans: Plan[];
+    plans: Paginated<Plan> | Plan[];
     tab: Tab;
     search: string;
     counts: Record<Tab, number>;
@@ -29,13 +46,23 @@ export default function PlansIndex({
     tab,
     search: initialSearch,
     counts,
-    plugins
+    plugins,
 }: Props) {
     const { t } = useTranslation();
     const [search, setSearch] = useState(initialSearch);
     const [pending, setPending] = useState<Pending | null>(null);
     const [processing, setProcessing] = useState(false);
     const firstRender = useRef(true);
+
+    // Safely extract plans array whether paginated or plain array
+    const planList: Plan[] = Array.isArray(plans)
+        ? plans
+        : plans && Array.isArray(plans.data)
+          ? plans.data
+          : [];
+
+    // Extract pagination metadata
+    const pagination = Array.isArray(plans) ? null : plans;
 
     const visit = (next: { tab?: Tab; search?: string }) => {
         const nextTab = next.tab ?? tab;
@@ -184,7 +211,7 @@ export default function PlansIndex({
                     </div>
                 </div>
 
-                {plans.length === 0 ? (
+                {planList.length === 0 ? (
                     <EmptyState
                         icon={Package}
                         title={search ? t("No plans found") : t("No plans yet")}
@@ -205,29 +232,83 @@ export default function PlansIndex({
                         }
                     />
                 ) : (
-                    <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-                        {plans.map((plan) => (
-                            <PlanCard
-                                key={plan.id}
-                                plan={plan}
-                                onToggle={() =>
-                                    setPending({
-                                        plan,
-                                        action:
-                                            plan.status === "active"
-                                                ? "disable"
-                                                : "enable",
-                                    })
-                                }
-                                onDelete={() =>
-                                    setPending({ plan, action: "delete" })
-                                }
-                                aiBuilderEnabled={plugins.aiBuilder}
-                                googleWalletInstalled={plugins.googleWallet}
-                                nfcEnabled={plugins.nfc}
-                            />
-                        ))}
-                    </div>
+                    <>
+                        <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+                            {planList.map((plan) => (
+                                <PlanCard
+                                    key={plan.id}
+                                    plan={plan}
+                                    onToggle={() =>
+                                        setPending({
+                                            plan,
+                                            action:
+                                                plan.status === "active"
+                                                    ? "disable"
+                                                    : "enable",
+                                        })
+                                    }
+                                    onDelete={() =>
+                                        setPending({ plan, action: "delete" })
+                                    }
+                                    aiBuilderEnabled={plugins.aiBuilder}
+                                    googleWalletInstalled={plugins.googleWallet}
+                                    nfcEnabled={plugins.nfc}
+                                />
+                            ))}
+                        </div>
+
+                        {/* Pagination navigation controls */}
+                        {pagination && pagination.last_page > 1 && (
+                            <div className="flex flex-col items-center justify-between gap-4 border-t pt-4 sm:flex-row">
+                                <p className="text-sm text-muted-foreground">
+                                    {t("Showing :from to :to of :total results")
+                                        .replace(
+                                            ":from",
+                                            String(pagination.from ?? 0),
+                                        )
+                                        .replace(
+                                            ":to",
+                                            String(pagination.to ?? 0),
+                                        )
+                                        .replace(
+                                            ":total",
+                                            String(pagination.total),
+                                        )}
+                                </p>
+                                <div className="flex flex-wrap items-center gap-1">
+                                    {pagination.links.map((link, index) => {
+                                        if (!link.url) {
+                                            return (
+                                                <span
+                                                    key={index}
+                                                    className="inline-flex h-9 min-w-9 items-center justify-center rounded-md border border-transparent px-3 text-sm text-muted-foreground/50 opacity-50"
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: link.label,
+                                                    }}
+                                                />
+                                            );
+                                        }
+                                        return (
+                                            <Link
+                                                key={index}
+                                                href={link.url}
+                                                preserveScroll
+                                                className={cn(
+                                                    "inline-flex h-9 min-w-9 items-center justify-center rounded-md border px-3 text-sm font-medium transition-colors",
+                                                    link.active
+                                                        ? "border-primary bg-primary text-primary-foreground"
+                                                        : "border-input bg-background hover:bg-muted text-foreground",
+                                                )}
+                                                dangerouslySetInnerHTML={{
+                                                    __html: link.label,
+                                                }}
+                                            />
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
 

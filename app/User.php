@@ -21,6 +21,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use ProtoneMedia\LaravelVerifyNewEmail\MustVerifyNewEmail;
 
@@ -82,6 +84,17 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Get the token value for the "remember me" session safely.
+     *
+     * @return string
+     */
+    public function getRememberToken()
+    {
+        // Return an empty string if the remember_token column is null
+        return (string) parent::getRememberToken();
+    }
+
+    /**
      * Send new email verification notification.
      */
     public function sendEmailVerificationNotification()
@@ -128,6 +141,34 @@ class User extends Authenticatable implements MustVerifyEmail
                 'user_id' => $this->id ?? null,
                 'error' => $e->getMessage(),
             ]);
+        }
+    }
+
+    /**
+     * Send the welcome email (when the template is enabled).
+     */
+    public function sendWelcomeEmail()
+    {
+        $emailTemplate = EmailTemplate::where('email_template_id', '584922675208')->first();
+
+        if (!$emailTemplate || $emailTemplate->is_enabled != 1) {
+            return;
+        }
+
+        try {
+            $message = [
+                'status'          => '',
+                'emailSubject'    => $emailTemplate->email_template_subject,
+                'emailContent'    => $emailTemplate->email_template_content,
+                'registeredName'  => $this->name,
+                'registeredEmail' => $this->email,
+            ];
+
+            Mail::to($this->email)
+                ->bcc(config('mail.from.address'))
+                ->send(new \App\Mail\AppointmentMail($message));
+        } catch (\Throwable $e) {
+            report($e);
         }
     }
 
@@ -273,7 +314,9 @@ class User extends Authenticatable implements MustVerifyEmail
                 DB::table('testimonials')->whereIn('card_id', $cardIds)->delete();
                 DB::table('vcard_products')->whereIn('card_id', $cardIds)->delete();
                 DB::table('visitors')->whereIn('card_id', $cardIds)->delete();
-                DB::table('google_wallets_vcard')->whereIn('card_id', $cardIds)->delete();
+                if (Schema::hasTable('google_wallets_vcard')) {
+                    DB::table('google_wallets_vcard')->whereIn('card_id', $cardIds)->delete();
+                }
                 DB::table('custom_domain_requests')->whereIn('card_id', $cardIds)->delete();
 
                 DB::table('nfc_card_keys')
@@ -296,13 +339,42 @@ class User extends Authenticatable implements MustVerifyEmail
             DB::table('service_booking_confirmeds')->whereIn('user_id', $userIds)->delete();
             DB::table('categories')->whereIn('user_id', $userIds)->delete();
             DB::table('medias')->whereIn('user_id', $userIds)->delete();
-            DB::table('google_wallets')->whereIn('user_id', $userIds)->delete();
+            if (Schema::hasTable('google_wallets')) {
+                DB::table('google_wallets')->whereIn('user_id', $userIds)->delete();
+            }
             DB::table('custom_domain_requests')->whereIn('user_id', $userIds)->delete();
 
             $nfcOrders = DB::table('nfc_card_orders')->whereIn('user_id', $userIds)->pluck('nfc_card_order_id')->toArray();
             if (!empty($nfcOrders)) {
                 DB::table('nfc_card_order_transactions')->whereIn('nfc_card_order_id', $nfcOrders)->delete();
                 DB::table('nfc_card_orders')->whereIn('nfc_card_order_id', $nfcOrders)->delete();
+            }
+
+            // Support tickets (TicketingSystem plugin, optional: only when its tables exist).
+            // Tickets store users.id; their files are on the private "local" disk.
+            if (Schema::hasTable('ticketing_tickets')) {
+                $ticketIds = DB::table('ticketing_tickets')->where('user_id', $user->id)->pluck('id')->toArray();
+
+                if (!empty($ticketIds)) {
+                    foreach ($ticketIds as $ticketId) {
+                        Storage::disk('local')->deleteDirectory('ticketing/' . $ticketId);
+                    }
+
+                    if (Schema::hasTable('ticketing_attachments')) {
+                        DB::table('ticketing_attachments')->whereIn('ticket_id', $ticketIds)->delete();
+                    }
+                    if (Schema::hasTable('ticketing_messages')) {
+                        DB::table('ticketing_messages')->whereIn('ticket_id', $ticketIds)->delete();
+                    }
+                    DB::table('ticketing_tickets')->whereIn('id', $ticketIds)->delete();
+                }
+
+                // A deleted staff member: their replies stay in the customers' conversations,
+                // but tickets assigned to them go back to "unassigned"
+                DB::table('ticketing_tickets')->where('assigned_to', $user->id)->update([
+                    'assigned_to' => null,
+                    'updated_at'  => now(),
+                ]);
             }
 
             $referralRequests = DB::table('referral_withdraw_requests')->whereIn('user_id', $userIds)->pluck('referral_withdraw_request_id')->toArray();
@@ -317,7 +389,9 @@ class User extends Authenticatable implements MustVerifyEmail
                 ->delete();
 
             DB::table('applied_coupons')->whereIn('user_id', $userIds)->delete();
-            DB::table('in_app_purchases')->whereIn('user_id', $userIds)->delete();
+            if (Schema::hasTable('in_app_purchases')) {
+                DB::table('in_app_purchases')->whereIn('user_id', $userIds)->delete();
+            }
             DB::table('transactions')->whereIn('user_id', $userIds)->delete();
 
             DB::table('pending_user_emails')->where('user_id', $user->id)->delete();

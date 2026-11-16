@@ -1,5 +1,17 @@
-import { Head, router, useForm, usePage } from "@inertiajs/react";
-import { Boxes, CreditCard, Loader2, MoreHorizontal, Package, Pencil, Plus, Power, PowerOff, RotateCw, Trash2 } from "lucide-react";
+import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
+import {
+    Boxes,
+    CreditCard,
+    Loader2,
+    MoreHorizontal,
+    Package,
+    Pencil,
+    Plus,
+    Power,
+    PowerOff,
+    RotateCw,
+    Trash2,
+} from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -11,7 +23,13 @@ import { PageHeader } from "@admin/components/page-header";
 import { Badge } from "@admin/components/ui/badge";
 import { Button } from "@admin/components/ui/button";
 import { Card, CardContent, CardFooter } from "@admin/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@admin/components/ui/dialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@admin/components/ui/dialog";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -39,15 +57,54 @@ type Design = {
     sold: number;
 };
 
-type Props = { designs: Design[]; lowStock: number; maxUploadKb: number; open: string | null };
+type PaginationLinks = {
+    url: string | null;
+    label: string;
+    active: boolean;
+};
+
+type Paginated<T> = {
+    data: T[];
+    links: PaginationLinks[];
+    current_page: number;
+    last_page: number;
+    from: number | null;
+    to: number | null;
+    total: number;
+};
+
+type Props = {
+    designs: Paginated<Design> | Design[];
+    lowStock: number;
+    maxUploadKb: number;
+    open: string | null;
+};
 
 type Pending = { design: Design; action: "activate" | "deactivate" | "delete" };
 
-export default function NfcDesigns({ designs, lowStock, maxUploadKb, open }: Props) {
+export default function NfcDesigns({
+    designs,
+    lowStock,
+    maxUploadKb,
+    open,
+}: Props) {
     const { t } = useTranslation();
     const { currency } = usePage().props;
+
+    // Safely extract designs array whether designs is a paginated object or an array
+    const cardList: Design[] = Array.isArray(designs)
+        ? designs
+        : designs && Array.isArray(designs.data)
+          ? designs.data
+          : [];
+
+    // Extract pagination metadata if available
+    const pagination = Array.isArray(designs) ? null : designs;
+
     const [editing, setEditing] = useState<Design | "new" | null>(
-        open === "new" ? "new" : (designs.find((design) => design.id === open) ?? null),
+        open === "new"
+            ? "new"
+            : (cardList.find((design) => design.id === open) ?? null),
     );
     const [stockFor, setStockFor] = useState<Design | null>(null);
     const [pending, setPending] = useState<Pending | null>(null);
@@ -70,23 +127,29 @@ export default function NfcDesigns({ designs, lowStock, maxUploadKb, open }: Pro
         );
     };
 
-    const confirmCopy = pending && {
-        activate: {
-            title: t("Make “:name” available?"),
-            description: t("Customers can order this NFC card again."),
-            label: t("Make available"),
-        },
-        deactivate: {
-            title: t("Hide “:name”?"),
-            description: t("Customers can no longer order this NFC card. Existing orders are not affected."),
-            label: t("Hide"),
-        },
-        delete: {
-            title: t("Delete “:name”?"),
-            description: t("The NFC card is removed from this list and can't be ordered. Existing orders are not affected."),
-            label: t("Delete"),
-        },
-    }[pending.action];
+    const confirmCopy =
+        pending &&
+        {
+            activate: {
+                title: t("Make “:name” available?"),
+                description: t("Customers can order this NFC card again."),
+                label: t("Make available"),
+            },
+            deactivate: {
+                title: t("Hide “:name”?"),
+                description: t(
+                    "Customers can no longer order this NFC card. Existing orders are not affected.",
+                ),
+                label: t("Hide"),
+            },
+            delete: {
+                title: t("Delete “:name”?"),
+                description: t(
+                    "The NFC card is removed from this list and can't be ordered. Existing orders are not affected.",
+                ),
+                label: t("Delete"),
+            },
+        }[pending.action];
 
     return (
         <>
@@ -94,8 +157,16 @@ export default function NfcDesigns({ designs, lowStock, maxUploadKb, open }: Pro
             <div className="flex flex-1 flex-col gap-6 p-4 lg:p-6">
                 <PageHeader
                     title={t("NFC cards")}
-                    description={t("Physical NFC cards customers can order for their business cards.")}
-                    breadcrumbs={[{ label: t("Dashboard"), href: route("admin.dashboard") }, { label: t("NFC cards") }]}
+                    description={t(
+                        "Physical NFC cards customers can order for their business cards.",
+                    )}
+                    breadcrumbs={[
+                        {
+                            label: t("Dashboard"),
+                            href: route("admin.dashboard"),
+                        },
+                        { label: t("NFC cards") },
+                    ]}
                     actions={
                         <Button onClick={() => setEditing("new")}>
                             <Plus />
@@ -104,11 +175,13 @@ export default function NfcDesigns({ designs, lowStock, maxUploadKb, open }: Pro
                     }
                 />
 
-                {designs.length === 0 ? (
+                {cardList.length === 0 ? (
                     <EmptyState
                         icon={CreditCard}
                         title={t("No NFC cards yet")}
-                        description={t("Add a card design so customers can order it.")}
+                        description={t(
+                            "Add a card design so customers can order it.",
+                        )}
                         action={
                             <Button size="sm" onClick={() => setEditing("new")}>
                                 <Plus />
@@ -117,117 +190,283 @@ export default function NfcDesigns({ designs, lowStock, maxUploadKb, open }: Pro
                         }
                     />
                 ) : (
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                        {designs.map((design) => {
-                            const showBack = flipped[design.id] && design.back;
-                            const out = design.stock <= 0;
-                            const low = !out && design.stock < lowStock;
-                            return (
-                                <Card key={design.id} className={cn("gap-0 overflow-hidden py-0", !design.active && "bg-muted/30")}>
-                                    <button
-                                        type="button"
-                                        onClick={() => setFlipped((state) => ({ ...state, [design.id]: !state[design.id] }))}
-                                        className="group relative aspect-[1.586] overflow-hidden bg-muted"
-                                        title={t("Show the other side")}
-                                    >
-                                        {(showBack ? design.back : design.front) && (
-                                            <img
-                                                src={(showBack ? design.back : design.front) ?? ""}
-                                                alt={design.name}
-                                                className={cn("size-full object-cover transition-opacity", !design.active && "opacity-60")}
-                                            />
+                    <>
+                        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                            {cardList.map((design) => {
+                                const showBack =
+                                    flipped[design.id] && design.back;
+                                const out = design.stock <= 0;
+                                const low = !out && design.stock < lowStock;
+                                return (
+                                    <Card
+                                        key={design.id}
+                                        className={cn(
+                                            "gap-0 overflow-hidden py-0",
+                                            !design.active && "bg-muted/30",
                                         )}
-                                        <span className="absolute end-2 bottom-2 flex items-center gap-1 rounded-full bg-background/90 px-2 py-1 text-[11px] font-medium opacity-0 shadow transition-opacity group-hover:opacity-100">
-                                            <RotateCw className="size-3" />
-                                            {showBack ? t("Front") : t("Back")}
-                                        </span>
-                                        <span className="absolute start-2 top-2 flex gap-1">
-                                            {!design.active && (
-                                                <Badge variant="secondary" className="bg-background/90">
-                                                    {t("Hidden")}
-                                                </Badge>
-                                            )}
-                                        </span>
-                                    </button>
-                                    <CardContent className="flex flex-1 flex-col gap-3 p-4">
-                                        <div className="flex items-start justify-between gap-2">
-                                            <div className="flex min-w-0 flex-col">
-                                                <span className="truncate font-medium">{design.name}</span>
-                                                <span className="text-lg font-semibold tabular-nums">
-                                                    {design.price > 0 ? formatCurrency(design.price, currency) : t("Free")}
-                                                </span>
-                                            </div>
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon-sm" aria-label={t("Actions")}>
-                                                        <MoreHorizontal />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem onSelect={() => setEditing(design)}>
-                                                        <Pencil />
-                                                        {t("Edit")}
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem onSelect={() => setStockFor(design)}>
-                                                        <Boxes />
-                                                        {t("Adjust stock")}
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem onSelect={() => setPending({ design, action: design.active ? "deactivate" : "activate" })}>
-                                                        {design.active ? <PowerOff /> : <Power />}
-                                                        {design.active ? t("Hide from customers") : t("Make available")}
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem variant="destructive" onSelect={() => setPending({ design, action: "delete" })}>
-                                                        <Trash2 />
-                                                        {t("Delete")}
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </div>
-                                        {design.description && <p className="line-clamp-2 text-sm text-muted-foreground">{design.description}</p>}
-                                    </CardContent>
-                                    <CardFooter className="grid grid-cols-2 gap-2 border-t p-4 text-sm">
+                                    >
                                         <button
                                             type="button"
-                                            onClick={() => setStockFor(design)}
-                                            className="flex flex-col items-start rounded-md text-start hover:opacity-80"
+                                            onClick={() =>
+                                                setFlipped((state) => ({
+                                                    ...state,
+                                                    [design.id]:
+                                                        !state[design.id],
+                                                }))
+                                            }
+                                            className="group relative aspect-[1.586] overflow-hidden bg-muted"
+                                            title={t("Show the other side")}
                                         >
-                                            <span className="text-xs text-muted-foreground">{t("In stock")}</span>
-                                            <span
-                                                className={cn(
-                                                    "font-semibold tabular-nums",
-                                                    out && "text-destructive",
-                                                    low && "text-warning",
+                                            {(showBack
+                                                ? design.back
+                                                : design.front) && (
+                                                <img
+                                                    src={
+                                                        (showBack
+                                                            ? design.back
+                                                            : design.front) ??
+                                                        ""
+                                                    }
+                                                    alt={design.name}
+                                                    className={cn(
+                                                        "size-full object-cover transition-opacity",
+                                                        !design.active &&
+                                                            "opacity-60",
+                                                    )}
+                                                />
+                                            )}
+                                            <span className="absolute end-2 bottom-2 flex items-center gap-1 rounded-full bg-background/90 px-2 py-1 text-[11px] font-medium opacity-0 shadow transition-opacity group-hover:opacity-100">
+                                                <RotateCw className="size-3" />
+                                                {showBack
+                                                    ? t("Front")
+                                                    : t("Back")}
+                                            </span>
+                                            <span className="absolute start-2 top-2 flex gap-1">
+                                                {!design.active && (
+                                                    <Badge
+                                                        variant="secondary"
+                                                        className="bg-background/90"
+                                                    >
+                                                        {t("Hidden")}
+                                                    </Badge>
                                                 )}
-                                            >
-                                                {design.stock.toLocaleString()}
-                                                {out && <span className="ms-1.5 text-xs font-normal">{t("Sold out")}</span>}
-                                                {low && <span className="ms-1.5 text-xs font-normal">{t("Running low")}</span>}
                                             </span>
                                         </button>
-                                        <div className="flex flex-col">
-                                            <span className="text-xs text-muted-foreground">{t("Sold")}</span>
-                                            <span className="font-semibold tabular-nums">
-                                                {design.sold.toLocaleString()}
-                                                <span className="ms-1.5 text-xs font-normal text-muted-foreground">
-                                                    {design.orders} {t("orders")}
+                                        <CardContent className="flex flex-1 flex-col gap-3 p-4">
+                                            <div className="flex items-start justify-between gap-2">
+                                                <div className="flex min-w-0 flex-col">
+                                                    <span className="truncate font-medium">
+                                                        {design.name}
+                                                    </span>
+                                                    <span className="text-lg font-semibold tabular-nums">
+                                                        {design.price > 0
+                                                            ? formatCurrency(
+                                                                  design.price,
+                                                                  currency,
+                                                              )
+                                                            : t("Free")}
+                                                    </span>
+                                                </div>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger
+                                                        asChild
+                                                    >
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon-sm"
+                                                            aria-label={t(
+                                                                "Actions",
+                                                            )}
+                                                        >
+                                                            <MoreHorizontal />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem
+                                                            onSelect={() =>
+                                                                setEditing(
+                                                                    design,
+                                                                )
+                                                            }
+                                                        >
+                                                            <Pencil />
+                                                            {t("Edit")}
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem
+                                                            onSelect={() =>
+                                                                setStockFor(
+                                                                    design,
+                                                                )
+                                                            }
+                                                        >
+                                                            <Boxes />
+                                                            {t("Adjust stock")}
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem
+                                                            onSelect={() =>
+                                                                setPending({
+                                                                    design,
+                                                                    action: design.active
+                                                                        ? "deactivate"
+                                                                        : "activate",
+                                                                })
+                                                            }
+                                                        >
+                                                            {design.active ? (
+                                                                <PowerOff />
+                                                            ) : (
+                                                                <Power />
+                                                            )}
+                                                            {design.active
+                                                                ? t(
+                                                                      "Hide from customers",
+                                                                  )
+                                                                : t(
+                                                                      "Make available",
+                                                                  )}
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem
+                                                            variant="destructive"
+                                                            onSelect={() =>
+                                                                setPending({
+                                                                    design,
+                                                                    action: "delete",
+                                                                })
+                                                            }
+                                                        >
+                                                            <Trash2 />
+                                                            {t("Delete")}
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </div>
+                                            {design.description && (
+                                                <p className="line-clamp-2 text-sm text-muted-foreground">
+                                                    {design.description}
+                                                </p>
+                                            )}
+                                        </CardContent>
+                                        <CardFooter className="grid grid-cols-2 gap-2 border-t p-4 text-sm">
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setStockFor(design)
+                                                }
+                                                className="flex flex-col items-start rounded-md text-start hover:opacity-80"
+                                            >
+                                                <span className="text-xs text-muted-foreground">
+                                                    {t("In stock")}
                                                 </span>
-                                            </span>
-                                        </div>
-                                    </CardFooter>
-                                </Card>
-                            );
-                        })}
-                    </div>
+                                                <span
+                                                    className={cn(
+                                                        "font-semibold tabular-nums",
+                                                        out &&
+                                                            "text-destructive",
+                                                        low && "text-warning",
+                                                    )}
+                                                >
+                                                    {design.stock.toLocaleString()}
+                                                    {out && (
+                                                        <span className="ms-1.5 text-xs font-normal">
+                                                            {t("Sold out")}
+                                                        </span>
+                                                    )}
+                                                    {low && (
+                                                        <span className="ms-1.5 text-xs font-normal">
+                                                            {t("Running low")}
+                                                        </span>
+                                                    )}
+                                                </span>
+                                            </button>
+                                            <div className="flex flex-col">
+                                                <span className="text-xs text-muted-foreground">
+                                                    {t("Sold")}
+                                                </span>
+                                                <span className="font-semibold tabular-nums">
+                                                    {design.sold.toLocaleString()}
+                                                    <span className="ms-1.5 text-xs font-normal text-muted-foreground">
+                                                        {design.orders}{" "}
+                                                        {t("orders")}
+                                                    </span>
+                                                </span>
+                                            </div>
+                                        </CardFooter>
+                                    </Card>
+                                );
+                            })}
+                        </div>
+
+                        {/* Pagination navigation controls */}
+                        {pagination && pagination.last_page > 1 && (
+                            <div className="flex flex-col items-center justify-between gap-4 border-t pt-4 sm:flex-row">
+                                <p className="text-sm text-muted-foreground">
+                                    {t("Showing :from to :to of :total results")
+                                        .replace(
+                                            ":from",
+                                            String(pagination.from ?? 0),
+                                        )
+                                        .replace(
+                                            ":to",
+                                            String(pagination.to ?? 0),
+                                        )
+                                        .replace(
+                                            ":total",
+                                            String(pagination.total),
+                                        )}
+                                </p>
+                                <div className="flex flex-wrap items-center gap-1">
+                                    {pagination.links.map((link, index) => {
+                                        if (!link.url) {
+                                            return (
+                                                <span
+                                                    key={index}
+                                                    className="inline-flex h-9 min-w-9 items-center justify-center rounded-md border border-transparent px-3 text-sm text-muted-foreground/50 opacity-50"
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: link.label,
+                                                    }}
+                                                />
+                                            );
+                                        }
+                                        return (
+                                            <Link
+                                                key={index}
+                                                href={link.url}
+                                                preserveScroll
+                                                className={cn(
+                                                    "inline-flex h-9 min-w-9 items-center justify-center rounded-md border px-3 text-sm font-medium transition-colors",
+                                                    link.active
+                                                        ? "border-primary bg-primary text-primary-foreground"
+                                                        : "border-input bg-background hover:bg-muted text-foreground",
+                                                )}
+                                                dangerouslySetInnerHTML={{
+                                                    __html: link.label,
+                                                }}
+                                            />
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
 
-            <DesignDialog design={editing} maxUploadKb={maxUploadKb} onClose={() => setEditing(null)} />
+            <DesignDialog
+                design={editing}
+                maxUploadKb={maxUploadKb}
+                onClose={() => setEditing(null)}
+            />
             <StockDialog design={stockFor} onClose={() => setStockFor(null)} />
             <ConfirmDialog
                 open={pending !== null}
                 onOpenChange={(value) => !value && setPending(null)}
-                title={confirmCopy?.title.replace(":name", pending?.design.name ?? "") ?? ""}
+                title={
+                    confirmCopy?.title.replace(
+                        ":name",
+                        pending?.design.name ?? "",
+                    ) ?? ""
+                }
                 description={confirmCopy?.description}
                 confirmLabel={confirmCopy?.label}
                 destructive={pending?.action !== "activate"}
@@ -238,17 +477,43 @@ export default function NfcDesigns({ designs, lowStock, maxUploadKb, open }: Pro
     );
 }
 
-function DesignDialog({ design, maxUploadKb, onClose }: { design: Design | "new" | null; maxUploadKb: number; onClose: () => void }) {
+function DesignDialog({
+    design,
+    maxUploadKb,
+    onClose,
+}: {
+    design: Design | "new" | null;
+    maxUploadKb: number;
+    onClose: () => void;
+}) {
     return (
-        <Dialog open={design !== null} onOpenChange={(open) => !open && onClose()}>
+        <Dialog
+            open={design !== null}
+            onOpenChange={(open) => !open && onClose()}
+        >
             <DialogContent className="max-h-[92svh] overflow-y-auto sm:max-w-xl">
-                {design && <DesignForm key={design === "new" ? "new" : design.id} design={design === "new" ? null : design} maxUploadKb={maxUploadKb} onClose={onClose} />}
+                {design && (
+                    <DesignForm
+                        key={design === "new" ? "new" : design.id}
+                        design={design === "new" ? null : design}
+                        maxUploadKb={maxUploadKb}
+                        onClose={onClose}
+                    />
+                )}
             </DialogContent>
         </Dialog>
     );
 }
 
-function DesignForm({ design, maxUploadKb, onClose }: { design: Design | null; maxUploadKb: number; onClose: () => void }) {
+function DesignForm({
+    design,
+    maxUploadKb,
+    onClose,
+}: {
+    design: Design | null;
+    maxUploadKb: number;
+    onClose: () => void;
+}) {
     const { t } = useTranslation();
     const { currency } = usePage().props;
     const form = useForm({
@@ -263,25 +528,36 @@ function DesignForm({ design, maxUploadKb, onClose }: { design: Design | null; m
 
     const submit = (event: React.FormEvent) => {
         event.preventDefault();
-        form.post(design ? route("admin.update.design") : route("admin.save.design"), {
-            forceFormData: true,
-            preserveScroll: true,
-            onSuccess: onClose,
-        });
+        form.post(
+            design ? route("admin.update.design") : route("admin.save.design"),
+            {
+                forceFormData: true,
+                preserveScroll: true,
+                onSuccess: onClose,
+            },
+        );
     };
 
     return (
         <form onSubmit={submit} className="flex flex-col gap-5">
             <DialogHeader>
-                <DialogTitle>{design ? t("Edit NFC card") : t("Add NFC card")}</DialogTitle>
-                <DialogDescription>{t("Customers see the name, picture, price and description when they order.")}</DialogDescription>
+                <DialogTitle>
+                    {design ? t("Edit NFC card") : t("Add NFC card")}
+                </DialogTitle>
+                <DialogDescription>
+                    {t(
+                        "Customers see the name, picture, price and description when they order.",
+                    )}
+                </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col gap-2">
                 <Label htmlFor="nfc_card_name">{t("Name")}</Label>
                 <Input
                     id="nfc_card_name"
                     value={form.data.nfc_card_name}
-                    onChange={(event) => form.setData("nfc_card_name", event.target.value)}
+                    onChange={(event) =>
+                        form.setData("nfc_card_name", event.target.value)
+                    }
                     placeholder={t("e.g., Matte black NFC card")}
                     aria-invalid={!!form.errors.nfc_card_name}
                     required
@@ -293,7 +569,9 @@ function DesignForm({ design, maxUploadKb, onClose }: { design: Design | null; m
                 <Textarea
                     id="nfc_card_description"
                     value={form.data.nfc_card_description}
-                    onChange={(event) => form.setData("nfc_card_description", event.target.value)}
+                    onChange={(event) =>
+                        form.setData("nfc_card_description", event.target.value)
+                    }
                     aria-invalid={!!form.errors.nfc_card_description}
                     className="min-h-20"
                 />
@@ -312,7 +590,12 @@ function DesignForm({ design, maxUploadKb, onClose }: { design: Design | null; m
                             min={0}
                             step="0.01"
                             value={form.data.nfc_card_price}
-                            onChange={(event) => form.setData("nfc_card_price", event.target.value)}
+                            onChange={(event) =>
+                                form.setData(
+                                    "nfc_card_price",
+                                    event.target.value,
+                                )
+                            }
                             aria-invalid={!!form.errors.nfc_card_price}
                             className="ps-8"
                             required
@@ -321,23 +604,36 @@ function DesignForm({ design, maxUploadKb, onClose }: { design: Design | null; m
                     <FieldError message={form.errors.nfc_card_price} />
                 </div>
                 <div className="flex flex-col gap-2">
-                    <Label htmlFor="nfc_card_available_stocks">{t("Cards in stock")}</Label>
+                    <Label htmlFor="nfc_card_available_stocks">
+                        {t("Cards in stock")}
+                    </Label>
                     <Input
                         id="nfc_card_available_stocks"
                         type="number"
                         min={0}
                         value={form.data.nfc_card_available_stocks}
-                        onChange={(event) => form.setData("nfc_card_available_stocks", event.target.value)}
+                        onChange={(event) =>
+                            form.setData(
+                                "nfc_card_available_stocks",
+                                event.target.value,
+                            )
+                        }
                         aria-invalid={!!form.errors.nfc_card_available_stocks}
                         required
                     />
-                    <FieldError message={form.errors.nfc_card_available_stocks} />
+                    <FieldError
+                        message={form.errors.nfc_card_available_stocks}
+                    />
                 </div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
                 {(
                     [
-                        ["nfc_card_front_image", t("Front side"), design?.front],
+                        [
+                            "nfc_card_front_image",
+                            t("Front side"),
+                            design?.front,
+                        ],
                         ["nfc_card_back_image", t("Back side"), design?.back],
                     ] as const
                 ).map(([field, label, current]) => (
@@ -360,7 +656,10 @@ function DesignForm({ design, maxUploadKb, onClose }: { design: Design | null; m
                 <Button type="button" variant="outline" onClick={onClose}>
                     {t("Cancel")}
                 </Button>
-                <Button type="submit" disabled={form.processing || (!!design && !form.isDirty)}>
+                <Button
+                    type="submit"
+                    disabled={form.processing || (!!design && !form.isDirty)}
+                >
                     {form.processing && <Loader2 className="animate-spin" />}
                     {design ? t("Save changes") : t("Add NFC card")}
                 </Button>
@@ -369,13 +668,30 @@ function DesignForm({ design, maxUploadKb, onClose }: { design: Design | null; m
     );
 }
 
-function StockDialog({ design, onClose }: { design: Design | null; onClose: () => void }) {
+function StockDialog({
+    design,
+    onClose,
+}: {
+    design: Design | null;
+    onClose: () => void;
+}) {
     const { t } = useTranslation();
-    const form = useForm({ id: "", mode: "add" as "add" | "remove" | "set", amount: "" });
+    const form = useForm({
+        id: "",
+        mode: "add" as "add" | "remove" | "set",
+        amount: "",
+    });
     const amount = Number(form.data.amount) || 0;
     const result = !design
         ? 0
-        : Math.max(0, form.data.mode === "add" ? design.stock + amount : form.data.mode === "remove" ? design.stock - amount : amount);
+        : Math.max(
+              0,
+              form.data.mode === "add"
+                  ? design.stock + amount
+                  : form.data.mode === "remove"
+                    ? design.stock - amount
+                    : amount,
+          );
 
     const submit = (event: React.FormEvent) => {
         event.preventDefault();
@@ -405,24 +721,38 @@ function StockDialog({ design, onClose }: { design: Design | null; onClose: () =
                     <DialogHeader>
                         <DialogTitle>{t("Adjust stock")}</DialogTitle>
                         <DialogDescription>
-                            {design?.name} · {t("Currently")} {design?.stock.toLocaleString()}
+                            {design?.name} · {t("Currently")}{" "}
+                            {design?.stock.toLocaleString()}
                         </DialogDescription>
                     </DialogHeader>
-                    <Tabs value={form.data.mode} onValueChange={(mode) => form.setData("mode", mode as typeof form.data.mode)}>
+                    <Tabs
+                        value={form.data.mode}
+                        onValueChange={(mode) =>
+                            form.setData("mode", mode as typeof form.data.mode)
+                        }
+                    >
                         <TabsList className="w-full">
                             <TabsTrigger value="add">{t("Add")}</TabsTrigger>
-                            <TabsTrigger value="remove">{t("Remove")}</TabsTrigger>
+                            <TabsTrigger value="remove">
+                                {t("Remove")}
+                            </TabsTrigger>
                             <TabsTrigger value="set">{t("Set to")}</TabsTrigger>
                         </TabsList>
                     </Tabs>
                     <div className="flex flex-col gap-2">
-                        <Label htmlFor="stock_amount">{form.data.mode === "set" ? t("New stock") : t("Number of cards")}</Label>
+                        <Label htmlFor="stock_amount">
+                            {form.data.mode === "set"
+                                ? t("New stock")
+                                : t("Number of cards")}
+                        </Label>
                         <Input
                             id="stock_amount"
                             type="number"
                             min={0}
                             value={form.data.amount}
-                            onChange={(event) => form.setData("amount", event.target.value)}
+                            onChange={(event) =>
+                                form.setData("amount", event.target.value)
+                            }
                             aria-invalid={!!form.errors.amount}
                             autoFocus
                             required
@@ -434,14 +764,27 @@ function StockDialog({ design, onClose }: { design: Design | null; onClose: () =
                             <Package className="size-4" />
                             {t("Stock after saving")}
                         </span>
-                        <span className="font-semibold tabular-nums">{result.toLocaleString()}</span>
+                        <span className="font-semibold tabular-nums">
+                            {result.toLocaleString()}
+                        </span>
                     </div>
                     <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                        <Button type="button" variant="outline" onClick={onClose}>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={onClose}
+                        >
                             {t("Cancel")}
                         </Button>
-                        <Button type="submit" disabled={form.processing || form.data.amount === ""}>
-                            {form.processing && <Loader2 className="animate-spin" />}
+                        <Button
+                            type="submit"
+                            disabled={
+                                form.processing || form.data.amount === ""
+                            }
+                        >
+                            {form.processing && (
+                                <Loader2 className="animate-spin" />
+                            )}
                             {t("Update stock")}
                         </Button>
                     </div>

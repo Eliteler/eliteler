@@ -28,7 +28,7 @@ use Inertia\Inertia;
  *
  * business_cards.card_status: activated / inactive / deleted (deleted are hidden)
  * business_cards.status: '1', or '0' when the owner's account is suspended/inactive
- * visitors.card_id holds the card_url (see ProfileController).
+ * visitors.card_id holds business_cards.card_id (see App\Services\Analytics\VisitTracker).
  */
 class CreatedCardsController extends Controller
 {
@@ -117,7 +117,7 @@ class CreatedCardsController extends Controller
                 'users.plan_validity as owner_plan_validity', 'themes.theme_name',
             ])
             ->selectSub(
-                DB::table('visitors')->selectRaw('COUNT(*)')->whereColumn('visitors.card_id', 'business_cards.card_url'),
+                DB::table('visitors')->selectRaw('COUNT(*)')->whereColumn('visitors.card_id', 'business_cards.card_id')->where('visitors.is_bot', 0),
                 'visits'
             );
 

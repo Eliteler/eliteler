@@ -418,8 +418,7 @@ export default function CustomerShow(props: Props) {
                                             </span>
                                             <span className="text-xs text-muted-foreground">
                                                 {formatDate(
-                                                    payment.date,
-                                                    "dd MMM yyyy, HH:mm",
+                                                    payment.date
                                                 )}
                                             </span>
                                         </div>
@@ -905,8 +904,7 @@ export default function CustomerShow(props: Props) {
                                 <InfoRow label={t("Joined")}>
                                     <span
                                         title={formatDate(
-                                            customer.joined,
-                                            "dd MMM yyyy, HH:mm",
+                                            customer.joined
                                         )}
                                     >
                                         {formatDate(customer.joined)}

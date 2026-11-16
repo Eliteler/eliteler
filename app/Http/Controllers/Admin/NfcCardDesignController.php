@@ -27,6 +27,7 @@ use Inertia\Inertia;
 class NfcCardDesignController extends Controller
 {
     public const LOW_STOCK = 10;
+    public const PER_PAGE = 9;
 
     public function __construct()
     {
@@ -49,8 +50,12 @@ class NfcCardDesignController extends Controller
             ->get()
             ->keyBy('nfc_card_id');
 
-        $designs = NfcCardDesign::where('status', '!=', 2)->orderByDesc('status')->orderBy('id')->get()
-            ->map(fn (NfcCardDesign $design) => [
+        // Paginate NFC designs
+        $designs = NfcCardDesign::where('status', '!=', 2)
+            ->orderByDesc('status')
+            ->orderBy('id')
+            ->paginate(self::PER_PAGE)
+            ->through(fn(NfcCardDesign $design) => [
                 'id'          => $design->nfc_card_id,
                 'name'        => $design->nfc_card_name,
                 'description' => $design->nfc_card_description,
@@ -61,7 +66,8 @@ class NfcCardDesignController extends Controller
                 'active'      => (int) $design->status === 1,
                 'orders'      => (int) ($sold[$design->nfc_card_id]->orders ?? 0),
                 'sold'        => (int) ($sold[$design->nfc_card_id]->cards ?? 0),
-            ]);
+            ])
+            ->withQueryString();
 
         return Inertia::render('nfc/designs', [
             'designs'     => $designs,

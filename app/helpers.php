@@ -113,19 +113,173 @@ if (!function_exists('plugin_active')) {
 // Zapier Helper
 if (!function_exists('zapier_dispatch')) {
     /**
-     * Safe Zapier Webhook Dispatcher
+     * Safe Zapier Webhook Dispatcher (kept for existing callers and plugins).
+     * New code: App\Support\Zapier, which builds the payload too.
      */
     function zapier_dispatch(string $event, array $payload)
     {
-        $class = 'Plugins\Zapier\Helpers\ZapierHelper';
+        \App\Support\Zapier::send($event, $payload);
+    }
+}
 
-        // base_path points accurately to the project root directory
-        $file = base_path('plugins/Zapier/Helpers/ZapierHelper.php');
-
-        // Check if the file physically exists before triggering the autoloader
-        if (plugin_active('Zapier') && file_exists($file) && class_exists($class)) {
-            $class::dispatch($event, $payload);
+// Whether the user's subscribed plan (users.plan_details snapshot) includes visitor analytics.
+// Snapshots taken before the feature existed have no key and read as false.
+if (!function_exists('plan_has_analytics')) {
+    function plan_has_analytics($user = null): bool
+    {
+        $user = $user ?? auth()->user();
+        if (!$user || empty($user->plan_details)) {
+            return false;
         }
+
+        $planDetails = is_string($user->plan_details)
+            ? json_decode($user->plan_details, true)
+            : (array) $user->plan_details;
+
+        return !empty($planDetails['advanced_analytics']);
+    }
+}
+
+// Flag emoji for a two-letter country code ("IN" -> 🇮🇳); empty for anything else.
+if (!function_exists('country_flag')) {
+    function country_flag(?string $code): string
+    {
+        if (!$code || !preg_match('/^[A-Za-z]{2}$/', $code)) {
+            return '';
+        }
+
+        return implode('', array_map(fn($char) => mb_chr(0x1F1E6 + ord($char) - 65), str_split(strtoupper($code))));
+    }
+}
+
+// YouTube video ID from a stored value: a bare ID (existing cards), an "ID&t=30" leftover
+// or any watch / youtu.be / shorts / embed / live URL. Channel, @handle and playlist URLs give null.
+if (!function_exists('youtube_video_id')) {
+    function youtube_video_id(?string $value): ?string
+    {
+        $value = trim((string) $value);
+
+        if ($value === '') {
+            return null;
+        }
+
+        // Bare ID, optionally followed by leftover query params ("ID&t=30", "ID?si=...")
+        if (preg_match('/^([A-Za-z0-9_-]{11})(?:[&?#].*)?$/', $value, $match)) {
+            return $match[1];
+        }
+
+        $url  = preg_match('#^https?://#i', $value) ? $value : 'https://' . $value;
+        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+        $host = preg_replace('/^(www|m|music)\./', '', $host);
+        $path = (string) parse_url($url, PHP_URL_PATH);
+        $id   = null;
+
+        if ($host === 'youtu.be') {
+            $id = explode('/', trim($path, '/'))[0] ?? null;
+        } elseif (in_array($host, ['youtube.com', 'youtube-nocookie.com'], true)) {
+            parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+
+            if (!empty($query['v']) && is_string($query['v'])) {
+                $id = $query['v'];
+            } elseif (preg_match('~^/(?:embed|shorts|live|v)/([^/?#]+)~', $path, $match)) {
+                $id = $match[1];
+            }
+        }
+
+        return $id !== null && preg_match('/^[A-Za-z0-9_-]{11}$/', $id) ? $id : null;
+    }
+}
+
+// Cleans YouTube cover and video features before a card is rendered, without saving anything:
+// IDs are extracted from old URL-shaped values, a cover without a video is hidden and a
+// video feature holding a channel URL is shown as a link button instead of a broken embed.
+if (!function_exists('normalize_card_youtube')) {
+    function normalize_card_youtube($business_card_details, $feature_details)
+    {
+        if ($business_card_details && in_array($business_card_details->cover_type ?? null, ['youtube', 'youtube-ap'], true)) {
+            $id = youtube_video_id($business_card_details->cover);
+
+            if ($id) {
+                $business_card_details->cover = $id;
+            } else {
+                $business_card_details->cover_type = 'none';
+            }
+        }
+
+        if (!$feature_details instanceof \Illuminate\Support\Collection) {
+            return $feature_details;
+        }
+
+        return $feature_details->filter(function ($feature) {
+            if (($feature->type ?? null) !== 'youtube') {
+                return true;
+            }
+
+            $id = youtube_video_id($feature->content);
+
+            if ($id) {
+                $feature->content = $id;
+                return true;
+            }
+
+            if (preg_match('#^https?://#i', trim((string) $feature->content))) {
+                $feature->type = 'url';
+                return true;
+            }
+
+            return false;
+        })->values();
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| Storage Format Helper
+|--------------------------------------------------------------------------
+*/
+
+if (!function_exists('formatStorageSize')) {
+    /**
+     * Converts storage size in MB to a human-readable format (MB, GB, TB).
+     * Automatically adds a note when storage is unlimited (Max 100 GB).
+     *
+     * @param int|float|string|null $mb
+     * @param bool $showNote
+     * @return string
+     */
+    function formatStorageSize($mb, bool $showNote = true): string
+    {
+        // Detect unlimited values (-1, null, 'unlimited', or large values like 999999)
+        $isUnlimited = $mb === -1 ||
+            $mb === '-1' ||
+            $mb === null ||
+            strtolower((string) $mb) === 'unlimited' ||
+            (is_numeric($mb) && (float) $mb >= 999999);
+
+        if ($isUnlimited) {
+            return $showNote ? __('Unlimited (Max: 100 GB)') : __('Unlimited');
+        }
+
+        $mb = (float) $mb;
+
+        if ($mb <= 0) {
+            return '0 MB';
+        }
+
+        // Convert MB to TB (1 TB = 1048576 MB)
+        if ($mb >= 1048576) {
+            $tb = $mb / 1048576;
+            return ($tb == (int) $tb ? (int) $tb : number_format($tb, 1)) . ' TB';
+        }
+
+        // Convert MB to GB (1 GB = 1024 MB)
+        if ($mb >= 1024) {
+            $gb = $mb / 1024;
+            return ($gb == (int) $gb ? (int) $gb : number_format($gb, 1)) . ' GB';
+        }
+
+        // Return in MB
+        return ($mb == (int) $mb ? (int) $mb : number_format($mb, 1)) . ' MB';
     }
 }
 

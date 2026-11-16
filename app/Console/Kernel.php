@@ -29,6 +29,10 @@ class Kernel extends ConsoleKernel
         $cronHour = (int) DB::table('config')->where('config_key', 'cron_hour')->value('config_value');
         $schedule->command('expiry:cron')->dailyAt(sprintf('%02d:00', min(max($cronHour, 0), 23)));
 
+        // Visitor analytics: refresh the MaxMind GeoLite2 database weekly once the admin has added a license key
+        $schedule->command('analytics:geoip-update')->weeklyOn(3, '04:00')
+            ->when(fn () => \App\Services\Analytics\GeoIpUpdater::configured());
+
         // Check health
         $schedule->command(\Spatie\Health\Commands\RunHealthChecksCommand::class)->everyMinute();
     }

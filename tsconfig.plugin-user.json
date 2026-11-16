@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./plugins/ModernDashboard/Views/js/*"],
+      "@lang/*": ["./resources/lang/*"],
+      "@gobiz/user": ["./plugins/ModernDashboard/Views/js/plugin-sdk/user.ts"]
+    }
+  },
+  "include": [
+    "plugins/ModernDashboard/Views/js/types",
+    "plugins/ModernDashboard/Views/js/plugin-sdk",
+    "plugins/*/resources/js/user",
+    "plugins/*/resources/js/widgets"
+  ]
+}

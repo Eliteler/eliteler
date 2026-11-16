@@ -3,6 +3,57 @@
 @section('css')
     {{-- File Manager CSS --}}
     <link href="{{ asset('css/file-manager.css') }}" rel="stylesheet">
+    {{-- LightGallery CSS --}}
+    <link rel="stylesheet" href="{{ asset('plugins/file-manager/css/lightgallery.min.css') }}">
+    <link rel="stylesheet" href="{{ asset('plugins/file-manager/css/lg-zoom.min.css') }}">
+
+    <style>
+        /* Responsive adjustments for mobile screens */
+        @media (max-width: 991.98px) {
+            .fm-inspector-panel {
+                display: none !important;
+            }
+        }
+
+        .cursor-pointer {
+            cursor: pointer;
+        }
+
+        /* Modern Skeleton Shimmer Loading Effect */
+        .skeleton-shimmer {
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 25%, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.04) 75%) !important;
+            background-size: 200% 100% !important;
+            animation: skeletonLoading 1.5s infinite ease-in-out !important;
+            border: 1px dashed rgba(255, 255, 255, 0.15) !important;
+        }
+
+        @keyframes skeletonLoading {
+            0% {
+                background-position: 200% 0;
+            }
+
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        /* Smooth fade-in animation once image finishes loading */
+        .img-fade-in {
+            animation: fadeInImg 0.35s ease-in-out forwards;
+        }
+
+        @keyframes fadeInImg {
+            from {
+                opacity: 0;
+                transform: scale(0.98);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+    </style>
 @endsection
 
 @section('content')
@@ -50,7 +101,7 @@
                                 <path d="M4 12v6a8 3 0 0 0 16 0v-6" />
                             </svg>
                             <span>{{ __('Used:') }} <strong>{{ $usedStorage }} MB</strong> /
-                                {{ $active_plan->storage == '999' ? __('Unlimited') : $totalStorage . ' MB' }}</span>
+                                {{ ($active_plan->storage == '999' || $active_plan->storage == -1) ? __('Unlimited') : $totalStorage . ' MB' }}</span>
                             <div class="progress" style="width: 60px; height: 6px;">
                                 <div class="progress-bar bg-primary" style="width: {{ $usedStoragePercentage }}%"></div>
                             </div>
@@ -203,8 +254,8 @@
                             </div>
                         </div>
 
-                        <!-- Right Side Inspector Panel -->
-                        <div class="fm-inspector-panel" id="fmInspector">
+                        <!-- Right Side Inspector Panel (Desktop only) -->
+                        <div class="fm-inspector-panel d-none d-lg-block" id="fmInspector">
                             <div id="inspectorEmpty" class="text-center my-auto text-muted small py-5">
                                 <svg xmlns="http://www.w3.org/2000/svg"
                                     class="icon icon-tabler icon-tabler-info-circle mb-2 text-primary" width="32"
@@ -224,7 +275,7 @@
                                     <span class="badge bg-primary text-white" id="inspectorExt">JPG</span>
                                 </div>
 
-                                <div class="inspector-hero-img" id="inspectorThumb"></div>
+                                <div class="inspector-hero-img cursor-pointer rounded" id="inspectorThumb"></div>
 
                                 <div class="mb-3">
                                     <label class="form-label text-muted small mb-1">{{ __('File URL') }}</label>
@@ -251,10 +302,9 @@
                                 </div>
 
                                 <div class="d-flex gap-2">
-                                    <a href="#" target="_blank" class="btn btn-primary w-100"
-                                        id="inspectorPreviewBtn">
-                                        {{ __('Open Original') }}
-                                    </a>
+                                    <button type="button" class="btn btn-primary w-100" id="inspectorPreviewBtn">
+                                        {{ __('View Image') }}
+                                    </button>
                                     <button class="btn btn-danger px-3" id="inspectorDeleteBtn">
                                         {{ __('Delete') }}
                                     </button>
@@ -371,9 +421,79 @@
             </div>
         </div>
     </div>
+
+    {{-- Mobile File Details Modal --}}
+    <div class="modal modal-blur fade" id="mobileInspectorModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">{{ __('File Details') }}</h5>
+                    <span class="badge bg-primary text-white ms-auto me-2" id="mInspectorExt">JPG</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    {{-- Alert container inside modal --}}
+                    <div id="mAlertContainer"></div>
+
+                    {{-- Image Container (with Skeleton Shimmer support) --}}
+                    <div class="inspector-hero-img mb-3 cursor-pointer rounded border" id="mInspectorThumb"
+                        style="height: 220px; background-size: contain; background-repeat: no-repeat; background-position: center;">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-muted small mb-1">{{ __('File URL') }}</label>
+                        <div class="input-group input-group-sm">
+                            <input type="text" class="form-control" id="mInspectorUrl" readonly>
+                            <button class="btn btn-primary" type="button" id="mCopyBtn"
+                                onclick="copyMobileInspectorUrl()">{{ __('Copy') }}</button>
+                        </div>
+                    </div>
+
+                    <div class="card bg-surface-secondary border-0 mb-3">
+                        <div class="card-body p-2">
+                            <table class="table table-sm table-borderless small mb-0">
+                                <tr>
+                                    <td class="text-muted ps-1">{{ __('File Size:') }}</td>
+                                    <td class="text-end fw-semibold" id="mInspectorSize">-</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted ps-1">{{ __('Uploaded:') }}</td>
+                                    <td class="text-end fw-semibold" id="mInspectorDate">-</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="button"
+                            class="btn btn-primary w-100 d-inline-flex align-items-center justify-content-center gap-1"
+                            id="mInspectorPreviewBtn">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-zoom-in"
+                                width="16" height="16" viewBox="0 0 24 24" stroke-width="2"
+                                stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                <circle cx="10" cy="10" r="7" />
+                                <line x1="21" y1="21" x2="15" y2="15" />
+                                <line x1="10" y1="7" x2="10" y2="13" />
+                                <line x1="7" y1="10" x2="13" y2="10" />
+                            </svg>
+                            {{ __('View Image') }}
+                        </button>
+                        <button class="btn btn-danger px-3" id="mInspectorDeleteBtn">
+                            {{ __('Delete') }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('custom-js')
+    {{-- LightGallery JS dependencies --}}
+    <script src="{{ asset('plugins/file-manager/js/lightgallery.min.js') }}"></script>
+    <script src="{{ asset('plugins/file-manager/js/lg-zoom.min.js') }}"></script>
+
     <script>
         "use strict";
 
@@ -385,6 +505,32 @@
         let viewMode = 'grid';
         let searchTimer = null;
         let currentSearchQuery = '';
+        let lgInstance = null;
+
+        function isMobileView() {
+            return window.innerWidth < 992;
+        }
+
+        // Trigger dynamic LightGallery modal
+        function openWithLightGallery(imageUrl, fileName = '') {
+            const container = document.createElement('div');
+
+            if (lgInstance) {
+                lgInstance.destroy();
+            }
+
+            lgInstance = lightGallery(container, {
+                dynamic: true,
+                plugins: [lgZoom],
+                dynamicEl: [{
+                    src: imageUrl,
+                    thumb: imageUrl,
+                    subHtml: `<h4>${fileName}</h4>`
+                }]
+            });
+
+            lgInstance.openGallery(0);
+        }
 
         function debounceSearch(value) {
             clearTimeout(searchTimer);
@@ -478,14 +624,14 @@
             renderGridView(items);
             renderListView(items);
 
-            // Maintain active inspection or select first item
-            if (items.length > 0) {
+            // Maintain active inspection or select first item on desktop
+            if (items.length > 0 && !isMobileView()) {
                 if (activeMedia) {
                     const found = items.find(m => m.media_id === activeMedia.media_id);
-                    if (found) inspectMedia(found);
-                    else inspectMedia(items[0]);
+                    if (found) inspectMedia(found, false);
+                    else inspectMedia(items[0], false);
                 } else {
-                    inspectMedia(items[0]);
+                    inspectMedia(items[0], false);
                 }
             }
         }
@@ -573,34 +719,70 @@
 
         function inspectMediaById(id) {
             const media = allMediaData.find(item => item.media_id == id);
-            if (media) inspectMedia(media);
+            if (media) inspectMedia(media, true);
         }
 
-        function inspectMedia(media) {
+        function inspectMedia(media, isUserClick = false) {
             activeMedia = media;
             const fullUrl = media.full_url;
 
+            // Highlight selected file
+            $('.file-item-card').removeClass('selected');
+            $('.fm-table-view tbody tr').removeClass('selected');
+            $(`.file-item-card:has(input[value="${media.media_id}"])`).addClass('selected');
+            $(`.fm-table-view tbody tr:has(input[value="${media.media_id}"])`).addClass('selected');
+
+            // Populate Desktop Panel
             $('#inspectorEmpty').addClass('d-none');
             $('#inspectorDetails').removeClass('d-none');
 
-            // Add placeholder glow while image loads
-            $('#inspectorThumb').addClass('placeholder-glow');
-            const img = new Image();
-            img.src = fullUrl;
-            img.onload = function() {
-                $('#inspectorThumb').removeClass('placeholder-glow').css('background-image', `url('${fullUrl}')`);
+            // Apply Skeleton Shimmer Effect while image is fetching/loading
+            const targets = $('#inspectorThumb, #mInspectorThumb');
+            targets.removeClass('img-fade-in')
+                .addClass('skeleton-shimmer')
+                .css('background-image', 'none');
+
+            // Preload image to avoid sudden pop-in
+            const preloader = new Image();
+            preloader.src = fullUrl;
+            preloader.onload = function() {
+                targets.removeClass('skeleton-shimmer')
+                    .css('background-image', `url('${fullUrl}')`)
+                    .addClass('img-fade-in');
+            };
+            preloader.onerror = function() {
+                targets.removeClass('skeleton-shimmer');
             };
 
             $('#inspectorExt').text(media.extension);
             $('#inspectorUrl').val(media.media_url);
             $('#inspectorSize').text(media.size_formatted);
             $('#inspectorDate').text(media.full_date || media.formatted_created_at);
-            $('#inspectorPreviewBtn').attr('href', fullUrl);
+
+            // Desktop LightGallery trigger
+            $('#inspectorPreviewBtn, #inspectorThumb').off('click').on('click', function(e) {
+                e.preventDefault();
+                openWithLightGallery(fullUrl, media.file_name);
+            });
+
             $('#inspectorDeleteBtn').attr('onclick', `deleteMedia('${media.media_id}')`);
 
-            // Highlight state
-            $('.file-item-card').removeClass('selected');
-            $('.fm-table-view tbody tr').removeClass('selected');
+            // Mobile-specific modal trigger
+            if (isUserClick && isMobileView()) {
+                $('#mInspectorExt').text(media.extension);
+                $('#mInspectorUrl').val(media.media_url);
+                $('#mInspectorSize').text(media.size_formatted);
+                $('#mInspectorDate').text(media.full_date || media.formatted_created_at);
+                $('#mInspectorDeleteBtn').attr('onclick',
+                    `$('#mobileInspectorModal').modal('hide'); deleteMedia('${media.media_id}');`);
+
+                // Mobile LightGallery trigger
+                $('#mInspectorThumb, #mInspectorPreviewBtn').off('click').on('click', function() {
+                    openWithLightGallery(fullUrl, media.file_name);
+                });
+
+                $('#mobileInspectorModal').modal('show');
+            }
         }
 
         function resetInspector() {
@@ -614,6 +796,41 @@
             navigator.clipboard.writeText(val);
             showNotificationAlert(`{{ __('Path copied to clipboard') }}`, 'success');
         }
+
+        // Copy URL from mobile inspector and display alert inside the modal
+        function copyMobileInspectorUrl() {
+            const val = $('#mInspectorUrl').val();
+            navigator.clipboard.writeText(val);
+
+            // Button feedback
+            const copyBtn = $('#mCopyBtn');
+            const originalText = copyBtn.text();
+            copyBtn.text(`{{ __('Copied!') }}`).prop('disabled', true);
+
+            // Render alert inside modal
+            const alertDiv = `
+                <div class="alert alert-important alert-success alert-dismissible border-0 shadow-sm mb-3" role="alert">
+                    <div class="d-flex align-items-center gap-2">
+                        <div>{{ __('Path copied to clipboard') }}</div>
+                    </div>
+                </div>
+            `;
+            $('#mAlertContainer').html(alertDiv);
+
+            // Auto-hide alert and restore button state
+            setTimeout(() => {
+                $('#mAlertContainer .alert').fadeOut(300, function() {
+                    $(this).remove();
+                });
+                copyBtn.text(originalText).prop('disabled', false);
+            }, 3000);
+        }
+
+        // Reset alert when modal is closed
+        $('#mobileInspectorModal').on('hidden.bs.modal', function() {
+            $('#mAlertContainer').empty();
+            $('#mCopyBtn').text(`{{ __('Copy') }}`).prop('disabled', false);
+        });
 
         function toggleMediaSelection(id, checkbox) {
             if (checkbox.checked) {

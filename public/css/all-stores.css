@@ -232,3 +232,55 @@ div.dataTables_wrapper .dataTables_length select {
     justify-content: center;
     margin-bottom: 1rem;
 }
+
+/* Force empty state table and tbody to span full width */
+#storesTable.is-table-empty,
+#storesTable.is-table-empty tbody {
+    display: block !important;
+    width: 100% !important;
+}
+
+/* Override mobile card-like borders and paddings on the empty row */
+#storesTable tbody tr.empty-table-row {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+/* Center empty table td horizontally and vertically */
+#storesTable tbody tr.empty-table-row td.dataTables_empty {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    width: 100% !important;
+    min-height: 380px !important;
+    margin: 0 auto !important;
+    border: none !important;
+    background: transparent !important;
+}
+
+/* Remove mobile pseudo-label elements */
+#storesTable tbody tr.empty-table-row td.dataTables_empty::before,
+#storesTable tbody tr.empty-table-row td.dataTables_empty::after {
+    display: none !important;
+    content: none !important;
+}
+
+/* Center and format the store empty state icon */
+.empty-state-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background-color: rgba(32, 107, 196, 0.12);
+    color: #206bc4;
+    margin: 0 auto 1rem auto;
+}

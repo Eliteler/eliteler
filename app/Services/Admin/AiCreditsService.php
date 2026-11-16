@@ -5,7 +5,9 @@ namespace App\Services\Admin;
 use App\AiCredit;
 use App\AiCreditsPlan;
 use App\AiCreditsTransaction;
+use App\Classes\InvoiceNumber;
 use App\User;
+use App\Support\Zapier;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -35,7 +37,7 @@ class AiCreditsService
             if ($status === 'paid' && ! $transaction->invoice_number) {
                 $prefix = DB::table('config')->where('config_key', 'invoice_prefix')->value('config_value');
                 $transaction->invoice_prefix = $prefix;
-                $transaction->invoice_number = AiCreditsTransaction::where('invoice_prefix', $prefix)->count() + 1;
+                $transaction->invoice_number = InvoiceNumber::next('ai_credits_transactions', $prefix);
             }
 
             $transaction->payment_status = $status;
@@ -67,32 +69,13 @@ class AiCreditsService
 
     private function dispatchZapier(AiCreditsTransaction $transaction, ?User $user): void
     {
-        if (! function_exists('zapier_dispatch')) {
-            return;
-        }
-
-        $invoice = json_decode($transaction->invoice_details ?? '', true) ?: [];
-
-        zapier_dispatch('ai_credits', [
-            'transaction_id'  => $transaction->ai_credits_transaction_id,
-            'invoice_id'      => $transaction->invoice_prefix . $transaction->invoice_number,
-            'user_name'       => $user->name ?? ($invoice['to_billing_name'] ?? 'Customer'),
-            'user_address'    => $user->billing_address ?? ($invoice['to_billing_address'] ?? ''),
-            'user_city'       => $user->billing_city ?? ($invoice['to_billing_city'] ?? ''),
-            'user_state'      => $user->billing_state ?? ($invoice['to_billing_state'] ?? ''),
-            'user_country'    => $user->billing_country ?? ($invoice['to_billing_country'] ?? ''),
-            'user_zip'        => $user->billing_zipcode ?? ($invoice['to_billing_zipcode'] ?? ''),
-            'user_email'      => $user->email ?? ($invoice['to_billing_email'] ?? ''),
-            'user_phone'      => ($user->country_code ?? '') . ($user->mobile_number ?? ($invoice['to_billing_phone'] ?? '')),
-            'user_tax_number' => $user->vat_number ?? ($invoice['to_vat_number'] ?? ''),
-            'plan_name'       => $transaction->purchase_details,
-            'quantity'        => 1,
-            'currency'        => $transaction->currency,
-            'amount'          => (float) $transaction->amount,
-            'payment_method'  => $transaction->payment_method ?? 'Offline',
-            'payment_status'  => 'paid',
-            'invoice_date'    => now()->toDateString(),
-            'purchased_at'    => now()->toDateTimeString(),
-        ]);
+        Zapier::aiCredits($user, [
+            'transaction_id' => $transaction->ai_credits_transaction_id,
+            'invoice_id'     => $transaction->invoice_prefix . $transaction->invoice_number,
+            'plan_name'      => $transaction->purchase_details,
+            'currency'       => $transaction->currency,
+            'amount'         => $transaction->amount,
+            'payment_method' => $transaction->payment_method ?? 'Offline',
+        ], json_decode($transaction->invoice_details ?? '', true) ?: []);
     }
 }

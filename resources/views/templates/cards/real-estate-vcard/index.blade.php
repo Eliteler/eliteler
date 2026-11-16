@@ -1167,7 +1167,7 @@
                 </div>
             @else
                 {{-- ================================================================
-                PWA MODAL
+                PWA MODAL 
             ================================================================ --}}
                 @if ($plan_details != null)
                     @if ($plan_details['pwa'] == 1 && $business_card_details->is_enable_pwa == 1)

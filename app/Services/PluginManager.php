@@ -41,7 +41,6 @@ class PluginManager
         foreach ($pluginDirectories as $directory) {
             $pluginJsonPath = $directory . '/plugin.json';
 
-
             if (File::exists($pluginJsonPath)) {
                 $pluginData = json_decode(File::get($pluginJsonPath), true);
                 if (! is_array($pluginData)) {
@@ -72,6 +71,13 @@ class PluginManager
     public function isActive(string $id): bool
     {
         foreach ($this->plugins as $plugin) {
+            // mobile app api
+            if ($id === "MobileAppAPI") {
+                if (($plugin['plugin_id'] ?? null) === "API") {
+                    return true;
+                }
+            }
+
             if (($plugin['plugin_id'] ?? null) === $id) {
                 return true;
             }
@@ -102,6 +108,8 @@ class PluginManager
                 $pluginPath = $this->plugins[$i]['path'];
                 // Delete the plugin directory
                 File::deleteDirectory($pluginPath);
+                // Its admin page files copied to public/ (App\Support\Admin\PluginPage)
+                File::deleteDirectory(\App\Support\Admin\PluginPage::publicPath('plugin', basename($pluginPath)));
                 unset($this->plugins[$i]);
                 return true;
             }

@@ -1,4 +1,4 @@
-import { Head, router, useForm, usePage } from "@inertiajs/react";
+import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
 import {
     ArrowUpCircle,
     ArrowUpRight,
@@ -11,7 +11,7 @@ import {
     Trash2,
     Upload,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { ConfirmDialog } from "@admin/components/confirm-dialog";
@@ -36,6 +36,7 @@ import {
     openMarketplacePage,
     type MarketItem,
 } from "@admin/lib/marketplace";
+import { cn } from "@admin/lib/utils";
 import type { PluginNotice } from "@admin/types";
 
 type Plugin = {
@@ -46,19 +47,49 @@ type Plugin = {
     image: string;
     settingsUrl: string | null;
     builtIn: boolean;
-    legacy: boolean; // old Blade version: runs, but its settings need the new version
+    legacy: boolean;
 };
 
-type Props = { plugins: Plugin[]; maxUploadKb: number };
+type PaginationLinks = {
+    url: string | null;
+    label: string;
+    active: boolean;
+};
+
+type Paginated<T> = {
+    data: T[];
+    links: PaginationLinks[];
+    current_page: number;
+    last_page: number;
+    from: number | null;
+    to: number | null;
+    total: number;
+};
 
 type Tab = "all" | "builtIn" | "added" | "marketplace";
 
+type Props = {
+    plugins: Paginated<Plugin> | Plugin[];
+    allPlugins?: Plugin[];
+    tab?: Tab;
+    search?: string;
+    counts?: { all: number; builtIn: number; added: number };
+    maxUploadKb: number;
+};
+
 const MARKETPLACE_DATA = "https://gobizsaas.com/data/plugins.json";
 
-export default function Plugins({ plugins, maxUploadKb }: Props) {
+export default function Plugins({
+    plugins,
+    allPlugins,
+    tab: serverTab = "all",
+    search: initialSearch = "",
+    counts: serverCounts,
+    maxUploadKb,
+}: Props) {
     const { t } = useTranslation();
-    const [tab, setTab] = useState<Tab>("all");
-    const [search, setSearch] = useState("");
+    const [tab, setTab] = useState<Tab>(serverTab);
+    const [search, setSearch] = useState(initialSearch);
     const [uploading, setUploading] = useState(false);
     const [removing, setRemoving] = useState<Plugin | null>(null);
     const [processing, setProcessing] = useState(false);
@@ -66,6 +97,17 @@ export default function Plugins({ plugins, maxUploadKb }: Props) {
     const [notice, setNotice] = useState<PluginNotice | null>(null);
     const [market, setMarket] = useState<MarketItem[] | null>(null);
     const [loadingMarket, setLoadingMarket] = useState(false);
+    const firstRender = useRef(true);
+
+    // Safely extract plugin list whether paginated or plain array
+    const pluginList: Plugin[] = Array.isArray(plugins)
+        ? plugins
+        : plugins && Array.isArray(plugins.data)
+          ? plugins.data
+          : [];
+
+    const pagination = Array.isArray(plugins) ? null : plugins;
+    const fullPlugins = allPlugins ?? pluginList;
 
     // An uploaded zip that wasn't installed (old Blade version, or older than installed)
     useEffect(
@@ -73,26 +115,15 @@ export default function Plugins({ plugins, maxUploadKb }: Props) {
         [flash.plugin_notice],
     );
 
-    const counts = {
-        all: plugins.length,
-        builtIn: plugins.filter((p) => p.builtIn).length,
-        added: plugins.filter((p) => !p.builtIn).length,
+    const counts = serverCounts ?? {
+        all: fullPlugins.length,
+        builtIn: fullPlugins.filter((p) => p.builtIn).length,
+        added: fullPlugins.filter((p) => !p.builtIn).length,
     };
 
-    const visible = useMemo(() => {
-        const term = search.trim().toLowerCase();
-        return plugins.filter(
-            (plugin) =>
-                (tab === "all" || (tab === "builtIn") === plugin.builtIn) &&
-                (!term ||
-                    plugin.name.toLowerCase().includes(term) ||
-                    plugin.description?.toLowerCase().includes(term)),
-        );
-    }, [plugins, tab, search]);
-
     const installed = useMemo(
-        () => new Map(plugins.map((plugin) => [plugin.id, plugin])),
-        [plugins],
+        () => new Map(fullPlugins.map((plugin) => [plugin.id, plugin])),
+        [fullPlugins],
     );
 
     const visibleMarket = useMemo(() => {
@@ -104,6 +135,37 @@ export default function Plugins({ plugins, maxUploadKb }: Props) {
                 plugin.description?.toLowerCase().includes(term),
         );
     }, [market, search]);
+
+    const visit = (next: { tab?: Tab; search?: string }) => {
+        const nextTab = next.tab ?? tab;
+        const nextSearch = next.search ?? search;
+
+        if (nextTab === "marketplace") {
+            openMarketplace();
+            return;
+        }
+
+        router.get(
+            route("admin.plugins"),
+            {
+                ...(nextTab !== "all" ? { tab: nextTab } : {}),
+                ...(nextSearch ? { search: nextSearch } : {}),
+            },
+            { preserveState: true, preserveScroll: true, replace: true },
+        );
+    };
+
+    // Debounce search
+    useEffect(() => {
+        if (firstRender.current) {
+            firstRender.current = false;
+            return;
+        }
+        if (tab === "marketplace") return;
+        const timer = window.setTimeout(() => visit({ search }), 300);
+        return () => window.clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [search]);
 
     // Loaded once per visit; if the list can't be loaded, open the marketplace website instead
     const openMarketplace = async () => {
@@ -159,11 +221,15 @@ export default function Plugins({ plugins, maxUploadKb }: Props) {
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <Tabs
                         value={tab}
-                        onValueChange={(value) =>
-                            value === "marketplace"
-                                ? openMarketplace()
-                                : setTab(value as Tab)
-                        }
+                        onValueChange={(value) => {
+                            const newTab = value as Tab;
+                            setTab(newTab);
+                            if (newTab !== "marketplace") {
+                                visit({ tab: newTab });
+                            } else {
+                                openMarketplace();
+                            }
+                        }}
                     >
                         <TabsList>
                             {(
@@ -231,16 +297,16 @@ export default function Plugins({ plugins, maxUploadKb }: Props) {
                             ))}
                         </div>
                     )
-                ) : visible.length === 0 ? (
+                ) : pluginList.length === 0 ? (
                     <EmptyState
                         icon={Puzzle}
                         title={
-                            plugins.length === 0
-                                ? t("No plugins installed")
-                                : t("No plugins match your search")
+                            search
+                                ? t("No plugins match your search")
+                                : t("No plugins installed")
                         }
                         description={
-                            plugins.length === 0
+                            !search && fullPlugins.length === 0
                                 ? t(
                                       "Install a plugin from a .zip file to add features.",
                                   )
@@ -248,90 +314,150 @@ export default function Plugins({ plugins, maxUploadKb }: Props) {
                         }
                     />
                 ) : (
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                        {visible.map((plugin) => (
-                            <Card key={plugin.id} className="gap-0 py-0">
-                                <CardContent className="flex flex-1 items-start gap-3 p-4">
-                                    <div className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-white p-1.5">
-                                        <img
-                                            src={plugin.image}
-                                            alt=""
-                                            className="max-h-full max-w-full object-contain"
-                                        />
-                                    </div>
-                                    <div className="flex min-w-0 flex-1 flex-col gap-1">
-                                        <div className="flex items-center gap-2">
-                                            <span
-                                                className="truncate font-medium"
-                                                title={plugin.name}
-                                            >
-                                                {plugin.name}
-                                            </span>
-                                            {(plugin.builtIn || plugin.legacy) && (
-                                                <div className="ms-auto flex shrink-0 items-center gap-1.5">
-                                                    {plugin.builtIn && (
-                                                        <Badge variant="secondary">
-                                                            {t("Built-in")}
-                                                        </Badge>
+                    <>
+                        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                            {pluginList.map((plugin) => (
+                                <Card key={plugin.id} className="gap-0 py-0">
+                                    <CardContent className="flex flex-1 items-start gap-3 p-4">
+                                        <div className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-white p-1.5">
+                                            <img
+                                                src={plugin.image}
+                                                alt=""
+                                                className="max-h-full max-w-full object-contain"
+                                            />
+                                        </div>
+                                        <div className="flex min-w-0 flex-1 flex-col gap-1">
+                                            <div className="flex items-center gap-2">
+                                                <span
+                                                    className="truncate font-medium"
+                                                    title={plugin.name}
+                                                >
+                                                    {plugin.name}
+                                                </span>
+                                                {(plugin.builtIn ||
+                                                    plugin.legacy) && (
+                                                    <div className="ms-auto flex shrink-0 items-center gap-1.5">
+                                                        {plugin.builtIn && (
+                                                            <Badge variant="secondary">
+                                                                {t("Built-in")}
+                                                            </Badge>
+                                                        )}
+                                                        {plugin.legacy && (
+                                                            <Badge
+                                                                variant="outline"
+                                                                className="border-warning/40 text-warning"
+                                                            >
+                                                                {t(
+                                                                    "Update required",
+                                                                )}
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {plugin.legacy ? (
+                                                <p className="text-sm text-muted-foreground">
+                                                    {t(
+                                                        "A new version is available. Upload the latest version to edit this plugin's settings.",
                                                     )}
-                                                    {plugin.legacy && (
-                                                        <Badge
-                                                            variant="outline"
-                                                            className="border-warning/40 text-warning"
-                                                        >
-                                                            {t("Update required")}
-                                                        </Badge>
-                                                    )}
-                                                </div>
+                                                </p>
+                                            ) : (
+                                                plugin.description && (
+                                                    <p className="line-clamp-2 text-sm text-muted-foreground">
+                                                        {plugin.description}
+                                                    </p>
+                                                )
                                             )}
                                         </div>
-                                        {plugin.legacy ? (
-                                            <p className="text-sm text-muted-foreground">
-                                                {t(
-                                                    "A new version is available. Upload the latest version to edit this plugin's settings.",
-                                                )}
-                                            </p>
-                                        ) : (
-                                            plugin.description && (
-                                                <p className="line-clamp-2 text-sm text-muted-foreground">
-                                                    {plugin.description}
-                                                </p>
-                                            )
+                                    </CardContent>
+                                    <CardFooter className="flex items-center gap-2 border-t p-3">
+                                        <span className="me-auto text-xs text-muted-foreground tabular-nums">
+                                            {plugin.version &&
+                                                `v${plugin.version}`}
+                                        </span>
+                                        {!plugin.builtIn && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon-sm"
+                                                className="text-muted-foreground hover:text-destructive"
+                                                onClick={() =>
+                                                    setRemoving(plugin)
+                                                }
+                                                aria-label={t("Remove")}
+                                                title={t("Remove")}
+                                            >
+                                                <Trash2 />
+                                            </Button>
                                         )}
-                                    </div>
-                                </CardContent>
-                                <CardFooter className="flex items-center gap-2 border-t p-3">
-                                    <span className="me-auto text-xs text-muted-foreground tabular-nums">
-                                        {plugin.version && `v${plugin.version}`}
-                                    </span>
-                                    {!plugin.builtIn && (
-                                        <Button
-                                            variant="ghost"
-                                            size="icon-sm"
-                                            className="text-muted-foreground hover:text-destructive"
-                                            onClick={() => setRemoving(plugin)}
-                                            aria-label={t("Remove")}
-                                            title={t("Remove")}
-                                        >
-                                            <Trash2 />
-                                        </Button>
-                                    )}
-                                    {plugin.settingsUrl && (
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            asChild
-                                        >
-                                            <a href={plugin.settingsUrl}>
-                                                {t("Open")}
-                                                <ArrowUpRight />
-                                            </a>
-                                        </Button>
-                                    )}
-                                </CardFooter>
-                            </Card>
-                        ))}
-                    </div>
+                                        {plugin.settingsUrl && (
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                asChild
+                                            >
+                                                <a href={plugin.settingsUrl}>
+                                                    {t("Open")}
+                                                    <ArrowUpRight />
+                                                </a>
+                                            </Button>
+                                        )}
+                                    </CardFooter>
+                                </Card>
+                            ))}
+                        </div>
+
+                        {/* Pagination navigation controls */}
+                        {pagination && pagination.last_page > 1 && (
+                            <div className="flex flex-col items-center justify-between gap-4 border-t pt-4 sm:flex-row">
+                                <p className="text-sm text-muted-foreground">
+                                    {t("Showing :from to :to of :total results")
+                                        .replace(
+                                            ":from",
+                                            String(pagination.from ?? 0),
+                                        )
+                                        .replace(
+                                            ":to",
+                                            String(pagination.to ?? 0),
+                                        )
+                                        .replace(
+                                            ":total",
+                                            String(pagination.total),
+                                        )}
+                                </p>
+                                <div className="flex flex-wrap items-center gap-1">
+                                    {pagination.links.map((link, index) => {
+                                        if (!link.url) {
+                                            return (
+                                                <span
+                                                    key={index}
+                                                    className="inline-flex h-9 min-w-9 items-center justify-center rounded-md border border-transparent px-3 text-sm text-muted-foreground/50 opacity-50"
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: link.label,
+                                                    }}
+                                                />
+                                            );
+                                        }
+                                        return (
+                                            <Link
+                                                key={index}
+                                                href={link.url}
+                                                preserveScroll
+                                                className={cn(
+                                                    "inline-flex h-9 min-w-9 items-center justify-center rounded-md border px-3 text-sm font-medium transition-colors",
+                                                    link.active
+                                                        ? "border-primary bg-primary text-primary-foreground"
+                                                        : "border-input bg-background hover:bg-muted text-foreground",
+                                                )}
+                                                dangerouslySetInnerHTML={{
+                                                    __html: link.label,
+                                                }}
+                                            />
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
 

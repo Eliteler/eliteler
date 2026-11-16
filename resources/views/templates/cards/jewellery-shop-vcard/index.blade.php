@@ -1066,7 +1066,7 @@
                         $business_card_details->is_info_pop_active == 1)
                     @include('templates.cards.jewellery-shop-vcard.includes.information_popup_modal' , ['introScreen' => $introScreen])
                 @endif
-            @endif
+            @endif 
         </div>
     </div>
 

@@ -22,14 +22,15 @@ use App\EmailTemplate;
 use App\Helpers\StorageHelper;
 use App\Mail\AppointmentMail;
 use App\ServiceBooking;
+use App\Services\Analytics\VisitTracker;
 use App\Services\GoBizCommonService;
 use App\Setting;
 use App\StoreBusinessHour;
 use App\StoreCategory;
 use App\StoreProduct;
 use App\Support\Store\ProductOptions;
+use App\Support\Store\StoreTheme;
 use App\Testimonial;
-use App\Visitor;
 use Artesaos\SEOTools\Facades\JsonLd;
 use Artesaos\SEOTools\Facades\OpenGraph;
 use Artesaos\SEOTools\Facades\SEOMeta;
@@ -47,9 +48,8 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
-use Jenssegers\Agent\Agent;
+use Illuminate\Support\Str;
 use JeroenDesloovere\VCard\VCard;
-use App\Support\Store\StoreTheme;
 
 class ProfileController extends Controller
 {
@@ -101,33 +101,7 @@ class ProfileController extends Controller
             $whatsAppNumberExists = BusinessField::where('card_id', $card_details->card_id)->where('type', 'wa')->exists();
 
             // Save visitor
-            $clientIP = \Request::getClientIp(true);
-
-            $agent     = new Agent();
-            $userAgent = $request->header('user_agent');
-            $agent->setUserAgent($userAgent);
-
-            // Device
-            $device = $agent->device();
-            if ($device == "" || $device == "0") {
-                $device = "Others";
-            }
-
-            // Language
-            $language = "en";
-            if ($agent->languages()) {
-                $language = $agent->languages()[0];
-            }
-
-            $visitor             = new Visitor();
-            $visitor->card_id    = $card_details->card_url;
-            $visitor->type       = $card_details->card_type;
-            $visitor->ip_address = $clientIP;
-            $visitor->platform   = $agent->platform();
-            $visitor->device     = $agent->device();
-            $visitor->language   = $language;
-            $visitor->user_agent = $userAgent;
-            $visitor->save();
+            app(VisitTracker::class)->record($request, $card_details);
 
             if (isset($card_details)) {
                 if ($card_details->card_type == "store") {
@@ -365,7 +339,7 @@ class ProfileController extends Controller
                         // Set locale if not same as business card locale.
                         $locale = Session::get('locale') ?? $business_card_details->card_lang ?? config('app.locale');
                         App::setLocale($locale);
- 
+
                         $qr_url = "https://chart.googleapis.com/chart?chs=250x250&cht=qr&chl=" . $url;
 
                         $shareComponent['facebook'] = "https://www.facebook.com/sharer/sharer.php?u=$url&quote=$shareContent";
@@ -582,6 +556,9 @@ class ProfileController extends Controller
                         $shareComponent['linkedin'] = "https://www.linkedin.com/shareArticle?mini=true&url=$url";
                         $shareComponent['telegram'] = "https://telegram.me/share/url?text=$shareContent&url=$url";
                         $shareComponent['whatsapp'] = "https://api.whatsapp.com/send/?phone&text=$shareContent";
+
+                        // Old YouTube values (full URLs, channel links) render as embeds or link buttons
+                        $feature_details = normalize_card_youtube($business_card_details, $feature_details);
 
                         // Datas
                         $datas = compact('card_details', 'plan_details', 'business_card_details', 'feature_details', 'service_details', 'product_details', 'galleries_details', 'testimonials', 'payment_details', 'appointmentEnabled', 'appointment_slots', 'business_hours', 'settings', 'shareComponent', 'shareContent', 'config', 'enquiry_button', 'iframes', 'customTexts', 'manifest', 'whatsAppNumberExists', 'service_booking_details');
@@ -903,7 +880,8 @@ class ProfileController extends Controller
 
         $business_card = BusinessCard::where('business_cards.card_id', $id)
             ->join('users', 'business_cards.user_id', '=', 'users.user_id')
-            ->where('business_cards.card_status', 'activated')->where('business_cards.status', '1')
+            ->where('business_cards.card_status', 'activated')
+            ->where('business_cards.status', '1')
             ->select('business_cards.*')
             ->first();
 
@@ -915,7 +893,7 @@ class ProfileController extends Controller
 
         if ($business_card->custom_domain) {
             $vcard_url = $business_card->custom_domain;
-        } elseif ($config['enable_subdomain'] == '1') {
+        } elseif (isset($config['enable_subdomain']) && $config['enable_subdomain'] == '1') {
             $vcard_url = 'https://' . $business_card->card_url . '.' . env('MAIN_DOMAIN');
         } else {
             $vcard_url = env('APP_URL') . '/' . $business_card->card_url;
@@ -923,7 +901,10 @@ class ProfileController extends Controller
 
         $vcard = new VCard();
 
-        $vcard->addName('', $business_card->title ?? '', '', '', '');
+        // Set contact name and company for proper display in iOS Contacts
+        $cardTitle = $business_card->title ?? 'Contact';
+        $vcard->addName($cardTitle, '', '', '', '');
+        $vcard->addCompany($cardTitle);
 
         $socialTypes = [
             "facebook",
@@ -945,13 +926,11 @@ class ProfileController extends Controller
         ];
 
         foreach ($features as $feature) {
-
             if (!$feature->content) {
                 continue;
             }
 
             switch ($feature->type) {
-
                 case 'email':
                     $vcard->addEmail($feature->content);
                     break;
@@ -980,18 +959,32 @@ class ProfileController extends Controller
             $vcard->addJobtitle($business_card->sub_title);
         }
 
-        $profilePath = public_path(ltrim($business_card->profile, '/'));
+        // Attach profile picture (safely limited to avoid iOS contacts crash)
+        $profilePath = public_path(ltrim($business_card->profile ?? '', '/'));
         $defaultProfile = public_path('images/default-profile.jpg');
 
-        if ($business_card->profile && file_exists($profilePath)) {
-            $vcard->addPhoto($profilePath);
-        } elseif (file_exists($defaultProfile)) {
+        if (!empty($business_card->profile) && file_exists($profilePath)) {
+            // iOS fails to parse vCard if base64 image exceeds ~200-300KB
+            if (filesize($profilePath) <= 300000) {
+                $vcard->addPhoto($profilePath);
+            }
+        } elseif (file_exists($defaultProfile) && filesize($defaultProfile) <= 300000) {
             $vcard->addPhoto($defaultProfile);
         }
 
         $vcard->addURL($vcard_url);
 
-        return response($vcard->getOutput(), 200, $vcard->getHeaders(true));
+        // Prepare safe file name
+        $fileName = Str::slug($cardTitle, '_') . '.vcf';
+
+        // Proper MIME type and headers for Safari / iOS compatibility
+        $content = $vcard->getOutput();
+
+        return response($content, 200, [
+            'Content-Type'        => 'text/vcard; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+            'Content-Length'      => strlen($content),
+        ]);
     }
 
     // Sent email form vcard
@@ -1060,8 +1053,14 @@ class ProfileController extends Controller
                         'receiverMessage' => $request->message,
                     ];
 
-                    // Send mail
-                    Mail::to($business_card_details->enquiry_email)->send(new AppointmentMail($enquiryDetails));
+                    // Send mail (a mail failure shouldn't skip the WhatsApp step)
+                    $mailSent = true;
+                    try {
+                        Mail::to($business_card_details->enquiry_email)->send(new AppointmentMail($enquiryDetails));
+                    } catch (\Throwable $e) {
+                        report($e);
+                        $mailSent = false;
+                    }
 
                     // Send appointment booked message to vcard owner's WhatsApp
                     $whatsAppNumberExists = BusinessField::where('card_id', $request->card_id)->where('type', 'wa')->exists();
@@ -1097,9 +1096,10 @@ class ProfileController extends Controller
                         return view('templates.cards.includes.open-whatsapp', ['whatsapp_url' => $whatsAppUrl, 'title' => $title, 'messageOne' => $messageOne, 'messageTwo' => $messageTwo, 'messageThree' => $messageThree]);
                     }
 
-                    Session::flash('message', trans('Email sent.',));
+                    Session::flash('message', $mailSent ? trans('Email sent.') : trans('Email service not available.'));
                     return redirect()->back();
-                } catch (Exception $e) {
+                } catch (\Throwable $e) {
+                    report($e);
                     Session::flash('message', trans('Email service not available.'));
                     return redirect()->back();
                 }
@@ -1230,5 +1230,4 @@ class ProfileController extends Controller
 
         return $serviceWorker->generateServiceWorker($id, $url);
     }
-
 }

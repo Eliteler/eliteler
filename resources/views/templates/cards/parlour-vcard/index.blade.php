@@ -976,7 +976,7 @@ if (!empty($custom_js)) {
                     @if (
                         $business_card_details != null &&
                             !empty($business_card_details->is_newsletter_pop_active) &&
-                            $business_card_details->is_newsletter_pop_active == 1)
+                            $business_card_details->is_newsletter_pop_active == 1) 
                         @include('templates.cards.parlour-vcard.includes.newsletter_modal')
                     @endif
 

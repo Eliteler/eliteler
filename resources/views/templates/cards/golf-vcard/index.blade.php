@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-
+ 
 @php
     use Illuminate\Support\Facades\Session;
     use App\BusinessCardIntro;
@@ -32,7 +32,7 @@
 
     {{-- Luxury Augusta Deep Green Accent Meta --}}
     <meta name="theme-color" content="#0F382C" />
-    <meta name="application-name" content="{{ $card_details->title }}">x
+    <meta name="application-name" content="{{ $card_details->title }}">
     <meta name="apple-mobile-web-app-title" content="{{ $card_details->title }}">
     <meta name="msapplication-TileColor" content="#07221A">
     <meta name="msapplication-TileImage" content="{{ url($business_card_details->profile) }}">

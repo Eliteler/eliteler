@@ -16,6 +16,7 @@ use App\AiCredit;
 use App\AiCreditsPlan;
 use App\AiCreditsTransaction;
 use App\AppliedCoupon;
+use App\Classes\InvoiceNumber;
 use App\Coupon;
 use App\Http\Controllers\Controller;
 use App\Setting;
@@ -26,7 +27,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
-use Plugins\Zapier\Helpers\ZapierHelper;
 
 class PaddleController extends Controller
 {
@@ -405,19 +405,14 @@ class PaddleController extends Controller
             )->first();
 
             // Invoice
-            $invoice_count = AiCreditsTransaction::where(
-                'invoice_prefix',
-                $config[15]->config_value
-            )->count();
-
-            $invoice_number = $invoice_count + 1;
-
             // Update Transaction
-            $transaction_details->payment_transaction_id = $paddleTransactionId;
-            $transaction_details->invoice_prefix = $config[15]->config_value;
-            $transaction_details->invoice_number = $invoice_number;
-            $transaction_details->payment_status = 'paid';
-            $transaction_details->save();
+            $invoice_number = InvoiceNumber::assign('ai_credits_transactions', $config[15]->config_value, function ($invoice_number) use ($transaction_details, $paddleTransactionId, $config) {
+                $transaction_details->payment_transaction_id = $paddleTransactionId;
+                $transaction_details->invoice_prefix = $config[15]->config_value;
+                $transaction_details->invoice_number = $invoice_number;
+                $transaction_details->payment_status = 'paid';
+                $transaction_details->save();
+            });
 
             // Update AI credits
             $aiCredit = AiCredit::where('user_id', Auth::user()->user_id)->first();
@@ -474,7 +469,8 @@ class PaddleController extends Controller
             try {
                 Mail::to($encode['to_billing_email'])
                     ->send(new \App\Mail\SendEmailInvoice($details));
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
+                report($e);
             }
 
             // Fetch customer details safely
@@ -612,21 +608,14 @@ class PaddleController extends Controller
                     )->first();
 
                 // Invoice
-                $invoice_count =
-                    AiCreditsTransaction::where(
-                        'invoice_prefix',
-                        $config[15]->config_value
-                    )->count();
-
-                $invoice_number =
-                    $invoice_count + 1;
-
                 // Update Transaction
-                $transaction_details->payment_transaction_id = $paddleTransactionId;
-                $transaction_details->invoice_prefix = $config[15]->config_value;
-                $transaction_details->invoice_number = $invoice_number;
-                $transaction_details->payment_status = 'paid';
-                $transaction_details->save();
+                $invoice_number = InvoiceNumber::assign('ai_credits_transactions', $config[15]->config_value, function ($invoice_number) use ($transaction_details, $paddleTransactionId, $config) {
+                    $transaction_details->payment_transaction_id = $paddleTransactionId;
+                    $transaction_details->invoice_prefix = $config[15]->config_value;
+                    $transaction_details->invoice_number = $invoice_number;
+                    $transaction_details->payment_status = 'paid';
+                    $transaction_details->save();
+                });
 
                 // Update AI Credits
                 $aiCredit = AiCredit::where('user_id', Auth::user()->user_id)->first();
@@ -683,7 +672,8 @@ class PaddleController extends Controller
                 try {
                     Mail::to($encode['to_billing_email'])
                         ->send(new \App\Mail\SendEmailInvoice($details));
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
+                    report($e);
                 }
 
                 return response()->json([

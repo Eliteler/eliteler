@@ -2,6 +2,7 @@
 
 namespace App\Support\Admin;
 
+use App\Support\Plugins\PluginExtensions;
 use App\User;
 use Illuminate\Support\Facades\Auth;
 
@@ -76,10 +77,23 @@ class AdminPermissions
         'nfc_card_order_transactions',
     ];
 
+    /**
+     * GROUPS plus a "Plugins" group with the permissions installed plugins declare
+     * (plugin.json "permissions").
+     *
+     * @return array<string, array<string, string>>
+     */
+    public static function groups(): array
+    {
+        $plugins = array_diff_key(PluginExtensions::permissions(), array_merge(...array_values(self::GROUPS)));
+
+        return $plugins ? self::GROUPS + ['Plugins' => $plugins] : self::GROUPS;
+    }
+
     /** @return array<int, string> */
     public static function keys(): array
     {
-        return array_keys(array_merge(...array_values(self::GROUPS)));
+        return array_keys(array_merge(...array_values(self::groups())));
     }
 
     /**
@@ -119,6 +133,11 @@ class AdminPermissions
     {
         $stored = json_decode($user->permissions ?? '', true);
         $merged = array_merge(self::DEFAULTS, is_array($stored) ? $stored : []);
+
+        // Plugin permissions: the super admin always has them, staff only when given
+        foreach (array_keys(PluginExtensions::permissions()) as $key) {
+            $merged[$key] = (int) $user->role_id === 1 ? 1 : ($merged[$key] ?? 0);
+        }
 
         $merged[self::HIDE_REVENUE] = self::hidesRevenue($user);
         if ($merged[self::HIDE_REVENUE]) {

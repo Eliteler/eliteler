@@ -70,7 +70,7 @@ class MediaController extends Controller
                 $item->file_name = $fileName;
                 $item->extension = $extension;
                 $item->formatted_created_at = Carbon::parse($item->created_at)->diffForHumans();
-                $item->full_date = Carbon::parse($item->created_at)->format('d M Y, h:i A');
+                $item->full_date = formatDateForUser($item->created_at, 'full', true);
                 $item->size_formatted = $this->formatBytes($item->size);
                 $item->base_url = asset('');
                 $item->full_url = asset($item->media_url);
@@ -87,7 +87,7 @@ class MediaController extends Controller
         $rawUsedBytes = Medias::where('user_id', Auth::user()->user_id)->sum('size');
         $usedStorage  = round($rawUsedBytes / 1024 / 1024, 2); // In MB
 
-        if ($totalStorage <= 0 || $totalStorage == 999) {
+        if ($totalStorage <= 0 || $totalStorage == 999 || $totalStorage == -1) {
             $usedStoragePercentage = 0;
             $availableStorage = 'Unlimited';
             $availableStoragePercentage = 100;
@@ -142,15 +142,13 @@ class MediaController extends Controller
         // Check user storage limit
         $active_plan = json_decode(Auth::user()->plan_details);
 
-        // Store in unlimited
-        if ($active_plan->storage == "999") {
-            $active_plan->storage = "1073741824000";
-        }
-
         // Total
         $totalStorage = round(($totalUsedStorage + $imageSize) / 1024 / 1024, 2);
 
-        if ($active_plan?->storage !== null && $totalStorage > $active_plan->storage) {
+        $storageLimit = (int) ($active_plan->storage ?? 0);
+        $isUnlimited = $storageLimit === 999 || $storageLimit === -1;
+
+        if (!$isUnlimited && $active_plan?->storage !== null && $totalStorage > $storageLimit) {
             return response()->json(['status' => 'error', 'message' => trans('You have reached your storage limit.')], 200);
         }
 
@@ -222,13 +220,11 @@ class MediaController extends Controller
         // Calculate new total in MB
         $totalStorage = round(($totalUsedStorage + $imageSize) / 1024 / 1024, 2);
 
-        // Store in unlimited
-        if ($active_plan->storage == "999") {
-            $active_plan->storage = "1073741824000";
-        }
+        $storageLimit = (int) ($active_plan->storage ?? 0);
+        $isUnlimited = $storageLimit === 999 || $storageLimit === -1;
 
         // Check storage limit
-        if (!empty($active_plan?->storage) && $totalStorage > $active_plan->storage) {
+        if (!$isUnlimited && !empty($active_plan?->storage) && $totalStorage > $storageLimit) {
             return response()->json(['status' => 'error', 'message' => trans('You have reached your storage limit.')], 200);
         }
 

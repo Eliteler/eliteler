@@ -14,6 +14,7 @@ namespace App\Http\Controllers\Payment;
 
 use App\AppliedCoupon;
 use App\BusinessCard;
+use App\Classes\InvoiceNumber;
 use App\Coupon;
 use App\Http\Controllers\Controller;
 use App\Plan;
@@ -26,7 +27,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
-use Plugins\Zapier\Helpers\ZapierHelper;
 
 class MercadoPagoController extends Controller
 {
@@ -271,16 +271,13 @@ class MercadoPagoController extends Controller
                 }
 
                 // Generate invoice number
-                $invoice_count = Transaction::where("invoice_prefix", $config[15]->config_value)->count();
-                $invoice_number = $invoice_count + 1;
-
                 // Update transaction details
-                Transaction::where('transaction_id', $transaction_details->transaction_id)->update([
+                $invoice_number = InvoiceNumber::assign('transactions', $config[15]->config_value, fn ($invoice_number) => Transaction::where('transaction_id', $transaction_details->transaction_id)->update([
                     'transaction_id' => $preferenceId,
                     'invoice_prefix' => $config[15]->config_value,
                     'invoice_number' => $invoice_number,
                     'payment_status' => 'SUCCESS',
-                ]);
+                ]));
 
                 // Update user details
                 if ($user_details) {
@@ -332,16 +329,13 @@ class MercadoPagoController extends Controller
                 }
 
                 // Generate invoice number
-                $invoice_count = Transaction::where("invoice_prefix", $config[15]->config_value)->count();
-                $invoice_number = $invoice_count + 1;
-
                 // Update transaction details
-                Transaction::where('transaction_id', $transaction_details->transaction_id)->update([
+                $invoice_number = InvoiceNumber::assign('transactions', $config[15]->config_value, fn ($invoice_number) => Transaction::where('transaction_id', $transaction_details->transaction_id)->update([
                     'transaction_id' => $preferenceId,
                     'invoice_prefix' => $config[15]->config_value,
                     'invoice_number' => $invoice_number,
                     'payment_status' => 'SUCCESS',
-                ]);
+                ]));
 
                 // Update user details
                 if ($user_details) {
@@ -395,7 +389,8 @@ class MercadoPagoController extends Controller
             // Send invoice via email
             try {
                 Mail::to($encode['to_billing_email'])->send(new \App\Mail\SendEmailInvoice($details));
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
+                report($e);
                 // Handle email sending failure if needed
             }
 
@@ -527,16 +522,13 @@ class MercadoPagoController extends Controller
                 }
 
                 // Generate invoice number
-                $invoice_count = Transaction::where("invoice_prefix", $config[15]->config_value)->count();
-                $invoice_number = $invoice_count + 1;
-
                 // Update transaction details
-                Transaction::where('transaction_id', $transaction_details->transaction_id)->update([
+                $invoice_number = InvoiceNumber::assign('transactions', $config[15]->config_value, fn ($invoice_number) => Transaction::where('transaction_id', $transaction_details->transaction_id)->update([
                     'transaction_id' => $preferenceId,
                     'invoice_prefix' => $config[15]->config_value,
                     'invoice_number' => $invoice_number,
                     'payment_status' => 'SUCCESS',
-                ]);
+                ]));
 
                 // Update user details
                 if ($user_details) {
@@ -588,16 +580,13 @@ class MercadoPagoController extends Controller
                 }
 
                 // Generate invoice number
-                $invoice_count = Transaction::where("invoice_prefix", $config[15]->config_value)->count();
-                $invoice_number = $invoice_count + 1;
-
                 // Update transaction details
-                Transaction::where('transaction_id', $transaction_details->transaction_id)->update([
+                $invoice_number = InvoiceNumber::assign('transactions', $config[15]->config_value, fn ($invoice_number) => Transaction::where('transaction_id', $transaction_details->transaction_id)->update([
                     'transaction_id' => $preferenceId,
                     'invoice_prefix' => $config[15]->config_value,
                     'invoice_number' => $invoice_number,
                     'payment_status' => 'SUCCESS',
-                ]);
+                ]));
 
                 // Update user details
                 if ($user_details) {
@@ -651,7 +640,8 @@ class MercadoPagoController extends Controller
             // Send invoice via email
             try {
                 Mail::to($encode['to_billing_email'])->send(new \App\Mail\SendEmailInvoice($details));
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
+                report($e);
                 // Handle email sending failure if needed
             }
 

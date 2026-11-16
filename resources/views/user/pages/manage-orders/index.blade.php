@@ -6,6 +6,58 @@
         .ts-control>input {
             display: contents !important;
         }
+
+        /* Force empty state table and tbody to span full width */
+        #nfc-card-order-table.is-table-empty,
+        #nfc-card-order-table.is-table-empty tbody {
+            display: block !important;
+            width: 100% !important;
+        }
+
+        /* Remove default mobile card border and background from empty state row */
+        #nfc-card-order-table tbody tr.empty-table-row {
+            display: block !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+
+        /* Center empty table content horizontally and vertically */
+        #nfc-card-order-table tbody tr.empty-table-row td.dataTables_empty {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+            text-align: center !important;
+            width: 100% !important;
+            min-height: 380px !important;
+            margin: 0 auto !important;
+            border: none !important;
+            background: transparent !important;
+        }
+
+        /* Hide mobile pseudo-label elements */
+        #nfc-card-order-table tbody tr.empty-table-row td.dataTables_empty::before,
+        #nfc-card-order-table tbody tr.empty-table-row td.dataTables_empty::after {
+            display: none !important;
+            content: none !important;
+        }
+
+        /* Style NFC empty state icon badge */
+        .empty-state-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background-color: rgba(32, 107, 196, 0.12);
+            color: #206bc4;
+            margin: 0 auto 1rem auto;
+        }
     </style>
 @endsection
 
@@ -67,10 +119,10 @@
                     </div>
                 @endif
 
-                <div class="row row-deck row-cards">
+                <div class="row">
                     <div class="col-sm-12 col-lg-12">
                         <!-- Upgraded to Borderless Shadowed Card Wrapper -->
-                        <div class="card border-0 shadow-sm">
+                        <div class="border-0 shadow-sm">
                             <div class="table-responsive px-3 pt-2 py-2">
                                 <!-- Table renders normally on desktop and transforms automatically via CSS on mobile -->
                                 <table class="table card-table table-vcenter text-nowrap responsive-card-table"
@@ -154,7 +206,38 @@
                     "sInfoEmpty": `{{ __('Showing 0 to 0 of 0 entries') }}`,
                     "sInfoFiltered": `{{ __('(filtered from _MAX_ total entries)') }}`,
                     loadingRecords: `{{ __('Please wait - loading...') }}`,
-                    emptyTable: `{{ __('No data available in the table') }}`
+
+                    // Centered Empty State HTML for Orders
+                    emptyTable: `
+                        <div class="d-flex flex-column align-items-center justify-content-center text-center w-100">
+                            <div class="empty-state-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-credit-card">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                    <rect x="3" y="5" width="18" height="14" rx="3" />
+                                    <line x1="3" y1="10" x2="21" y2="10" />
+                                    <line x1="7" y1="15" x2="7.01" y2="15" />
+                                    <line x1="11" y1="15" x2="13" y2="15" />
+                                </svg>
+                            </div>
+                            <h4 class="fw-bold mb-1 text-reset">{{ __('No Orders Placed Yet') }}</h4>
+                            <p class="text-muted small mb-0">{{ __('You have not placed any NFC card orders yet.') }}</p>
+                        </div>
+                    `,
+                    zeroRecords: `
+                        <div class="d-flex flex-column align-items-center justify-content-center text-center w-100">
+                            <div class="empty-state-icon" style="background-color: var(--tblr-danger-lt); color: var(--tblr-danger);">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-credit-card">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                    <rect x="3" y="5" width="18" height="14" rx="3" />
+                                    <line x1="3" y1="10" x2="21" y2="10" />
+                                    <line x1="7" y1="15" x2="7.01" y2="15" />
+                                    <line x1="11" y1="15" x2="13" y2="15" />
+                                </svg>
+                            </div>
+                            <h4 class="fw-bold mb-1 text-reset">{{ __('No Matching Orders Found') }}</h4>
+                            <p class="text-muted small mb-0">{{ __('We could not find any orders matching your search keyword.') }}</p>
+                        </div>
+                    `
                 },
                 columns: [{
                         data: 'DT_RowIndex',
@@ -181,7 +264,7 @@
                     {
                         data: 'nfc_card_logo',
                         name: 'nfc_card_orders.nfc_card_logo',
-                        className: 'rc-info-next' // Resolved: Changed from rc-hide to rc-info-next to expose the attachments line on mobile
+                        className: 'rc-info-next'
                     },
                     {
                         data: 'nfc_card_name',
@@ -226,13 +309,15 @@
                     }
                 },
                 drawCallback: function(settings) {
+                    var api = this.api();
+                    var $table = $(settings.nTable);
+
                     // Remove loading placeholder glow indicators
                     $('#nfc-card-order-table_wrapper').removeClass('placeholder-glow');
 
                     // Clear desktop dynamic action placeholders
                     $('#nfc-card-order-table tbody tr').each(function() {
-                        var actionCell = $(this).find('td').eq(
-                            9); // Targeting the 10th column (index 9)
+                        var actionCell = $(this).find('td').eq(9);
                         if (actionCell.find('span.placeholder').length > 0) {
                             actionCell.empty();
                         }
@@ -241,24 +326,36 @@
                     // Force empty table message cell to span all 10 columns correctly
                     $('#nfc-card-order-table tbody tr td.dataTables_empty').attr('colspan', 10);
 
+                    // Check if table has active rows
+                    const rowsCount = api.rows({
+                        page: 'current'
+                    }).data().length;
+
+                    if (rowsCount === 0) {
+                        $table.addClass('is-table-empty');
+                        $table.find('tbody tr').addClass('empty-table-row');
+                    } else {
+                        $table.removeClass('is-table-empty');
+                        $table.find('tbody tr').removeClass('empty-table-row');
+                    }
+
                     // Generate 'data-label' attributes based on the current <thead> elements
                     var headers = [];
                     $('#nfc-card-order-table thead th').each(function() {
                         headers.push($(this).text().trim());
                     });
 
-                    $('#nfc-card-order-table tbody tr').each(function() {
+                    // Exclude empty state rows from mobile data labels
+                    $('#nfc-card-order-table tbody tr:not(.empty-table-row)').each(function() {
                         $(this).find('td').each(function(index) {
-                            $(this).attr('data-label', headers[index]);
+                            if (headers[index]) {
+                                $(this).attr('data-label', headers[index]);
+                            }
                         });
                     });
 
                     // Update Custom Mobile Pagination Footer State dynamically
-                    const api = this.api();
                     const pageInfo = api.page.info();
-                    const rowsCount = api.rows({
-                        page: 'current'
-                    }).data().length;
 
                     // Hide/show dynamic mobile footer based on pages total and active record count
                     if (pageInfo.pages <= 1 || rowsCount === 0) {
@@ -290,7 +387,7 @@
                 }
             });
 
-            // Trigger Skeleton Glow Loader state dynamically when table AJAX transactions are processing (e.g. searching)
+            // Trigger Skeleton Glow Loader state dynamically when table AJAX transactions are processing
             table.on('processing.dt', function(e, settings, processing) {
                 if (processing) {
                     $('#nfc-card-order-table_wrapper').addClass('placeholder-glow');

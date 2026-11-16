@@ -3,11 +3,13 @@
 namespace App\Services\Admin\Nfc;
 
 use App\AppliedCoupon;
+use App\Classes\InvoiceNumber;
 use App\EmailTemplate;
 use App\NfcCardDesign;
 use App\NfcCardOrder;
 use App\NfcCardOrderTransaction;
 use App\User;
+use App\Support\Zapier;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 
@@ -161,7 +163,7 @@ class NfcOrderService
 
                 if (! $transaction->invoice_number) {
                     $transaction->invoice_prefix = $prefix;
-                    $transaction->invoice_number = NfcCardOrderTransaction::where('invoice_prefix', $prefix)->count() + 1;
+                    $transaction->invoice_number = InvoiceNumber::next('nfc_card_order_transactions', $prefix);
                 }
                 $transaction->payment_status = 'success';
                 $transaction->save();
@@ -227,34 +229,14 @@ class NfcOrderService
 
     private function dispatchZapier(NfcCardOrderTransaction $transaction, NfcCardOrder $order, int $quantity): void
     {
-        if (! function_exists('zapier_dispatch')) {
-            return;
-        }
-
-        $customer = User::find($order->user_id);
-        $invoice  = json_decode($transaction->invoice_details ?? '', true) ?: [];
-
-        zapier_dispatch('nfc_order', [
-            'transaction_id'  => $order->nfc_card_order_id,
-            'invoice_id'      => $transaction->invoice_prefix . $transaction->invoice_number,
-            'user_name'       => $customer->name ?? ($invoice['to_billing_name'] ?? 'Customer'),
-            'user_address'    => $customer->billing_address ?? ($invoice['to_billing_address'] ?? ''),
-            'user_city'       => $customer->billing_city ?? ($invoice['to_billing_city'] ?? ''),
-            'user_state'      => $customer->billing_state ?? ($invoice['to_billing_state'] ?? ''),
-            'user_country'    => $customer->billing_country ?? ($invoice['to_billing_country'] ?? ''),
-            'user_zip'        => $customer->billing_zipcode ?? ($invoice['to_billing_zipcode'] ?? ''),
-            'user_email'      => $customer->email ?? ($invoice['to_billing_email'] ?? ''),
-            'user_phone'      => ($customer->country_code ?? '') . ($customer->mobile_number ?? ($invoice['to_billing_phone'] ?? '')),
-            'user_tax_number' => $customer->vat_number ?? ($invoice['to_vat_number'] ?? ''),
-            'nfc_card_name'   => self::details($order)['order_item'] ?? 'NFC Card',
-            'quantity'        => $quantity,
-            'currency'        => $transaction->currency,
-            'amount'          => (float) $transaction->amount,
-            'order_status'    => 'processing',
-            'payment_method'  => $transaction->payment_method ?? 'Offline',
-            'payment_status'  => 'paid',
-            'invoice_date'    => now()->toDateString(),
-            'purchased_at'    => now()->toDateTimeString(),
-        ]);
+        Zapier::nfcOrder(User::find($order->user_id), [
+            'transaction_id' => $order->nfc_card_order_id,
+            'invoice_id'     => $transaction->invoice_prefix . $transaction->invoice_number,
+            'nfc_card_name'  => self::details($order)['order_item'] ?? 'NFC Card',
+            'quantity'       => $quantity,
+            'currency'       => $transaction->currency,
+            'amount'         => $transaction->amount,
+            'payment_method' => $transaction->payment_method ?? 'Offline',
+        ], json_decode($transaction->invoice_details ?? '', true) ?: []);
     }
 }

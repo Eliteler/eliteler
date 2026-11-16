@@ -21,6 +21,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class PaymentLinkController extends Controller
 {
@@ -76,7 +77,7 @@ class PaymentLinkController extends Controller
     public function updatePaymentLinks(Request $request, $id)
     {
         // Find business card
-        $business_card = BusinessCard::where('card_id', $id)->first();
+        $business_card = BusinessCard::where('card_id', $id)->where('user_id', Auth::user()->user_id)->first();
         if (!$business_card) {
             return redirect()->route('user.cards')->with('failed', trans('Card not found!'));
         }
@@ -113,6 +114,25 @@ class PaymentLinkController extends Controller
             ) {
                 return redirect()->route('user.edit.payment.links', $id)
                     ->with('failed', trans('Please fill out all required fields.'));
+            }
+        }
+
+        // Validate any uploaded payment images
+        $fileRules = [];
+        $customAttributes = [];
+        if ($request->has('type') && is_array($request->type)) {
+            foreach ($request->type as $i => $type) {
+                if ($type === 'image' && $request->hasFile("value.$i")) {
+                    $fileRules["value.$i"] = 'required|file|image|mimes:jpeg,png,jpg,gif,svg,webp|max:' . env('SIZE_LIMIT', 2048);
+                    $customAttributes["value.$i"] = trans('Payment image');
+                }
+            }
+        }
+
+        if (!empty($fileRules)) {
+            $validator = Validator::make($request->all(), $fileRules, [], $customAttributes);
+            if ($validator->fails()) {
+                return redirect()->route('user.edit.payment.links', $id)->with('failed', $validator->errors()->first());
             }
         }
 
