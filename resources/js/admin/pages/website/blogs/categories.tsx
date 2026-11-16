@@ -1,4 +1,4 @@
-import { Head, router, useForm } from "@inertiajs/react";
+import { Head, Link, router, useForm } from "@inertiajs/react";
 import {
     Eye,
     EyeOff,
@@ -43,6 +43,7 @@ import {
     TableHeader,
     TableRow,
 } from "@admin/components/ui/table";
+import { cn } from "@admin/lib/utils";
 
 type Category = {
     id: string;
@@ -53,7 +54,26 @@ type Category = {
     isFallback: boolean;
 };
 
-type Props = { categories: Category[]; open: string | null };
+type PaginationLinks = {
+    url: string | null;
+    label: string;
+    active: boolean;
+};
+
+type Paginated<T> = {
+    data: T[];
+    links: PaginationLinks[];
+    current_page: number;
+    last_page: number;
+    from: number | null;
+    to: number | null;
+    total: number;
+};
+
+type Props = {
+    categories: Paginated<Category> | Category[];
+    open: string | null;
+};
 
 type Pending = { category: Category; mode: "publish" | "unpublish" | "delete" };
 
@@ -67,10 +87,21 @@ const slugify = (text: string) =>
 
 export default function BlogCategories({ categories, open }: Props) {
     const { t } = useTranslation();
+
+    // Safely extract category list whether paginated or plain array
+    const categoryList: Category[] = Array.isArray(categories)
+        ? categories
+        : categories && Array.isArray(categories.data)
+          ? categories.data
+          : [];
+
+    // Extract pagination metadata
+    const pagination = Array.isArray(categories) ? null : categories;
+
     const [editing, setEditing] = useState<Category | "new" | null>(
         open === "new"
             ? "new"
-            : (categories.find((category) => category.id === open) ?? null),
+            : (categoryList.find((category) => category.id === open) ?? null),
     );
     const [pending, setPending] = useState<Pending | null>(null);
     const [processing, setProcessing] = useState(false);
@@ -142,7 +173,7 @@ export default function BlogCategories({ categories, open }: Props) {
 
                 <Card className="gap-0 py-0">
                     <CardContent className="p-0">
-                        {categories.length === 0 ? (
+                        {categoryList.length === 0 ? (
                             <EmptyState
                                 icon={Folder}
                                 title={t("No categories yet")}
@@ -166,7 +197,7 @@ export default function BlogCategories({ categories, open }: Props) {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {categories.map((category) => (
+                                    {categoryList.map((category) => (
                                         <TableRow key={category.id}>
                                             <TableCell className="ps-4">
                                                 <button
@@ -286,6 +317,49 @@ export default function BlogCategories({ categories, open }: Props) {
                         )}
                     </CardContent>
                 </Card>
+
+                {/* Pagination navigation controls */}
+                {pagination && pagination.last_page > 1 && (
+                    <div className="flex flex-col items-center justify-between gap-4 border-t pt-4 sm:flex-row">
+                        <p className="text-sm text-muted-foreground">
+                            {t("Showing :from to :to of :total results")
+                                .replace(":from", String(pagination.from ?? 0))
+                                .replace(":to", String(pagination.to ?? 0))
+                                .replace(":total", String(pagination.total))}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-1">
+                            {pagination.links.map((link, index) => {
+                                if (!link.url) {
+                                    return (
+                                        <span
+                                            key={index}
+                                            className="inline-flex h-9 min-w-9 items-center justify-center rounded-md border border-transparent px-3 text-sm text-muted-foreground/50 opacity-50"
+                                            dangerouslySetInnerHTML={{
+                                                __html: link.label,
+                                            }}
+                                        />
+                                    );
+                                }
+                                return (
+                                    <Link
+                                        key={index}
+                                        href={link.url}
+                                        preserveScroll
+                                        className={cn(
+                                            "inline-flex h-9 min-w-9 items-center justify-center rounded-md border px-3 text-sm font-medium transition-colors",
+                                            link.active
+                                                ? "border-primary bg-primary text-primary-foreground"
+                                                : "border-input bg-background hover:bg-muted text-foreground",
+                                        )}
+                                        dangerouslySetInnerHTML={{
+                                            __html: link.label,
+                                        }}
+                                    />
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
             </div>
 
             <Dialog

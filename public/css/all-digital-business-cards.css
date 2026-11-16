@@ -223,3 +223,56 @@ div.dataTables_wrapper .dataTables_length select {
         min-width: 260px !important;
     }
 }
+
+/* Force empty state row to be completely centered */
+#businessCardsTable.is-table-empty,
+#businessCardsTable.is-table-empty tbody {
+    display: block !important;
+    width: 100% !important;
+}
+
+/* Override mobile card styles on empty state tr */
+#businessCardsTable tbody tr.empty-table-row {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+/* Center empty table td both horizontally and vertically */
+#businessCardsTable tbody tr.empty-table-row td.dataTables_empty {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    width: 100% !important;
+    min-height: 380px !important;
+    /* Adjust height to center vertically on mobile */
+    margin: 0 auto !important;
+    border: none !important;
+    background: transparent !important;
+}
+
+/* Remove mobile data-label pseudo-elements */
+#businessCardsTable tbody tr.empty-table-row td.dataTables_empty::before,
+#businessCardsTable tbody tr.empty-table-row td.dataTables_empty::after {
+    display: none !important;
+    content: none !important;
+}
+
+/* Empty state icon styling */
+.empty-state-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background-color: rgba(32, 107, 196, 0.12);
+    color: #206bc4;
+    margin: 0 auto 1rem auto;
+}

@@ -108,9 +108,9 @@ class BookServiceController extends Controller
                     'status' => "Pending",
                     'emailSubject' => $emailTemplateDetails->email_template_subject,
                     'emailContent' => $emailTemplateDetails->email_template_content,
-                    'checkindate' => Carbon::parse($request->service_start_date)->format('d M Y'), // e.g., '2024-10-18'
+                    'checkindate' => formatDateOnlyForUser($request->service_start_date, true), // e.g., '2024-10-18'
                     'checkintime' => Carbon::parse($request->service_start_time)->format('H:i'), // e.g., '14:00'
-                    'checkoutdate' => Carbon::parse($request->service_end_date)->format('d M Y'), // e.g., '2024-10-18'
+                    'checkoutdate' => formatDateOnlyForUser($request->service_end_date, true), // e.g., '2024-10-18'
                     'checkouttime' => Carbon::parse($request->service_end_time)->format('H:i'), // e.g., '14:00'
                     'servicebookingpageurl' => "",
                     'googleCalendarUrl' => "",
@@ -123,7 +123,8 @@ class BookServiceController extends Controller
 
             try {
                 Mail::to($request->customer_email)->send(new \App\Mail\AppointmentMail($details));
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
+                report($e);
             }
 
             // Booking mail sent to business card owner
@@ -135,9 +136,9 @@ class BookServiceController extends Controller
                     'status' => "Pending",
                     'emailSubject' => $businessEmailTemplateDetails->email_template_subject,
                     'emailContent' => $businessEmailTemplateDetails->email_template_content,
-                    'checkindate' => Carbon::parse($request->service_start_date)->format('d M Y'), // e.g., '2024-10-18'
+                    'checkindate' => formatDateOnlyForUser($request->service_start_date, true), // e.g., '2024-10-18'
                     'checkintime' => Carbon::parse($request->service_start_time)->format('H:i'), // e.g., '14:00'
-                    'checkoutdate' => Carbon::parse($request->service_end_date)->format('d M Y'), // e.g., '2024-10-18'
+                    'checkoutdate' => formatDateOnlyForUser($request->service_end_date, true), // e.g., '2024-10-18'
                     'checkouttime' => Carbon::parse($request->service_end_time)->format('H:i'), // e.g., '14:00'
                     'servicebookingpageurl' => route('user.all.service.booking', $serviceDetails->vcard_id),
                     'googleCalendarUrl' => "",
@@ -153,7 +154,8 @@ class BookServiceController extends Controller
 
             try {
                 Mail::to($businessEmail)->send(new \App\Mail\AppointmentMail($serviceBookingDetails));
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
+                report($e);
             }
 
             if ($bookService) {

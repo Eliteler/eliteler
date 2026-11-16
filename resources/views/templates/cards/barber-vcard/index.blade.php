@@ -1401,7 +1401,7 @@ if (!empty($custom_js)) {
 
                     <div id="root-level-modals" style="display:none;">
                         <!-- Include PWA modal -->
-                        @if ($plan_details != null)
+                        @if ($plan_details != null) 
                             @if ($plan_details['pwa'] == 1 && $business_card_details->is_enable_pwa == 1)
                                 @include('vendor.laravelpwa.barber_pwa_modal', [
                                     'primary_color' => 'pink',

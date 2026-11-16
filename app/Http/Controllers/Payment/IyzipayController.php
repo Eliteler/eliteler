@@ -31,7 +31,6 @@ use Iyzipay\Model\CheckoutForm;
 use Iyzipay\Options;
 use Iyzipay\Request\CreateCheckoutFormInitializeRequest;
 use Iyzipay\Request\RetrieveCheckoutFormRequest;
-use Plugins\Zapier\Helpers\ZapierHelper;
 
 class IyzipayController extends Controller
 {

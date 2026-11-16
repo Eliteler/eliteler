@@ -20,6 +20,7 @@ use App\Providers\RouteServiceProvider;
 use App\Referral;
 use App\Services\GoBizCommonService;
 use App\Transaction;
+use App\Support\Zapier;
 use App\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Auth\RegistersUsers;
@@ -32,7 +33,6 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
-use Plugins\Zapier\Helpers\ZapierHelper;
 
 class RegisterController extends Controller
 {
@@ -231,23 +231,8 @@ class RegisterController extends Controller
         // Create new user
         $user = User::create($userData);
 
-        // Dispatch new user event to Zapier (Frontend Registration)
-        if (function_exists('zapier_dispatch')) {
-            zapier_dispatch('new_user', [
-                'registered_at'   => now()->toDateTimeString(),
-                'user_id'         => $user->user_id ?? $user->id,
-                'name'            => $user->name,
-                'email'           => $user->email,
-                'mobile_number'   => ($user->country_code ?? '') . ($user->mobile_number ?? ''),
-                'address'         => $user->billing_address ?? '',
-                'city'            => $user->billing_city ?? '',
-                'state'           => $user->billing_state ?? '',
-                'country'         => $user->billing_country ?? '',
-                'zipcode'         => $user->billing_zipcode ?? '',
-                'user_tax_number' => $user->billing_tax_number ?? $user->tax_number ?? '', // Global Tax ID / VAT / GSTIN
-                'registered_by'   => 'Customer (Frontend)',
-            ]);
-        }
+        // Zapier: new user (frontend registration)
+        Zapier::newUser($user, 'Customer (Frontend)');
 
         if ($nfc_ref) {
             session()->put('pending_nfc_ref', $nfc_ref);
@@ -314,7 +299,7 @@ class RegisterController extends Controller
 
                     // Send welcome email
                     Mail::to($data['email'])
-                        ->bcc(env('MAIL_FROM_ADDRESS'))
+                        ->bcc(config('mail.from.address'))
                         ->send(new \App\Mail\AppointmentMail($message));
                 } catch (\Exception $e) {
                     Log::error('Registration email failed', ['error' => $e->getMessage()]);

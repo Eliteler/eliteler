@@ -18,7 +18,7 @@
         "plugin:zip": "node scripts/plugin-build.mjs zip",
         "template:build": "node scripts/plugin-build.mjs build --templates",
         "template:zip": "node scripts/plugin-build.mjs zip --templates",
-        "types:plugins": "tsc --noEmit -p tsconfig.plugin.json",
+        "types:plugins": "tsc --noEmit -p tsconfig.plugin.json && tsc --noEmit -p tsconfig.plugin-user.json",
         "build:store": "tailwindcss -c ./tailwind.store.js -o ./public/templates/css/store/digital-store.css --minify"
     },
     "devDependencies": {
@@ -42,6 +42,8 @@
         "typescript-eslint": "^8.23.0"
     },
     "dependencies": {
+        "@dicebear/core": "^9.4.3",
+        "@dicebear/lorelei": "9.4.3",
         "@dnd-kit/core": "^6.3.1",
         "@dnd-kit/modifiers": "^9.0.0",
         "@dnd-kit/sortable": "^10.0.0",
@@ -102,6 +104,7 @@
         "react-cropper": "^2.3.3",
         "react-day-picker": "^9.13.0",
         "react-dom": "^19.2.0",
+        "react-globe.gl": "2.38.0",
         "react-hook-form": "^7.68.0",
         "react-hot-toast": "^2.6.1",
         "react-i18next": "^16.5.3",

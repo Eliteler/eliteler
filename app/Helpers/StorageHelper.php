@@ -9,6 +9,23 @@ use Illuminate\Support\Str;
 class StorageHelper
 {
     /**
+     * Dangerous executable and script extensions that must never be stored.
+     */
+    private const DISALLOWED_EXTENSIONS = [
+        'php', 'php3', 'php4', 'php5', 'php7', 'php8', 'phtml', 'phar', 'pht',
+        'exe', 'sh', 'bash', 'bat', 'cmd', 'bin', 'dll', 'cgi', 'pl', 'py',
+        'asp', 'aspx', 'jsp', 'jspx', 'htaccess', 'htpasswd', 'vbs', 'scr', 'msi',
+    ];
+
+    /**
+     * Allowed upload extensions for public assets (images, audio, json, pdf).
+     */
+    private const ALLOWED_EXTENSIONS = [
+        'jpg', 'jpeg', 'png', 'gif', 'svg', 'webp', 'ico', 'heic', 'bmp', 'avif',
+        'mp3', 'wav', 'ogg', 'json', 'pdf',
+    ];
+
+    /**
      * Upload an uploaded file or save raw string content and return relative path.
      *
      * @param  \Illuminate\Http\UploadedFile|string|null  $fileOrContent
@@ -27,14 +44,29 @@ class StorageHelper
 
         // Case 1: If input is an UploadedFile instance ($request->file)
         if ($fileOrContent instanceof UploadedFile) {
-            // Get valid extension with fallback for cropped blobs
-            $extension = $fileOrContent->getClientOriginalExtension()
-                ?: $fileOrContent->extension()
-                ?: 'png';
+            // Determine real extension from binary MIME type first, then fallback
+            $detected = strtolower($fileOrContent->guessExtension() ?: $fileOrContent->extension() ?: $fileOrContent->getClientOriginalExtension());
+
+            if ($detected === 'jpeg') {
+                $detected = 'jpg';
+            }
+
+            // Immediately reject disallowed or non-whitelisted extensions
+            if (in_array($detected, self::DISALLOWED_EXTENSIONS, true) || !in_array($detected, self::ALLOWED_EXTENSIONS, true)) {
+                return null;
+            }
+
+            $extension = $detected;
 
             if ($fileName) {
-                // Ensure extension is attached to the custom name
-                $finalName = pathinfo($fileName, PATHINFO_EXTENSION) ? $fileName : $fileName . '.' . $extension;
+                $cleanFileName = basename($fileName);
+                $specifiedExt = strtolower(pathinfo($cleanFileName, PATHINFO_EXTENSION));
+
+                if ($specifiedExt && in_array($specifiedExt, self::DISALLOWED_EXTENSIONS, true)) {
+                    return null;
+                }
+
+                $finalName = $specifiedExt ? $cleanFileName : $cleanFileName . '.' . $extension;
             } else {
                 $originalName = pathinfo($fileOrContent->getClientOriginalName(), PATHINFO_FILENAME);
                 $finalName = Str::slug($originalName ?: 'image') . '_' . uniqid() . '.' . $extension;
@@ -52,7 +84,13 @@ class StorageHelper
 
         // Case 2: If input is raw string / base64 content
         if (is_string($fileOrContent)) {
-            $finalName = $fileName ?: 'file_' . uniqid() . '.png';
+            $finalName = $fileName ? basename($fileName) : 'file_' . uniqid() . '.png';
+            $specifiedExt = strtolower(pathinfo($finalName, PATHINFO_EXTENSION));
+
+            if ($specifiedExt && in_array($specifiedExt, self::DISALLOWED_EXTENSIONS, true)) {
+                return null;
+            }
+
             $fullPath = $cleanPath ? $cleanPath . '/' . ltrim($finalName, '/') : ltrim($finalName, '/');
 
             Storage::disk($disk)->put($fullPath, $fileOrContent);

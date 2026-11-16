@@ -6,6 +6,7 @@ use App\AiCredit;
 use App\AiCreditsPlan;
 use App\AiCreditsTransaction;
 use App\AppliedCoupon;
+use App\Classes\InvoiceNumber;
 use App\Coupon;
 use App\Http\Controllers\Controller;
 use App\Setting;
@@ -17,7 +18,6 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
-use Plugins\Zapier\Helpers\ZapierHelper;
 
 class CashfreeController extends Controller
 {
@@ -425,24 +425,15 @@ class CashfreeController extends Controller
                     )->first();
 
                 // Invoice Count
-                $invoice_count =
-                    AiCreditsTransaction::where(
-                        'invoice_prefix',
-                        $config[15]->config_value
-                    )->count();
-
-                $invoice_number =
-                    $invoice_count + 1;
-
                 // Update Transaction
-                AiCreditsTransaction::where(
+                $invoice_number = InvoiceNumber::assign('ai_credits_transactions', $config[15]->config_value, fn ($invoice_number) => AiCreditsTransaction::where(
                     'payment_transaction_id',
                     $transactionDetails->payment_transaction_id
                 )->update([
                     'invoice_prefix' => $config[15]->config_value,
                     'invoice_number' => $invoice_number,
                     'payment_status' => 'paid',
-                ]);
+                ]));
 
                 // Update AI credits
                 $aiCredit = AiCredit::where('user_id', Auth::user()->user_id)->first();
@@ -488,7 +479,8 @@ class CashfreeController extends Controller
                 try {
                     Mail::to($encode['to_billing_email'])
                         ->send(new \App\Mail\SendEmailInvoice($details));
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
+                    report($e);
                 }
 
                 // Fetch customer details safely

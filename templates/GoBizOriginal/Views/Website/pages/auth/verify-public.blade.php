@@ -31,8 +31,8 @@ if ($config[38]->config_value == "no") {
         <div class="flex flex-wrap items-center -m-6">
             {{-- Left image --}}
             <div class="w-full md:w-1/2 p-6 lg:block hidden mobile-banner">
-                <div class="p-1 mx-auto max-w-max overflow-hidden rounded-full">
-                    <img class="object-cover rounded-full" src="{{ asset($template_config->auth_image) }}" alt="{{ $config[0]->config_value }}">
+                <div class="p-1 mx-auto max-w-max overflow-hidden">
+                    <img class="object-cover" src="{{ asset($template_config->auth_image) }}" alt="{{ $config[0]->config_value }}">
                 </div>
             </div>
 

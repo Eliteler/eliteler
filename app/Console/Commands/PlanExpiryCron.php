@@ -111,7 +111,8 @@ class PlanExpiryCron extends Command
                         Mail::to($user->email)->send(new \App\Mail\AppointmentMail($expiryPlanDetails));
                         $this->sendAllChannels($user, $expiryPlanDetails, 'User Plan Expiry Remainder');
                     }
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
+                    report($e);
                     // $this->error("Failed to send email to {$user->email}: {$e->getMessage()}");
                 }
             }

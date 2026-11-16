@@ -141,7 +141,7 @@ export default function NfcTransactions({ transactions, tab, search, counts }: P
                                                 <span className="truncate font-mono text-xs font-medium" title={transaction.id}>
                                                     {transaction.invoice ?? transaction.id}
                                                 </span>
-                                                <span className="text-xs text-muted-foreground" title={formatDate(transaction.date, "dd MMM yyyy, HH:mm")}>
+                                                <span className="text-xs text-muted-foreground" title={formatDate(transaction.date)}>
                                                     {fromNow(transaction.date)}
                                                 </span>
                                             </div>

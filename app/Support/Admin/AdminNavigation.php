@@ -2,6 +2,7 @@
 
 namespace App\Support\Admin;
 
+use App\Support\Plugins\PluginExtensions;
 use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -27,6 +28,7 @@ class AdminNavigation
         'admin.account',
         'admin.settings',
         'admin.cron.jobs',
+        'admin.visitor.analytics',
         'admin.sitemap',
         'admin.tax.setting',
         'admin.check',
@@ -74,6 +76,10 @@ class AdminNavigation
     {
         $can = fn (string $key) => $permissions[$key] ?? false;
         $hidesRevenue = AdminPermissions::hidesRevenue($user);
+
+        // Plugins shown in the sidebar ("Apps"); their pages light up their own entry, not "Plugins"
+        $apps = PluginExtensions::sidebarItems('admin', $user);
+        $onApp = in_array(true, array_column($apps, 'isActive'), true);
 
         $sections = [
             [
@@ -142,12 +148,22 @@ class AdminNavigation
                 ],
             ],
             [
+                // Sidebar entries of installed plugins (plugin.json "sidebar")
+                'title' => __('Apps'),
+                'items' => array_map(fn (array $item) => self::item($item['title'], $item['route'], [], null, [ltrim((string) parse_url($item['href'], PHP_URL_PATH), '/') . '*']) + [
+                    'svg'     => $item['svg'],
+                    'badge'   => $item['badge'],
+                    'inertia' => true,
+                ], $apps),
+            ],
+            [
                 'title' => __('Settings & Tools'),
                 'items' => [
-                    $can('plugins') ? self::item(__('Plugins'), 'admin.plugins', [], 'puzzle', ['admin/plugins', 'admin/plugin*']) : null,
-                    self::group(__('System Utilities'), 'settings', ['admin/settings*', 'admin/cron*', 'admin/sitemap*', 'admin/currencies*', 'admin/create-currency', 'admin/edit-currency*', 'admin/users*', 'admin/create-user', 'admin/edit-user*', 'admin/email-templates*', 'admin/translations*', 'admin/backups*', 'admin/clear-cache*', 'admin/software-update*'], [
+                    $can('plugins') ? self::item(__('Plugins'), 'admin.plugins', [], 'puzzle', $onApp ? ['admin/plugins', 'admin/plugins/*'] : ['admin/plugins', 'admin/plugin*']) : null,
+                    self::group(__('System Utilities'), 'settings', ['admin/settings*', 'admin/cron*', 'admin/visitor-analytics*', 'admin/sitemap*', 'admin/currencies*', 'admin/create-currency', 'admin/edit-currency*', 'admin/users*', 'admin/create-user', 'admin/edit-user*', 'admin/email-templates*', 'admin/translations*', 'admin/backups*', 'admin/clear-cache*', 'admin/software-update*'], [
                         $can('general_settings') ? self::item(__('General Settings'), 'admin.settings') : null,
                         $can('general_settings') ? self::item(__('Cron Jobs'), 'admin.cron.jobs') : null,
+                        $can('general_settings') ? self::item(__('Visitor Analytics'), 'admin.visitor.analytics') : null,
                         $can('sitemap') ? self::item(__('Generate Sitemap'), 'admin.sitemap') : null,
                         $can('invoice_tax') ? self::item(__('Invoice & Tax Settings'), 'admin.tax.setting') : null,
                         $can('currencies') ? self::item(__('Currencies'), 'admin.currencies') : null,
@@ -198,7 +214,9 @@ class AdminNavigation
                 'title'    => $item['title'],
                 'href'     => $url,
                 'icon'     => $item['icon'],
-                'inertia'  => in_array($item['route'], self::INERTIA, true),
+                'svg'      => $item['svg'] ?? null,
+                'badge'    => $item['badge'] ?? 0,
+                'inertia'  => $item['inertia'] ?? in_array($item['route'], self::INERTIA, true),
                 'action'   => self::ACTIONS[$item['route']] ?? null,
                 'isActive' => $item['active']
                     ? $request->is(...$item['active'])

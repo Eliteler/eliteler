@@ -243,7 +243,7 @@ export default function StaffPage({
             login: {
                 title: t("Sign in as :name?"),
                 description: t(
-                    "You'll see the admin panel with their permissions. Sign out and back in to return to your account.",
+                    "You'll see the admin panel with their permissions. Use \"Back to admin\" in the bar at the bottom of the screen (or Logout) to return to your account.",
                 ),
                 label: t("Sign in as them"),
             },

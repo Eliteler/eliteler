@@ -16,8 +16,11 @@ use App\Http\Controllers\Controller;
 use App\Services\GoBizCommonService;
 use App\Services\PackageZip;
 use App\Services\PluginManager;
+use App\Support\Admin\AdminPermissions;
 use App\Transaction;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
@@ -34,10 +37,24 @@ use ZipArchive;
  */
 class PluginController extends Controller
 {
+    public const PER_PAGE = 9;
+
     private const BUILT_IN = [
-        'TawkChat', 'WhatsappChatButton', 'WhatsAppChatButton', 'GoogleRecaptcha', 'GoogleOAuth', 'GoogleAnalytics',
-        'GoogleAdSense', 'MaintenanceMode', 'SMTP', 'SubDomain', 'OrderNFCSystem', 'ReferralSystem', 'CookieConsent',
-        'WebTools', 'AiBuilder',
+        'TawkChat',
+        'WhatsappChatButton',
+        'WhatsAppChatButton',
+        'GoogleRecaptcha',
+        'GoogleOAuth',
+        'GoogleAnalytics',
+        'GoogleAdSense',
+        'MaintenanceMode',
+        'SMTP',
+        'SubDomain',
+        'OrderNFCSystem',
+        'ReferralSystem',
+        'CookieConsent',
+        'WebTools',
+        'AiBuilder',
     ];
 
     public function __construct(private PluginManager $pluginManager)
@@ -45,11 +62,14 @@ class PluginController extends Controller
         $this->middleware('auth');
     }
 
-    public function index()
+    public function index(Request $request)
     {
+        $tab    = in_array($request->query('tab'), ['all', 'builtIn', 'added'], true) ? $request->query('tab') : 'all';
+        $search = trim((string) $request->query('search', ''));
+
         $this->pluginManager->loadPlugins();
 
-        $plugins = collect($this->pluginManager->getPlugins())->map(function ($plugin) {
+        $allPlugins = collect($this->pluginManager->getPlugins())->map(function ($plugin) use ($request) {
             $image = ! empty($plugin['img']) && File::exists(public_path('img/plugins/' . $plugin['img'])) ? $plugin['img'] : 'default.png';
             $route = $plugin['main_route'] ?? null;
             $id    = (string) ($plugin['plugin_id'] ?? basename($plugin['path']));
@@ -62,14 +82,46 @@ class PluginController extends Controller
                 'image'       => asset('img/plugins/' . $image),
                 'settingsUrl' => $plugin['legacy']
                     ? route('admin.plugin.update-required', $id)
-                    : ($route && Route::has($route) ? route($route) : null),
+                    : ($route && Route::has($route) && $this->canOpen($route, $request) ? route($route) : null),
                 'builtIn'     => in_array($plugin['plugin_id'] ?? '', self::BUILT_IN, true),
                 'legacy'      => $plugin['legacy'],
             ];
         })->sortBy(fn($plugin) => mb_strtolower($plugin['name']))->values();
 
+        $counts = [
+            'all'     => $allPlugins->count(),
+            'builtIn' => $allPlugins->where('builtIn', true)->count(),
+            'added'   => $allPlugins->where('builtIn', false)->count(),
+        ];
+
+        // Filter plugins based on active tab and search
+        $filtered = $allPlugins
+            ->when($tab === 'builtIn', fn($c) => $c->where('builtIn', true))
+            ->when($tab === 'added', fn($c) => $c->where('builtIn', false))
+            ->when($search !== '', function ($c) use ($search) {
+                $term = mb_strtolower($search);
+                return $c->filter(fn($p) => str_contains(mb_strtolower($p['name']), $term) || str_contains(mb_strtolower((string) $p['description']), $term));
+            })
+            ->values();
+
+        // Paginate filtered plugins collection
+        $currentPage  = Paginator::resolveCurrentPage() ?: 1;
+        $currentItems = $filtered->slice(($currentPage - 1) * self::PER_PAGE, self::PER_PAGE)->values();
+
+        $paginated = new LengthAwarePaginator(
+            $currentItems,
+            $filtered->count(),
+            self::PER_PAGE,
+            $currentPage,
+            ['path' => Paginator::resolveCurrentPath(), 'query' => $request->query()]
+        );
+
         return Inertia::render('plugins/index', [
-            'plugins'     => $plugins,
+            'plugins'     => $paginated,
+            'allPlugins'  => $allPlugins,
+            'tab'         => $tab,
+            'search'      => $search,
+            'counts'      => $counts,
             'maxUploadKb' => (int) env('SIZE_LIMIT', 2048),
         ]);
     }
@@ -120,9 +172,27 @@ class PluginController extends Controller
         // The manager only knows plugins after loading them
         $this->pluginManager->loadPlugins();
 
-        return $this->pluginManager->deletePlugin($pluginName)
-            ? back()->with('success', __('Plugin removed.'))
-            : back()->with('failed', __('Plugin not found or could not be removed.'));
+        if (! $this->pluginManager->deletePlugin($pluginName)) {
+            return back()->with('failed', __('Plugin not found or could not be removed.'));
+        }
+
+        return back()->with('success', __('Plugin removed.'));
+    }
+
+    /** Whether the admin passes the route's "user.page.permission" check (no Settings button that ends in a 403). */
+    private function canOpen(string $route, Request $request): bool
+    {
+        $keys = collect(Route::getRoutes()->getByName($route)?->gatherMiddleware() ?? [])
+            ->filter(fn ($middleware) => is_string($middleware) && str_starts_with($middleware, 'user.page.permission:'))
+            ->flatMap(fn ($middleware) => explode(',', substr($middleware, strlen('user.page.permission:'))));
+
+        if ($keys->isEmpty()) {
+            return true;
+        }
+
+        $permissions = AdminPermissions::for($request->user());
+
+        return $keys->contains(fn ($key) => $permissions[$key] ?? false);
     }
 
     public function upload(Request $request)
@@ -163,11 +233,13 @@ class PluginController extends Controller
 
             $found = [];
             foreach ($manifestPath === null ? [] : PackageZip::files($zip, $root) as $name) {
-                foreach ([
-                    'routes'     => '#^routes\.php$#i',
-                    'controller' => '#^Controllers/#i',
-                    'adminPage'  => '#^(Views/.+\.blade\.php|dist/manifest\.json)$#i',
-                ] as $part => $pattern) {
+                foreach (
+                    [
+                        'routes'     => '#^routes\.php$#i',
+                        'controller' => '#^Controllers/#i',
+                        'adminPage'  => '#^(Views/.+\.blade\.php|dist/manifest\.json)$#i',
+                    ] as $part => $pattern
+                ) {
                     if (preg_match($pattern, $name)) {
                         $found[$part] = true;
                     }

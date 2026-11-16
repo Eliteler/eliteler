@@ -1467,7 +1467,7 @@
                 @endif
 
                 {{-- 21. Include Newsletter Modal --}}
-                @if ($business_card_details != null)
+                @if ($business_card_details != null) 
                     {{-- Check Newsletter --}}
                     @if (!empty($business_card_details->is_newsletter_pop_active) && $business_card_details->is_newsletter_pop_active == 1)
                         @include('templates.cards.pet-store-vcard.includes.newsletter_modal')

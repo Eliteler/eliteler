@@ -31,6 +31,7 @@ use Inertia\Inertia;
  */
 class CouponsController extends Controller
 {
+    public const PER_PAGE = 10;
     private const TABS = ['active', 'expired', 'disabled', 'all'];
 
     public function __construct()
@@ -44,30 +45,34 @@ class CouponsController extends Controller
         $search = trim((string) $request->query('search', ''));
         $now    = Carbon::now();
 
-        $base = fn () => Coupon::where('status', '!=', 2)
-            ->when($search !== '', fn ($q) => $q->where(fn ($q) => $q->where('coupon_code', 'like', "%{$search}%")->orWhere('coupon_desc', 'like', "%{$search}%")));
+        $base = fn() => Coupon::where('status', '!=', 2)
+            ->when($search !== '', fn($q) => $q->where(fn($q) => $q->where('coupon_code', 'like', "%{$search}%")->orWhere('coupon_desc', 'like', "%{$search}%")));
 
-        $coupons = $base()
-            ->when($tab === 'active', fn ($q) => $q->where('status', 1)->where(fn ($q) => $q->whereNull('coupon_expired_on')->orWhere('coupon_expired_on', '>=', $now)))
-            ->when($tab === 'expired', fn ($q) => $q->where('coupon_expired_on', '<', $now))
-            ->when($tab === 'disabled', fn ($q) => $q->where('status', 0))
+        // Paginate coupons query
+        $page = $base()
+            ->when($tab === 'active', fn($q) => $q->where('status', 1)->where(fn($q) => $q->whereNull('coupon_expired_on')->orWhere('coupon_expired_on', '>=', $now)))
+            ->when($tab === 'expired', fn($q) => $q->where('coupon_expired_on', '<', $now))
+            ->when($tab === 'disabled', fn($q) => $q->where('status', 0))
             ->orderByDesc('id')
-            ->get();
+            ->paginate(self::PER_PAGE)
+            ->withQueryString();
 
-        $usage = $this->usage($coupons);
+        $usage = $this->usage($page->getCollection());
         $names = $this->itemNames();
+
+        $page->through(fn(Coupon $coupon) => [
+            ...$this->present($coupon, $names),
+            'redeemed'   => $usage[$coupon->coupon_id]['redeemed'] ?? 0,
+            'customers'  => $usage[$coupon->coupon_id]['customers'] ?? 0,
+        ]);
 
         $counts = $base()->selectRaw('COUNT(*) as `all`, SUM(status = 1 AND (coupon_expired_on IS NULL OR coupon_expired_on >= ?)) as active, SUM(coupon_expired_on < ?) as expired, SUM(status = 0) as disabled', [$now, $now])->first();
 
         return Inertia::render('coupons/index', [
-            'coupons' => $coupons->map(fn (Coupon $coupon) => [
-                ...$this->present($coupon, $names),
-                'redeemed' => $usage[$coupon->coupon_id]['redeemed'] ?? 0,
-                'customers'=> $usage[$coupon->coupon_id]['customers'] ?? 0,
-            ]),
+            'coupons' => $page,
             'tab'     => $tab,
             'search'  => $search,
-            'counts'  => collect(self::TABS)->mapWithKeys(fn ($k) => [$k => (int) $counts->{$k}]),
+            'counts'  => collect(self::TABS)->mapWithKeys(fn($k) => [$k => (int) $counts->{$k}]),
             'items'   => $this->itemOptions(),
             'open'    => $request->query('edit') ?: ($request->boolean('new') ? 'new' : null),
         ]);
@@ -139,15 +144,26 @@ class CouponsController extends Controller
         };
         $amountColumn = $coupon->used_for === 'plan' ? 'transaction_amount' : 'amount';
 
-        $rows = $this->appliedQuery($coupon)
+        // Select the required columns including customer_id alias before paginate
+        $paginated = $this->appliedQuery($coupon)
             ->leftJoin('users', 'users.id', '=', 'applied_coupons.user_id')
+            ->select([
+                'applied_coupons.transaction_id',
+                'applied_coupons.status',
+                'applied_coupons.created_at',
+                'users.user_id as customer_id',
+                'users.name',
+                'users.email',
+            ])
             ->orderByDesc('applied_coupons.id')
-            ->limit(200)
-            ->get(['applied_coupons.transaction_id', 'applied_coupons.status', 'applied_coupons.created_at', 'users.user_id as customer_id', 'users.name', 'users.email']);
+            ->paginate(10)
+            ->withQueryString();
 
-        $refs   = collect($refs);
-        $paid   = DB::table($table)->where(fn ($q) => $refs->each(fn ($c) => $q->orWhereIn($c, $rows->pluck('transaction_id'))))
+        $rows = $paginated->getCollection();
+        $refs = collect($refs);
+        $paid = DB::table($table)->where(fn($q) => $refs->each(fn($c) => $q->orWhereIn($c, $rows->pluck('transaction_id'))))
             ->get([...$refs->all(), $amountColumn . ' as amount', 'invoice_details']);
+
         $lookup = [];
         foreach ($paid as $t) {
             foreach ($refs as $c) {
@@ -157,7 +173,7 @@ class CouponsController extends Controller
 
         return Inertia::render('coupons/usage', [
             'coupon' => $this->present($coupon, $this->itemNames()),
-            'uses'   => $rows->map(function ($row) use ($lookup) {
+            'uses'   => $paginated->through(function ($row) use ($lookup) {
                 $t       = $lookup[$row->transaction_id] ?? null;
                 $invoice = $t ? (json_decode($t->invoice_details ?? '', true) ?: []) : [];
 
@@ -217,8 +233,8 @@ class CouponsController extends Controller
         return Coupon::where('coupon_code', Str::upper($code))
             ->where('used_for', $usedFor)
             ->where('status', '!=', 2)
-            ->when($exceptId, fn ($q) => $q->where('coupon_id', '!=', $exceptId))
-            ->where(fn ($q) => $q->whereNull('coupon_expired_on')->orWhere('coupon_expired_on', '>=', Carbon::now()))
+            ->when($exceptId, fn($q) => $q->where('coupon_id', '!=', $exceptId))
+            ->where(fn($q) => $q->whereNull('coupon_expired_on')->orWhere('coupon_expired_on', '>=', Carbon::now()))
             ->exists();
     }
 
@@ -241,9 +257,9 @@ class CouponsController extends Controller
 
     private function appliedQuery(Coupon $coupon)
     {
-        return DB::table('applied_coupons')->where(fn ($q) => $q
+        return DB::table('applied_coupons')->where(fn($q) => $q
             ->where('applied_coupons.coupon_id', $coupon->coupon_id)
-            ->when($coupon->used_for !== 'plan', fn ($q) => $q->orWhere('applied_coupons.coupon_id', $coupon->coupon_code)));
+            ->when($coupon->used_for !== 'plan', fn($q) => $q->orWhere('applied_coupons.coupon_id', $coupon->coupon_code)));
     }
 
     /** @return array<string, array{redeemed: int, customers: int}> */
@@ -269,7 +285,7 @@ class CouponsController extends Controller
 
     private function itemOptions(): array
     {
-        $map = fn ($rows, $id, $name, $price) => $rows->map(fn ($r) => ['id' => $r->{$id}, 'name' => $r->{$name}, 'price' => (float) $r->{$price}])->values();
+        $map = fn($rows, $id, $name, $price) => $rows->map(fn($r) => ['id' => $r->{$id}, 'name' => $r->{$name}, 'price' => (float) $r->{$price}])->values();
 
         return [
             'plan'       => $map(DB::table('plans')->where('status', 1)->orderBy('plan_price')->get(), 'plan_id', 'plan_name', 'plan_price'),
@@ -290,7 +306,7 @@ class CouponsController extends Controller
             'description' => $coupon->coupon_desc,
             'usedFor'     => $coupon->used_for,
             'itemIds'     => $ids,
-            'items'       => in_array('all', $ids, true) ? null : array_values(array_filter(array_map(fn ($id) => $names[$coupon->used_for][$id] ?? null, $ids))),
+            'items'       => in_array('all', $ids, true) ? null : array_values(array_filter(array_map(fn($id) => $names[$coupon->used_for][$id] ?? null, $ids))),
             'type'        => $coupon->coupon_type,
             'amount'      => (float) $coupon->coupon_amount,
             'expires'     => $expires?->toIso8601String(),

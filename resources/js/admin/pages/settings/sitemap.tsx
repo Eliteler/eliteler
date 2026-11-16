@@ -127,7 +127,7 @@ export default function Sitemap({ categories, status }: Props) {
                                             </div>
                                             <div className="col-span-2">
                                                 <dt className="text-xs text-muted-foreground">{t("Last generated")}</dt>
-                                                <dd className="font-medium">{formatDate(status.generatedAt, "dd MMM yyyy, HH:mm")}</dd>
+                                                <dd className="font-medium">{formatDate(status.generatedAt)}</dd>
                                             </div>
                                         </dl>
                                         <div className="flex items-center gap-2">

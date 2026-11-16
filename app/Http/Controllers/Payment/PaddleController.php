@@ -14,6 +14,7 @@ namespace App\Http\Controllers\Payment;
 
 use App\AppliedCoupon;
 use App\BusinessCard;
+use App\Classes\InvoiceNumber;
 use App\Coupon;
 use App\Http\Controllers\Controller;
 use App\Plan;
@@ -27,7 +28,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Plugins\Zapier\Helpers\ZapierHelper;
 
 class PaddleController extends Controller
 {
@@ -469,16 +469,13 @@ class PaddleController extends Controller
                             $plan_validity->addDays($term_days);
                         }
 
-                        $invoice_count  = Transaction::where("invoice_prefix", $config[15]->config_value)->count();
-                        $invoice_number = $invoice_count + 1;
-
-                        Transaction::where('transaction_id', $transaction_id)->update([
+                        $invoice_number = InvoiceNumber::assign('transactions', $config[15]->config_value, fn ($invoice_number) => Transaction::where('transaction_id', $transaction_id)->update([
                             'transaction_id' => $paddleTransactionId,
                             'invoice_prefix' => $config[15]->config_value,
                             'invoice_number' => $invoice_number,
                             'payment_status' => 'SUCCESS',
                             'updated_at'     => now(),
-                        ]);
+                        ]));
 
                         if ($user_details) {
                             $user_details->plan_id              = $transaction_details->plan_id;
@@ -528,16 +525,13 @@ class PaddleController extends Controller
                             }
                         }
 
-                        $invoice_count  = Transaction::where("invoice_prefix", $config[15]->config_value)->count();
-                        $invoice_number = $invoice_count + 1;
-
-                        Transaction::where('transaction_id', $transaction_id)->update([
+                        $invoice_number = InvoiceNumber::assign('transactions', $config[15]->config_value, fn ($invoice_number) => Transaction::where('transaction_id', $transaction_id)->update([
                             'transaction_id' => $paddleTransactionId,
                             'invoice_prefix' => $config[15]->config_value,
                             'invoice_number' => $invoice_number,
                             'payment_status' => 'SUCCESS',
                             'updated_at'     => now(),
-                        ]);
+                        ]));
 
                         if ($user_details) {
                             $user_details->plan_id              = $transaction_details->plan_id;
@@ -586,7 +580,8 @@ class PaddleController extends Controller
 
                     try {
                         Mail::to($encode['to_billing_email'])->send(new \App\Mail\SendEmailInvoice($details));
-                    } catch (\Exception $e) {
+                    } catch (\Throwable $e) {
+                        report($e);
                         // Handle email sending failure if needed
                     }
 
@@ -755,16 +750,13 @@ class PaddleController extends Controller
                     $plan_validity->addDays($term_days);
                 }
 
-                $invoice_count  = Transaction::where("invoice_prefix", $config[15]->config_value)->count();
-                $invoice_number = $invoice_count + 1;
-
-                Transaction::where('transaction_id', $transaction_id)->update([
+                $invoice_number = InvoiceNumber::assign('transactions', $config[15]->config_value, fn ($invoice_number) => Transaction::where('transaction_id', $transaction_id)->update([
                     'transaction_id' => $paymentId,
                     'invoice_prefix' => $config[15]->config_value,
                     'invoice_number' => $invoice_number,
                     'payment_status' => 'SUCCESS',
                     'updated_at'     => now(),
-                ]);
+                ]));
 
                 if ($user_details) {
                     $user_details->plan_id              = $transaction_details->plan_id;
@@ -797,16 +789,13 @@ class PaddleController extends Controller
                     }
                 }
 
-                $invoice_count  = Transaction::where("invoice_prefix", $config[15]->config_value)->count();
-                $invoice_number = $invoice_count + 1;
-
-                Transaction::where('transaction_id', $transaction_id)->update([
+                $invoice_number = InvoiceNumber::assign('transactions', $config[15]->config_value, fn ($invoice_number) => Transaction::where('transaction_id', $transaction_id)->update([
                     'transaction_id' => $paymentId,
                     'invoice_prefix' => $config[15]->config_value,
                     'invoice_number' => $invoice_number,
                     'payment_status' => 'SUCCESS',
                     'updated_at'     => now(),
-                ]);
+                ]));
 
                 if ($user_details) {
                     $user_details->plan_id              = $transaction_details->plan_id;
@@ -854,7 +843,8 @@ class PaddleController extends Controller
 
             try {
                 Mail::to($encode['to_billing_email'])->send(new \App\Mail\SendEmailInvoice($details));
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
+                report($e);
                 // Handle email sending failure if needed
             }
         }

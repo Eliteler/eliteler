@@ -1690,7 +1690,7 @@
                 @if ($business_card_details != null)
                     {{-- Check Newsletter --}}
                     @if ($business_card_details->is_newsletter_pop_active == 1)
-                        @include('templates.cards.includes.old_theme_newsletter_modal', [
+                        @include('templates.cards.includes.newsletter_modal', [
                             'primary_color' => 'orange',
                         ])
                     @endif

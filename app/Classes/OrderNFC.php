@@ -19,12 +19,12 @@ use App\NfcCardDesign;
 use App\NfcCardKey;
 use App\NfcCardOrder;
 use App\NfcCardOrderTransaction;
+use App\Support\Zapier;
 use App\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
-use Plugins\Zapier\Helpers\ZapierHelper;
 
 class OrderNFC
 {
@@ -39,16 +39,34 @@ class OrderNFC
 
         $transactionDetails = NfcCardOrderTransaction::where('payment_transaction_id', $paymentId)->where('status', 1)->first();
 
-        $invoice_count = NfcCardOrderTransaction::where("invoice_prefix", $config[15]->config_value)->count();
-        $invoice_number = $invoice_count + 1;
+        if (!$transactionDetails) {
+            return;
+        }
 
-        // Update nfc card order transaction details
-        if ($transactionDetails) {
+        // Update nfc card order transaction details.
+        // A gateway can report the same payment twice (return page + webhook), so the status
+        // is checked under a row lock and an already processed payment is skipped.
+        $invoice_number = DB::transaction(function () use ($transactionDetails, $paymentId, $config) {
+            // Takes the invoice lock first (same lock order as the admin approval path)
+            $invoice_number = InvoiceNumber::next('nfc_card_order_transactions', $config[15]->config_value);
+
+            $locked = NfcCardOrderTransaction::whereKey($transactionDetails->getKey())->lockForUpdate()->first();
+            if ($locked->payment_status === 'success') {
+                return null;
+            }
+
             $transactionDetails->payment_transaction_id = $paymentId;
             $transactionDetails->invoice_prefix = $config[15]->config_value;
             $transactionDetails->invoice_number = $invoice_number;
             $transactionDetails->payment_status = 'success';
             $transactionDetails->save();
+
+            return $invoice_number;
+        });
+
+        // Already processed
+        if ($invoice_number === null) {
+            return;
         }
 
         // Update nfc card order details
@@ -64,13 +82,11 @@ class OrderNFC
         // Get NFC card order details
         $nfcCardOrderDetails = NfcCardOrder::where('nfc_card_order_id', $transactionDetails->nfc_card_order_id)->first();
 
-        // Reduce NFC card stock
-        $nfcCardDesign = NfcCardDesign::where('nfc_card_id', $nfcCardOrderDetails->nfc_card_id)->first();
-        $nfcCardDesign->available_stocks = (int) $nfcCardDesign->available_stocks - 1;
-        $nfcCardDesign->save();
-
         // Quantity
         $quantity = max((int) json_decode($nfcCardOrderDetails->order_details, true)['order_quantity'], 1);
+
+        // Reduce NFC card stock by the ordered quantity
+        NfcCardDesign::where('nfc_card_id', $nfcCardOrderDetails->nfc_card_id)->decrement('available_stocks', $quantity);
 
         // Generate quantity wise NFC card key
         $orderDetails = json_decode($nfcCardOrderDetails->order_details, true) ?? [];
@@ -150,42 +166,22 @@ class OrderNFC
 
         try {
             Mail::to($encode['to_billing_email'])->send(new \App\Mail\AppointmentMail($details));
-            Mail::to(env('MAIL_FROM_ADDRESS'))->send(new \App\Mail\AppointmentMail($ownerDetails));
-        } catch (\Exception $e) {
+            Mail::to(config('mail.from.address'))->send(new \App\Mail\AppointmentMail($ownerDetails));
+        } catch (\Throwable $e) {
+            report($e);
         }
 
-        // Safely format user billing address
-        $userAddress = $customerDetails->billing_address ?? '';
-        $userCity = $customerDetails->billing_city ?? '';
-        $userState = $customerDetails->billing_state ?? '';
-        $userCountry = $customerDetails->billing_country ?? '';
-        $userZip = $customerDetails->billing_zipcode ?? '';
-
-        // Dispatch NFC card order event to Zapier
-        if (function_exists('zapier_dispatch')) {
-            zapier_dispatch('nfc_order', [
-                'transaction_id'  => $transactionDetails->nfc_card_order_id ?? $paymentId,
-                'invoice_id'      => ($config[15]->config_value ?? 'INV-') . $invoice_number,
-                'user_name'       => $customerDetails->name ?? ($encode['to_billing_name'] ?? 'Customer'),
-                'user_address'    => !empty($userAddress) ? $userAddress : ($encode['to_billing_address'] ?? ''),
-                'user_city'       => !empty($userCity) ? $userCity : ($encode['to_billing_city'] ?? ''),
-                'user_state'      => !empty($userState) ? $userState : ($encode['to_billing_state'] ?? ''),
-                'user_country'    => !empty($userCountry) ? $userCountry : ($encode['to_billing_country'] ?? ''),
-                'user_zip'        => !empty($userZip) ? $userZip : ($encode['to_billing_zipcode'] ?? ''),
-                'user_email'      => $customerDetails->email ?? ($encode['to_billing_email'] ?? ''),
-                'user_phone'      => ($customerDetails->country_code ?? '') . ($customerDetails->mobile_number ?? ($encode['to_billing_phone'] ?? '')),
-                'user_tax_number' => $customerDetails->vat_number ?? $customerDetails->tax_number ?? ($encode['to_vat_number'] ?? ''),
-                'nfc_card_name'   => $itemDetails['order_item'] ?? 'Custom Metal NFC Business Card',
-                'quantity'        => (int) $quantity,
-                'currency'        => $transactionDetails->currency ?? ($config[1]->config_value ?? 'USD'),
-                'amount'          => (float) ($transactionDetails->amount ?? ($encode['invoice_amount'] ?? 0)),
-                'order_status'    => 'processing',
-                'payment_method'  => $transactionDetails->payment_method ?? 'Online',
-                'payment_status'  => $nfcCardOrderDetails->payment_status ?? 'paid',
-                'invoice_date'    => now()->toDateString(),
-                'purchased_at'    => now()->toDateTimeString(),
-            ]);
-        }
+        // Zapier: NFC card order
+        Zapier::nfcOrder($customerDetails, [
+            'transaction_id' => $transactionDetails->nfc_card_order_id ?? $paymentId,
+            'invoice_id'     => ($config[15]->config_value ?? 'INV-') . $invoice_number,
+            'nfc_card_name'  => $itemDetails['order_item'] ?? 'Custom Metal NFC Business Card',
+            'quantity'       => (int) $quantity,
+            'currency'       => $transactionDetails->currency ?? ($config[1]->config_value ?? 'USD'),
+            'amount'         => $transactionDetails->amount ?? ($encode['invoice_amount'] ?? 0),
+            'payment_method' => $transactionDetails->payment_method ?? 'Online',
+            'payment_status' => $nfcCardOrderDetails->payment_status ?? 'paid',
+        ], $encode ?? []);
     }
 
     // Failed

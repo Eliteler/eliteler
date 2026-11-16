@@ -186,6 +186,11 @@ class ProductController extends Controller
             'product_status' => 'required'
         ]);
 
+        // The store must be the user's own
+        if (! $this->ownsStore($request->card_id)) {
+            return response()->json(['success' => false, 'error' => trans('Store not found!')], 404);
+        }
+
         // Get plan constraints
         $plan = User::where('user_id', Auth::user()->user_id)->where('status', 1)->first();
         $plan_details = json_decode($plan->plan_details);
@@ -314,7 +319,8 @@ class ProductController extends Controller
             'product_status' => 'required'
         ]);
 
-        $product = DB::table('store_products')->where('id', $request->input('product_id'))->first();
+        // Only a product of the user's own stores
+        $product = $this->ownedProduct($request->input('product_id'));
 
         if (!$product) {
             return response()->json([
@@ -435,6 +441,8 @@ class ProductController extends Controller
             $results = DB::table('store_products')
                 ->leftJoin('store_product_variants', 'store_products.product_id', '=', 'store_product_variants.product_id')
                 ->where('store_products.id', $id)
+                // Only products of the user's own stores
+                ->whereIn('store_products.card_id', $this->ownStoreIds())
                 ->select(
                     'store_products.*',
                     'store_product_variants.id as variant_table_id',
@@ -485,7 +493,8 @@ class ProductController extends Controller
     // Delete product and its variants
     public function deleteProduct($id)
     {
-        $product = DB::table('store_products')->where('id', $id)->first();
+        // Only a product of the user's own stores
+        $product = $this->ownedProduct($id);
 
         if ($product) {
             // Remove associated variants first, then the product
@@ -496,5 +505,22 @@ class ProductController extends Controller
         } else {
             return response()->json(['message' => trans('Product not found.')], 404);
         }
+    }
+
+    // Card ids of the signed-in user's stores
+    private function ownStoreIds()
+    {
+        return BusinessCard::where('user_id', Auth::user()->user_id)->select('card_id');
+    }
+
+    private function ownsStore($cardId): bool
+    {
+        return $cardId !== null && BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $cardId)->exists();
+    }
+
+    // A product (store_products row id) of one of the user's stores, or null
+    private function ownedProduct($id): ?object
+    {
+        return DB::table('store_products')->where('id', $id)->whereIn('card_id', $this->ownStoreIds())->first();
     }
 }

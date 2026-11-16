@@ -37,7 +37,7 @@ class PlanService
     /** Switches shared by all plan types. */
     public const COMMON_FEATURES = [
         'custom_domain', 'nfc_card', 'pwa', 'advanced_settings', 'personalized_link',
-        'hide_branding', 'free_setup', 'free_support',
+        'hide_branding', 'advanced_analytics', 'free_setup', 'free_support',
     ];
 
     /** Payment gateway / app store ids, only stored when the plugin is installed. */

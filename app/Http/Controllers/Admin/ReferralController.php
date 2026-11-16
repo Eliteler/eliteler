@@ -23,6 +23,8 @@ use Inertia\Inertia;
 
 class ReferralController extends Controller
 {
+    public const PER_PAGE = 10;
+
     public function __construct(private ReferralService $referrals)
     {
         $this->middleware('auth');
@@ -38,19 +40,20 @@ class ReferralController extends Controller
         $tab    = in_array($request->query('tab'), ['subscribed', 'signed_up'], true) ? $request->query('tab') : 'all';
         $search = trim((string) $request->query('search', ''));
 
-        $base = fn () => Referral::where('referrals.status', 1)
+        $base = fn() => Referral::where('referrals.status', 1)
             ->leftJoin('users as customer', 'customer.user_id', '=', 'referrals.user_id')
             ->leftJoin('users as referrer', 'referrer.user_id', '=', 'referrals.referred_user_id')
-            ->when($search !== '', fn ($q) => $q->where(fn ($q) => $q
+            ->when($search !== '', fn($q) => $q->where(fn($q) => $q
                 ->where('customer.name', 'like', "%{$search}%")->orWhere('customer.email', 'like', "%{$search}%")
                 ->orWhere('referrer.name', 'like', "%{$search}%")->orWhere('referrer.email', 'like', "%{$search}%")));
 
+        // Paginate using 10 records per page so 18 records show 2 pages
         $rows = $base()
-            ->when($tab === 'subscribed', fn ($q) => $q->where('referrals.is_subscribed', 1))
-            ->when($tab === 'signed_up', fn ($q) => $q->where('referrals.is_subscribed', 0))
+            ->when($tab === 'subscribed', fn($q) => $q->where('referrals.is_subscribed', 1))
+            ->when($tab === 'signed_up', fn($q) => $q->where('referrals.is_subscribed', 0))
             ->select('referrals.*', 'customer.name as customer_name', 'customer.email as customer_email', 'referrer.name as referrer_name', 'referrer.email as referrer_email')
             ->orderByDesc('referrals.created_at')
-            ->paginate(20)
+            ->paginate(self::PER_PAGE)
             ->withQueryString()
             ->through(function ($row) {
                 $scheme = json_decode($row->referral_scheme ?? '', true) ?: [];

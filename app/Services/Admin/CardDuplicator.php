@@ -163,7 +163,7 @@ class CardDuplicator
                     $duplicateTestimonial->card_id = $generateCardId;
                     $duplicateTestimonial->reviewer_image = $testimonial->reviewer_image;
                     $duplicateTestimonial->reviewer_name = $testimonial->reviewer_name;
-                    $duplicateTestimonial->reviewer_subtext = $testimonial->reviewer_subtext;
+                    $duplicateTestimonial->review_subtext = $testimonial->review_subtext;
                     $duplicateTestimonial->review = $testimonial->review;
                     $duplicateTestimonial->status = 1;
                     $duplicateTestimonial->save();

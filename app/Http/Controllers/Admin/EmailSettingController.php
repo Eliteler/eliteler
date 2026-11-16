@@ -71,6 +71,10 @@ class EmailSettingController extends Controller
         $mailSenderName = str_replace("'", "", $mailSenderName);
 
         // Set new values using putenv (google login)
+        // config/mail.php reads MAIL_MAILER; MAIL_DRIVER is kept for older installs
+        if ($mailDriver !== '') {
+            $this->updateEnvFile('MAIL_MAILER', $mailDriver);
+        }
         $this->updateEnvFile('MAIL_DRIVER', $mailDriver);
         $this->updateEnvFile('MAIL_HOST', $mailHost);
         $this->updateEnvFile('MAIL_PORT', $mailPort);
@@ -98,9 +102,10 @@ class EmailSettingController extends Controller
         ];
         $mail = false;
         try {
-            Mail::to(ENV('MAIL_FROM_ADDRESS'))->send(new \App\Mail\TestMail($message));
+            Mail::to(config('mail.from.address'))->send(new \App\Mail\TestMail($message));
             $mail = true;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            report($e);
             // Page redirect
             return redirect()->route('admin.settings')->with('failed', trans('Email configuration wrong.'));
         }

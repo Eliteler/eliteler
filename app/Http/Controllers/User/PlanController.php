@@ -12,7 +12,9 @@
 
 namespace App\Http\Controllers\User;
 
+use App\Classes\InvoiceNumber;
 use App\Currency;
+use App\Support\Zapier;
 use App\EmailTemplate;
 use App\Http\Controllers\Controller;
 use App\NfcCardDesign;
@@ -224,8 +226,18 @@ class PlanController extends Controller
         $config = DB::table('config')->get();
 
         // Activate the plan for the customer
-        $this->createNfcPlanTransaction($user, $associatedPlan, $config);
+        $planTransaction = $this->createNfcPlanTransaction($user, $associatedPlan, $config);
         $user = $this->assignPlanToUser($user, $associatedPlan);
+
+        // Zapier: plan activated with an NFC card key (no payment, so no invoice)
+        Zapier::planPurchase($user, [
+            'transaction_id' => $planTransaction->gobiz_transaction_id,
+            'invoice_id'     => '',
+            'plan_name'      => $associatedPlan->plan_name,
+            'currency'       => $planTransaction->transaction_currency,
+            'amount'         => 0,
+            'payment_method' => 'NFC Card Key',
+        ]);
 
         // Generate order / transaction reference ids
         $nfcCardOrderId   = $this->generateReferenceId('OD');
@@ -383,9 +395,6 @@ class PlanController extends Controller
         // invoice prefix
         $invoicePrefix = $config[15]->config_value;
 
-        // invoice number
-        $invoiceNumber = NfcCardOrderTransaction::where('invoice_prefix', $invoicePrefix)->count() + 1;
-
         // create transaction
         $transaction                                = new NfcCardOrderTransaction();
         $transaction->nfc_card_order_transaction_id = $transactionId;
@@ -396,9 +405,13 @@ class PlanController extends Controller
         $transaction->amount                        = $amount;
         $transaction->invoice_details               = json_encode($invoiceDetails);
         $transaction->invoice_prefix                = $invoicePrefix;
-        $transaction->invoice_number                = $invoiceNumber;
         $transaction->payment_status                = 'success';
-        $transaction->save();
+
+        // invoice number is taken and saved in one locked transaction
+        InvoiceNumber::assign('nfc_card_order_transactions', $invoicePrefix, function ($invoiceNumber) use ($transaction) {
+            $transaction->invoice_number = $invoiceNumber;
+            $transaction->save();
+        });
 
         // return transaction
         return $transaction;
@@ -496,8 +509,9 @@ class PlanController extends Controller
 
         try {
             Mail::to($invoiceDetails['to_billing_email'])->send(new \App\Mail\AppointmentMail($customerPayload));
-            Mail::to(env('MAIL_FROM_ADDRESS'))->send(new \App\Mail\AppointmentMail($ownerPayload));
-        } catch (\Exception $e) {
+            Mail::to(config('mail.from.address'))->send(new \App\Mail\AppointmentMail($ownerPayload));
+        } catch (\Throwable $e) {
+            report($e);
             // Silently ignore mail failures, same as original behaviour
         }
     }

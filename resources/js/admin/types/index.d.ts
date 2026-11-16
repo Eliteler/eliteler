@@ -4,6 +4,10 @@ export type NavLink = {
     title: string;
     href: string;
     icon: string | null;
+    /** Inline SVG icon of a plugin entry (App\Support\Plugins\PluginExtensions) */
+    svg?: string | null;
+    /** Unread count shown next to the title (0 = none) */
+    badge?: number;
     inertia: boolean;
     action: NavAction | null;
     isActive: boolean;

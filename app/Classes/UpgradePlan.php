@@ -16,6 +16,7 @@ use App\AppliedCoupon;
 use App\BusinessCard;
 use App\Plan;
 use App\Referral;
+use App\Support\Zapier;
 use App\Transaction;
 use App\User;
 use Carbon\Carbon;
@@ -23,7 +24,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
-use Plugins\Zapier\Helpers\ZapierHelper;
 
 class UpgradePlan
 {
@@ -76,15 +76,12 @@ class UpgradePlan
                 $plan_validity = Carbon::now()->addDays($term_days);
             }
 
-            $invoice_count = Transaction::where("invoice_prefix", $config[15]->config_value)->count();
-            $invoice_number = $invoice_count + 1;
-
-            Transaction::where('transaction_id', $orderId)->update([
+            $invoice_number = InvoiceNumber::assign('transactions', $config[15]->config_value, fn ($invoice_number) => Transaction::where('transaction_id', $orderId)->update([
                 'transaction_id' => $transactionId,
                 'invoice_prefix' => $config[15]->config_value,
                 'invoice_number' => $invoice_number,
                 'payment_status' => 'SUCCESS',
-            ]);
+            ]));
 
             if ($user_details) {
                 $user_details->plan_id              = $transaction_details->plan_id;
@@ -127,8 +124,19 @@ class UpgradePlan
 
             try {
                 Mail::to($encode['to_billing_email'])->send(new \App\Mail\SendEmailInvoice($details));
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
+                report($e);
             }
+
+            // Zapier: plan purchase
+            Zapier::planPurchase($user_details, [
+                'transaction_id' => $transaction_details->transaction_id,
+                'invoice_id'     => ($config[15]->config_value ?? 'INV-') . $invoice_number,
+                'plan_name'      => $plan_data->plan_name ?? $plan_data->name ?? ($transaction_details->desciption ?? 'Subscription Plan'),
+                'currency'       => $transaction_details->transaction_currency ?? ($config[1]->config_value ?? 'USD'),
+                'amount'         => $transaction_details->transaction_amount ?? 0,
+                'payment_method' => $transaction_details->payment_gateway_name ?? 'Online',
+            ], json_decode($transaction_details->invoice_details ?? '', true) ?: []);
 
             alert()->success(trans('Plan activation success!'));
             return redirect()->route('user.plans');
@@ -186,15 +194,12 @@ class UpgradePlan
                 }
             }
 
-            $invoice_count = Transaction::where("invoice_prefix", $config[15]->config_value)->count();
-            $invoice_number = $invoice_count + 1;
-
-            Transaction::where('transaction_id', $orderId)->update([
+            $invoice_number = InvoiceNumber::assign('transactions', $config[15]->config_value, fn ($invoice_number) => Transaction::where('transaction_id', $orderId)->update([
                 'transaction_id' => $transactionId,
                 'invoice_prefix' => $config[15]->config_value,
                 'invoice_number' => $invoice_number,
                 'payment_status' => 'SUCCESS',
-            ]);
+            ]));
 
             if ($user_details) {
                 $user_details->plan_id              = $transaction_details->plan_id;
@@ -211,37 +216,15 @@ class UpgradePlan
                 'status' => 1
             ]);
 
-            // Safely format user billing address
-            $userAddress = $user_details->billing_address ?? '';
-            $userCity = $user_details->billing_city ?? '';
-            $userState = $user_details->billing_state ?? '';
-            $userCountry = $user_details->billing_country ?? '';
-            $userZip = $user_details->billing_zipcode ?? '';
-
-            // Dispatch plan purchase event to Zapier
-            if (function_exists('zapier_dispatch')) {
-                zapier_dispatch('plan_purchase', [
-                    'transaction_id'  => $transaction_details->transaction_id,
-                    'invoice_id'      => ($config[15]->config_value ?? 'INV-') . $invoice_number,
-                    'user_name'       => $user_details->name ?? ($encode['to_billing_name'] ?? 'Customer'),
-                    'user_address'    => !empty($userAddress) ? $userAddress : ($encode['to_billing_address'] ?? ''),
-                    'user_city'       => !empty($userCity) ? $userCity : ($encode['to_billing_city'] ?? ''),
-                    'user_state'      => !empty($userState) ? $userState : ($encode['to_billing_state'] ?? ''),
-                    'user_country'    => !empty($userCountry) ? $userCountry : ($encode['to_billing_country'] ?? ''),
-                    'user_zip'        => !empty($userZip) ? $userZip : ($encode['to_billing_zipcode'] ?? ''),
-                    'user_email'      => $user_details->email ?? ($encode['to_billing_email'] ?? ''),
-                    'user_phone'      => ($user_details->country_code ?? '') . ($user_details->mobile_number ?? ($encode['to_billing_phone'] ?? '')),
-                    'user_tax_number' => $user_details->vat_number ?? $user_details->tax_number ?? ($encode['to_vat_number'] ?? ''),
-                    'plan_name'       => $plan_data->plan_name ?? $plan_data->name ?? ($transaction_details->desciption ?? 'Subscription Plan'),
-                    'quantity'        => 1,
-                    'currency'        => $transaction_details->transaction_currency ?? ($config[1]->config_value ?? 'USD'),
-                    'amount'          => (float) ($transaction_details->transaction_amount ?? 0),
-                    'payment_method'  => $transaction_details->payment_gateway_name ?? 'Online',
-                    'payment_status'  => 'paid',
-                    'invoice_date'    => now()->toDateString(),
-                    'purchased_at'    => now()->toDateTimeString(),
-                ]);
-            }
+            // Zapier: plan purchase
+            Zapier::planPurchase($user_details, [
+                'transaction_id' => $transaction_details->transaction_id,
+                'invoice_id'     => ($config[15]->config_value ?? 'INV-') . $invoice_number,
+                'plan_name'      => $plan_data->plan_name ?? $plan_data->name ?? ($transaction_details->desciption ?? 'Subscription Plan'),
+                'currency'       => $transaction_details->transaction_currency ?? ($config[1]->config_value ?? 'USD'),
+                'amount'         => $transaction_details->transaction_amount ?? 0,
+                'payment_method' => $transaction_details->payment_gateway_name ?? 'Online',
+            ], json_decode($transaction_details->invoice_details ?? '', true) ?: []);
 
             $encode = json_decode($transaction_details['invoice_details'], true);
             $details = [
@@ -269,7 +252,8 @@ class UpgradePlan
 
             try {
                 Mail::to($encode['to_billing_email'])->send(new \App\Mail\SendEmailInvoice($details));
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
+                report($e);
             }
 
             Auth::loginUsingId($user_details->id);

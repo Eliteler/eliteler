@@ -17,6 +17,8 @@ use App\Services\GoBizCommonService;
 use App\Services\PackageZip;
 use App\Services\TemplateManager;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
@@ -33,6 +35,8 @@ use ZipArchive;
  */
 class WebTemplateController extends Controller
 {
+    public const PER_PAGE = 6;
+
     /** Shipped with GoBiz; always kept as a fallback. */
     private const BUILT_IN = 'GoBizOriginal';
 
@@ -41,11 +45,11 @@ class WebTemplateController extends Controller
         $this->middleware('auth');
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $active = $this->activeId();
 
-        $templates = collect($this->templates())->map(function ($template) use ($active) {
+        $allTemplates = collect($this->templates())->map(function ($template) use ($active) {
             $id = (string) ($template['template_id'] ?? basename($template['path']));
 
             return [
@@ -63,8 +67,20 @@ class WebTemplateController extends Controller
             ];
         })->sortByDesc('active')->values();
 
+        // Paginate the collection manually for filesystem templates
+        $currentPage = Paginator::resolveCurrentPage() ?: 1;
+        $currentItems = $allTemplates->slice(($currentPage - 1) * self::PER_PAGE, self::PER_PAGE)->values();
+
+        $paginatedTemplates = new LengthAwarePaginator(
+            $currentItems,
+            $allTemplates->count(),
+            self::PER_PAGE,
+            $currentPage,
+            ['path' => Paginator::resolveCurrentPath(), 'query' => $request->query()]
+        );
+
         return Inertia::render('website/templates', [
-            'templates'   => $templates,
+            'templates'   => $paginatedTemplates,
             'maxUploadKb' => (int) env('SIZE_LIMIT', 2048),
         ]);
     }
@@ -172,11 +188,13 @@ class WebTemplateController extends Controller
 
             $found = [];
             foreach ($manifestPath === null ? [] : PackageZip::files($zip, $root) as $name) {
-                foreach ([
-                    'views'      => '#^Views/#i',
-                    'controller' => '#^Controllers/#i',
-                    'routes'     => '#^routes\.php$#i',
-                ] as $part => $pattern) {
+                foreach (
+                    [
+                        'views'      => '#^Views/#i',
+                        'controller' => '#^Controllers/#i',
+                        'routes'     => '#^routes\.php$#i',
+                    ] as $part => $pattern
+                ) {
                     if (preg_match($pattern, $name)) {
                         $found[$part] = true;
                     }

@@ -486,16 +486,21 @@ document.addEventListener("DOMContentLoaded", function () {
     if (document.readyState !== "loading") initAll();
     else document.addEventListener("DOMContentLoaded", initAll);
 
-    // Re-scan when new components are injected later (AJAX-loaded cards,
-    // dynamically created toasts, etc.) — debounced so bursts of DOM
-    // changes only trigger one pass.
-    let refreshTimer = null;
-    new MutationObserver(() => {
-        clearTimeout(refreshTimer);
-        refreshTimer = setTimeout(initAll, 50);
-    }).observe(document.body, { childList: true, subtree: true });
-
     // Manual trigger if you ever need it, e.g. after injecting HTML yourself:
     // window.componentAnimations.refresh();
     window.componentAnimations = { refresh: initAll };
+
+    // Re-scan when new components are injected later (AJAX-loaded cards,
+    // dynamically created toasts, etc.) — debounced so bursts of DOM
+    // changes only trigger one pass. Started once <body> exists: the customer
+    // layout loads this file in <head>, where document.body is still null.
+    let refreshTimer = null;
+    const watch = () =>
+        new MutationObserver(() => {
+            clearTimeout(refreshTimer);
+            refreshTimer = setTimeout(initAll, 50);
+        }).observe(document.body, { childList: true, subtree: true });
+
+    if (document.body) watch();
+    else document.addEventListener("DOMContentLoaded", watch);
 })();

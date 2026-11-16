@@ -21,6 +21,8 @@ use Inertia\Inertia;
 
 class BusinessCardIntrosController extends Controller
 {
+    public const PER_PAGE = 18;
+
     public function __construct()
     {
         $this->middleware('auth');
@@ -39,13 +41,25 @@ class BusinessCardIntrosController extends Controller
             ->groupBy('intro_screen')
             ->pluck('total', 'intro_screen');
 
-        $intros = BusinessCardIntro::getIntros($status)->map(fn (BusinessCardIntro $intro) => [
-            'id'        => $intro->business_card_intro_id,
-            'name'      => $intro->intro_name,
-            'thumbnail' => $intro->intro_thumbnail ? asset('img/intros/' . $intro->intro_thumbnail) : null,
-            'active'    => (string) $intro->status === '1',
-            'usage'     => (int) ($usage[$intro->business_card_intro_id] ?? 0),
-        ]);
+        // Build query based on status filter
+        $query = BusinessCardIntro::query();
+        if ($status === 'active') {
+            $query->where('status', 1);
+        } elseif ($status === 'disabled') {
+            $query->where('status', 0);
+        }
+
+        // Paginate intro items
+        $intros = $query->orderBy('id')
+            ->paginate(self::PER_PAGE)
+            ->through(fn(BusinessCardIntro $intro) => [
+                'id'        => $intro->business_card_intro_id,
+                'name'      => $intro->intro_name,
+                'thumbnail' => $intro->intro_thumbnail ? asset('img/intros/' . $intro->intro_thumbnail) : null,
+                'active'    => (string) $intro->status === '1',
+                'usage'     => (int) ($usage[$intro->business_card_intro_id] ?? 0),
+            ])
+            ->withQueryString();
 
         return Inertia::render('themes/intros', [
             'intros'      => $intros,

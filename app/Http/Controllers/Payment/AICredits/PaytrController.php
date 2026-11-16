@@ -6,6 +6,7 @@ use App\AiCredit;
 use App\AiCreditsPlan;
 use App\AiCreditsTransaction;
 use App\AppliedCoupon;
+use App\Classes\InvoiceNumber;
 use App\Coupon;
 use App\Http\Controllers\Controller;
 use App\Setting;
@@ -16,7 +17,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
-use Plugins\Zapier\Helpers\ZapierHelper;
 
 class PaytrController extends Controller
 {
@@ -346,15 +346,12 @@ class PaytrController extends Controller
 
         $config = DB::table('config')->get();
 
-        $invoice_count  = AiCreditsTransaction::where('invoice_prefix', $config[15]->config_value)->count();
-        $invoice_number = $invoice_count + 1;
-
-        AiCreditsTransaction::where('payment_transaction_id', $transactionId)
+        $invoice_number = InvoiceNumber::assign('ai_credits_transactions', $config[15]->config_value, fn ($invoice_number) => AiCreditsTransaction::where('payment_transaction_id', $transactionId)
             ->update([
                 'invoice_prefix' => $config[15]->config_value,
                 'invoice_number' => $invoice_number,
                 'payment_status' => 'paid',
-            ]);
+            ]));
 
         // Use transaction's user_id since Auth::user() is null in webhooks
         $aiCredit = AiCredit::where('user_id', $transaction_details->user_id)->first();

@@ -3,9 +3,11 @@
 namespace App\Services\Admin;
 
 use App\BusinessCard;
+use App\Classes\InvoiceNumber;
 use App\Plan;
 use App\Referral;
 use App\Transaction;
+use App\Support\Zapier;
 use App\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -82,7 +84,7 @@ class CustomerPlanService
             if (! $transaction->invoice_number) {
                 $prefix = $config->get('invoice_prefix');
                 $transaction->invoice_prefix = $prefix;
-                $transaction->invoice_number = Transaction::where('invoice_prefix', $prefix)->count() + 1;
+                $transaction->invoice_number = InvoiceNumber::next('transactions', $prefix);
             }
             $transaction->payment_status = 'SUCCESS';
             $transaction->save();
@@ -191,11 +193,14 @@ class CustomerPlanService
         $transaction->payment_gateway_name = 'Offline';
         $transaction->transaction_amount   = $price + $taxAmount;
         $transaction->invoice_prefix       = $prefix;
-        $transaction->invoice_number       = Transaction::where('invoice_prefix', $prefix)->count() + 1;
         $transaction->transaction_currency = $config->get('currency');
         $transaction->invoice_details      = json_encode($invoiceDetails);
         $transaction->payment_status       = 'SUCCESS';
-        $transaction->save();
+
+        InvoiceNumber::assign('transactions', $prefix, function ($invoiceNumber) use ($transaction) {
+            $transaction->invoice_number = $invoiceNumber;
+            $transaction->save();
+        });
 
         return $transaction;
     }
@@ -225,30 +230,13 @@ class CustomerPlanService
 
     private function dispatchZapier(User $user, Plan $plan, Collection $config, Transaction $transaction): void
     {
-        if (! function_exists('zapier_dispatch')) {
-            return;
-        }
-
-        zapier_dispatch('plan_purchase', [
-            'transaction_id'  => $transaction->gobiz_transaction_id,
-            'invoice_id'      => ($transaction->invoice_prefix ?? 'INV-') . $transaction->invoice_number,
-            'user_name'       => $user->name ?? $user->billing_name ?? 'Customer',
-            'user_address'    => $user->billing_address ?? '',
-            'user_city'       => $user->billing_city ?? '',
-            'user_state'      => $user->billing_state ?? '',
-            'user_country'    => $user->billing_country ?? '',
-            'user_zip'        => $user->billing_zipcode ?? '',
-            'user_email'      => $user->email ?? '',
-            'user_phone'      => ($user->billing_country_code ?? $user->country_code ?? '') . ($user->billing_phone ?? $user->mobile_number ?? ''),
-            'user_tax_number' => $user->vat_number ?? '',
-            'plan_name'       => $plan->plan_name,
-            'quantity'        => 1,
-            'currency'        => $config->get('currency', 'USD'),
-            'amount'          => (float) $transaction->transaction_amount,
-            'payment_method'  => 'Offline (Admin Upgrade)',
-            'payment_status'  => 'paid',
-            'invoice_date'    => now()->toDateString(),
-            'purchased_at'    => now()->toDateTimeString(),
+        Zapier::planPurchase($user, [
+            'transaction_id' => $transaction->gobiz_transaction_id,
+            'invoice_id'     => ($transaction->invoice_prefix ?? 'INV-') . $transaction->invoice_number,
+            'plan_name'      => $plan->plan_name,
+            'currency'       => $config->get('currency', 'USD'),
+            'amount'         => $transaction->transaction_amount,
+            'payment_method' => 'Offline (Admin Upgrade)',
         ]);
     }
 

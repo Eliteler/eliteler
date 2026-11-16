@@ -20,6 +20,8 @@ import {
     Wallet,
 } from "lucide-react";
 
+import { cn } from "@admin/lib/utils";
+
 // Icon names come from App\Support\Admin\AdminNavigation.
 const ICONS: Record<string, LucideIcon> = {
     "layout-dashboard": LayoutDashboard,
@@ -41,7 +43,12 @@ const ICONS: Record<string, LucideIcon> = {
     "user-round": UserRound,
 };
 
-export function NavIcon({ name, className }: { name: string | null; className?: string }) {
+export function NavIcon({ name, svg, className }: { name: string | null; svg?: string | null; className?: string }) {
+    // Plugin entries bring their own SVG (sanitised on the server)
+    if (svg) {
+        return <span className={cn("inline-flex size-4 shrink-0 [&>svg]:size-full", className)} aria-hidden dangerouslySetInnerHTML={{ __html: svg }} />;
+    }
+
     const Icon = (name && ICONS[name]) || Circle;
     return <Icon className={className} />;
 }

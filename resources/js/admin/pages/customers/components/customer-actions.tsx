@@ -1,4 +1,4 @@
-import { Link, router } from "@inertiajs/react";
+import { Link, router, usePage } from "@inertiajs/react";
 import {
     BadgeCheck,
     Ban,
@@ -58,6 +58,8 @@ export function CustomerActions({
     const setPlanOpen = onPlanDialogChange ?? setPlanOpenLocal;
 
     const { state, verified } = customer;
+    // Already signed in as someone else (super admin viewing as staff): no nested sign-in
+    const impersonating = !!(usePage().props as { impersonation?: unknown }).impersonation;
     const deleted = state === "deleted";
 
     const post = (url: string, data: Record<string, string>) =>
@@ -84,8 +86,8 @@ export function CustomerActions({
             case "delete":
                 return post(route("admin.delete.customer"), { id: customer.id });
             case "login":
-                // Full page load: this signs the admin out and into the customer's account.
-                window.location.href = route("admin.login-as.customer", customer.id);
+                // The server answers with a full page load into the customer's dashboard
+                return post(route("admin.login-as.customer", customer.id), {});
         }
     };
 
@@ -132,7 +134,7 @@ export function CustomerActions({
         },
         login: {
             title: t("Sign in as this customer?"),
-            description: t("You will be signed out of the admin panel and signed in to the customer's dashboard."),
+            description: t("You'll see their dashboard as they do. Use \"Back to admin\" in the bar at the bottom of the screen (or Logout) to return here."),
             label: t("Sign in as customer"),
         },
     };
@@ -172,7 +174,7 @@ export function CustomerActions({
                             </DropdownMenuItem>
                         </>
                     )}
-                    {state === "active" && (
+                    {state === "active" && !impersonating && (
                         <DropdownMenuItem onSelect={() => setConfirm("login")}>
                             <LogIn />
                             {t("Sign in as customer")}

@@ -10,27 +10,28 @@
  */
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const ROOT = new URL("..", import.meta.url).pathname;
+const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const EN = join(ROOT, "resources/lang/en.json");
 
 const SOURCES = [
-    { dir: "resources/js/admin", ext: [".tsx", ".ts"], patterns: [/\bt\(\s*"((?:[^"\\]|\\.)+)"/g, /\bt\(\s*'((?:[^'\\]|\\.)+)'/g, /\bt\(\s*`([^`$]+)`/g] },
+    { dir: "resources/js/admin", ext: [".tsx", ".ts"], patterns: [/\bt\(\s*"((?:[^"\r\n\\]|\\.)+)"/g, /\bt\(\s*'((?:[^'\r\n\\]|\\.)+)'/g, /\bt\(\s*`([^`$\r\n]+)`/g] },
     // String constants passed through t() later, e.g. label: "Business cards"
-    { dir: "resources/js/admin/pages", ext: [".ts", ".tsx"], patterns: [/\b(?:label|hint|title|description|long|short): "((?:[^"\\]|\\.)+)"/g, /\[\s*"[a-z_]+",\s*"((?:[^"\\]|\\.)+)"\s*\]/g] },
+    { dir: "resources/js/admin/pages", ext: [".ts", ".tsx"], patterns: [/\b(?:label|hint|title|description|long|short): "((?:[^"\r\n\\]|\\.)+)"/g, /\[\s*"[a-z_]+",\s*"((?:[^"\r\n\\]|\\.)+)"\s*\]/g] },
     {
         dir: "app",
         ext: [".php"],
         only: ["Services/Admin", "Support/Admin", "Http/Controllers/Admin"],
-        patterns: [/__\(\s*'((?:[^'\\]|\\.)+)'/g, /__\(\s*"((?:[^"\\]|\\.)+)"/g],
+        patterns: [/__\(\s*'((?:[^'\r\n\\]|\\.)+)'/g, /__\(\s*"((?:[^"\r\n\\]|\\.)+)"/g],
     },
     // Plugins and web templates with React admin pages: their page sources and admin controllers
     ...["plugins", "templates"].flatMap((base) =>
         readdirSync(join(ROOT, base))
             .filter((name) => existsSync(join(ROOT, base, name, "resources/js")))
             .flatMap((name) => [
-                { dir: `${base}/${name}/resources/js`, ext: [".tsx", ".ts"], patterns: [/\bt\(\s*"((?:[^"\\]|\\.)+)"/g, /\bt\(\s*'((?:[^'\\]|\\.)+)'/g] },
-                { dir: `${base}/${name}/Controllers`, ext: [".php"], patterns: [/__\(\s*'((?:[^'\\]|\\.)+)'/g, /__\(\s*"((?:[^"\\]|\\.)+)"/g] },
+                { dir: `${base}/${name}/resources/js`, ext: [".tsx", ".ts"], patterns: [/\bt\(\s*"((?:[^"\r\n\\]|\\.)+)"/g, /\bt\(\s*'((?:[^'\r\n\\]|\\.)+)'/g] },
+                { dir: `${base}/${name}/Controllers`, ext: [".php"], patterns: [/__\(\s*'((?:[^'\r\n\\]|\\.)+)'/g, /__\(\s*"((?:[^"\r\n\\]|\\.)+)"/g] },
             ]),
     ),
 ];
@@ -48,13 +49,14 @@ const unescape = (s) => s.replace(/\\(["'`\\])/g, "$1");
 const found = new Set();
 for (const source of SOURCES) {
     for (const file of walk(join(ROOT, source.dir), source.ext)) {
-        if (source.only && !source.only.some((part) => file.includes(`/${part}/`))) continue;
+        const normFile = file.replace(/\\/g, "/");
+        if (source.only && !source.only.some((part) => normFile.includes(`/${part}/`))) continue;
         const code = readFileSync(file, "utf8");
         for (const pattern of source.patterns) {
             for (const match of code.matchAll(pattern)) {
                 const key = unescape(match[1]);
-                // Skip identifiers / route names / CSS that the loose patterns can catch
-                if (!/\s|[A-Z]/.test(key) || /^[a-z0-9_.-]+$/.test(key)) continue;
+                // Skip identifiers / route names / CSS / PHP code fragments that the loose patterns can catch
+                if (!/\s|[A-Z]/.test(key) || /^[a-z0-9_.-]+$/.test(key) || /[\r\n]|\$|\bstr_contains\b|[{}();]/.test(key)) continue;
                 found.add(key);
             }
         }

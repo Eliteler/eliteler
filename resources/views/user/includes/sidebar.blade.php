@@ -557,6 +557,29 @@
                     </li>
                 @endif
 
+                <!-- ================= HEADER: MORE (plugins shown in the sidebar: the last section before My Account / Logout, like the React panel) ================= -->
+                @php($pluginNav = \App\Support\Plugins\PluginExtensions::sidebarItems('user'))
+                @if ($pluginNav)
+                    <li class="nav-item-header text-uppercase text-muted px-3 mt-3 mb-1"
+                        style="font-size: 0.72rem; letter-spacing: 0.05rem; font-weight: 600;">
+                        {{ __('More') }}
+                    </li>
+
+                    @foreach ($pluginNav as $pluginItem)
+                        <li class="nav-item {{ $pluginItem['isActive'] ? 'active' : '' }}">
+                            <a class="nav-link" href="{{ $pluginItem['href'] }}">
+                                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                    {!! preg_replace('/^<svg\b/', '<svg class="icon"', $pluginItem['svg']) !!}
+                                </span>
+                                <span class="nav-link-title">{{ $pluginItem['title'] }}</span>
+                                @if ($pluginItem['badge'] > 0)
+                                    <span class="badge bg-red text-red-fg position-static ms-auto" style="transform: none;">{{ $pluginItem['badge'] > 99 ? '99+' : $pluginItem['badge'] }}</span>
+                                @endif
+                            </a>
+                        </li>
+                    @endforeach
+                @endif
+
                 <!-- ================= HEADER: PERSONAL ================= -->
                 <li class="nav-item-header text-uppercase text-muted px-3 mt-3 mb-1"
                     style="font-size: 0.72rem; letter-spacing: 0.05rem; font-weight: 600;">

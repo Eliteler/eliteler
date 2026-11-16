@@ -75,7 +75,7 @@
 
             <div class="col-6 text-end">
                 <p><strong>{{ __('Date') }}</strong>:
-                    {{ date('M d, Y', strtotime($transaction->created_at)) }}</p>
+                    {{ formatDateOnlyForUser($transaction->created_at, true) }}</p>
                 <p><strong>{{ __('Payment Terms') }}</strong>:
                     {{ __('-') }}</p>
                 <h5><strong>{{ __('Balance Due') }}</strong>:

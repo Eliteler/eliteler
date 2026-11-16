@@ -23,7 +23,10 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\NfcCardKey;
 use App\Services\GoBizCommonService;
+use App\Support\Impersonation;
+use App\Support\Zapier;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
@@ -33,18 +36,19 @@ use Illuminate\Validation\ValidationException;
 
 class LoginController extends Controller
 {
-    /*
-    |--------------------------------------------------------------------------
-    | Login Controller
-    |--------------------------------------------------------------------------
-    |
-    | This controller handles authenticating users for the application and
-    | redirecting them to your home screen. The controller uses a trait
-    | to conveniently provide its functionality to your applications.
-    |
-     */
+    use AuthenticatesUsers {
+        logout as protected endSession;
+    }
 
-    use AuthenticatesUsers;
+    /** Logging out while signed in as a customer/staff member goes back to the admin account. */
+    public function logout(Request $request)
+    {
+        if (Impersonation::active()) {
+            return Impersonation::redirect($request, Impersonation::leave($request));
+        }
+
+        return $this->endSession($request);
+    }
 
     /**
      * Where to redirect users after login.
@@ -55,12 +59,13 @@ class LoginController extends Controller
 
     /**
      * Create a new controller instance.
+     * Exclude OAuth routes from the guest middleware to prevent in-app browser redirect traps.
      *
      * @return void
      */
     public function __construct()
     {
-        $this->middleware('guest')->except('logout');
+        $this->middleware('guest')->except(['logout', 'redirectToProvider', 'handleProviderCallback']);
     }
 
     /**
@@ -107,6 +112,32 @@ class LoginController extends Controller
         }
     }
 
+    /**
+     * Attempt to log the user into the application.
+     * Protects Google accounts from being accessed via public user_id passwords.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return bool
+     *
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    protected function attemptLogin(Request $request)
+    {
+        $user = User::where($this->username(), $request->input($this->username()))->first();
+
+        // Refuse password login if account was created with Google and password equals public user_id
+        if ($user && $user->auth_type === 'Google' && Hash::check($user->user_id, $user->password)) {
+            throw ValidationException::withMessages([
+                $this->username() => [__('This account was registered using Google. Please log in using Google or reset your password.')],
+            ]);
+        }
+
+        return $this->guard()->attempt(
+            $this->credentials($request),
+            $request->filled('remember')
+        );
+    }
+
     public function authenticated(Request $request)
     {
         $config = GoBizCommonService::config()->pluck('config_value', 'config_key');
@@ -145,37 +176,26 @@ class LoginController extends Controller
         // NFC Card Key
         $nfc_ref = request()->get('nfc_ref');
 
-        // check nfc card key
         if ($nfc_ref) {
-            // check nfc card key exists
             $nfcKey = NfcCardKey::where('unqiue_key', $nfc_ref)->where('status', 1)->where('key_status', 'active')->first();
 
-            // if nfc card key not exists return error
             if (empty($nfcKey)) {
                 throw ValidationException::withMessages([
                     'email' => __('Invalid NFC Card Key Reference'),
                 ]);
             }
-        }
-
-        if ($nfc_ref) {
             session()->put('nfc_ref', $nfc_ref);
         }
 
-        // check modern_dashboard_settings table is available
         if (Schema::hasTable('modern_dashboard_settings')) {
-            // check modern_dashboard_enabled
             $is_modern_dashboard_enabled = DB::table('modern_dashboard_settings')->first()->modern_dashboard_enabled;
 
-            // if enabled redirect to react dashboard
             if (plugin_active('ModernDashboard') && $is_modern_dashboard_enabled == 1) {
                 return redirect()->route('user.dashboard.overview');
             } else {
-                // if disabled redirect to default dashboard
                 return redirect()->route('user.dashboard');
             }
         } else {
-            // if table not available redirect to default dashboard
             return redirect()->route('user.dashboard');
         }
     }
@@ -206,22 +226,35 @@ class LoginController extends Controller
 
     public function redirectToProvider(Request $request)
     {
-        // check platform
         $platform = $request->query('platform', 'web');
         session(['platform' => $platform]);
 
-        return Socialite::driver('google')->redirect();
+        // If request originates from mobile app, clear any stale web session in the webview
+        if ($platform == 'app' && Auth::check()) {
+            Auth::logout();
+        }
+
+        // Encode platform in the state parameter to ensure it survives cross-site redirects
+        $state = base64_encode(json_encode(['platform' => $platform]));
+
+        return Socialite::driver('google')
+            ->with(['prompt' => 'select_account', 'state' => $state])
+            ->redirect();
     }
 
-    public function handleProviderCallback()
+    public function handleProviderCallback(Request $request)
     {
-        // Queries
         $config = GoBizCommonService::config();
 
-        $platform = session('platform', 'web');
+        // Retrieve platform from session or state parameter
+        $platform = session('platform');
+        if (!$platform && $request->has('state')) {
+            $stateData = json_decode(base64_decode($request->get('state')), true);
+            $platform = $stateData['platform'] ?? 'web';
+        }
+        $platform = $platform ?: 'web';
 
         try {
-            // Using stateless() to avoid session issues if needed
             $googleUser = Socialite::driver('google')->stateless()->user();
         } catch (\Exception $e) {
             if ($platform == 'app') {
@@ -234,52 +267,49 @@ class LoginController extends Controller
         $rawEmail = $googleUser->getEmail();
         $deletedEmail = $rawEmail . 'deleted';
 
-        // First check the deleted version in DB
+        // Check if account was deleted
         $deletedUser = User::where('email', $deletedEmail)->first();
-
         if ($deletedUser) {
             return redirect('/login')->with('deleted_account_message', trans('deleted_account_message') . ' <a href="' . route('contact') . '"><strong>' . trans('contact support') . '</strong></a>.');
         }
 
-        // Now clean the email for normal check
         $email = $rawEmail;
-
         if (str_contains($email, 'deleted')) {
             $email = str_replace('deleted', '', $email);
             $email = trim($email);
         }
 
-        // Check if user exists in the database
+        // Check if user exists in database
         $existingUser = User::where('email', $email)->where('status', 1)->first();
 
         if ($existingUser) {
-            // check if user is active
             if ($existingUser->status == 1) {
-                Auth::login($existingUser, true);
+                // Auto-healing: If user still has password == user_id, overwrite it with secure random password
+                if (Hash::check($existingUser->user_id, $existingUser->password)) {
+                    $existingUser->password = Hash::make(Str::random(32));
+                    $existingUser->save();
+                }
 
-                // check platform
+                // Handle mobile app platform login
                 if ($platform == 'app') {
+                    // Do NOT log into web session so webview stays clean
                     $token = Str::random(60);
 
-                    // Old tokens
                     $tokens = json_decode($existingUser->auth_token, true);
-                    // Check if tokens is array
                     if (!is_array($tokens)) {
                         $tokens = [];
                     }
 
-                    // Append new token
                     $tokens[] = $token;
-
-                    // Save updated tokens
                     $existingUser->auth_token = json_encode(array_values($tokens));
-                    $existingUser->device_token = $request->device_token ?? null;
                     $existingUser->save();
 
-                    // return response
+                    // Redirect back to mobile app via deep link
                     return redirect()->away("gobiz://auth/callback?token={$token}&email={$existingUser->email}");
                 } else {
-                    // check modern_dashboard_enabled
+                    // Authenticate web session only for web platform
+                    Auth::login($existingUser, true);
+
                     if (Schema::hasTable('modern_dashboard_settings')) {
                         $is_modern_dashboard_enabled = DB::table('modern_dashboard_settings')->first()->modern_dashboard_enabled;
                         if (plugin_active('ModernDashboard') && $is_modern_dashboard_enabled == 1) {
@@ -299,15 +329,18 @@ class LoginController extends Controller
                 }
             }
         } else {
-            // Create user data
+            // Generate standard secure unique user_id
+            $newUserId = uniqid();
+
+            // Create user data with secure random password
             $userData = [
                 'name' => $googleUser->getName(),
                 'lang' => config('app.locale') ?? 'en',
                 'email' => $googleUser->getEmail(),
                 'email_verified_at' => now(),
-                'user_id' => $googleUser->getId(),
+                'user_id' => $newUserId,
                 'profile_image' => $googleUser->getAvatar(),
-                'password' => bcrypt($googleUser->getId()),
+                'password' => Hash::make(Str::random(32)),
                 'auth_type' => 'Google',
                 'role_id' => 2,
                 'status' => 1,
@@ -316,17 +349,16 @@ class LoginController extends Controller
             // Create new user
             $newUser = User::create($userData);
 
-            // Activate plan during registeration
+            // Zapier notification
+            Zapier::newUser($newUser, $platform == 'app' ? 'Customer (Google, Mobile App)' : 'Customer (Google)');
+
+            // Free plan activation during registration
             $activate_plan_during_registeration = $config[94]->config_value ?? '0';
 
-            // if activate plan during registeration is enabled
             if ($activate_plan_during_registeration == '1') {
-                // check free plan available in db
                 $free_plan = Plan::where('plan_price', 0)->where('status', 1)->first();
 
-                // if free plan available
                 if ($free_plan) {
-                    // create one transaction for free plan
                     $transaction = new Transaction();
                     $transaction->gobiz_transaction_id = uniqid();
                     $transaction->transaction_date = now();
@@ -341,25 +373,20 @@ class LoginController extends Controller
                     $transaction->payment_status = "SUCCESS";
                     $transaction->save();
 
-                    // set plan validity
                     $plan_validity = Carbon::now();
                     $plan_validity->addDays((int) $free_plan->validity);
 
-                    // update user
-                    $user = User::where('user_id', $googleUser->getId())->first();
-
-                    $user->plan_id = $free_plan->plan_id;
-                    $user->term = $free_plan->validity;
-                    $user->plan_validity = $plan_validity;
-                    $user->plan_activation_date = now();
-                    $user->plan_details = $free_plan;
-                    $user->save();
+                    $newUser->plan_id = $free_plan->plan_id;
+                    $newUser->term = $free_plan->validity;
+                    $newUser->plan_validity = $plan_validity;
+                    $newUser->plan_activation_date = now();
+                    $newUser->plan_details = $free_plan;
+                    $newUser->save();
                 }
             }
 
-            // Get appointment pending email template content
+            // Welcome email handling
             $emailTemplateDetails = EmailTemplate::where('email_template_id', '584922675208')->first();
-
             $message = [
                 'status' => "",
                 'emailSubject' => $emailTemplateDetails->email_template_subject,
@@ -368,45 +395,41 @@ class LoginController extends Controller
                 'registeredEmail' => $googleUser->getEmail(),
             ];
 
-            // Booking mail sent to customer
             if ($emailTemplateDetails->is_enabled == 1) {
                 try {
-                    // Welcome email
-                    Mail::to($googleUser->getEmail())->bcc(env('MAIL_FROM_ADDRESS'))->send(new \App\Mail\AppointmentMail($message));
+                    Mail::to($googleUser->getEmail())->bcc(config('mail.from.address'))->send(new \App\Mail\AppointmentMail($message));
+                } catch (\Throwable $e) {
+                    report($e);
+                }
 
-                    // Check email verification system is enabled
-                    if ($config[43]->config_value == "1") {
-                        // Send email verification
+                if ($config->firstWhere('config_key', 'disable_user_email_verification')?->config_value == "1") {
+                    try {
                         $newUser->newEmail($googleUser->getEmail());
+                    } catch (\Throwable $e) {
+                        report($e);
                     }
-                } catch (\Exception $e) {
                 }
             }
 
-            Auth::login($newUser, true);
-
-            // check platform
+            // Handle mobile app platform login for new users
             if ($platform == 'app') {
                 $token = Str::random(60);
 
-                // Old tokens
                 $tokens = json_decode($newUser->auth_token, true);
-                // Check if tokens is array
                 if (!is_array($tokens)) {
                     $tokens = [];
                 }
 
-                // Append new token
                 $tokens[] = $token;
-
-                // Save updated tokens
                 $newUser->auth_token = json_encode(array_values($tokens));
                 $newUser->save();
 
-                // return response
+                // Redirect back to mobile app via deep link
                 return redirect()->away("gobiz://auth/callback?token={$token}&email={$newUser->email}");
             } else {
-                // check modern_dashboard_enabled
+                // Authenticate web session only for web platform
+                Auth::login($newUser, true);
+
                 if (Schema::hasTable('modern_dashboard_settings')) {
                     $is_modern_dashboard_enabled = DB::table('modern_dashboard_settings')->first()->modern_dashboard_enabled;
                     if (plugin_active('ModernDashboard') && $is_modern_dashboard_enabled == 1) {

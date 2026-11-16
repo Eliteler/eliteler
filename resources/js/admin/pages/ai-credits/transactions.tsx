@@ -127,7 +127,7 @@ export default function AiCreditPurchases({ transactions, tab, search, counts }:
                                                     {row.plan}
                                                     {row.credits !== null && <span className="ms-1.5 text-xs font-normal text-muted-foreground">{row.credits.toLocaleString()} {t("credits")}</span>}
                                                 </span>
-                                                <span className="text-xs text-muted-foreground" title={formatDate(row.date, "dd MMM yyyy, HH:mm")}>
+                                                <span className="text-xs text-muted-foreground" title={formatDate(row.date)}>
                                                     {row.invoice ?? row.id} · {fromNow(row.date)}
                                                 </span>
                                             </div>

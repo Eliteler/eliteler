@@ -238,6 +238,11 @@ export function PlanCard({
             on: f.personalized_link,
         },
         { kind: "flag", label: t("Hide Branding"), on: f.hide_branding },
+        {
+            kind: "flag",
+            label: t("Visitor Analytics"),
+            on: f.advanced_analytics,
+        },
         { kind: "flag", label: t("Free Setup"), on: f.free_setup },
         { kind: "flag", label: t("Free Support"), on: f.free_support },
     );

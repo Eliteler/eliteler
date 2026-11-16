@@ -16,6 +16,12 @@
             height: 40px !important;
         }
 
+        .card .table-responsive,
+        .card>.table-responsive {
+            padding: 0 !important; */
+            border-radius: 16px !important;
+        }
+
         /* Desktop Mode: Force pagination alignment cleanly to the right side */
         @media (min-width: 768px) {
             .dataTables_wrapper .dataTables_paginate {
@@ -397,8 +403,7 @@
                     <div class="w-100">
                         <div class="row g-2">
                             <div class="col">
-                                <button type="button" class="btn w-100"
-                                    data-bs-dismiss="modal">
+                                <button type="button" class="btn w-100" data-bs-dismiss="modal">
                                     {{ __('Cancel') }}
                                 </button>
                             </div>

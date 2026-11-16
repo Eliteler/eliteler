@@ -27,6 +27,7 @@ use Inertia\Inertia;
  */
 class BlogCategoryController extends Controller
 {
+    public const PER_PAGE = 10;
     private const FALLBACK = 'uncategorized';
 
     public function __construct()
@@ -38,14 +39,19 @@ class BlogCategoryController extends Controller
     {
         $counts = Blog::where('status', '!=', 2)->groupBy('category')->selectRaw('category, COUNT(*) as total')->pluck('total', 'category');
 
-        $categories = BlogCategory::where('status', '!=', 2)->orderBy('blog_category_title')->get()->map(fn (BlogCategory $category) => [
-            'id'         => $category->blog_category_id,
-            'name'       => $category->blog_category_title,
-            'slug'       => $category->blog_category_slug,
-            'visible'    => (int) $category->status === 1,
-            'posts'      => (int) ($counts[$category->blog_category_id] ?? 0),
-            'isFallback' => $category->blog_category_slug === self::FALLBACK,
-        ]);
+        // Paginate blog categories
+        $categories = BlogCategory::where('status', '!=', 2)
+            ->orderBy('blog_category_title')
+            ->paginate(self::PER_PAGE)
+            ->through(fn(BlogCategory $category) => [
+                'id'         => $category->blog_category_id,
+                'name'       => $category->blog_category_title,
+                'slug'       => $category->blog_category_slug,
+                'visible'    => (int) $category->status === 1,
+                'posts'      => (int) ($counts[$category->blog_category_id] ?? 0),
+                'isFallback' => $category->blog_category_slug === self::FALLBACK,
+            ])
+            ->withQueryString();
 
         return Inertia::render('website/blogs/categories', [
             'categories' => $categories,
@@ -125,7 +131,7 @@ class BlogCategoryController extends Controller
 
         return $request->validate([
             'category_name' => 'required|string|min:2|max:191',
-            'category_slug' => ['required', 'string', 'max:191', Rule::unique('blog_categories', 'blog_category_slug')->where(fn ($q) => $q->where('status', '!=', 2))->ignore($category?->id)],
+            'category_slug' => ['required', 'string', 'max:191', Rule::unique('blog_categories', 'blog_category_slug')->where(fn($q) => $q->where('status', '!=', 2))->ignore($category?->id)],
         ], [
             'category_slug.unique' => __('Another category already uses this URL.'),
         ], [

@@ -1,12 +1,14 @@
 {{-- Start PWA Install Prompt Modal — Real Estate Design --}}
 <div id="pwaModal">
     {{-- Backdrop — clicking this closes the modal --}}
-    <div class="pwa-backdrop" onclick="hidePwaPrompt()"></div>
+    <div class="pwa-backdrop" onclick="window.hidePwaPrompt()"></div>
 
-    <div class="pwa-box">
+    <div class="pwa-box" onclick="event.stopPropagation()">
 
         {{-- Close Button --}}
-        <button class="pwa-close" id="closePwaModal"><i class="fas fa-times"></i></button>
+        <button type="button" class="pwa-close" id="closePwaModal" onclick="window.hidePwaPrompt()">
+            <i class="fas fa-times"></i>
+        </button>
 
         {{-- Drag Handle --}}
         <div class="pwa-handle"></div>
@@ -21,13 +23,14 @@
 
         {{-- Description --}}
         <p class="pwa-desc">
-            {{ __('Add this digital card to your home screen for instant access."') }}
+            {{ __('Add this digital card to your home screen for instant access.') }}
         </p>
 
         {{-- Buttons --}}
         <div class="pwa-btn-row">
-            <button class="pwa-btn-cancel" id="closeModal">{{ __('Cancel') }}</button>
-            <button class="pwa-btn-install" id="addToHomeScreenButton">
+            <button type="button" class="pwa-btn-cancel" id="closeModal"
+                onclick="window.hidePwaPrompt()">{{ __('Cancel') }}</button>
+            <button type="button" class="pwa-btn-install" id="addToHomeScreenButton" onclick="window.installPwa()">
                 <i class="fas fa-download"></i> {{ __('Install App') }}
             </button>
         </div>
@@ -37,34 +40,70 @@
 <script>
     "use strict";
 
-    document.addEventListener('DOMContentLoaded', () => {
-        const modal = document.getElementById('pwaModal');
-        const closeBtn = document.getElementById('closePwaModal');
-        const cancelBtn = document.getElementById('closeModal');
+    (function() {
+        let deferredPrompt = null;
 
-        if (!modal) return;
-
-        // Show modal
-        const showPwaPrompt = () => {
-            modal.classList.add('show');
-            modal.classList.remove('hidden', 'fadeOut');
+        // Show modal function
+        window.showPwaPrompt = function() {
+            const modal = document.getElementById('pwaModal');
+            if (modal) {
+                // Ensure modal is attached directly to body
+                if (modal.parentElement !== document.body) {
+                    document.body.appendChild(modal);
+                }
+                modal.classList.add('show');
+                modal.classList.remove('hidden', 'fadeOut');
+                // Force display flex directly
+                modal.style.setProperty('display', 'flex', 'important');
+            }
         };
 
-        // Hide modal
-        const hidePwaPrompt = () => {
-            modal.classList.add('fadeOut');
-
-            // Wait for animation before hiding
-            modal.classList.add('hidden');
-            modal.classList.remove('show');
+        // Hide modal function
+        window.hidePwaPrompt = function() {
+            const modal = document.getElementById('pwaModal');
+            if (modal) {
+                modal.classList.add('fadeOut');
+                modal.classList.add('hidden');
+                modal.classList.remove('show');
+                // Force display none directly
+                modal.style.setProperty('display', 'none', 'important');
+            }
         };
 
-        // Attach events safely
-        closeBtn?.addEventListener('click', hidePwaPrompt);
-        cancelBtn?.addEventListener('click', hidePwaPrompt);
+        // 1. Capture browser PWA prompt event
+        window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            deferredPrompt = e;
+            window.showPwaPrompt();
+        });
 
-        // Optional: expose globally if needed
-        window.showPwaPrompt = showPwaPrompt;
-    });
+        // 2. Fallback: Automatically show modal after 1.5 seconds so you can see it
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                window.showPwaPrompt();
+            }, 1500);
+        });
+
+        // 3. Trigger native install dialog
+        window.installPwa = async function() {
+            if (!deferredPrompt) {
+                alert("PWA is already installed or not supported in this browser.");
+                return;
+            }
+
+            deferredPrompt.prompt();
+            const {
+                outcome
+            } = await deferredPrompt.userChoice;
+            deferredPrompt = null;
+            window.hidePwaPrompt();
+        };
+
+        // Hide after installation
+        window.addEventListener('appinstalled', function() {
+            window.hidePwaPrompt();
+            deferredPrompt = null;
+        });
+    })();
 </script>
 {{-- End PWA Install Prompt Modal --}}

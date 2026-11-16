@@ -13,6 +13,7 @@
 namespace App\Http\Controllers\User\Store\Create;
 
 use App\BusinessCard;
+use App\Services\ReservedLinks;
 use App\Currency;
 use App\Helpers\StorageHelper;
 use App\Http\Controllers\Controller;
@@ -237,6 +238,11 @@ class CreateController extends Controller
 
         // Unique Store URL
         $card_url = $personalized_link;
+
+        // a page of the site already uses this link (login, user, admin, ...)
+        if (ReservedLinks::contains($card_url)) {
+            return redirect()->route('user.create.store')->with('failed', trans(ReservedLinks::MESSAGE));
+        }
 
         // Check existing card URL
         $current_card = BusinessCard::where('card_url', $card_url)

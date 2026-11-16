@@ -5,6 +5,7 @@ namespace App\Services\Admin;
 use App\ReferralWithdrawRequest;
 use App\ReferralWithdrawTransaction;
 use App\User;
+use App\Support\Zapier;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -90,28 +91,12 @@ class ReferralService
 
     private function dispatchZapier(ReferralWithdrawRequest $request, int $status): void
     {
-        if (! function_exists('zapier_dispatch')) {
-            return;
-        }
-
-        $user = User::where('user_id', $request->user_id)->first();
-
-        zapier_dispatch('referral_withdraw', [
-            'requested_at'        => now()->toDateTimeString(),
-            'withdraw_id'         => $request->referral_withdraw_request_id,
-            'user_name'           => $user->name ?? 'Affiliate User',
-            'user_address'        => $user->billing_address ?? '',
-            'user_city'           => $user->billing_city ?? '',
-            'user_state'          => $user->billing_state ?? '',
-            'user_country'        => $user->billing_country ?? '',
-            'user_zip'            => $user->billing_zipcode ?? '',
-            'user_email'          => $user->email ?? '',
-            'user_phone'          => ($user->country_code ?? '') . ($user->mobile_number ?? ''),
-            'user_tax_number'     => $user->vat_number ?? '',
-            'withdrawal_currency' => DB::table('config')->where('config_key', 'currency')->value('config_value') ?? 'USD',
-            'amount'              => (float) $request->amount,
-            'bank_details'        => self::payoutDetails($request->bank_details),
-            'transfer_status'     => [self::ACCEPTED => 'Accepted', self::REJECTED => 'Rejected', self::TRANSFERRED => 'Transferred'][$status] ?? 'Processed',
-        ]);
+        Zapier::referralWithdraw(
+            User::where('user_id', $request->user_id)->first(),
+            $request->referral_withdraw_request_id,
+            (float) $request->amount,
+            self::payoutDetails($request->bank_details),
+            [self::ACCEPTED => 'Accepted', self::REJECTED => 'Rejected', self::TRANSFERRED => 'Transferred'][$status] ?? 'Processed',
+        );
     }
 }

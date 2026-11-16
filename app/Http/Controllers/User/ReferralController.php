@@ -17,6 +17,7 @@ use App\Http\Controllers\Controller;
 use App\Plan;
 use App\Referral;
 use App\ReferralWithdrawRequest;
+use App\Support\Zapier;
 use App\Setting;
 use App\User;
 use Illuminate\Http\Request;
@@ -24,7 +25,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
-use Plugins\Zapier\Helpers\ZapierHelper;
 use Yajra\DataTables\Facades\DataTables;
 
 class ReferralController extends Controller
@@ -347,6 +347,32 @@ class ReferralController extends Controller
             return redirect()->route('user.referrals.withdrawal.request')->with('failed', $validator->errors());
         }
 
+        // Check enable referral system
+        if ($config[80]->config_value == '0') {
+            return abort(404);
+        }
+
+        // One pending request at a time (the form page checks this, the submit did not)
+        if (ReferralWithdrawRequest::where('payment_status', 0)->where('user_id', Auth::user()->user_id)->exists()) {
+            return redirect()->route('user.referrals.withdrawal.request')->with('failed', __('You already have a pending withdrawal payment request. Please wait for the payment to be processed.'));
+        }
+
+        // Amount must be within the balance (earnings minus requests that are not rejected) and above the minimum
+        $amount = round((float) $request->amount, 2);
+        $earned = 0;
+        foreach (Referral::where('is_registered', 1)->where('is_subscribed', 1)->where('referred_user_id', Auth::user()->user_id)->get() as $earning) {
+            $earned += (float) (json_decode($earning->referral_scheme)->referral_amount ?? 0);
+        }
+        $requested = ReferralWithdrawRequest::where('payment_status', '!=', '-1')->where('user_id', Auth::user()->user_id)->sum('amount');
+        $balance = round($earned - (float) $requested, 2);
+
+        if ($amount <= 0 || $amount > $balance) {
+            return redirect()->route('user.referrals.withdrawal.request')->with('failed', __('Withdrawal amount is greater than your current balance!'));
+        }
+        if ($amount < (float) $config[83]->config_value) {
+            return redirect()->route('user.referrals.withdrawal.request')->with('failed', __('Your current balance is less than the minimum withdrawal amount. Please increase your balance to proceed.'));
+        }
+
         // Request ID
         $requestId = "REQ" . preg_replace('/\D/', '', Str::uuid());
 
@@ -354,7 +380,7 @@ class ReferralController extends Controller
         $withdrawalRequest = new ReferralWithdrawRequest();
         $withdrawalRequest->referral_withdraw_request_id = $requestId;
         $withdrawalRequest->user_id = Auth::user()->user_id;
-        $withdrawalRequest->amount = $request->amount;
+        $withdrawalRequest->amount = $amount;
         $withdrawalRequest->bank_details = json_encode($request->bank_details);
         $withdrawalRequest->notes = $request->notes ?? '-';
         $withdrawalRequest->payment_status = 0;
@@ -365,43 +391,8 @@ class ReferralController extends Controller
         $user->bank_details = $request->bank_details;
         $user->save();
 
-        // Clean bank details safely
-        $cleanBankDetails = $request->bank_details ?? '';
-        if (is_string($cleanBankDetails)) {
-            $decodedJson = json_decode($cleanBankDetails);
-            if (json_last_error() === JSON_ERROR_NONE && $decodedJson !== null) {
-                $cleanBankDetails = $decodedJson;
-            }
-            $cleanBankDetails = strip_tags($cleanBankDetails);
-        }
-
-        // Safely format user billing address
-        $userAddress = $user->billing_address ?? '';
-        $userCity = $user->billing_city ?? '';
-        $userState = $user->billing_state ?? '';
-        $userCountry = $user->billing_country ?? '';
-        $userZip = $user->billing_zipcode ?? '';
-
-        // Dispatch referral withdraw event to Zapier (New Request)
-        if (function_exists('zapier_dispatch')) {
-            zapier_dispatch('referral_withdraw', [
-                'requested_at'        => now()->toDateTimeString(),
-                'withdraw_id'         => $requestId,
-                'user_name'           => Auth::user()->name ?? 'Affiliate User',
-                'user_address'        => !empty($userAddress) ? $userAddress : (Auth::user()->billing_address ?? ''),
-                'user_city'           => !empty($userCity) ? $userCity : (Auth::user()->billing_city ?? ''),
-                'user_state'          => !empty($userState) ? $userState : (Auth::user()->billing_state ?? ''),
-                'user_country'        => !empty($userCountry) ? $userCountry : (Auth::user()->billing_country ?? ''),
-                'user_zip'            => !empty($userZip) ? $userZip : (Auth::user()->billing_zipcode ?? ''),
-                'user_email'          => Auth::user()->email ?? '',
-                'user_phone'          => (Auth::user()->country_code ?? '') . (Auth::user()->mobile_number ?? ''),
-                'user_tax_number'     => Auth::user()->billing_tax_number ?? Auth::user()->tax_number ?? '',
-                'withdrawal_currency' => $config[1]->config_value ?? 'USD',
-                'amount'              => (float) $request->amount,
-                'bank_details'        => $cleanBankDetails,
-                'transfer_status'     => 'Pending Approval',
-            ]);
-        }
+        // Zapier: new withdrawal request
+        Zapier::referralWithdraw($user, $requestId, (float) $request->amount, $request->bank_details);
 
         return redirect()->route('user.referrals.withdrawal.request')->with('success', __('Withdrawal Requested Successfully'));
     }

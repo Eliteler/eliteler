@@ -1,115 +1,42 @@
 @extends('user.layouts.index', ['header' => true, 'nav' => true, 'demo' => true, 'settings' => $settings])
 
-{{-- Custom CSS (Responsive pagination alignment and search layout rules) --}}
+{{-- Custom CSS --}}
 @section('css')
-    <link href="{{ asset('plugins/datatable/css/dataTables.bootstrap5.min.css') }}" rel="stylesheet">
-    <link href="{{ asset('plugins/datatable/css/buttons.bootstrap5.min.css') }}" rel="stylesheet">
+    {{-- Main Digital Business Cards CSS --}}
+    <link href="{{ asset('css/all-digital-business-cards.css') }}" rel="stylesheet">
 
     <style>
-        .btn {
-            border-radius: 12px !important;
-            font-size: small !important;
-            padding: 10px 18px !important;
+        /* Empty state full-width alignment for responsive mobile card tables */
+        .responsive-card-table tbody td.dataTables_empty::before {
+            display: none !important;
+            content: "" !important;
         }
 
-        div.dt-container div.dt-search input {
-            height: 40px !important;
-            font-size: 14px !important;
+        .responsive-card-table tbody td.dataTables_empty {
+            text-align: center !important;
+            width: 100% !important;
+            padding: 2.5rem 1rem !important;
         }
 
-        /* Desktop Mode: Force pagination alignment cleanly to the right side */
-        @media (min-width: 768px) {
-            .dataTables_wrapper .dataTables_paginate {
-                display: flex !important;
-                justify-content: flex-end !important;
-                margin-left: auto !important;
-                /* Pulls pagination cleanly to the right boundary margin */
-                width: auto !important;
-            }
-
-            /* Overwrite Tabler's global flex centering on list elements with high CSS specificity */
-            .dataTables_wrapper .pagination,
-            .dataTables_wrapper .dataTables_paginate .pagination,
-            .dataTables_wrapper div.dataTables_paginate ul.pagination {
-                display: flex !important;
-                justify-content: flex-end !important;
-                margin: 0 !important;
-            }
-        }
-
-        /* Mobile Mode: Stack column structures, center pagination, and optimize search inputs */
         @media (max-width: 767.98px) {
 
-            /* Hide the DataTables informational statistics summary exclusively on mobile viewports */
-            .dataTables_wrapper .dataTables_info {
-                display: none !important;
-            }
-
-            /* Transform the bottom wrapper from row-flex to column-flex */
-            div.dataTables_wrapper .d-flex.justify-content-between {
-                flex-direction: column !important;
-                justify-content: center !important;
-                text-align: center !important;
-                gap: 12px !important;
-            }
-
-            div.dataTables_wrapper .dataTables_paginate {
-                display: flex !important;
-                justify-content: center !important;
-                float: none !important;
-                margin-top: 1rem !important;
+            .responsive-card-table tbody tr:has(.dataTables_empty),
+            .responsive-card-table tbody tr.odd:has(.dataTables_empty) {
+                display: block !important;
                 width: 100% !important;
-                padding: 0 0.5rem !important;
+                background: transparent !important;
+                box-shadow: none !important;
+                border: none !important;
             }
 
-            div.dataTables_wrapper .dataTables_paginate ul.pagination {
-                display: flex !important;
-                flex-wrap: wrap !important;
-                /* Wraps button arrays smoothly on narrow viewports to avoid overflow clipping */
-                justify-content: center !important;
-                padding-left: 0 !important;
-                list-style: none !important;
-                gap: 4px !important;
+            .responsive-card-table tbody td.dataTables_empty {
+                display: block !important;
+                width: 100% !important;
+            }
+
+            .responsive-card-table tbody td.dataTables_empty>div {
                 margin: 0 auto !important;
-            }
-
-            div.dataTables_wrapper .dataTables_paginate ul.pagination .page-item .page-link {
-                padding: 4px 8px !important;
-                /* Compact mobile touch targets */
-                font-size: 11px !important;
-                border-radius: 4px !important;
-            }
-
-            /* Enforce full-width block alignment for the search input on mobile viewports */
-            .dataTables_wrapper .dataTables_filter {
                 width: 100% !important;
-                margin-top: 0.5rem !important;
-                text-align: left !important;
-            }
-
-            .dataTables_wrapper .dataTables_filter input {
-                width: 100% !important;
-                display: block !important;
-                margin-left: 0 !important;
-            }
-
-            /* Enable touch horizontal scrolling inside table boundaries */
-            .table-responsive {
-                overflow-x: auto !important;
-                -webkit-overflow-scrolling: touch !important;
-                border-bottom: 1px solid rgba(101, 109, 119, 0.16);
-            }
-
-            div.dt-container div.dt-search input {
-                width: 100% !important;
-                display: block !important;
-                margin-left: 0 !important;
-                height: 40px !important;
-                font-size: 14px !important;
-            }
-
-            #emailSubscribed_info {
-                display: none !important;
             }
         }
     </style>
@@ -117,100 +44,163 @@
 
 @section('content')
     <div class="page-wrapper">
-        <!-- Page Header (Wraps the inner container-fluid) -->
+        <!-- Page Header -->
         <div class="page-header d-print-none">
             <div class="container-fluid">
                 <div class="row g-2 align-items-center">
-                    <!-- Hierarchical Breadcrumb Trail -->
-                    <nav aria-label="breadcrumb">
-                        <ol class="breadcrumb mb-2">
-                            <li class="breadcrumb-item">
-                                <a href="{{ route('user.dashboard') }}" class="text-secondary text-decoration-none">
-                                    {{ __('Dashboard') }}
-                                </a>
-                            </li>
-                            <li class="breadcrumb-item">
-                                <a href="{{ route('user.cards') }}" class="text-secondary text-decoration-none">
-                                    {{ __('Digital Business Cards') }}
-                                </a>
-                            </li>
-                            <li class="breadcrumb-item active" aria-current="page">
-                                {{ __('Subscribed Emails') }}
-                            </li>
-                        </ol>
-                    </nav>
+                    <!-- Hierarchical Breadcrumbs -->
+                    <div class="col-12">
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb breadcrumb-arrows">
+                                <li class="breadcrumb-item">
+                                    <a href="{{ route('user.dashboard') }}" class="text-secondary text-decoration-none">
+                                        {{ __('Dashboard') }}
+                                    </a>
+                                </li>
+                                <li class="breadcrumb-item">
+                                    <a href="{{ route('user.cards') }}" class="text-secondary text-decoration-none">
+                                        {{ __('Digital Business Cards') }}
+                                    </a>
+                                </li>
+                                <li class="breadcrumb-item active fw-semibold" aria-current="page">
+                                    {{ __('Subscribed Emails') }}
+                                </li>
+                            </ol>
+                        </nav>
+                    </div>
+
+                    <!-- Page Title & Help Subtitle -->
                     <div class="col">
-                        <h2 class="page-title">
+                        <h2 class="page-title text-reset fw-bold">
                             {{ __('Subscribed Emails') }}
                         </h2>
-
-                        <!-- Descriptive Help Subtitle -->
                         <div class="text-muted mt-1">
                             {{ __('Review campaign subscription logs, verify registered client emails, and export contact registers.') }}
                         </div>
                     </div>
 
-                    {{-- Custom Buttons Destination Element --}}
-                    <div class="col-auto text-end">
-                        <div id="customButtonsContainer" class="d-inline-flex gap-2"></div>
+                    <!-- Export Action Buttons in Page Header -->
+                    <div class="col-auto ms-auto d-print-none">
+                        <div class="d-inline-flex align-items-center gap-2">
+                            <button type="button" id="btn-export-csv"
+                                class="btn btn-primary btn-icon-only d-inline-flex align-items-center shadow-sm px-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-file-text me-1"
+                                    width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                    fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+                                    <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" />
+                                    <path d="M9 9l1 0" />
+                                    <path d="M9 13l6 0" />
+                                    <path d="M9 17l6 0" />
+                                </svg>
+                                <span>{{ __('CSV') }}</span>
+                            </button>
+
+                            <button type="button" id="btn-export-excel"
+                                class="btn btn-primary btn-icon-only d-inline-flex align-items-center shadow-sm px-3">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                    class="icon icon-tabler icon-tabler-file-spreadsheet me-1" width="18" height="18"
+                                    viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+                                    <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" />
+                                    <path d="M8 11h8v7h-8z" />
+                                    <path d="M8 15h8" />
+                                    <path d="M11 11v7" />
+                                </svg>
+                                <span>{{ __('Excel') }}</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
+        <!-- Page Body -->
         <div class="page-body">
             <div class="container-fluid">
-                {{-- Failed Alert --}}
+                {{-- Flash Notifications --}}
                 @if (Session::has('failed'))
                     <div class="alert alert-important alert-danger alert-dismissible mb-3 border-0 shadow-sm"
                         role="alert">
-                        <div class="d-flex">
+                        <div class="d-flex align-items-center gap-2">
                             <div>{{ Session::get('failed') }}</div>
                         </div>
                         <a class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="close"></a>
                     </div>
                 @endif
 
-                {{-- Success Alert --}}
                 @if (Session::has('success'))
                     <div class="alert alert-important alert-success alert-dismissible mb-3 border-0 shadow-sm"
                         role="alert">
-                        <div class="d-flex">
+                        <div class="d-flex align-items-center gap-2">
                             <div>{{ Session::get('success') }}</div>
                         </div>
                         <a class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="close"></a>
                     </div>
                 @endif
 
-                <div class="row row-deck row-cards">
-                    <div class="col-12">
-                        <!-- Upgraded to Borderless Shadowed Card Wrapper (Clean design-time padding) -->
-                        <div class="card border-0 shadow-sm p-3">
-                            <!-- Removed design-time table-responsive wrapper so Datatables elements stay static -->
-                            <table class="table card-table table-vcenter text-nowrap" id="emailSubscribed">
-                                <thead>
+                <!-- Cards Data Table Wrapper -->
+                <div class="cards-table-card">
+                    <div class="table-responsive">
+                        <table id="emailSubscribedTable"
+                            class="table card-table table-vcenter table-hover text-nowrap responsive-card-table">
+                            <thead>
+                                <tr>
+                                    <th class="w-1">{{ __('#') }}</th>
+                                    <th>{{ __('Date') }}</th>
+                                    <th>{{ __('Email') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($subscripedEmails as $subscripedEmail)
                                     <tr>
-                                        <th>{{ __('#') }}</th>
-                                        <th>{{ __('Date') }}</th>
-                                        <th>{{ __('Email') }}</th>
+                                        <td class="rc-hide">{{ $loop->iteration }}</td>
+                                        <td>
+                                            <span class="text-secondary fw-semibold">
+                                                {{ formatDateForUser($card->created_at ?? $subscripedEmail->created_at) }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a href="mailto:{{ $subscripedEmail->email }}"
+                                                class="text-decoration-none fw-semibold">
+                                                {{ $subscripedEmail->email }}
+                                            </a>
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($subscripedEmails as $subscripedEmail)
-                                        <tr>
-                                            <td>{{ $loop->iteration }}</td>
-                                            <td><span
-                                                    class="fw-bold text-secondary">{{ formatDateForUser($card->created_at ?? $subscripedEmail->created_at) }}</span>
-                                            </td>
-                                            <td>
-                                                <a href="mailto:{{ $subscripedEmail->email }}"
-                                                    class="text-decoration-none fw-bold">{{ $subscripedEmail->email }}</a>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {{-- Mobile Pagination Bar --}}
+                    <div id="custom-mobile-pagination"
+                        class="d-flex d-md-none justify-content-between align-items-center px-3 py-3">
+                        <button id="mobile-prev-btn" class="btn btn-primary btn-sm d-inline-flex align-items-center"
+                            type="button">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-chevron-left me-1"
+                                width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                <path d="M15 6l-6 6l6 6"></path>
+                            </svg>
+                            {{ __('Previous') }}
+                        </button>
+
+                        <span id="mobile-page-info" class="text-muted small fw-semibold"></span>
+
+                        <button id="mobile-next-btn" class="btn btn-primary btn-sm d-inline-flex align-items-center"
+                            type="button">
+                            {{ __('Next') }}
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-chevron-right ms-1"
+                                width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                <path d="M9 6l6 6l-6 6"></path>
+                            </svg>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -221,134 +211,190 @@
     </div>
 @endsection
 
+{{-- Custom Scripts --}}
 @section('scripts')
-    <script src="{{ asset('plugins/datatable/js/dataTables.min.js') }}"></script>
-    <script src="{{ asset('plugins/datatable/js/dataTables.bootstrap5.min.js') }}"></script>
-    <script src="{{ asset('plugins/datatable/js/dataTables.buttons.min.js') }}"></script>
-    <script src="{{ asset('plugins/datatable/js/buttons.bootstrap5.min.js') }}"></script>
-    <script src="{{ asset('plugins/datatable/js/buttons.html5.min.js') }}"></script>
-
-    <!-- JSZip for Excel export -->
-    <script src="{{ asset('plugins/datatable/js/jszip.min.js') }}"></script>
     <script type="text/javascript">
-        "use strict";
-
         $(document).ready(function() {
-            const totalColumns = 3;
+            "use strict";
 
-            const table = $('#emailSubscribed').DataTable({
-                responsive: false, // Omitted stacked transformations to use horizontal tables
+            const total_columns = 3;
+
+            const table = $('#emailSubscribedTable').DataTable({
+                processing: false,
+                serverSide: false,
                 ordering: false,
-                // Integrated 'f' selector parameter cleanly with responsive columns structure
-                dom: "<'row mb-3 align-items-center g-3'<'col-12 col-md-6'l><'col-12 col-md-6 text-md-end'f>>" +
-                    "<'row'<'col-sm-12'tr>>" +
-                    "<'d-flex justify-content-between align-items-center mt-3'ip>",
-                buttons: [{
-                        extend: 'csv',
-                        text: '{{ __('CSV') }}',
-                        className: 'btn btn-sm btn-success force-class-csv',
-                        filename: 'newsletter_subscribed_emails',
-                        exportOptions: {
-                            columns: [0, 1, 2],
-                            format: {
-                                header: function(data, columnIdx) {
-                                    switch (columnIdx) {
-                                        case 0:
-                                            return '#';
-                                        case 1:
-                                            return 'Date';
-                                        case 2:
-                                            return 'Email';
-                                        default:
-                                            return data;
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    {
-                        extend: 'excel',
-                        text: '{{ __('Excel') }}',
-                        className: 'btn btn-sm btn-success force-class-excel',
-                        filename: 'newsletter_subscribed_emails',
-                        exportOptions: {
-                            columns: [0, 1, 2],
-                            format: {
-                                header: function(data, columnIdx) {
-                                    switch (columnIdx) {
-                                        case 0:
-                                            return '#';
-                                        case 1:
-                                            return 'Date';
-                                        case 2:
-                                            return 'Email';
-                                        default:
-                                            return data;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                ],
+                dom: "<'card-body d-flex align-items-center justify-content-between gap-2'<'text-muted d-none d-md-flex align-items-center'l><'d-flex align-items-center ms-auto w-100 w-md-auto'f>>" +
+                    "<'table-responsive'tr>" +
+                    "<'card-footer d-none d-md-flex align-items-center justify-content-between gap-2 bg-transparent border-top-0'<'text-muted'i><'pagination-wrapper'p>>",
                 language: {
-                    "sProcessing": `{{ __('Processing...') }}`,
-                    "sLengthMenu": `{{ __('Show _MENU_ entries') }}`,
-                    "sSearch": ``,
-                    "sSearchPlaceholder": `{{ __('Search') }}`,
-                    "oPaginate": {
-                        "sNext": `{{ __('Next') }}`,
-                        "sPrevious": `{{ __('Previous') }}`
+                    sProcessing: `{{ __('Processing...') }}`,
+                    sLengthMenu: `{{ __('Show _MENU_ entries') }}`,
+                    sSearch: ``,
+                    sSearchPlaceholder: `{{ __('Search emails...') }}`,
+                    oPaginate: {
+                        sNext: `{{ __('Next') }}`,
+                        sPrevious: `{{ __('Previous') }}`
                     },
-                    "sInfo": `{{ __('Showing _START_ to _END_ of _TOTAL_ entries') }}`,
-                    "sInfoEmpty": `{{ __('Showing 0 to 0 of 0 entries') }}`,
-                    "sInfoFiltered": `{{ __('(filtered from _MAX_ total entries)') }}`,
+                    sInfo: `{{ __('Showing _START_ to _END_ of _TOTAL_ entries') }}`,
+                    sInfoEmpty: `{{ __('Showing 0 to 0 of 0 entries') }}`,
+                    sInfoFiltered: `{{ __('(filtered from _MAX_ total entries)') }}`,
                     loadingRecords: `{{ __('Please wait - loading...') }}`,
-                    emptyTable: `{{ __('No data available in the table') }}`
-                },
-                preDrawCallback: function(settings) {
-                    $('#emailSubscribed_wrapper').addClass('placeholder-glow');
+
+                    // SVG Empty State
+                    emptyTable: `
+                        <div class="text-center py-4 w-100">
+                            <div class="empty-state-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icon-tabler-mail-off">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                    <path d="M3 3l18 18" />
+                                    <path d="M19 19h-14a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 1.056 -1.748" />
+                                    <path d="M9 5h10a2 2 0 0 1 2 2v8a2 2 0 0 1 -.57 1.402" />
+                                    <path d="M3 7l6 6" />
+                                    <path d="M15 9l6 -6" />
+                                </svg>
+                            </div>
+                            <h4 class="fw-bold mb-1 text-reset">{{ __('No Subscribed Emails Yet') }}</h4>
+                            <p class="text-muted small mb-0">{{ __('No contact subscriptions have been logged for this card.') }}</p>
+                        </div>
+                    `,
+                    zeroRecords: `
+                        <div class="text-center py-4 w-100">
+                            <div class="empty-state-icon" style="background-color: var(--tblr-danger-lt); color: var(--tblr-danger);">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icon-tabler-mail-search">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                    <path d="M11 19h-6a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v4.5" />
+                                    <path d="M3 7l9 6l9 -6" />
+                                    <path d="M18 18m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
+                                    <path d="M20.2 20.2l1.8 1.8" />
+                                </svg>
+                            </div>
+                            <h4 class="fw-bold mb-1 text-reset">{{ __('No Matching Emails Found') }}</h4>
+                            <p class="text-muted small mb-0">{{ __('We could not find any email matching your search keyword.') }}</p>
+                        </div>
+                    `
                 },
                 drawCallback: function(settings) {
-                    $('#emailSubscribed_wrapper').removeClass('placeholder-glow');
+                    var api = new $.fn.dataTable.Api(settings);
+                    var $table = $(settings.nTable);
 
-                    // Match empty display widths
-                    $('#emailSubscribed tbody tr td.dataTables_empty').attr('colspan', totalColumns);
+                    $table.closest('.table-responsive').removeClass('placeholder-glow');
+                    $table.find('tbody tr td.dataTables_empty').attr('colspan', total_columns);
+
+                    // Map headers into data-label for regular rows only (exclude empty rows)
+                    var headers = [];
+                    $table.find('thead th').each(function() {
+                        headers.push($(this).text().trim());
+                    });
+
+                    // Target only data rows, ignoring .dataTables_empty
+                    $table.find('tbody tr').each(function() {
+                        var $tr = $(this);
+                        if ($tr.find('td.dataTables_empty').length === 0) {
+                            $tr.find('td').each(function(index) {
+                                if (headers[index]) {
+                                    $(this).attr('data-label', headers[index]);
+                                }
+                            });
+                        } else {
+                            $tr.find('td.dataTables_empty').removeAttr('data-label');
+                        }
+                    });
+
+                    // Mobile Pagination handler
+                    const pageInfo = api.page.info();
+                    const rowsCount = api.rows({
+                        page: 'current'
+                    }).data().length;
+
+                    if (pageInfo.pages <= 1 || rowsCount === 0) {
+                        $('#custom-mobile-pagination').addClass('d-none').removeClass('d-flex');
+                    } else {
+                        $('#custom-mobile-pagination').removeClass('d-none').addClass('d-flex');
+                    }
+
+                    const pageInfoText = `{{ __('Page :current of :total') }}`
+                        .replace(':current', pageInfo.page + 1)
+                        .replace(':total', pageInfo.pages || 1);
+                    $('#mobile-page-info').text(pageInfoText);
+
+                    $('#mobile-prev-btn').prop('disabled', pageInfo.page === 0).toggleClass('disabled',
+                        pageInfo.page === 0);
+                    $('#mobile-next-btn').prop('disabled', pageInfo.page >= pageInfo.pages - 1)
+                        .toggleClass('disabled', pageInfo.page >= pageInfo.pages - 1);
                 }
             });
 
-            // Wrap ONLY the table element in the responsive wrapper container dynamically
-            $('#emailSubscribed').wrap('<div class="table-responsive px-0 py-2"></div>');
-
-            // Move button container dynamically to aligned page header block
-            table.buttons().container().appendTo('#customButtonsContainer');
-
-            // Implement static 350ms debounced filters execution with matching skeletons
-            $('.dataTables_filter input').unbind().on('keyup', function() {
-                const searchValue = this.value;
-                clearTimeout(window.searchTimeout);
-
-                $('#emailSubscribed_wrapper').addClass('placeholder-glow');
-                let placeholderRows = '';
-                for (let i = 0; i < 5; i++) {
-                    placeholderRows += '<tr>' +
-                        '<td class="text-center"><div class="placeholder placeholder-xs col-12"></div></td>'
-                        .repeat(totalColumns) + '</tr>';
-                }
-                $('#emailSubscribed tbody').html(placeholderRows);
-
-                window.searchTimeout = setTimeout(function() {
-                    table.search(searchValue).draw();
-                }, 350);
-            });
-
-            // Re-apply standard Bootstrap utility layout classes to DataTable export nodes
-            const applyButtonClasses = () => {
-                document.querySelectorAll('.force-class-csv, .force-class-excel').forEach(btn => {
-                    btn.classList.remove('dt-button');
-                    btn.classList.add('btn', 'btn-primary', 'btn-sm', 'me-2');
+            // Native CSV Export Handler
+            $('#btn-export-csv').on('click', function() {
+                let csv = ['\uFEFF"#","Date","Email"'];
+                table.rows({
+                    search: 'applied'
+                }).every(function(rowIdx, tableLoop, rowLoop) {
+                    let $node = $(this.node());
+                    let col0 = rowLoop + 1;
+                    let col1 = $node.find('td').eq(1).text().trim().replace(/"/g, '""');
+                    let col2 = $node.find('td').eq(2).text().trim().replace(/"/g, '""');
+                    csv.push(`"${col0}","${col1}","${col2}"`);
                 });
-            };
-            setTimeout(applyButtonClasses, 100);
+
+                let blob = new Blob([csv.join('\n')], {
+                    type: 'text/csv;charset=utf-8;'
+                });
+                let link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'newsletter_subscribed_emails.csv';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+
+            // Native Excel (.xls) Export Handler
+            $('#btn-export-excel').on('click', function() {
+                let tableHtml =
+                    '<table border="1"><thead><tr><th>#</th><th>Date</th><th>Email</th></tr></thead><tbody>';
+                table.rows({
+                    search: 'applied'
+                }).every(function(rowIdx, tableLoop, rowLoop) {
+                    let $node = $(this.node());
+                    let col0 = rowLoop + 1;
+                    let col1 = $node.find('td').eq(1).text().trim();
+                    let col2 = $node.find('td').eq(2).text().trim();
+                    tableHtml += `<tr><td>${col0}</td><td>${col1}</td><td>${col2}</td></tr>`;
+                });
+                tableHtml += '</tbody></table>';
+
+                let blob = new Blob(['\uFEFF' + tableHtml], {
+                    type: 'application/vnd.ms-excel;charset=utf-8'
+                });
+                let link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'newsletter_subscribed_emails.xls';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+
+            // Mobile Pagination Clicks
+            $('#mobile-prev-btn').on('click', function(e) {
+                e.preventDefault();
+                table.page('previous').draw('page');
+            });
+
+            $('#mobile-next-btn').on('click', function(e) {
+                e.preventDefault();
+                table.page('next').draw('page');
+            });
+        });
+
+        // Search debounce
+        var emailSearchTimer;
+        $(document).on('input', '#emailSubscribedTable_filter input', function() {
+            var value = this.value;
+            var table = $('#emailSubscribedTable').DataTable();
+            clearTimeout(emailSearchTimer);
+            emailSearchTimer = setTimeout(function() {
+                table.search(value).draw();
+            }, 300);
         });
     </script>
 @endsection

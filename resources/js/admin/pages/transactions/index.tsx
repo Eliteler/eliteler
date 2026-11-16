@@ -131,7 +131,7 @@ export default function Transactions({ transactions, filters, counts }: Props) {
                                     <TableRow key={row.id}>
                                         <TableCell className="max-w-[240px] ps-4">
                                             <span className="block truncate text-sm font-medium">{row.plan}</span>
-                                            <span className="block truncate text-xs text-muted-foreground" title={formatDate(row.date, "dd MMM yyyy, HH:mm")}>
+                                            <span className="block truncate text-xs text-muted-foreground" title={formatDate(row.date)}>
                                                 {row.invoice ?? row.id} · {fromNow(row.date)}
                                             </span>
                                         </TableCell>

@@ -7,7 +7,8 @@ import { Tabs, TabsList, TabsTrigger } from "@admin/components/ui/tabs";
 import { cn } from "@admin/lib/utils";
 
 /**
- * Tabs with counts + debounced search, kept in the query string.
+ * Tabs with counts + debounced search, kept in the query string. The default tab (the one
+ * the page shows without ?tab, "all" unless the page says otherwise) is left out of the URL.
  */
 export function ListToolbar({
     routeName,
@@ -18,6 +19,7 @@ export function ListToolbar({
     placeholder,
     extraQuery = {},
     highlight,
+    defaultTab = "all",
     children,
 }: {
     routeName: string;
@@ -28,6 +30,7 @@ export function ListToolbar({
     placeholder: string;
     extraQuery?: Record<string, string>;
     highlight?: string;
+    defaultTab?: string;
     children?: ReactNode;
 }) {
     const [search, setSearch] = useState(initialSearch);
@@ -38,7 +41,7 @@ export function ListToolbar({
         const value = next.search ?? search;
         router.get(
             route(routeName),
-            { ...extraQuery, ...(nextTab !== "all" ? { tab: nextTab } : {}), ...(value ? { search: value } : {}) },
+            { ...extraQuery, ...(nextTab !== defaultTab ? { tab: nextTab } : {}), ...(value ? { search: value } : {}) },
             { preserveState: true, preserveScroll: true, replace: true },
         );
     };

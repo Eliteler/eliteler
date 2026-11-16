@@ -32,26 +32,7 @@ class VerificationController extends Controller
         ]);
 
         // Send Welcome Email
-        $emailTemplate = EmailTemplate::where('email_template_id', '584922675208')->first();
-
-        if ($emailTemplate && $emailTemplate->is_enabled == 1) {
-            try {
-                $message = [
-                    'status'         => '',
-                    'emailSubject'   => $emailTemplate->email_template_subject,
-                    'emailContent'   => $emailTemplate->email_template_content,
-                    'registeredName' => auth()->user()->name,
-                    'registeredEmail' => auth()->user()->email,
-                ];
-
-                // Send welcome email
-                Mail::to(auth()->user()->email)
-                    ->bcc(env('MAIL_FROM_ADDRESS'))
-                    ->send(new \App\Mail\AppointmentMail($message));
-            } catch (\Exception $e) {
-                Log::error('Email Sending Error : ' . $e->getMessage());
-            }
-        }
+        auth()->user()->sendWelcomeEmail();
 
         // Page redirect
         return redirect()->route('user.dashboard');

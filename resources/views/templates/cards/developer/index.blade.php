@@ -1496,7 +1496,7 @@
             @else
                 <!-- Include PWA modal -->
                 @if ($plan_details != null)
-                    {{-- Check PWA --}}
+                    {{-- Check PWA --}} 
                     @if ($plan_details['pwa'] == 1 && $business_card_details->is_enable_pwa == 1)
                         @include('vendor.laravelpwa.new_pwa_modal', [
                             'primary_color' => 'orange',
@@ -1509,7 +1509,7 @@
                 @if ($business_card_details != null)
                     {{-- Check Newsletter --}}
                     @if (!empty($business_card_details->is_newsletter_pop_active) && $business_card_details->is_newsletter_pop_active == 1)
-                        @include('templates.cards.includes.old_theme_newsletter_modal', [
+                        @include('templates.cards.includes.newsletter_modal', [
                             'primary_color' => 'orange'
                         ])
                     @endif

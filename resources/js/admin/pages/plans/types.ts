@@ -33,6 +33,7 @@ export const COMMON_FEATURES = [
     ["advanced_settings", "Advanced settings"],
     ["personalized_link", "Personalized link"],
     ["hide_branding", "Hide branding"],
+    ["advanced_analytics", "Visitor analytics"],
     ["free_setup", "Free setup"],
     ["free_support", "Free support"],
 ] as const;

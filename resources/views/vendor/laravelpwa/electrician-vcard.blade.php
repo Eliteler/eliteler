@@ -2,12 +2,13 @@
      PWA INSTALL PROMPT MODAL
 ============================================================ --}}
 
-<div id="pwaModal">
+{{-- Added style="display: none;" so it does not block the vCard content on initial load --}}
+<div id="pwaModal" style="display: none;">
 
     {{-- Backdrop — clicking closes modal --}}
-    <div class="pwa-backdrop" onclick="hidePwaPrompt()"></div>
+    <div class="pwa-backdrop" onclick="window.hidePwaPrompt()"></div>
 
-    <div class="pwa-box">
+    <div class="pwa-box" onclick="event.stopPropagation()">
 
         {{-- Drag Handle --}}
         <div class="pwa-handle"></div>
@@ -22,13 +23,14 @@
 
         {{-- Description --}}
         <p class="pwa-desc">
-            {{ __('Add this digital card to your home screen for instant access."') }}
+            {{ __('Add this digital card to your home screen for instant access.') }}
         </p>
 
         {{-- Buttons --}}
         <div class="pwa-btn-row">
-            <button class="pwa-btn-cancel" id="closeModal">{{ __('Cancel') }}</button>
-            <button class="pwa-btn-install" id="addToHomeScreenButton">
+            <button type="button" class="pwa-btn-cancel" id="closeModal"
+                onclick="window.hidePwaPrompt()">{{ __('Cancel') }}</button>
+            <button type="button" class="pwa-btn-install" id="addToHomeScreenButton" onclick="window.installPwa()">
                 <i class="fas fa-download"></i> {{ __('Install App') }}
             </button>
         </div>
@@ -39,30 +41,66 @@
 <script>
     "use strict";
 
-    document.addEventListener('DOMContentLoaded', () => {
-        const modal = document.getElementById('pwaModal');
-        const closeBtn = document.getElementById('closePwaModal');
-        const cancelBtn = document.getElementById('closeModal');
+    (function() {
+        // Variable to hold the browser prompt event
+        let deferredPrompt = null;
 
-        if (!modal) return;
-
-        // Show modal
-        window.showPwaPrompt = () => {
-            modal.classList.add('show');
-            modal.classList.remove('hidden', 'fadeOut');
+        // Show modal function
+        window.showPwaPrompt = function() {
+            const modal = document.getElementById('pwaModal');
+            if (modal) {
+                // Attach to body to prevent stacking context or layout issues
+                if (modal.parentElement !== document.body) {
+                    document.body.appendChild(modal);
+                }
+                modal.classList.add('show');
+                modal.classList.remove('hidden', 'fadeOut');
+                // Make modal visible explicitly
+                modal.style.setProperty('display', 'flex', 'important');
+            }
         };
 
-        // Hide modal — slide down animation then hide
-        window.hidePwaPrompt = () => {
-            modal.classList.add('fadeOut');
-            setTimeout(() => {
-                modal.classList.remove('show', 'fadeOut');
-            }, 260);
+        // Hide modal function
+        window.hidePwaPrompt = function() {
+            const modal = document.getElementById('pwaModal');
+            if (modal) {
+                modal.classList.add('fadeOut');
+                setTimeout(() => {
+                    modal.classList.remove('show', 'fadeOut');
+                    modal.classList.add('hidden');
+                    // Hide completely so vCard is fully interactable
+                    modal.style.setProperty('display', 'none', 'important');
+                }, 260);
+            }
         };
 
-        // Attach close events
-        closeBtn?.addEventListener('click', window.hidePwaPrompt);
-        cancelBtn?.addEventListener('click', window.hidePwaPrompt);
-    });
+        // Capture browser install prompt
+        window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            deferredPrompt = e;
+            // Only show modal when the browser is actually ready
+            window.showPwaPrompt();
+        });
+
+        // Trigger native install
+        window.installPwa = async function() {
+            if (!deferredPrompt) {
+                return;
+            }
+
+            deferredPrompt.prompt();
+            const {
+                outcome
+            } = await deferredPrompt.userChoice;
+            deferredPrompt = null;
+            window.hidePwaPrompt();
+        };
+
+        // Hide automatically on successful installation
+        window.addEventListener('appinstalled', function() {
+            window.hidePwaPrompt();
+            deferredPrompt = null;
+        });
+    })();
 </script>
 {{-- End PWA Install Prompt Modal --}}

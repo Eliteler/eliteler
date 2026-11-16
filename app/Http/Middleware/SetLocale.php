@@ -13,6 +13,7 @@
 namespace App\Http\Middleware;
 
 use Closure;
+use Throwable;
 
 class SetLocale
 {
@@ -25,7 +26,24 @@ class SetLocale
      */
     public function handle($request, Closure $next)
     {
-        $user = auth()->user();
+        $user = null;
+
+        // Safely resolve the authenticated user to prevent SessionGuard hash_equals TypeErrors on broken recaller cookies
+        try {
+            $user = auth()->user();
+        } catch (Throwable $e) {
+            $user = null;
+
+            // Invalidate and remove the corrupted remember-me cookie from the client
+            try {
+                if (method_exists(auth()->guard(), 'getRecallerName')) {
+                    cookie()->queue(cookie()->forget(auth()->guard()->getRecallerName()));
+                }
+            } catch (Throwable $cookieException) {
+                // Silently ignore cookie queue exceptions
+            }
+        }
+
         $languages = array_keys(config('app.languages'));
 
         if ($request->change_language && in_array($request->change_language, $languages)) {

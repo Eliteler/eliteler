@@ -517,6 +517,9 @@ class PreviewController extends Controller
                     $shareComponent['telegram'] = "https://telegram.me/share/url?text=$shareContent&url=$url";
                     $shareComponent['whatsapp'] = "https://api.whatsapp.com/send/?phone&text=$shareContent";
 
+                    // Old YouTube values (full URLs, channel links) render as embeds or link buttons
+                    $feature_details = normalize_card_youtube($business_card_details, $feature_details);
+
                     $datas = compact('card_details', 'plan_details', 'business_card_details', 'feature_details', 'service_details', 'product_details', 'galleries_details', 'testimonials', 'payment_details', 'appointmentEnabled', 'appointment_slots', 'business_hours', 'settings', 'shareComponent', 'shareContent', 'config', 'enquiry_button', 'iframes', 'customTexts', 'manifest', 'whatsAppNumberExists', 'service_booking_details');
 
                     try {

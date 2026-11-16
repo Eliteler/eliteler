@@ -99,11 +99,11 @@ class ServiceBookingController extends Controller
         $businessVcardUrl = url($businessDetails->card_url);
 
         // Appointment Date
-        $checkInDate = Carbon::parse($service->checkin_date)->format('d M Y'); // e.g., '2024-10-18'
+        $checkInDate = formatDateOnlyForUser($service->checkin_date, true); // e.g., '2024-10-18'
         $checkInTime = Carbon::parse($service->checkin_time)->format('H:i'); // e.g., '14:00'
 
         // CheckOut Date
-        $checkOutDate = Carbon::parse($service->checkout_date)->format('d M Y'); // e.g., '2024-10-19'
+        $checkOutDate = formatDateOnlyForUser($service->checkout_date, true); // e.g., '2024-10-19'
         $checkOutTime = Carbon::parse($service->checkout_time)->format('H:i'); // e.g., '14:00'
 
         // Combine date and time for start and end in ISO 8601 format
@@ -133,9 +133,9 @@ class ServiceBookingController extends Controller
                 'status' => "Confirmed",
                 'emailSubject' => $emailTemplateDetails->email_template_subject,
                 'emailContent' => $emailTemplateDetails->email_template_content,
-                'checkindate' => Carbon::parse($service->checkin_date)->format('d M Y'), // e.g., '2024-10-18'
+                'checkindate' => formatDateOnlyForUser($service->checkin_date, true), // e.g., '2024-10-18'
                 'checkintime' => Carbon::parse($service->checkin_time)->format('H:i'), // e.g., '14:00'
-                'checkoutdate' => Carbon::parse($service->checkout_date)->format('d M Y'), // e.g., '2024-10-18'
+                'checkoutdate' => formatDateOnlyForUser($service->checkout_date, true), // e.g., '2024-10-18'
                 'checkouttime' => Carbon::parse($service->checkout_time)->format('H:i'), // e.g., '14:00'
                 'servicebookingpageurl' => route('user.all.service.booking', $service->vcard_id),
                 'googleCalendarUrl' => $googleCalendarUrl,
@@ -148,7 +148,8 @@ class ServiceBookingController extends Controller
 
         try {
             Mail::to($service->email)->send(new \App\Mail\AppointmentMail($details));
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            report($e);
         }
 
         return redirect()->route('user.all.service.booking', $service->vcard_id)->with('success', trans('Service booking accepted successfully!'));
@@ -188,9 +189,9 @@ class ServiceBookingController extends Controller
                 'status' => "Rejected",
                 'emailSubject' => $emailTemplateDetails->email_template_subject,
                 'emailContent' => $emailTemplateDetails->email_template_content,
-                'checkindate' => Carbon::parse($service->checkin_date)->format('d M Y'), // e.g., '2024-10-18'
+                'checkindate' => formatDateOnlyForUser($service->checkin_date, true), // e.g., '2024-10-18'
                 'checkintime' => Carbon::parse($service->checkin_time)->format('H:i'), // e.g., '14:00'
-                'checkoutdate' => Carbon::parse($service->checkout_date)->format('d M Y'), // e.g., '2024-10-18'
+                'checkoutdate' => formatDateOnlyForUser($service->checkout_date, true), // e.g., '2024-10-18'
                 'checkouttime' => Carbon::parse($service->checkout_time)->format('H:i'), // e.g., '14:00'
                 'servicebookingpageurl' => route('user.all.service.booking', $service->vcard_id),
                 'googleCalendarUrl' => "",
@@ -203,7 +204,8 @@ class ServiceBookingController extends Controller
 
         try {
             Mail::to($service->email)->send(new \App\Mail\AppointmentMail($details));
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            report($e);
         }
 
         return redirect()->route('user.all.service.booking', $service->vcard_id)->with('success', trans('Service booking rejected successfully!'));
@@ -243,9 +245,9 @@ class ServiceBookingController extends Controller
                 'status' => "Completed",
                 'emailSubject' => $emailTemplateDetails->email_template_subject,
                 'emailContent' => $emailTemplateDetails->email_template_content,
-                'checkindate' => Carbon::parse($service->checkin_date)->format('d M Y'), // e.g., '2024-10-18'
+                'checkindate' => formatDateOnlyForUser($service->checkin_date, true), // e.g., '2024-10-18'
                 'checkintime' => Carbon::parse($service->checkin_time)->format('H:i'), // e.g., '14:00'
-                'checkoutdate' => Carbon::parse($service->checkout_date)->format('d M Y'), // e.g., '2024-10-18'
+                'checkoutdate' => formatDateOnlyForUser($service->checkout_date, true), // e.g., '2024-10-18'
                 'checkouttime' => Carbon::parse($service->checkout_time)->format('H:i'), // e.g., '14:00'
                 'servicebookingpageurl' => route('user.all.service.booking', $service->vcard_id),
                 'googleCalendarUrl' => "",
@@ -258,7 +260,8 @@ class ServiceBookingController extends Controller
 
         try {
             Mail::to($service->email)->send(new \App\Mail\AppointmentMail($details));
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            report($e);
         }
 
         return redirect()->route('user.all.service.booking', $service->vcard_id)->with('success', trans('Service booking completed successfully!'));

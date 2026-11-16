@@ -15,6 +15,7 @@ use App\AiCredit;
 use App\AiCreditsPlan;
 use App\AiCreditsTransaction;
 use App\AppliedCoupon;
+use App\Classes\InvoiceNumber;
 use App\Coupon;
 use App\Http\Controllers\Controller;
 use App\User;
@@ -24,7 +25,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
-use Plugins\Zapier\Helpers\ZapierHelper;
 
 class MercadoPagoController extends Controller
 {
@@ -245,13 +245,11 @@ class MercadoPagoController extends Controller
         $transactionDetails->payment_status = 'paid';
 
         // Invoice
-        $invoiceCount = AiCreditsTransaction::where("invoice_prefix", $config[15]->config_value)
-            ->count();
-
-        $invoiceNumber = $invoiceCount + 1;
-        $transactionDetails->invoice_prefix = $config[15]->config_value;
-        $transactionDetails->invoice_number = $invoiceNumber;
-        $transactionDetails->save();
+        $invoiceNumber = InvoiceNumber::assign('ai_credits_transactions', $config[15]->config_value, function ($invoiceNumber) use ($transactionDetails, $config) {
+            $transactionDetails->invoice_prefix = $config[15]->config_value;
+            $transactionDetails->invoice_number = $invoiceNumber;
+            $transactionDetails->save();
+        });
 
         // Plan Details
         $planDetails = AiCreditsPlan::where('ai_credits_plan_id', $transactionDetails->ai_credits_plan_id)
@@ -305,7 +303,8 @@ class MercadoPagoController extends Controller
         // Send Invoice
         try {
             Mail::to($encode['to_billing_email'])->send(new \App\Mail\SendEmailInvoice($details));
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            report($e);
         }
 
         // Fetch customer details safely

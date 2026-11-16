@@ -28,6 +28,8 @@ use Inertia\Inertia;
  */
 class PaymentMethodController extends Controller
 {
+    public const PER_PAGE = 16;
+
     public function __construct(private PaymentGatewayService $gateways)
     {
         $this->middleware('auth');
@@ -36,28 +38,40 @@ class PaymentMethodController extends Controller
     public function paymentMethods(Request $request)
     {
         $config = $this->gateways->config();
+        $search = trim((string) $request->query('search', ''));
 
-        $gateways = Gateway::where('status', '!=', -1)->orderBy('created_at')->get()->map(function ($gateway) use ($config) {
-            $id     = $gateway->payment_gateway_id;
-            $plugin = $gateway->plugin_id ? 'admin.plugin.' . strtolower($gateway->plugin_id) : null;
+        // Filter and paginate payment gateways with search support
+        $gateways = Gateway::where('status', '!=', -1)
+            ->when($search !== '', fn($q) => $q->where(fn($q) => $q
+                ->where('payment_gateway_name', 'like', "%{$search}%")
+                ->orWhere('display_name', 'like', "%{$search}%")
+                ->orWhere('plugin_id', 'like', "%{$search}%")))
+            ->orderBy('created_at')
+            ->paginate(self::PER_PAGE)
+            ->through(function ($gateway) use ($config) {
+                $id     = $gateway->payment_gateway_id;
+                $plugin = $gateway->plugin_id ? 'admin.plugin.' . strtolower($gateway->plugin_id) : null;
 
-            return [
-                'id'          => $id,
-                'name'        => $gateway->payment_gateway_name,
-                'displayName' => $gateway->display_name ?: $gateway->payment_gateway_name,
-                'logo'        => $gateway->payment_gateway_logo ? asset($gateway->payment_gateway_logo) : null,
-                'active'      => (int) $gateway->status === 1,
-                'plugin'      => (bool) $gateway->plugin_id,
-                'settingsUrl' => $plugin && Route::has($plugin) ? route($plugin) : null,
-                'fields'      => $this->gateways->form($id, $config),
-                'links'       => $this->gateways->links($id),
-                'configured'  => $gateway->plugin_id ? null : $this->gateways->configured($id, $config),
-                'testable'    => $this->gateways->hasFields($id) && $id !== PaymentGatewayService::BANK_TRANSFER,
-            ];
-        });
+                return [
+                    'id'          => $id,
+                    'name'        => $gateway->payment_gateway_name,
+                    'displayName' => $gateway->display_name ?: $gateway->payment_gateway_name,
+                    'logo'        => $gateway->payment_gateway_logo ? asset($gateway->payment_gateway_logo) : null,
+                    'active'      => (int) $gateway->status === 1,
+                    'plugin'      => (bool) $gateway->plugin_id,
+                    'settingsUrl' => $plugin && Route::has($plugin) ? route($plugin) : null,
+                    'fields'      => $this->gateways->form($id, $config),
+                    'links'       => $this->gateways->links($id),
+                    'configured'  => $gateway->plugin_id ? null : $this->gateways->configured($id, $config),
+                    'testable'    => $this->gateways->hasFields($id) && $id !== PaymentGatewayService::BANK_TRANSFER,
+                ];
+            })
+            ->withQueryString();
 
         return Inertia::render('payment-methods/index', [
             'gateways'    => $gateways,
+            'search'      => $search,
+            'activeCount' => Gateway::where('status', 1)->count(),
             'maxUploadKb' => (int) env('SIZE_LIMIT', 2048),
             'open'        => $request->query('edit'),
         ]);

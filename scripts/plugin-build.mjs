@@ -16,6 +16,7 @@ import {
     readFileSync,
     readdirSync,
     rmSync,
+    utimesSync,
     writeFileSync,
 } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -129,31 +130,62 @@ if (!base) {
     );
     process.exit(1);
 }
-execFileSync(
-    process.execPath,
-    [
-        resolve(root, "node_modules/vite/bin/vite.js"),
-        "build",
-        "--config",
-        "vite.plugin.config.ts",
-        "--logLevel",
-        "warn",
-    ],
-    {
-        cwd: root,
-        stdio: "inherit",
-        env: {
-            ...process.env,
-            PLUGIN: name,
-            PLUGIN_BASE: base,
+// Admin pages first (that pass empties dist/), then React customer pages
+// (resources/js/user → dist/user) and customer-panel widgets (resources/js/widgets → dist/widgets)
+for (const target of ["admin", "user", "widgets"]) {
+    if (
+        target !== "admin" &&
+        !existsSync(resolve(root, base, name, "resources/js", target))
+    ) {
+        continue;
+    }
+
+    execFileSync(
+        process.execPath,
+        [
+            resolve(root, "node_modules/vite/bin/vite.js"),
+            "build",
+            "--config",
+            "vite.plugin.config.ts",
+            "--logLevel",
+            "warn",
+        ],
+        {
+            cwd: root,
+            stdio: "inherit",
+            env: {
+                ...process.env,
+                PLUGIN: name,
+                PLUGIN_BASE: base,
+                PLUGIN_TARGET: target,
+            },
         },
-    },
-);
+    );
+}
+
+// The admin pass wrote dist/manifest.json first. Core copies dist/ to public/ when that file
+// changes (PluginPage::publish), so a page opened mid-build could copy half of it and keep it:
+// a fresh timestamp now makes that copy outdated, and the next request copies everything again.
+const distManifest = resolve(root, base, name, "dist/manifest.json");
+if (existsSync(distManifest)) {
+    const now = new Date();
+    utimesSync(distManifest, now, now);
+}
 
 console.log(`✓ Built ${base}/${name}/dist`);
 
 if (mode === "zip") {
-    const { version = "0" } = JSON.parse(readFileSync(resolve(root, base, name, base === "templates" ? "template.json" : "plugin.json"), "utf8"));
+    const { version = "0" } = JSON.parse(
+        readFileSync(
+            resolve(
+                root,
+                base,
+                name,
+                base === "templates" ? "template.json" : "plugin.json",
+            ),
+            "utf8",
+        ),
+    );
 
     const outDir = resolve(
         root,
@@ -185,6 +217,8 @@ if (mode === "zip") {
             ignore: [
                 "node_modules/**",
                 "**/node_modules/**",
+                "resources/js/**",
+                "**/resources/js/**",
                 "**/.DS_Store",
             ],
         });

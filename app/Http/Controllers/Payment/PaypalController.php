@@ -14,6 +14,7 @@ namespace App\Http\Controllers\Payment;
 
 use App\AppliedCoupon;
 use App\BusinessCard;
+use App\Classes\InvoiceNumber;
 use App\Coupon;
 use App\Http\Controllers\Controller;
 use App\Plan;
@@ -33,7 +34,6 @@ use PayPalCheckoutSdk\Core\SandboxEnvironment;
 use PayPalCheckoutSdk\Orders\OrdersCaptureRequest;
 use PayPalCheckoutSdk\Orders\OrdersCreateRequest;
 use PayPalHttp\HttpException;
-use Plugins\Zapier\Helpers\ZapierHelper;
 
 class PaypalController extends Controller
 {
@@ -247,15 +247,12 @@ class PaypalController extends Controller
                         $plan_validity->addDays($term_days);
                     }
 
-                    $invoice_count = Transaction::where("invoice_prefix", $config[15]->config_value)->count();
-                    $invoice_number = $invoice_count + 1;
-
-                    Transaction::where('transaction_id', $orderId)->update([
+                    $invoice_number = InvoiceNumber::assign('transactions', $config[15]->config_value, fn ($invoice_number) => Transaction::where('transaction_id', $orderId)->update([
                         'transaction_id' => $orderId,
                         'invoice_prefix' => $config[15]->config_value,
                         'invoice_number' => $invoice_number,
                         'payment_status' => 'SUCCESS',
-                    ]);
+                    ]));
 
                     if ($user_details) {
                         $user_details->plan_id              = $transactionDetails->plan_id;
@@ -298,7 +295,40 @@ class PaypalController extends Controller
 
                     try {
                         Mail::to($encode['to_billing_email'])->send(new \App\Mail\SendEmailInvoice($details));
-                    } catch (\Exception $e) {
+                    } catch (\Throwable $e) {
+                        report($e);
+                    }
+
+                    // Safely format user billing address
+                    $userAddress = $user_details->billing_address ?? '';
+                    $userCity = $user_details->billing_city ?? '';
+                    $userState = $user_details->billing_state ?? '';
+                    $userCountry = $user_details->billing_country ?? '';
+                    $userZip = $user_details->billing_zipcode ?? '';
+
+                    // Dispatch plan purchase event to Zapier
+                    if (function_exists('zapier_dispatch')) {
+                        zapier_dispatch('plan_purchase', [
+                            'transaction_id'  => $orderId ?? ($transactionDetails->transaction_id ?? 'TX_' . rand(100000, 999999)),
+                            'invoice_id'      => ($config[15]->config_value ?? 'INV-') . $invoice_number,
+                            'user_name'       => $user_details->name ?? ($encode['to_billing_name'] ?? 'Customer'),
+                            'user_address'    => !empty($userAddress) ? $userAddress : ($encode['to_billing_address'] ?? ''),
+                            'user_city'       => !empty($userCity) ? $userCity : ($encode['to_billing_city'] ?? ''),
+                            'user_state'      => !empty($userState) ? $userState : ($encode['to_billing_state'] ?? ''),
+                            'user_country'    => !empty($userCountry) ? $userCountry : ($encode['to_billing_country'] ?? ''),
+                            'user_zip'        => !empty($userZip) ? $userZip : ($encode['to_billing_zipcode'] ?? ''),
+                            'user_email'      => $user_details->email ?? ($encode['to_billing_email'] ?? ''),
+                            'user_phone'      => ($user_details->country_code ?? '') . ($user_details->mobile_number ?? ($encode['to_billing_phone'] ?? '')),
+                            'user_tax_number' => $user_details->vat_number ?? $user_details->tax_number ?? ($encode['to_vat_number'] ?? ''),
+                            'plan_name'       => $plan_data->plan_name ?? $plan_data->name ?? ($transactionDetails->desciption ?? ($transactionDetails->description ?? 'Subscription Plan')),
+                            'quantity'        => 1,
+                            'currency'        => $transactionDetails->transaction_currency ?? ($config[1]->config_value ?? 'USD'),
+                            'amount'          => (float) ($transactionDetails->transaction_amount ?? ($encode['invoice_amount'] ?? 0)),
+                            'payment_method'  => 'PayPal',
+                            'payment_status'  => 'paid',
+                            'invoice_date'    => now()->toDateString(),
+                            'purchased_at'    => now()->toDateTimeString(),
+                        ]);
                     }
 
                     return redirect()->route('user.plans')->with('success', trans('Plan activation success!'));
@@ -357,15 +387,12 @@ class PaypalController extends Controller
                         }
                     }
 
-                    $invoice_count = Transaction::where("invoice_prefix", $config[15]->config_value)->count();
-                    $invoice_number = $invoice_count + 1;
-
-                    Transaction::where('transaction_id', $orderId)->update([
+                    $invoice_number = InvoiceNumber::assign('transactions', $config[15]->config_value, fn ($invoice_number) => Transaction::where('transaction_id', $orderId)->update([
                         'transaction_id' => $orderId,
                         'invoice_prefix' => $config[15]->config_value,
                         'invoice_number' => $invoice_number,
                         'payment_status' => 'SUCCESS',
-                    ]);
+                    ]));
 
                     if ($user_details) {
                         $user_details->plan_id              = $transactionDetails->plan_id;
@@ -409,7 +436,8 @@ class PaypalController extends Controller
 
                     try {
                         Mail::to($encode['to_billing_email'])->send(new \App\Mail\SendEmailInvoice($details));
-                    } catch (\Exception $e) {
+                    } catch (\Throwable $e) {
+                        report($e);
                     }
 
                     // Decode invoice details safely

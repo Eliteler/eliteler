@@ -5,6 +5,7 @@ namespace App\Services\Admin;
 use App\BusinessCard;
 use App\CustomDomainRequest;
 use App\EmailTemplate;
+use App\Support\Zapier;
 use App\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -96,19 +97,13 @@ class CustomDomainService
 
     private function dispatchZapier(CustomDomainRequest $domainRequest, int $status, ?User $customer, ?BusinessCard $card): void
     {
-        if (! function_exists('zapier_dispatch')) {
-            return;
-        }
-
-        zapier_dispatch('custom_domain', [
-            'request_id'      => $domainRequest->custom_domain_request_id,
-            'user_name'       => $customer->name ?? 'Customer',
-            'user_email'      => $customer->email ?? '',
-            'card_name'       => $card->title ?? 'Business Card',
-            'previous_domain' => $domainRequest->previous_domain ?? '',
-            'current_domain'  => $domainRequest->current_domain ?? '',
-            'status'          => self::ZAPIER_STATUS[$status],
-            'requested_at'    => now()->toDateTimeString(),
-        ]);
+        Zapier::customDomain(
+            $customer,
+            $domainRequest->custom_domain_request_id,
+            $card->title ?? null,
+            $domainRequest->previous_domain ?? '',
+            $domainRequest->current_domain ?? '',
+            self::ZAPIER_STATUS[$status],
+        );
     }
 }

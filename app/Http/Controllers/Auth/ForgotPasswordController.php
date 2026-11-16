@@ -88,8 +88,10 @@ class ForgotPasswordController extends Controller
 
         try {
             Mail::to($user->email)->send(new \App\Mail\AppointmentMail($details));
-        } catch (\Exception $e) {
-            return back()->with('email', $e->getMessage());
+        } catch (\Throwable $e) {
+            report($e);
+
+            return back()->with('email', trans('Unable to send the password reset email. Please try again later.'));
         }
 
         return back()->with('status', trans('We have emailed your password reset link!'));

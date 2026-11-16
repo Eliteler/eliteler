@@ -13,6 +13,7 @@
 namespace App\Http\Middleware;
 
 use App\Support\Admin\AdminPermissions;
+use App\Support\Plugins\PluginExtensions;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -29,6 +30,12 @@ class UserPagePermission
     {
         // Fetch current user's details
         $user = Auth::user();
+
+        // Plugin permissions (plugin.json "permissions") aren't stored for every admin yet
+        $plugin = array_intersect($permissions, array_keys(PluginExtensions::permissions()));
+        if ($user && $plugin && array_filter(array_intersect_key(AdminPermissions::for($user), array_flip($plugin)))) {
+            return $next($request);
+        }
 
         // Check if user exists and has permissions
         if ($user && $user->permissions) {

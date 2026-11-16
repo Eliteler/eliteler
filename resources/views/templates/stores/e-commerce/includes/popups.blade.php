@@ -13,7 +13,6 @@
         align-items: center !important;
         justify-content: center !important;
         background: rgba(15, 23, 42, 0.75) !important;
-        /* 75% Deep Slate Dark Dimming */
         backdrop-filter: blur(2px) !important;
         z-index: 1055 !important;
     }
@@ -25,7 +24,12 @@
         visibility: hidden !important;
     }
 
+    /* Fixed responsive width matching both modals */
     .modal-dialog {
+        width: 90% !important;
+        max-width: 440px !important;
+        /* Perfect width matching newsletter modal */
+        margin: 1.75rem auto !important;
         z-index: 1060 !important;
         position: relative !important;
         pointer-events: auto !important;
@@ -33,51 +37,70 @@
 
     /* Modal Card Architecture */
     .popup-modal-card {
-        border-radius: 24px !important;
+        border-radius: 28px !important;
         border: 1px solid #edf2f7 !important;
         overflow: hidden !important;
         box-shadow: 0 25px 60px rgba(0, 0, 0, 0.45) !important;
         position: relative !important;
+        width: 100% !important;
+        padding: 34px 28px !important;
+        /* Balanced comfortable padding */
+    }
+
+    /* Close Button positioned cleanly away from badges */
+    .popup-close-btn {
+        position: absolute !important;
+        top: 18px !important;
+        right: 18px !important;
+        z-index: 20 !important;
+        opacity: 0.7;
+        transition: opacity 0.2s ease;
+    }
+
+    .popup-close-btn:hover {
+        opacity: 1;
     }
 
     /* Newsletter Mail Badge */
     .popup-icon-badge {
-        width: 72px;
-        height: 72px;
+        width: 76px;
+        height: 76px;
         border-radius: 50%;
         background-color: #e8f2fd !important;
         color: #206bc4 !important;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin: 0 auto 1rem auto;
+        margin: 0 auto 1.25rem auto;
         border: 4px solid #ffffff;
         box-shadow: 0 4px 15px rgba(32, 107, 196, 0.15);
     }
 
+    /* Information Pop Image */
     .popup-logo-img {
-        max-height: 90px;
-        max-width: 140px;
+        max-height: 120px;
+        max-width: 160px;
         object-fit: contain;
-        border-radius: 12px;
-        margin-bottom: 1rem;
+        border-radius: 16px;
+        margin: 10px auto 16px auto;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
     }
 
     /* Primary CTA Button (Strictly Store Blue) */
     .popup-btn-primary {
-        height: 46px !important;
-        border-radius: 12px !important;
+        height: 48px !important;
+        border-radius: 14px !important;
         background-color: #206bc4 !important;
         color: #ffffff !important;
         font-weight: 700 !important;
-        font-size: 14px !important;
+        font-size: 15px !important;
         box-shadow: 0 4px 15px rgba(32, 107, 196, 0.3) !important;
         transition: all 0.25s ease !important;
         border: none !important;
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
-        gap: 6px !important;
+        gap: 8px !important;
         width: 100% !important;
         text-decoration: none !important;
         cursor: pointer !important;
@@ -89,11 +112,11 @@
     }
 
     .popup-input-field {
-        height: 46px !important;
-        border-radius: 12px !important;
-        font-size: 13px !important;
+        height: 48px !important;
+        border-radius: 14px !important;
+        font-size: 14px !important;
         border: 1.5px solid #e2e8f0 !important;
-        padding-left: 42px !important;
+        padding-left: 44px !important;
     }
 
     .popup-input-field:focus {
@@ -108,13 +131,14 @@
         justify-content: center !important;
         gap: 6px !important;
         line-height: 1 !important;
-        padding: 6px 14px !important;
-        font-size: 12px !important;
+        padding: 7px 16px !important;
+        font-size: 12.5px !important;
         font-weight: 700 !important;
         border-radius: 9999px !important;
         background-color: #e8f2fd !important;
         color: #206bc4 !important;
         border: 1px solid #cfe2ff !important;
+        margin-bottom: 8px;
     }
 
     .special-offer-pill i {
@@ -141,13 +165,14 @@
 
         <div class="modal fade" id="informationModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="false"
             onclick="if(event.target === this) closeModalDirectly('informationModal');">
-            <div class="modal-dialog modal-md modal-dialog-centered" role="document">
-                <div class="modal-content popup-modal-card bg-white position-relative p-4 p-md-5 text-center">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content popup-modal-card bg-white position-relative text-center">
 
-                    <button type="button" class="btn-close position-absolute top-0 end-0 m-3 shadow-none"
+                    {{-- Properly aligned close button --}}
+                    <button type="button" class="btn-close popup-close-btn shadow-none"
                         onclick="closeModalDirectly('informationModal')" aria-label="Close"></button>
 
-                    <div class="mb-3 text-center">
+                    <div class="mb-2 text-center">
                         <span class="special-offer-pill">
                             <i class="ti ti-sparkles"></i>
                             <span>{{ __('Special Offer') }}</span>
@@ -161,8 +186,8 @@
                         </div>
                     @endif
 
-                    <h2 class="fs-1 fw-bold text-dark mb-1">{{ __($title) }}</h2>
-                    <p class="text-secondary fs-4 max-w-sm mx-auto mb-4">{{ __($desc) }}</p>
+                    <h2 class="fs-2 fw-bold text-dark mb-1">{{ __($title) }}</h2>
+                    <p class="text-secondary fs-5 mx-auto mb-4" style="max-width: 320px;">{{ __($desc) }}</p>
 
                     <a href="{{ $button_url }}" target="_blank" onclick="closeModalDirectly('informationModal')"
                         class="popup-btn-primary">
@@ -189,18 +214,18 @@
             empty(request()->getQueryString()))
         <div class="modal fade" id="newsletterModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="false"
             onclick="if(event.target === this) closeModalDirectly('newsletterModal');">
-            <div class="modal-dialog modal-md modal-dialog-centered" role="document">
-                <div class="modal-content popup-modal-card bg-white position-relative p-4 p-md-5 text-center">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content popup-modal-card bg-white position-relative text-center">
 
-                    <button type="button" class="btn-close position-absolute top-0 end-0 m-3 shadow-none"
+                    <button type="button" class="btn-close popup-close-btn shadow-none"
                         onclick="closeModalDirectly('newsletterModal')" aria-label="Close"></button>
 
                     <div class="popup-icon-badge">
                         <i class="ti ti-mail-opened fs-1"></i>
                     </div>
 
-                    <h2 class="fs-1 fw-bold text-dark mb-1">{{ __('Subscribe to our newsletter') }}</h2>
-                    <p class="text-secondary fs-4 max-w-sm mx-auto mb-4">
+                    <h2 class="fs-2 fw-bold text-dark mb-1">{{ __('Subscribe to our newsletter') }}</h2>
+                    <p class="text-secondary fs-5 mx-auto mb-4" style="max-width: 320px;">
                         {{ __('Get exclusive deals, new arrivals, and special promotions delivered right to your inbox.') }}
                     </p>
 

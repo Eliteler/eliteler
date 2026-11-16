@@ -14,13 +14,16 @@ namespace App\Http\Controllers\Admin;
 
 use App\EmailTemplate;
 use App\Http\Controllers\Controller;
+use App\Support\Plugins\PluginExtensions;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Mews\Purifier\Facades\Purifier;
 
 /**
- * System email templates (email_templates). The 25 rows ship with the app
- * and are only edited here, never created or deleted. Content is HTML
+ * System email templates (email_templates). The 25 core rows ship with the app;
+ * plugins may add their own (e.g. TicketingSystem's "ticketing-*" rows) with their
+ * placeholders in plugin.json "email_shortcodes". Rows are only edited here, never
+ * created or deleted. Content is HTML
  * cleaned with Purifier; ":placeholders" are filled in when the email is sent.
  */
 class EmailTemplateController extends Controller
@@ -78,7 +81,8 @@ class EmailTemplateController extends Controller
                 'content' => (string) $template->email_template_content,
                 'enabled' => (bool) $template->is_enabled,
             ],
-            'shortcodes' => collect(self::SHORTCODES)->map(fn ($codes, $group) => [
+            // Plus the groups of installed plugins (plugin.json "email_shortcodes")
+            'shortcodes' => collect(self::SHORTCODES + PluginExtensions::emailShortcodes())->map(fn ($codes, $group) => [
                 'group' => __($group),
                 'codes' => collect($codes)->map(fn ($sample, $code) => ['code' => $code, 'sample' => $sample ?? config('app.name')])->values(),
             ])->values(),

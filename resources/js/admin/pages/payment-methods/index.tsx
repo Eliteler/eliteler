@@ -1,7 +1,19 @@
-import { Head, router, useForm } from "@inertiajs/react";
+import { Head, Link, router, useForm } from "@inertiajs/react";
 import axios from "axios";
-import { CheckCircle2, ExternalLink, Loader2, MoreHorizontal, Plug, Settings2, Trash2, Wallet, XCircle } from "lucide-react";
-import { useState } from "react";
+import {
+    CheckCircle2,
+    ExternalLink,
+    Loader2,
+    MoreHorizontal,
+    Plug,
+    Search,
+    Settings2,
+    Trash2,
+    Wallet,
+    X,
+    XCircle,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { ConfirmDialog } from "@admin/components/confirm-dialog";
@@ -13,11 +25,28 @@ import { PageHeader } from "@admin/components/page-header";
 import { Badge } from "@admin/components/ui/badge";
 import { Button } from "@admin/components/ui/button";
 import { Card, CardContent, CardFooter } from "@admin/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@admin/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@admin/components/ui/dropdown-menu";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@admin/components/ui/dialog";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@admin/components/ui/dropdown-menu";
 import { Input } from "@admin/components/ui/input";
 import { Label } from "@admin/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@admin/components/ui/select";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@admin/components/ui/select";
 import { Switch } from "@admin/components/ui/switch";
 import { Textarea } from "@admin/components/ui/textarea";
 import { cn } from "@admin/lib/utils";
@@ -45,15 +74,80 @@ type Gateway = {
     testable: boolean;
 };
 
-type Props = { gateways: Gateway[]; maxUploadKb: number; open: string | null };
+type PaginationLinks = {
+    url: string | null;
+    label: string;
+    active: boolean;
+};
 
-export default function PaymentMethods({ gateways, maxUploadKb, open }: Props) {
+type Paginated<T> = {
+    data: T[];
+    links: PaginationLinks[];
+    current_page: number;
+    last_page: number;
+    from: number | null;
+    to: number | null;
+    total: number;
+};
+
+type Props = {
+    gateways: Paginated<Gateway> | Gateway[];
+    search: string;
+    maxUploadKb: number;
+    open: string | null;
+    activeCount?: number;
+};
+
+export default function PaymentMethods({
+    gateways,
+    search: initialSearch,
+    maxUploadKb,
+    open,
+    activeCount,
+}: Props) {
     const { t } = useTranslation();
-    const [editing, setEditing] = useState<Gateway | null>(gateways.find((gateway) => gateway.id === open) ?? null);
+    const [search, setSearch] = useState(initialSearch ?? "");
+    const firstRender = useRef(true);
+
+    // Safely extract gateway list whether paginated or plain array
+    const gatewayList: Gateway[] = Array.isArray(gateways)
+        ? gateways
+        : gateways && Array.isArray(gateways.data)
+          ? gateways.data
+          : [];
+
+    // Extract pagination metadata
+    const pagination = Array.isArray(gateways) ? null : gateways;
+
+    const [editing, setEditing] = useState<Gateway | null>(
+        gatewayList.find((gateway) => gateway.id === open) ?? null,
+    );
     const [deleting, setDeleting] = useState<Gateway | null>(null);
     const [busy, setBusy] = useState<string | null>(null);
 
-    const setStatus = (gateway: Gateway, status: "activated" | "deactivated" | "deleted") =>
+    const visit = (value: string) => {
+        router.get(
+            route("admin.payment.methods"),
+            value ? { search: value } : {},
+            { preserveState: true, preserveScroll: true, replace: true },
+        );
+    };
+
+    // Debounce search input
+    useEffect(() => {
+        if (firstRender.current) {
+            firstRender.current = false;
+            return;
+        }
+        const timer = window.setTimeout(() => visit(search), 300);
+        return () => window.clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [search]);
+
+    const setStatus = (
+        gateway: Gateway,
+        status: "activated" | "deactivated" | "deleted",
+    ) =>
         router.post(
             route("admin.delete.payment.method"),
             { id: gateway.id, status },
@@ -67,103 +161,273 @@ export default function PaymentMethods({ gateways, maxUploadKb, open }: Props) {
             },
         );
 
-    const activeCount = gateways.filter((gateway) => gateway.active).length;
+    const totalCount = pagination ? pagination.total : gatewayList.length;
+    const availableCount =
+        activeCount ?? gatewayList.filter((gateway) => gateway.active).length;
 
     return (
         <>
             <Head title={t("Payment gateways")} />
             <div className="flex flex-1 flex-col gap-6 p-4 lg:p-6">
+                {/* Search input placed neatly in PageHeader actions on the right */}
                 <PageHeader
                     title={t("Payment gateways")}
-                    description={t(":count of :total gateways are available at checkout.")
-                        .replace(":count", String(activeCount))
-                        .replace(":total", String(gateways.length))}
-                    breadcrumbs={[{ label: t("Dashboard"), href: route("admin.dashboard") }, { label: t("Payment gateways") }]}
+                    description={t(
+                        ":count of :total gateways are available at checkout.",
+                    )
+                        .replace(":count", String(availableCount))
+                        .replace(":total", String(totalCount))}
+                    breadcrumbs={[
+                        {
+                            label: t("Dashboard"),
+                            href: route("admin.dashboard"),
+                        },
+                        { label: t("Payment gateways") },
+                    ]}
+                    actions={
+                        <div className="relative w-full sm:w-72">
+                            <Search className="pointer-events-none absolute start-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                                value={search}
+                                onChange={(event) =>
+                                    setSearch(event.target.value)
+                                }
+                                placeholder={t("Search gateways...")}
+                                className="ps-8"
+                            />
+                        </div>
+                    }
                 />
 
-                {gateways.length === 0 ? (
-                    <EmptyState icon={Wallet} title={t("No payment gateways")} description={t("Payment gateways appear here once installed.")} />
+                {gatewayList.length === 0 ? (
+                    <EmptyState
+                        icon={Wallet}
+                        title={
+                            search
+                                ? t("No payment gateways match your search")
+                                : t("No payment gateways")
+                        }
+                        description={
+                            search
+                                ? undefined
+                                : t(
+                                      "Payment gateways appear here once installed.",
+                                  )
+                        }
+                        action={
+                            search ? (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        setSearch("");
+                                        visit("");
+                                    }}
+                                >
+                                    <X />
+                                    {t("Clear search")}
+                                </Button>
+                            ) : undefined
+                        }
+                    />
                 ) : (
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                        {gateways.map((gateway) => (
-                            <Card key={gateway.id} className={cn("gap-0 py-0", !gateway.active && "bg-muted/30")}>
-                                <CardContent className="flex flex-1 items-start gap-3 p-4">
-                                    <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-white p-1.5">
-                                        {gateway.logo ? (
-                                            <img src={gateway.logo} alt="" className={cn("max-h-full max-w-full object-contain", !gateway.active && "opacity-60")} />
-                                        ) : (
-                                            <Wallet className="size-5 text-muted-foreground" />
-                                        )}
-                                    </div>
-                                    <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                                        <span className="truncate font-medium" title={gateway.displayName}>
-                                            {gateway.displayName}
-                                        </span>
-                                        <div className="flex flex-wrap gap-1">
-                                            {gateway.plugin && (
-                                                <Badge variant="outline">
-                                                    <Plug />
-                                                    {t("Plugin")}
-                                                </Badge>
-                                            )}
-                                            {gateway.configured === true && (
-                                                <Badge variant="secondary">
-                                                    <CheckCircle2 className="text-success" />
-                                                    {t("Set up")}
-                                                </Badge>
-                                            )}
-                                            {gateway.configured === false && (
-                                                <Badge variant="secondary">
-                                                    <XCircle className="text-warning" />
-                                                    {t("Needs setup")}
-                                                </Badge>
+                    <>
+                        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                            {gatewayList.map((gateway) => (
+                                <Card
+                                    key={gateway.id}
+                                    className={cn(
+                                        "gap-0 py-0",
+                                        !gateway.active && "bg-muted/30",
+                                    )}
+                                >
+                                    <CardContent className="flex flex-1 items-start gap-3 p-4">
+                                        <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-white p-1.5">
+                                            {gateway.logo ? (
+                                                <img
+                                                    src={gateway.logo}
+                                                    alt=""
+                                                    className={cn(
+                                                        "max-h-full max-w-full object-contain",
+                                                        !gateway.active &&
+                                                            "opacity-60",
+                                                    )}
+                                                />
+                                            ) : (
+                                                <Wallet className="size-5 text-muted-foreground" />
                                             )}
                                         </div>
-                                    </div>
-                                    <Switch
-                                        checked={gateway.active}
-                                        disabled={busy === gateway.id}
-                                        onCheckedChange={(checked) => setStatus(gateway, checked ? "activated" : "deactivated")}
-                                        aria-label={gateway.active ? t("Hide from checkout") : t("Show at checkout")}
-                                        title={gateway.active ? t("Shown at checkout") : t("Hidden from checkout")}
-                                    />
-                                </CardContent>
-                                <CardFooter className="flex gap-2 border-t p-3">
-                                    <Button variant="outline" size="sm" className="flex-1" onClick={() => setEditing(gateway)}>
-                                        <Settings2 />
-                                        {t("Configure")}
-                                    </Button>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon-sm" aria-label={t("Actions")}>
-                                                <MoreHorizontal />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem variant="destructive" onSelect={() => setDeleting(gateway)}>
-                                                <Trash2 />
-                                                {t("Delete")}
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </CardFooter>
-                            </Card>
-                        ))}
-                    </div>
+                                        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                                            <span
+                                                className="truncate font-medium"
+                                                title={gateway.displayName}
+                                            >
+                                                {gateway.displayName}
+                                            </span>
+                                            <div className="flex flex-wrap gap-1">
+                                                {gateway.plugin && (
+                                                    <Badge variant="outline">
+                                                        <Plug />
+                                                        {t("Plugin")}
+                                                    </Badge>
+                                                )}
+                                                {gateway.configured ===
+                                                    true && (
+                                                    <Badge variant="secondary">
+                                                        <CheckCircle2 className="text-success" />
+                                                        {t("Set up")}
+                                                    </Badge>
+                                                )}
+                                                {gateway.configured ===
+                                                    false && (
+                                                    <Badge variant="secondary">
+                                                        <XCircle className="text-warning" />
+                                                        {t("Needs setup")}
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <Switch
+                                            checked={gateway.active}
+                                            disabled={busy === gateway.id}
+                                            onCheckedChange={(checked) =>
+                                                setStatus(
+                                                    gateway,
+                                                    checked
+                                                        ? "activated"
+                                                        : "deactivated",
+                                                )
+                                            }
+                                            aria-label={
+                                                gateway.active
+                                                    ? t("Hide from checkout")
+                                                    : t("Show at checkout")
+                                            }
+                                            title={
+                                                gateway.active
+                                                    ? t("Shown at checkout")
+                                                    : t("Hidden from checkout")
+                                            }
+                                        />
+                                    </CardContent>
+                                    <CardFooter className="flex gap-2 border-t p-3">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="flex-1"
+                                            onClick={() => setEditing(gateway)}
+                                        >
+                                            <Settings2 />
+                                            {t("Configure")}
+                                        </Button>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon-sm"
+                                                    aria-label={t("Actions")}
+                                                >
+                                                    <MoreHorizontal />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem
+                                                    variant="destructive"
+                                                    onSelect={() =>
+                                                        setDeleting(gateway)
+                                                    }
+                                                >
+                                                    <Trash2 />
+                                                    {t("Delete")}
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </CardFooter>
+                                </Card>
+                            ))}
+                        </div>
+
+                        {/* Pagination navigation controls */}
+                        {pagination && pagination.last_page > 1 && (
+                            <div className="flex flex-col items-center justify-between gap-4 border-t pt-4 sm:flex-row">
+                                <p className="text-sm text-muted-foreground">
+                                    {t("Showing :from to :to of :total results")
+                                        .replace(
+                                            ":from",
+                                            String(pagination.from ?? 0),
+                                        )
+                                        .replace(
+                                            ":to",
+                                            String(pagination.to ?? 0),
+                                        )
+                                        .replace(
+                                            ":total",
+                                            String(pagination.total),
+                                        )}
+                                </p>
+                                <div className="flex flex-wrap items-center gap-1">
+                                    {pagination.links.map((link, index) => {
+                                        if (!link.url) {
+                                            return (
+                                                <span
+                                                    key={index}
+                                                    className="inline-flex h-9 min-w-9 items-center justify-center rounded-md border border-transparent px-3 text-sm text-muted-foreground/50 opacity-50"
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: link.label,
+                                                    }}
+                                                />
+                                            );
+                                        }
+                                        return (
+                                            <Link
+                                                key={index}
+                                                href={link.url}
+                                                preserveScroll
+                                                className={cn(
+                                                    "inline-flex h-9 min-w-9 items-center justify-center rounded-md border px-3 text-sm font-medium transition-colors",
+                                                    link.active
+                                                        ? "border-primary bg-primary text-primary-foreground"
+                                                        : "border-input bg-background hover:bg-muted text-foreground",
+                                                )}
+                                                dangerouslySetInnerHTML={{
+                                                    __html: link.label,
+                                                }}
+                                            />
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
 
-            <Dialog open={editing !== null} onOpenChange={(isOpen) => !isOpen && setEditing(null)}>
+            <Dialog
+                open={editing !== null}
+                onOpenChange={(isOpen) => !isOpen && setEditing(null)}
+            >
                 <DialogContent className="max-h-[92svh] overflow-y-auto sm:max-w-lg">
-                    {editing && <GatewayForm key={editing.id} gateway={editing} maxUploadKb={maxUploadKb} onClose={() => setEditing(null)} />}
+                    {editing && (
+                        <GatewayForm
+                            key={editing.id}
+                            gateway={editing}
+                            maxUploadKb={maxUploadKb}
+                            onClose={() => setEditing(null)}
+                        />
+                    )}
                 </DialogContent>
             </Dialog>
 
             <ConfirmDialog
                 open={deleting !== null}
                 onOpenChange={(isOpen) => !isOpen && setDeleting(null)}
-                title={t("Delete “:name”?").replace(":name", deleting?.displayName ?? "")}
-                description={t("It's removed from this list and from checkout. Past payments are not affected.")}
+                title={t("Delete “:name”?").replace(
+                    ":name",
+                    deleting?.displayName ?? "",
+                )}
+                description={t(
+                    "It's removed from this list and from checkout. Past payments are not affected.",
+                )}
                 confirmLabel={t("Delete")}
                 destructive
                 processing={busy === deleting?.id}
@@ -173,20 +437,37 @@ export default function PaymentMethods({ gateways, maxUploadKb, open }: Props) {
     );
 }
 
-function GatewayForm({ gateway, maxUploadKb, onClose }: { gateway: Gateway; maxUploadKb: number; onClose: () => void }) {
+function GatewayForm({
+    gateway,
+    maxUploadKb,
+    onClose,
+}: {
+    gateway: Gateway;
+    maxUploadKb: number;
+    onClose: () => void;
+}) {
     const { t } = useTranslation();
     const form = useForm<Record<string, string | File | null>>({
         display_name: gateway.displayName,
         logo: null,
-        ...Object.fromEntries(gateway.fields.map((field) => [field.name, field.value])),
+        ...Object.fromEntries(
+            gateway.fields.map((field) => [field.name, field.value]),
+        ),
     });
     const [testing, setTesting] = useState(false);
-    const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
+    const [result, setResult] = useState<{
+        success: boolean;
+        message: string;
+    } | null>(null);
     const errors = form.errors as Record<string, string | undefined>;
 
     const submit = (event: React.FormEvent) => {
         event.preventDefault();
-        form.post(route("admin.update.payment.method", gateway.id), { forceFormData: true, preserveScroll: true, onSuccess: onClose });
+        form.post(route("admin.update.payment.method", gateway.id), {
+            forceFormData: true,
+            preserveScroll: true,
+            onSuccess: onClose,
+        });
     };
 
     const test = () => {
@@ -194,9 +475,22 @@ function GatewayForm({ gateway, maxUploadKb, onClose }: { gateway: Gateway; maxU
         setResult(null);
         const { logo: _logo, display_name: _name, ...credentials } = form.data;
         axios
-            .post(route("admin.test.payment.connection", gateway.id), credentials)
-            .then(({ data }) => setResult({ success: !!data.success, message: data.message ?? "" }))
-            .catch(() => setResult({ success: false, message: t("Couldn't run the test. Please try again.") }))
+            .post(
+                route("admin.test.payment.connection", gateway.id),
+                credentials,
+            )
+            .then(({ data }) =>
+                setResult({
+                    success: !!data.success,
+                    message: data.message ?? "",
+                }),
+            )
+            .catch(() =>
+                setResult({
+                    success: false,
+                    message: t("Couldn't run the test. Please try again."),
+                }),
+            )
             .finally(() => setTesting(false));
     };
 
@@ -206,18 +500,26 @@ function GatewayForm({ gateway, maxUploadKb, onClose }: { gateway: Gateway; maxU
                 <DialogTitle>{gateway.name}</DialogTitle>
                 <DialogDescription>
                     {gateway.plugin
-                        ? t("Change how this gateway appears at checkout. Its keys are managed in the plugin settings.")
-                        : t("Change how this gateway appears at checkout and enter its API keys.")}
+                        ? t(
+                              "Change how this gateway appears at checkout. Its keys are managed in the plugin settings.",
+                          )
+                        : t(
+                              "Change how this gateway appears at checkout and enter its API keys.",
+                          )}
                 </DialogDescription>
             </DialogHeader>
 
             <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
                 <div className="flex flex-col gap-2">
-                    <Label htmlFor="display_name">{t("Name at checkout")}</Label>
+                    <Label htmlFor="display_name">
+                        {t("Name at checkout")}
+                    </Label>
                     <Input
                         id="display_name"
                         value={String(form.data.display_name ?? "")}
-                        onChange={(event) => form.setData("display_name", event.target.value)}
+                        onChange={(event) =>
+                            form.setData("display_name", event.target.value)
+                        }
                         aria-invalid={!!errors.display_name}
                         required
                     />
@@ -253,13 +555,25 @@ function GatewayForm({ gateway, maxUploadKb, onClose }: { gateway: Gateway; maxU
                         <div key={field.name} className="flex flex-col gap-2">
                             <Label htmlFor={field.name}>{field.label}</Label>
                             {field.type === "select" ? (
-                                <Select value={String(form.data[field.name] ?? "")} onValueChange={(value) => form.setData(field.name, value)}>
-                                    <SelectTrigger id={field.name} className="w-full" aria-invalid={!!errors[field.name]}>
+                                <Select
+                                    value={String(form.data[field.name] ?? "")}
+                                    onValueChange={(value) =>
+                                        form.setData(field.name, value)
+                                    }
+                                >
+                                    <SelectTrigger
+                                        id={field.name}
+                                        className="w-full"
+                                        aria-invalid={!!errors[field.name]}
+                                    >
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {field.options?.map((option) => (
-                                            <SelectItem key={option.value} value={option.value}>
+                                            <SelectItem
+                                                key={option.value}
+                                                value={option.value}
+                                            >
                                                 {option.label}
                                             </SelectItem>
                                         ))}
@@ -269,19 +583,41 @@ function GatewayForm({ gateway, maxUploadKb, onClose }: { gateway: Gateway; maxU
                                 <Textarea
                                     id={field.name}
                                     value={String(form.data[field.name] ?? "")}
-                                    onChange={(event) => form.setData(field.name, event.target.value)}
-                                    placeholder={t("e.g., bank name, account name, account number, IFSC/SWIFT")}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            field.name,
+                                            event.target.value,
+                                        )
+                                    }
+                                    placeholder={t(
+                                        "e.g., bank name, account name, account number, IFSC/SWIFT",
+                                    )}
                                     className="min-h-28"
                                     aria-invalid={!!errors[field.name]}
                                 />
                             ) : (
                                 <Input
                                     id={field.name}
-                                    type={field.type === "secret" ? "password" : "text"}
+                                    type={
+                                        field.type === "secret"
+                                            ? "password"
+                                            : "text"
+                                    }
                                     autoComplete="off"
                                     value={String(form.data[field.name] ?? "")}
-                                    onChange={(event) => form.setData(field.name, event.target.value)}
-                                    placeholder={field.type === "secret" && field.saved ? t("Saved. Leave blank to keep it.") : ""}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            field.name,
+                                            event.target.value,
+                                        )
+                                    }
+                                    placeholder={
+                                        field.type === "secret" && field.saved
+                                            ? t(
+                                                  "Saved. Leave blank to keep it.",
+                                              )
+                                            : ""
+                                    }
                                     aria-invalid={!!errors[field.name]}
                                     className="font-mono text-sm"
                                 />
@@ -294,15 +630,30 @@ function GatewayForm({ gateway, maxUploadKb, onClose }: { gateway: Gateway; maxU
                         <div key={link.url} className="flex flex-col gap-2">
                             <Label>{link.label}</Label>
                             <div className="flex items-center gap-2">
-                                <Input value={link.url} readOnly className="font-mono text-xs" />
+                                <Input
+                                    value={link.url}
+                                    readOnly
+                                    className="font-mono text-xs"
+                                />
                                 <CopyButton value={link.url} />
                             </div>
                         </div>
                     ))}
 
                     {result && (
-                        <p className={cn("flex items-start gap-2 text-sm", result.success ? "text-success" : "text-destructive")}>
-                            {result.success ? <CheckCircle2 className="mt-0.5 size-4 shrink-0" /> : <XCircle className="mt-0.5 size-4 shrink-0" />}
+                        <p
+                            className={cn(
+                                "flex items-start gap-2 text-sm",
+                                result.success
+                                    ? "text-success"
+                                    : "text-destructive",
+                            )}
+                        >
+                            {result.success ? (
+                                <CheckCircle2 className="mt-0.5 size-4 shrink-0" />
+                            ) : (
+                                <XCircle className="mt-0.5 size-4 shrink-0" />
+                            )}
                             {result.message}
                         </p>
                     )}
@@ -311,7 +662,12 @@ function GatewayForm({ gateway, maxUploadKb, onClose }: { gateway: Gateway; maxU
 
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-between">
                 {gateway.testable ? (
-                    <Button type="button" variant="outline" onClick={test} disabled={testing}>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={test}
+                        disabled={testing}
+                    >
                         {testing && <Loader2 className="animate-spin" />}
                         {t("Test connection")}
                     </Button>
@@ -323,7 +679,9 @@ function GatewayForm({ gateway, maxUploadKb, onClose }: { gateway: Gateway; maxU
                         {t("Cancel")}
                     </Button>
                     <Button type="submit" disabled={form.processing}>
-                        {form.processing && <Loader2 className="animate-spin" />}
+                        {form.processing && (
+                            <Loader2 className="animate-spin" />
+                        )}
                         {t("Save")}
                     </Button>
                 </div>

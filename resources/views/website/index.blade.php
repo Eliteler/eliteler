@@ -483,6 +483,12 @@
                                             {{ __('Hide Branding') }}</p>
                                     </li>
                                     <li class="flex items-center font-heading font-medium text-base text-gray-400">
+                                        <i class="ti ti-{{ __($plan->advanced_analytics == '1' ? 'check' : 'x') }} mr-2.5 text-{{ $plan->advanced_analytics == '1' || $plan->recommended == 1 ? 'green-500' : 'gray-400' }}"
+                                            style="font-size: 20px;"></i>
+                                        <p class="text-{{ $plan->recommended == 1 ? 'white' : 'black' }}">
+                                            {{ __('Visitor Analytics') }}</p>
+                                    </li>
+                                    <li class="flex items-center font-heading font-medium text-base text-gray-400">
                                         <i class="ti ti-{{ __($plan->free_setup == '1' ? 'check' : 'x') }} mr-2.5 text-{{ $plan->free_setup == '1' || $plan->recommended == 1 ? 'green-500' : 'gray-400' }}"
                                             style="font-size: 20px;"></i>
                                         <p class="text-{{ $plan->recommended == 1 ? 'white' : 'black' }}">

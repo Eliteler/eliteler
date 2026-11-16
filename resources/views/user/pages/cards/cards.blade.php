@@ -135,6 +135,8 @@
         @include('user.includes.footer')
     </div>
 
+    @include('user.pages.cards.includes.upgrade-analytics-modal')
+
     {{-- Status Toggle Confirmation Modal --}}
     <div class="modal modal-blur fade" id="deleteModal" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
@@ -165,7 +167,8 @@
                                     data-bs-dismiss="modal">{{ __('Cancel') }}</button>
                             </div>
                             <div class="col">
-                                <a data-method="post" class="btn btn-primary w-100" id="plan_id">{{ __('Yes, Proceed') }}</a>
+                                <a data-method="post" class="btn btn-primary w-100"
+                                    id="plan_id">{{ __('Yes, Proceed') }}</a>
                             </div>
                         </div>
                     </div>
@@ -225,7 +228,8 @@
                                     data-bs-dismiss="modal">{{ __('Cancel') }}</button>
                             </div>
                             <div class="col">
-                                <a data-method="post" class="btn btn-primary w-100" id="duplicate_id">{{ __('Yes, Duplicate') }}</a>
+                                <a data-method="post" class="btn btn-primary w-100"
+                                    id="duplicate_id">{{ __('Yes, Duplicate') }}</a>
                             </div>
                         </div>
                     </div>
@@ -264,7 +268,8 @@
                                     data-bs-dismiss="modal">{{ __('Cancel') }}</button>
                             </div>
                             <div class="col">
-                                <a data-method="post" class="btn btn-danger w-100" id="delete_id">{{ __('Yes, Delete') }}</a>
+                                <a data-method="post" class="btn btn-danger w-100"
+                                    id="delete_id">{{ __('Yes, Delete') }}</a>
                             </div>
                         </div>
                     </div>
@@ -305,7 +310,7 @@
 
                     // Empty state displays
                     emptyTable: `
-                        <div class="text-center py-4">
+                        <div class="d-flex flex-column align-items-center justify-content-center text-center w-100">
                             <div class="empty-state-icon">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icon-tabler-id">
                                     <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
@@ -321,7 +326,7 @@
                         </div>
                     `,
                     zeroRecords: `
-                        <div class="text-center py-4">
+                        <div class="d-flex flex-column align-items-center justify-content-center text-center w-100">
                             <div class="empty-state-icon" style="background-color: var(--tblr-danger-lt); color: var(--tblr-danger);">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icon-tabler-id">
                                     <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
@@ -399,13 +404,29 @@
                     $table.closest('.table-responsive').removeClass('placeholder-glow');
                     $table.find('tbody tr td.dataTables_empty').attr('colspan', total_columns);
 
-                    // Assign data-label attributes for mobile card rendering
+                    // Check if table has records or is empty
+                    const rowsCount = api.rows({
+                        page: 'current'
+                    }).data().length;
+
+                    if (rowsCount === 0) {
+                        // Apply centering classes when empty
+                        $table.addClass('is-table-empty');
+                        $table.find('tbody tr').addClass('empty-table-row');
+                    } else {
+                        // Remove empty state classes when data exists
+                        $table.removeClass('is-table-empty');
+                        $table.find('tbody tr').removeClass('empty-table-row');
+                    }
+
+                    // Assign data-label attributes only to valid data rows
                     var headers = [];
                     $table.find('thead th').each(function() {
                         headers.push($(this).text().trim());
                     });
 
-                    $table.find('tbody tr').each(function() {
+                    // Exclude empty-state row from data-label assignment
+                    $table.find('tbody tr:not(.empty-table-row)').each(function() {
                         $(this).find('td').each(function(index) {
                             if (headers[index]) {
                                 $(this).attr('data-label', headers[index]);
@@ -415,9 +436,6 @@
 
                     // Manage mobile pagination state
                     const pageInfo = api.page.info();
-                    const rowsCount = api.rows({
-                        page: 'current'
-                    }).data().length;
 
                     if (pageInfo.pages <= 1 || rowsCount === 0) {
                         $('#custom-mobile-pagination').addClass('d-none').removeClass('d-flex');
@@ -481,6 +499,8 @@
         // Trigger QR Code Modal
         function updateQr(url) {
             "use strict";
+            // Scans of this code are counted as "QR" in visitor analytics
+            url = url + (url.indexOf('?') === -1 ? '?' : '&') + 'src=qr';
             $("#openQR").modal("show");
             if ($.fn.qrcode) {
                 $("#status_message_qr").empty().qrcode({

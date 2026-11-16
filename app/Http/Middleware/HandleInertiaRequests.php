@@ -4,6 +4,8 @@ namespace App\Http\Middleware;
 
 use App\Setting;
 use App\Support\Admin\AdminSharedProps;
+use App\Support\Impersonation;
+use App\Support\Plugins\PluginExtensions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -59,10 +61,18 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        // The admin's date format and timezone (Settings → General), the same ones the PHP
+        // date helpers use (userDateSettings), so React and server-made dates match
+        $dates = userDateSettings();
+
         if (self::isAdminRequest($request)) {
             return [
                 ...parent::share($request),
                 ...AdminSharedProps::for($request),
+                // "Back to admin" banner while a super admin is signed in as a staff member
+                'impersonation' => Impersonation::banner(),
+                'date_time_format' => $dates['format'],
+                'timezone'         => $dates['timezone'],
             ];
         }
 
@@ -180,6 +190,16 @@ class HandleInertiaRequests extends Middleware
                     ...(new Ziggy)->toArray(),
                     'location' => $request->url(),
                 ],
+                // "Back to admin" banner while an admin is signed in as this customer
+                'impersonation' => Impersonation::banner(),
+                'date_time_format' => $dates['format'],
+                'timezone'         => $dates['timezone'],
+                // What plugins add to this panel (App\Support\Plugins\PluginExtensions)
+                'plugins' => fn() => $request->user() ? [
+                    'nav'     => PluginExtensions::sidebarItems('user'),
+                    'header'  => PluginExtensions::headerItems(),
+                    'widgets' => PluginExtensions::widgets(),
+                ] : ['nav' => [], 'header' => [], 'widgets' => []],
             ];
         } else {
             return [];

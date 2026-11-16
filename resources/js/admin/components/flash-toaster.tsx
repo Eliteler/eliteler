@@ -18,9 +18,21 @@ export function FlashToaster({ initialFlash, dir }: { initialFlash: SharedProps[
     useEffect(() => {
         showFlash(initialFlash);
 
-        return router.on("success", (event) => {
-            showFlash((event.detail.page.props as unknown as SharedProps).flash);
+        // A partial reload (polling with "only") gets no fresh flash: the page keeps the
+        // previous one, so showing it again would repeat an old toast
+        let staleFlash = false;
+        const offStart = router.on("start", (event) => {
+            const { only, except } = event.detail.visit;
+            staleFlash = (only.length > 0 && !only.includes("flash")) || except.includes("flash");
         });
+        const offSuccess = router.on("success", (event) => {
+            if (!staleFlash) showFlash((event.detail.page.props as unknown as SharedProps).flash);
+        });
+
+        return () => {
+            offStart();
+            offSuccess();
+        };
         // Initial flash only once; later flashes arrive through router events.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);

@@ -5,7 +5,7 @@
         {{-- Close Button --}}
         <button type="button" class="sl-modal-close" id="closePwaModal" aria-label="{{ __('Close') }}">
             <i class="fas fa-times"></i>
-        </button>
+        </button> 
 
         {{-- Mobile Handle Indicator --}}
         <div class="w-10 h-1 rounded bg-[#5F6F52]/30 mx-auto mb-1"></div>

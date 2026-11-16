@@ -58,8 +58,8 @@ class ProductController extends Controller
     // Save Products
     public function saveProducts(Request $request, $id)
     {
-        // Queries
-        $business_card = BusinessCard::where('card_id', $id)->first();
+        // Queries (only the user's own store)
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
 
         // Check business card
         if ($business_card == null) {
@@ -76,7 +76,8 @@ class ProductController extends Controller
                 // Check products limit
                 if (count($request->badge) <= $plan_details->no_of_store_products) {
 
-                    // Delete previous products
+                    // Delete previous products and their variations
+                    DB::table('store_product_variants')->whereIn('product_id', StoreProduct::where('card_id', $id)->select('product_id'))->delete();
                     StoreProduct::where('card_id', $id)->delete();
 
                     // Check dynamic fields

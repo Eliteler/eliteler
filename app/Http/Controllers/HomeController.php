@@ -739,7 +739,8 @@ class HomeController extends Controller
             // Send mail
             Mail::to(config('mail.from.address'))
                 ->send(new ContactFormMail($request->all()));
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            report($e);
             return back()->with('error', __('We are sorry, but your message could not be sent.'));
         }
 

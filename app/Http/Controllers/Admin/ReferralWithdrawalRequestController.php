@@ -21,6 +21,8 @@ use Inertia\Inertia;
 
 class ReferralWithdrawalRequestController extends Controller
 {
+    public const PER_PAGE = 10;
+
     private const TABS = [
         'pending'     => ReferralService::PENDING,
         'accepted'    => ReferralService::ACCEPTED,
@@ -46,14 +48,15 @@ class ReferralWithdrawalRequestController extends Controller
         $base = fn() => ReferralWithdrawRequest::where('referral_withdraw_requests.status', 1)
             ->leftJoin('users', 'users.user_id', '=', 'referral_withdraw_requests.user_id')
             ->when($search !== '', fn($q) => $q->where(fn($q) => $q
-                    ->where('users.name', 'like', "%{$search}%")->orWhere('users.email', 'like', "%{$search}%")
-                    ->orWhere('referral_withdraw_requests.referral_withdraw_request_id', 'like', "%{$search}%")));
+                ->where('users.name', 'like', "%{$search}%")->orWhere('users.email', 'like', "%{$search}%")
+                ->orWhere('referral_withdraw_requests.referral_withdraw_request_id', 'like', "%{$search}%")));
 
+        // Paginate requests with standard per-page limit
         $page = $base()
             ->when(self::TABS[$tab] !== null, fn($q) => $q->where('referral_withdraw_requests.payment_status', self::TABS[$tab]))
             ->select('referral_withdraw_requests.*', 'users.name', 'users.email')
             ->orderByDesc('referral_withdraw_requests.id')
-            ->paginate(20)
+            ->paginate(self::PER_PAGE)
             ->withQueryString();
 
         $userIds = $page->getCollection()->pluck('user_id')->unique()->values()->all();

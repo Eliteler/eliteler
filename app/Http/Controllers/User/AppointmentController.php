@@ -118,7 +118,8 @@ class AppointmentController extends Controller
 
         try {
             Mail::to($bookedAppointment->email)->send(new \App\Mail\AppointmentMail($details));
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            report($e);
             // Handle the exception (e.g., log the error)
         }
 
@@ -186,7 +187,8 @@ class AppointmentController extends Controller
 
         try {
             Mail::to($bookedAppointment->email)->send(new \App\Mail\AppointmentMail($details));
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            report($e);
             // Handle exception (e.g., log the error)
         }
 
@@ -231,7 +233,8 @@ class AppointmentController extends Controller
 
         try {
             Mail::to($bookedAppointment->email)->send(new \App\Mail\AppointmentMail($details));
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            report($e);
         }
 
         return redirect()->back()->with('success', trans('Booking canceled, and the customer has been notified via email'));
@@ -275,7 +278,8 @@ class AppointmentController extends Controller
 
         try {
             Mail::to($bookedAppointment->email)->send(new \App\Mail\AppointmentMail($details));
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            report($e);
         }
 
         return redirect()->back()->with('success', trans('Booking completed, and the customer has been notified via email'));

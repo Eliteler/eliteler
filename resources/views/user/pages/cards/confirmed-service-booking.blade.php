@@ -1,115 +1,84 @@
 @extends('user.layouts.index', ['header' => true, 'nav' => true, 'demo' => true, 'settings' => $settings])
 
-{{-- Custom CSS (Responsive pagination alignment and search layout rules) --}}
+{{-- Custom CSS --}}
 @section('css')
-    <link href="{{ asset('plugins/datatable/css/dataTables.bootstrap5.min.css') }}" rel="stylesheet">
-    <link href="{{ asset('plugins/datatable/css/buttons.bootstrap5.min.css') }}" rel="stylesheet">
+    {{-- Main Digital Business Cards CSS --}}
+    <link href="{{ asset('css/all-digital-business-cards.css') }}" rel="stylesheet">
 
     <style>
-        .btn {
-            border-radius: 12px !important;
-            font-size: small !important;
-            padding: 10px 18px !important;
+        /* Empty state alignment fix for responsive mobile card view */
+        .responsive-card-table tbody td.dataTables_empty::before {
+            display: none !important;
+            content: "" !important;
         }
 
-        div.dt-container div.dt-search input {
-            height: 40px !important;
-            font-size: 14px !important;
+        .responsive-card-table tbody td.dataTables_empty {
+            text-align: center !important;
+            width: 100% !important;
+            padding: 2.5rem 1rem !important;
         }
 
-        /* Desktop Mode: Force pagination alignment cleanly to the right side */
+        /* Desktop specific styling */
         @media (min-width: 768px) {
-            .dataTables_wrapper .dataTables_paginate {
-                display: flex !important;
-                justify-content: flex-end !important;
-                margin-left: auto !important;
-                /* Pulls pagination cleanly to the right boundary margin */
-                width: auto !important;
-            }
-
-            /* Overwrite Tabler's global flex centering on list elements with high CSS specificity */
-            .dataTables_wrapper .pagination,
-            .dataTables_wrapper .dataTables_paginate .pagination,
-            .dataTables_wrapper div.dataTables_paginate ul.pagination {
-                display: flex !important;
-                justify-content: flex-end !important;
-                margin: 0 !important;
+            .booking-notes-col {
+                max-width: 160px;
+                white-space: normal;
+                word-break: break-word;
             }
         }
 
-        /* Mobile Mode: Stack column structures, center pagination, and optimize search inputs */
+        /* Mobile card view alignment optimization */
         @media (max-width: 767.98px) {
 
-            /* Hide the DataTables informational statistics summary exclusively on mobile viewports */
-            .dataTables_wrapper .dataTables_info {
-                display: none !important;
-            }
-
-            /* Transform the bottom wrapper from row-flex to column-flex */
-            div.dataTables_wrapper .d-flex.justify-content-between {
-                flex-direction: column !important;
-                justify-content: center !important;
-                text-align: center !important;
-                gap: 12px !important;
-            }
-
-            div.dataTables_wrapper .dataTables_paginate {
-                display: flex !important;
-                justify-content: center !important;
-                float: none !important;
-                margin-top: 1rem !important;
+            .responsive-card-table tbody tr:has(.dataTables_empty),
+            .responsive-card-table tbody tr.odd:has(.dataTables_empty) {
+                display: block !important;
                 width: 100% !important;
-                padding: 0 0.5rem !important;
+                background: transparent !important;
+                box-shadow: none !important;
+                border: none !important;
             }
 
-            div.dataTables_wrapper .dataTables_paginate ul.pagination {
-                display: flex !important;
-                flex-wrap: wrap !important;
-                /* Wraps button arrays smoothly on narrow viewports to avoid overflow clipping */
-                justify-content: center !important;
-                padding-left: 0 !important;
-                list-style: none !important;
-                gap: 4px !important;
+            .responsive-card-table tbody td.dataTables_empty {
+                display: block !important;
+                width: 100% !important;
+            }
+
+            .responsive-card-table tbody td.dataTables_empty>div {
                 margin: 0 auto !important;
-            }
-
-            div.dataTables_wrapper .dataTables_paginate ul.pagination .page-item .page-link {
-                padding: 4px 8px !important;
-                /* Compact mobile touch targets */
-                font-size: 11px !important;
-                border-radius: 4px !important;
-            }
-
-            /* Enforce full-width block alignment for the search input on mobile viewports */
-            .dataTables_wrapper .dataTables_filter {
                 width: 100% !important;
-                margin-top: 0.5rem !important;
-                text-align: left !important;
             }
 
-            .dataTables_wrapper .dataTables_filter input {
+            /* Ensure all rows take 100% width on mobile view */
+            .responsive-card-table tbody td {
+                display: flex !important;
+                justify-content: space-between !important;
+                align-items: center !important;
                 width: 100% !important;
-                display: block !important;
-                margin-left: 0 !important;
+                max-width: 100% !important;
+                padding: 0.65rem 1rem !important;
             }
 
-            /* Enable touch horizontal scrolling inside table boundaries */
-            .table-responsive {
-                overflow-x: auto !important;
-                -webkit-overflow-scrolling: touch !important;
-                border-bottom: 1px solid rgba(101, 109, 119, 0.16);
+            .responsive-card-table tbody td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: var(--tblr-muted, #667382);
+                text-align: left;
+                flex-shrink: 0;
+                margin-right: 1rem;
             }
 
-            div.dt-container div.dt-search input {
-                width: 100% !important;
-                display: block !important;
-                margin-left: 0 !important;
-                height: 40px !important;
-                font-size: 14px !important;
+            /* Align values cleanly to the right edge */
+            .responsive-card-table tbody td>* {
+                text-align: right !important;
+                margin-left: auto;
+                max-width: 65% !important;
+                word-break: break-word;
             }
 
-            #serviceBookingTable_info {
-                display: none !important;
+            /* Actions dropdown trigger alignment */
+            .responsive-card-table tbody td[data-label="Actions"] .btn-action {
+                padding: 4px !important;
             }
         }
     </style>
@@ -117,233 +86,285 @@
 
 @section('content')
     <div class="page-wrapper">
-        <!-- Page Header (Wraps the inner container-fluid) -->
+        <!-- Page Header -->
         <div class="page-header d-print-none">
             <div class="container-fluid">
                 <div class="row g-2 align-items-center">
-                    <!-- Hierarchical Breadcrumb Trail -->
-                    <nav aria-label="breadcrumb">
-                        <ol class="breadcrumb mb-2">
-                            <li class="breadcrumb-item">
-                                <a href="{{ route('user.dashboard') }}" class="text-secondary text-decoration-none">
-                                    {{ __('Dashboard') }}
-                                </a>
-                            </li>
-                            <li class="breadcrumb-item">
-                                <a href="{{ route('user.cards') }}" class="text-secondary text-decoration-none">
-                                    {{ __('Digital Business Cards') }}
-                                </a>
-                            </li>
-                            <li class="breadcrumb-item active" aria-current="page">
-                                {{ __('Service Bookings') }}
-                            </li>
-                        </ol>
-                    </nav>
+                    <!-- Hierarchical Breadcrumbs -->
+                    <div class="col-12">
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb breadcrumb-arrows">
+                                <li class="breadcrumb-item">
+                                    <a href="{{ route('user.dashboard') }}" class="text-secondary text-decoration-none">
+                                        {{ __('Dashboard') }}
+                                    </a>
+                                </li>
+                                <li class="breadcrumb-item">
+                                    <a href="{{ route('user.cards') }}" class="text-secondary text-decoration-none">
+                                        {{ __('Digital Business Cards') }}
+                                    </a>
+                                </li>
+                                <li class="breadcrumb-item active fw-semibold" aria-current="page">
+                                    {{ __('Service Bookings') }}
+                                </li>
+                            </ol>
+                        </nav>
+                    </div>
+
+                    <!-- Page Title & Help Subtitle -->
                     <div class="col">
-                        <h2 class="page-title">
+                        <h2 class="page-title text-reset fw-bold">
                             {{ __('Service Bookings') }}
                         </h2>
-
-                        <!-- Descriptive Help Subtitle -->
                         <div class="text-muted mt-1">
                             {{ __('Configure appointments, schedule check-ins, record reservation requests, and export records data.') }}
                         </div>
                     </div>
 
-                    {{-- Custom Buttons Destination Element --}}
-                    <div class="col-auto text-end">
-                        <div id="customButtonsContainer" class="d-inline-flex gap-2"></div>
+                    <!-- Export Action Buttons in Page Header -->
+                    <div class="col-auto ms-auto d-print-none">
+                        <div class="d-inline-flex align-items-center gap-2">
+                            <button type="button" id="btn-export-csv"
+                                class="btn btn-primary btn-icon-only d-inline-flex align-items-center shadow-sm px-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-file-text me-1"
+                                    width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                                    fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+                                    <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" />
+                                    <path d="M9 9l1 0" />
+                                    <path d="M9 13l6 0" />
+                                    <path d="M9 17l6 0" />
+                                </svg>
+                                <span>{{ __('CSV') }}</span>
+                            </button>
+
+                            <button type="button" id="btn-export-excel"
+                                class="btn btn-primary btn-icon-only d-inline-flex align-items-center shadow-sm px-3">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                    class="icon icon-tabler icon-tabler-file-spreadsheet me-1" width="18" height="18"
+                                    viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                    <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+                                    <path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" />
+                                    <path d="M8 11h8v7h-8z" />
+                                    <path d="M8 15h8" />
+                                    <path d="M11 11v7" />
+                                </svg>
+                                <span>{{ __('Excel') }}</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
+        <!-- Page Body -->
         <div class="page-body">
             <div class="container-fluid">
-                {{-- Failed Alert --}}
+                {{-- Flash Notifications --}}
                 @if (Session::has('failed'))
                     <div class="alert alert-important alert-danger alert-dismissible mb-3 border-0 shadow-sm"
                         role="alert">
-                        <div class="d-flex">
+                        <div class="d-flex align-items-center gap-2">
                             <div>{{ Session::get('failed') }}</div>
                         </div>
                         <a class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="close"></a>
                     </div>
                 @endif
 
-                {{-- Success Alert --}}
                 @if (Session::has('success'))
                     <div class="alert alert-important alert-success alert-dismissible mb-3 border-0 shadow-sm"
                         role="alert">
-                        <div class="d-flex">
+                        <div class="d-flex align-items-center gap-2">
                             <div>{{ Session::get('success') }}</div>
                         </div>
                         <a class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="close"></a>
                     </div>
                 @endif
 
-                <div class="row row-deck row-cards">
-                    <div class="col-12">
-                        <!-- Upgraded to Borderless Shadowed Card Wrapper (Clean design-time padding) -->
-                        <div class="card border-0 shadow-sm p-3">
-                            <!-- Removed design-time table-responsive wrapper so Datatables elements stay static -->
-                            <table class="table card-table table-vcenter text-nowrap" id="serviceBookingTable">
-                                <thead>
+                <!-- Cards Data Table Wrapper -->
+                <div class="cards-table-card">
+                    <div class="table-responsive">
+                        <table class="table card-table table-vcenter table-hover text-nowrap responsive-card-table"
+                            id="serviceBookingTable">
+                            <thead>
+                                <tr>
+                                    <th class="w-1">{{ __('#') }}</th>
+                                    <th>{{ __('Service Booking ID') }}</th>
+                                    <th>{{ __('Name') }}</th>
+                                    <th>{{ __('Email') }}</th>
+                                    <th>{{ __('Mobile Number') }}</th>
+                                    <th>{{ __('Address') }}</th>
+                                    <th>{{ __('Check-in') }}</th>
+                                    <th>{{ __('Check-out') }}</th>
+                                    <th class="text-center">{{ __('Guests') }}</th>
+                                    <th>{{ __('Notes') }}</th>
+                                    <th>{{ __('Booking Status') }}</th>
+                                    <th class="w-1 text-end">{{ __('Actions') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($serviceBooking as $booking)
                                     <tr>
-                                        <th class="text-start">{{ __('#') }}</th>
-                                        <th class="text-start">{{ __('Service Booking ID') }}</th>
-                                        <th>{{ __('Name') }}</th>
-                                        <th>{{ __('Email') }}</th>
-                                        <th>{{ __('Mobile Number') }}</th>
-                                        <th>{{ __('Address') }}</th>
-                                        <th>{{ __('Check-in') }}</th>
-                                        <th>{{ __('Check-out') }}</th>
-                                        <th class="text-start">{{ __('Number of Guests') }}</th>
-                                        <th>{{ __('Notes') }}</th>
-                                        <th>{{ __('Booking Status') }}</th>
-                                        <th class="w-1 text-end">{{ __('Actions') }}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($serviceBooking as $booking)
-                                        <tr>
-                                            <td class="text-start">{{ $loop->iteration }}</td>
+                                        <td class="rc-hide">{{ $loop->iteration }}</td>
 
-                                            <td class="text-start text-uppercase fw-bold text-dark">
+                                        <td>
+                                            <span class="text-uppercase fw-bold text-reset">
                                                 {{ $booking->service_booking_id }}
-                                            </td>
+                                            </span>
+                                        </td>
 
-                                            <td class="text-capitalize fw-bold text-dark">
-                                                @if (!empty($booking->name))
-                                                    {{ $booking->name }}
-                                                @else
-                                                    —
-                                                @endif
-                                            </td>
+                                        <td>
+                                            <span class="text-capitalize fw-semibold text-reset">
+                                                {{ !empty($booking->name) ? $booking->name : '—' }}
+                                            </span>
+                                        </td>
 
-                                            <td>
-                                                @if (!empty($booking->email))
-                                                    <a href="mailto:{{ trim($booking->email) }}"
-                                                        class="text-decoration-none fw-bold">{{ $booking->email }}</a>
-                                                @else
-                                                    —
-                                                @endif
-                                            </td>
+                                        <td>
+                                            @if (!empty($booking->email))
+                                                <a href="mailto:{{ trim($booking->email) }}"
+                                                    class="text-decoration-none fw-semibold">{{ $booking->email }}</a>
+                                            @else
+                                                <span class="text-muted">—</span>
+                                            @endif
+                                        </td>
 
-                                            <td>
-                                                @if (!empty($booking->phone))
-                                                    <a href="tel:{{ preg_replace('/\s+/', '', $booking->phone) }}"
-                                                        class="text-decoration-none fw-bold">{{ $booking->phone }}</a>
-                                                @else
-                                                    —
-                                                @endif
-                                            </td>
+                                        <td>
+                                            @if (!empty($booking->phone))
+                                                <a href="tel:{{ preg_replace('/\s+/', '', $booking->phone) }}"
+                                                    class="text-decoration-none fw-semibold">{{ $booking->phone }}</a>
+                                            @else
+                                                <span class="text-muted">—</span>
+                                            @endif
+                                        </td>
 
-                                            <td>
-                                                @if (!empty($booking->address))
-                                                    {{ $booking->address }}
-                                                @else
-                                                    -
-                                                @endif
-                                            </td>
+                                        <td>
+                                            <span
+                                                class="text-secondary">{{ !empty($booking->address) ? $booking->address : '—' }}</span>
+                                        </td>
 
-                                            <td>
-                                                <span
-                                                    class="fw-bold text-secondary">{{ formatDateForUser($booking->checkin) }}</span>
-                                            </td>
+                                        <td>
+                                            <span
+                                                class="text-secondary fw-semibold">{{ formatDateForUser($booking->checkin) }}</span>
+                                        </td>
 
-                                            <td>
-                                                <span
-                                                    class="fw-bold text-secondary">{{ formatDateForUser($booking->checkout) }}</span>
-                                            </td>
+                                        <td>
+                                            <span
+                                                class="text-secondary fw-semibold">{{ formatDateForUser($booking->checkout) }}</span>
+                                        </td>
 
-                                            <td class="text-center fw-bold">
-                                                {{ $booking->number_of_guests }}
-                                            </td>
+                                        <td class="text-center fw-semibold">
+                                            {{ $booking->number_of_guests }}
+                                        </td>
 
-                                            <td class="text-wrap" style="max-width: 150px;">
-                                                @if (!empty($booking->notes))
-                                                    {{ $booking->notes }}
-                                                @else
-                                                    -
-                                                @endif
-                                            </td>
+                                        <td class="booking-notes-col">
+                                            <span class="text-secondary small">
+                                                {{ !empty($booking->notes) ? $booking->notes : '—' }}
+                                            </span>
+                                        </td>
 
-                                            <td>
-                                                @switch($booking->booking_status)
-                                                    @case('pending')
-                                                        <span
-                                                            class="badge bg-yellow-100 text-yellow-800 px-2 py-1 text-uppercase">{{ __('Pending') }}</span>
-                                                    @break
+                                        <td>
+                                            @switch($booking->booking_status)
+                                                @case('pending')
+                                                    <span
+                                                        class="badge bg-warning-lt px-2 py-1 text-uppercase">{{ __('Pending') }}</span>
+                                                @break
 
-                                                    @case('confirmed')
-                                                        <span
-                                                            class="badge bg-green-600 text-green-50 px-2 py-1 text-uppercase">{{ __('Confirmed') }}</span>
-                                                    @break
+                                                @case('confirmed')
+                                                    <span
+                                                        class="badge bg-info-lt px-2 py-1 text-uppercase">{{ __('Confirmed') }}</span>
+                                                @break
 
-                                                    @case('rejected')
-                                                        <span
-                                                            class="badge bg-red-100 text-red-700 px-2 py-1 text-uppercase">{{ __('Canceled') }}</span>
-                                                    @break
+                                                @case('rejected')
+                                                    <span
+                                                        class="badge bg-danger-lt px-2 py-1 text-uppercase">{{ __('Canceled') }}</span>
+                                                @break
 
-                                                    @case('completed')
-                                                        <span
-                                                            class="badge bg-green-600 text-green-50 px-2 py-1 text-uppercase">{{ __('Completed') }}</span>
-                                                    @break
+                                                @case('completed')
+                                                    <span
+                                                        class="badge bg-success-lt px-2 py-1 text-uppercase">{{ __('Completed') }}</span>
+                                                @break
 
-                                                    @default
-                                                        <span
-                                                            class="badge bg-yellow-100 text-yellow-800 px-2 py-1 text-uppercase">{{ __('Pending') }}</span>
-                                                @endswitch
-                                            </td>
+                                                @default
+                                                    <span
+                                                        class="badge bg-warning-lt px-2 py-1 text-uppercase">{{ __('Pending') }}</span>
+                                            @endswitch
+                                        </td>
 
-                                            <td class="w-1">
-                                                @if ($booking->booking_status != 'completed')
-                                                    <div class="btn-list flex-nowrap justify-content-end">
-                                                        <a class="btn-action text-decoration-none" href="#"
-                                                            data-toggle="dropdown" data-bs-toggle="dropdown"
-                                                            data-bs-auto-close="outside" aria-expanded="false">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="24"
-                                                                height="24" viewBox="0 0 24 24" fill="none"
-                                                                stroke="currentColor" stroke-width="2"
-                                                                stroke-linecap="round" stroke-linejoin="round"
-                                                                class="icon icon-tabler icon-tabler-dots">
-                                                                <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                                                <circle cx="5" cy="12" r="1" />
-                                                                <circle cx="12" cy="12" r="1" />
-                                                                <circle cx="19" cy="12" r="1" />
-                                                            </svg>
+                                        <td class="text-end">
+                                            @if ($booking->booking_status != 'completed')
+                                                <div class="dropdown">
+                                                    <a class="btn-action text-decoration-none" href="#"
+                                                        data-bs-toggle="dropdown" aria-expanded="false">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="20"
+                                                            height="20" viewBox="0 0 24 24" fill="none"
+                                                            stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                                            stroke-linejoin="round"
+                                                            class="icon icon-tabler icon-tabler-dots-vertical">
+                                                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                                            <circle cx="12" cy="12" r="1" />
+                                                            <circle cx="12" cy="19" r="1" />
+                                                            <circle cx="12" cy="5" r="1" />
+                                                        </svg>
+                                                    </a>
+                                                    <div class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                                                        <a onclick="UpdateServiceBooking(`{{ $booking->service_booking_id }}`)"
+                                                            class="dropdown-item cursor-pointer">
+                                                            {{ __('Update Status') }}
                                                         </a>
-                                                        <div class="dropdown-menu dropdown-menu-end">
-                                                            <div class="nav-item dropdown">
-                                                                <a onclick="UpdateServiceBooking(`{{ $booking->service_booking_id }}`)"
-                                                                    class="dropdown-item">
-                                                                    {{ __('Update Status') }}
-                                                                </a>
 
-                                                                @if ($booking->booking_status != 'rejected')
-                                                                    <a onclick="completeServiceBooking(`{{ $booking->service_booking_id }}`)"
-                                                                        class="dropdown-item">
-                                                                        {{ __('Complete') }}
-                                                                    </a>
+                                                        @if ($booking->booking_status != 'rejected')
+                                                            <a onclick="completeServiceBooking(`{{ $booking->service_booking_id }}`)"
+                                                                class="dropdown-item cursor-pointer">
+                                                                {{ __('Complete') }}
+                                                            </a>
 
-                                                                    <a onclick="addMyGoogleCalendar(`{{ $booking->service_booking_id }}`)"
-                                                                        class="dropdown-item">
-                                                                        {{ __('Add My Google Calendar') }}
-                                                                    </a>
-                                                                @endif
-                                                            </div>
-                                                        </div>
+                                                            <a onclick="addMyGoogleCalendar(`{{ $booking->service_booking_id }}`)"
+                                                                class="dropdown-item cursor-pointer">
+                                                                {{ __('Add My Google Calendar') }}
+                                                            </a>
+                                                        @endif
                                                     </div>
-                                                @else
-                                                    <span class="text-center d-block">-</span>
-                                                @endif
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
+                                                </div>
+                                            @else
+                                                <span class="text-muted">—</span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {{-- Mobile Pagination Bar --}}
+                    <div id="custom-mobile-pagination"
+                        class="d-flex d-md-none justify-content-between align-items-center px-3 py-3">
+                        <button id="mobile-prev-btn" class="btn btn-primary btn-sm d-inline-flex align-items-center"
+                            type="button">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-chevron-left me-1"
+                                width="18" height="18" viewBox="0 0 24 24" stroke-width="2"
+                                stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                <path d="M15 6l-6 6l6 6"></path>
+                            </svg>
+                            {{ __('Previous') }}
+                        </button>
+
+                        <span id="mobile-page-info" class="text-muted small fw-semibold"></span>
+
+                        <button id="mobile-next-btn" class="btn btn-primary btn-sm d-inline-flex align-items-center"
+                            type="button">
+                            {{ __('Next') }}
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                class="icon icon-tabler icon-tabler-chevron-right ms-1" width="18" height="18"
+                                viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+                                <path d="M9 6l6 6l-6 6"></path>
+                            </svg>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -353,39 +374,41 @@
         @include('user.includes.footer')
     </div>
 
-    {{-- Accept or cancel service booking modal --}}
-    <div class="modal modal-bg fade" id="acceptServiceBookingModal" tabindex="-1" role="dialog" aria-hidden="true">
+    {{-- Accept or Cancel Modal --}}
+    <div class="modal fade" id="acceptServiceBookingModal" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
-            <div class="modal-content border-0 shadow-sm">
-                <div class="modal-status"></div>
+            <div class="modal-content border-0 shadow-lg">
                 <div class="modal-body text-center py-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="icon mb-2 text-danger icon-lg" width="24"
-                        height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                        <path d="M12 9v2m0 4v.01" />
-                        <path
-                            d="M5 19h14a2 2 0 0 0 1.84 -2.75l-7.1 -12.25a2 2 0 0 0 -3.5 0l-7.1 12.25a2 2 0 0 0 1.75 2.75" />
-                    </svg>
-                    <h3>{{ __('Are you sure?') }}</h3>
-                    <div id="accept_service_booking_status" class="text-secondary"></div>
+                    <div class="avatar avatar-lg bg-warning-lt mb-3">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                            class="icon icon-tabler icon-tabler-alert-triangle text-warning" width="28"
+                            height="28" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <path d="M12 9v4" />
+                            <path d="M12 16v.01" />
+                            <path
+                                d="M5 19h14a2 2 0 0 0 1.84 -2.75l-7.1 -12.25a2 2 0 0 0 -3.5 0l-7.1 12.25a2 2 0 0 0 1.75 2.75" />
+                        </svg>
+                    </div>
+                    <h3 class="fw-bold">{{ __('Are you sure?') }}</h3>
+                    <div id="accept_service_booking_status" class="text-muted"></div>
                 </div>
-                <div class="modal-footer">
+                <div class="modal-footer border-0 pt-0">
                     <div class="w-100">
                         <div class="row g-2">
-                            <div class="col">
-                                <button type="button" class="btn w-100"
-                                    data-bs-dismiss="modal">
+                            <div class="col-4">
+                                <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal">
                                     {{ __('Cancel') }}
                                 </button>
                             </div>
-                            <div class="col">
+                            <div class="col-4">
                                 <a data-method="post" class="btn btn-danger w-100" id="cancel_service_booking_id">
                                     {{ __('Reject') }}
                                 </a>
                             </div>
-                            <div class="col">
-                                <a data-method="post" class="btn btn-warning w-100" id="accept_service_booking_id">
+                            <div class="col-4">
+                                <a data-method="post" class="btn btn-primary w-100" id="accept_service_booking_id">
                                     {{ __('Accept') }}
                                 </a>
                             </div>
@@ -396,30 +419,28 @@
         </div>
     </div>
 
-
-    {{-- Complete service booking modal --}}
-    <div class="modal modal-bg fade" id="completeServiceBookingModal" tabindex="-1" role="dialog" aria-hidden="true">
+    {{-- Complete Confirmation Modal --}}
+    <div class="modal fade" id="completeServiceBookingModal" tabindex="-1" role="dialog"
+        aria-hidden="true">
         <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
-            <div class="modal-content border-0 shadow-sm">
-                <div class="modal-status"></div>
+            <div class="modal-content border-0 shadow-lg">
                 <div class="modal-body text-center py-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="icon mb-2 text-danger icon-lg" width="24"
-                        height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                        <path d="M12 9v2m0 4v.01" />
-                        <path
-                            d="M5 19h14a2 2 0 0 0 1.84 -2.75l-7.1 -12.25a2 2 0 0 0 -3.5 0l-7.1 12.25a2 2 0 0 0 1.75 2.75" />
-                    </svg>
-                    <h3>{{ __('Are you sure?') }}</h3>
-                    <div id="complete_service_booking_status" class="text-secondary"></div>
+                    <div class="avatar avatar-lg bg-success-lt mb-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-check text-success"
+                            width="28" height="28" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
+                            fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <path d="M5 12l5 5l10 -10" />
+                        </svg>
+                    </div>
+                    <h3 class="fw-bold">{{ __('Confirm Status Update') }}</h3>
+                    <div id="complete_service_booking_status" class="text-muted"></div>
                 </div>
-                <div class="modal-footer">
+                <div class="modal-footer border-0 pt-0">
                     <div class="w-100">
                         <div class="row g-2">
                             <div class="col">
-                                <button type="button" class="btn w-100"
-                                    data-bs-dismiss="modal">
+                                <button type="button" class="btn btn-danger w-100" data-bs-dismiss="modal">
                                     {{ __('Cancel') }}
                                 </button>
                             </div>
@@ -435,37 +456,37 @@
         </div>
     </div>
 
-    {{-- Add google calendar modal --}}
-    <div class="modal modal-bg fade" id="addMyGoogleCalendarModal" tabindex="-1" role="dialog" aria-hidden="true">
+    {{-- Add Google Calendar Modal --}}
+    <div class="modal fade" id="addMyGoogleCalendarModal" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
-            <div class="modal-content border-0 shadow-sm">
-                <div class="modal-status"></div>
+            <div class="modal-content border-0 shadow-lg">
                 <div class="modal-body text-center py-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round" class="icon icon-tabler icon-tabler-calendar-plus mb-2 text-info icon-lg">
-                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                        <path d="M12.5 21h-6.5a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v5" />
-                        <path d="M16 3v4" />
-                        <path d="M8 3v4" />
-                        <path d="M4 11h16" />
-                        <path d="M16 19h6" />
-                        <path d="M19 16v6" />
-                    </svg>
-                    <h3>{{ __('Add my google calendar') }}</h3>
-                    <div id="add_my_google_calendar_status" class="text-secondary"></div>
+                    <div class="avatar avatar-lg bg-info-lt mb-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" class="icon icon-tabler icon-tabler-calendar-plus text-info">
+                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                            <path d="M12.5 21h-6.5a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v5" />
+                            <path d="M16 3v4" />
+                            <path d="M8 3v4" />
+                            <path d="M4 11h16" />
+                            <path d="M16 19h6" />
+                            <path d="M19 16v6" />
+                        </svg>
+                    </div>
+                    <h3 class="fw-bold">{{ __('Add my Google Calendar') }}</h3>
+                    <div id="add_my_google_calendar_status" class="text-muted"></div>
                 </div>
-                <div class="modal-footer">
+                <div class="modal-footer border-0 pt-0">
                     <div class="w-100">
                         <div class="row g-2">
                             <div class="col">
-                                <button type="button" class="btn w-100"
-                                    data-bs-dismiss="modal">
+                                <button type="button" class="btn btn-danger w-100" data-bs-dismiss="modal">
                                     {{ __('Cancel') }}
                                 </button>
                             </div>
                             <div class="col">
-                                <a class="btn btn-info w-100" id="service_booking_google_calendar_id" target="_blank">
+                                <a class="btn btn-primary w-100" id="service_booking_google_calendar_id" target="_blank">
                                     {{ __('Add') }}
                                 </a>
                             </div>
@@ -477,177 +498,216 @@
     </div>
 @endsection
 
+{{-- Custom Scripts --}}
 @section('scripts')
-    <script src="{{ asset('plugins/datatable/js/dataTables.min.js') }}"></script>
-    <script src="{{ asset('plugins/datatable/js/dataTables.bootstrap5.min.js') }}"></script>
-    <script src="{{ asset('plugins/datatable/js/dataTables.buttons.min.js') }}"></script>
-    <script src="{{ asset('plugins/datatable/js/buttons.bootstrap5.min.js') }}"></script>
-    <script src="{{ asset('plugins/datatable/js/buttons.html5.min.js') }}"></script>
-
-    <!-- JSZip for Excel export -->
-    <script src="{{ asset('plugins/datatable/js/jszip.min.js') }}"></script>
     <script type="text/javascript">
-        "use strict";
-
         $(document).ready(function() {
-            const totalColumns = 12;
+            "use strict";
+
+            const total_columns = 12;
 
             const table = $('#serviceBookingTable').DataTable({
-                responsive: false, // Turned off stacked responsive engine to use horizontal tables
+                processing: false,
+                serverSide: false,
                 ordering: false,
-                // Integrated 'f' selector parameter cleanly with responsive columns structure
-                dom: "<'row mb-3 align-items-center g-3'<'col-12 col-md-6'l><'col-12 col-md-6 text-md-end'f>>" +
-                    "<'row'<'col-sm-12'tr>>" +
-                    "<'d-flex justify-content-between align-items-center mt-3'ip>",
-                buttons: [{
-                        extend: 'csv',
-                        text: '{{ __('CSV') }}',
-                        className: 'btn btn-sm btn-success force-class-csv',
-                        filename: 'service_booking_export',
-                        exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-                            format: {
-                                header: function(data, columnIdx) {
-                                    switch (columnIdx) {
-                                        case 0:
-                                            return '#';
-                                        case 1:
-                                            return 'Service Booking ID';
-                                        case 2:
-                                            return 'Name';
-                                        case 3:
-                                            return 'Email';
-                                        case 4:
-                                            return 'Phone';
-                                        case 5:
-                                            return 'Address';
-                                        case 6:
-                                            return 'Check-in';
-                                        case 7:
-                                            return 'Check-out';
-                                        case 8:
-                                            return 'Number of Guests';
-                                        case 9:
-                                            return 'Notes';
-                                        case 10:
-                                            return 'Booking Status';
-                                        default:
-                                            return data;
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    {
-                        extend: 'excel',
-                        text: '{{ __('Excel') }}',
-                        className: 'btn btn-sm btn-success force-class-excel',
-                        filename: 'contacts_export',
-                        exportOptions: {
-                            columns: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-                            format: {
-                                header: function(data, columnIdx) {
-                                    switch (columnIdx) {
-                                        case 0:
-                                            return '#';
-                                        case 1:
-                                            return 'Service Booking ID';
-                                        case 2:
-                                            return 'Name';
-                                        case 3:
-                                            return 'Email';
-                                        case 4:
-                                            return 'Phone';
-                                        case 5:
-                                            return 'Address';
-                                        case 6:
-                                            return 'Check-in';
-                                        case 7:
-                                            return 'Check-out';
-                                        case 8:
-                                            return 'Number of Guests';
-                                        case 9:
-                                            return 'Notes';
-                                        case 10:
-                                            return 'Booking Status';
-                                        default:
-                                            return data;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                ],
+                dom: "<'card-body d-flex align-items-center justify-content-between gap-2'<'text-muted d-none d-md-flex align-items-center'l><'d-flex align-items-center ms-auto w-100 w-md-auto'f>>" +
+                    "<'table-responsive'tr>" +
+                    "<'card-footer d-none d-md-flex align-items-center justify-content-between gap-2 bg-transparent border-top-0'<'text-muted'i><'pagination-wrapper'p>>",
                 language: {
-                    "sProcessing": `{{ __('Processing...') }}`,
-                    "sLengthMenu": `{{ __('Show _MENU_ entries') }}`,
-                    "sSearch": ``,
-                    "sSearchPlaceholder": `{{ __('Search') }}`,
-                    "oPaginate": {
-                        "sNext": `{{ __('Next') }}`,
-                        "sPrevious": `{{ __('Previous') }}`
+                    sProcessing: `{{ __('Processing...') }}`,
+                    sLengthMenu: `{{ __('Show _MENU_ entries') }}`,
+                    sSearch: ``,
+                    sSearchPlaceholder: `{{ __('Search bookings...') }}`,
+                    oPaginate: {
+                        sNext: `{{ __('Next') }}`,
+                        sPrevious: `{{ __('Previous') }}`
                     },
-                    "sInfo": `{{ __('Showing _START_ to _END_ of _TOTAL_ entries') }}`,
-                    "sInfoEmpty": `{{ __('Showing 0 to 0 of 0 entries') }}`,
-                    "sInfoFiltered": `{{ __('(filtered from _MAX_ total entries)') }}`,
+                    sInfo: `{{ __('Showing _START_ to _END_ of _TOTAL_ entries') }}`,
+                    sInfoEmpty: `{{ __('Showing 0 to 0 of 0 entries') }}`,
+                    sInfoFiltered: `{{ __('(filtered from _MAX_ total entries)') }}`,
                     loadingRecords: `{{ __('Please wait - loading...') }}`,
-                    emptyTable: `{{ __('No data available in the table') }}`
-                },
-                preDrawCallback: function(settings) {
-                    $('#serviceBookingTable_wrapper').addClass('placeholder-glow');
+
+                    // Custom SVG Empty State for Service Bookings
+                    emptyTable: `
+                        <div class="text-center py-4 w-100">
+                            <div class="empty-state-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icon-tabler-calendar-off">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                    <path d="M3 3l18 18" />
+                                    <path d="M19.823 19.824a2 2 0 0 1 -1.823 1.176h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 1.175 -1.823" />
+                                    <path d="M9 5h9a2 2 0 0 1 2 2v9" />
+                                    <path d="M16 3v4" />
+                                    <path d="M8 3v1" />
+                                    <path d="M4 11h7m4 0h5" />
+                                </svg>
+                            </div>
+                            <h4 class="fw-bold mb-1 text-reset">{{ __('No Service Bookings Yet') }}</h4>
+                            <p class="text-muted small mb-0">{{ __('Customer reservation requests and check-in schedules will appear here.') }}</p>
+                        </div>
+                    `,
+                    zeroRecords: `
+                        <div class="text-center py-4 w-100">
+                            <div class="empty-state-icon" style="background-color: var(--tblr-danger-lt); color: var(--tblr-danger);">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icon-tabler-calendar-search">
+                                    <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                    <path d="M11.5 21h-5.5a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v4.5" />
+                                    <path d="M16 3v4" />
+                                    <path d="M8 3v4" />
+                                    <path d="M4 11h16" />
+                                    <path d="M18 18m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
+                                    <path d="M20.2 20.2l1.8 1.8" />
+                                </svg>
+                            </div>
+                            <h4 class="fw-bold mb-1 text-reset">{{ __('No Matching Bookings Found') }}</h4>
+                            <p class="text-muted small mb-0">{{ __('We could not find any booking matching your search keyword.') }}</p>
+                        </div>
+                    `
                 },
                 drawCallback: function(settings) {
-                    $('#serviceBookingTable_wrapper').removeClass('placeholder-glow');
+                    var api = new $.fn.dataTable.Api(settings);
+                    var $table = $(settings.nTable);
 
-                    // Clear dynamic action skeleton loaders (Targeting 12th column: Index 11)
-                    $('#serviceBookingTable tbody tr').each(function() {
-                        const actionCell = $(this).find('td').eq(11);
-                        if (actionCell.find('span.placeholder').length > 0) {
-                            actionCell.empty();
+                    $table.closest('.table-responsive').removeClass('placeholder-glow');
+                    $table.find('tbody tr td.dataTables_empty').attr('colspan', total_columns);
+
+                    // Add data-label attributes for mobile cards on valid rows
+                    var headers = [];
+                    $table.find('thead th').each(function() {
+                        headers.push($(this).text().trim());
+                    });
+
+                    $table.find('tbody tr').each(function() {
+                        var $tr = $(this);
+                        if ($tr.find('td.dataTables_empty').length === 0) {
+                            $tr.find('td').each(function(index) {
+                                if (headers[index]) {
+                                    $(this).attr('data-label', headers[index]);
+                                }
+                            });
+                        } else {
+                            $tr.find('td.dataTables_empty').removeAttr('data-label');
                         }
                     });
 
-                    // Match empty display widths
-                    $('#serviceBookingTable tbody tr td.dataTables_empty').attr('colspan',
-                        totalColumns);
+                    // Mobile Pagination handler
+                    const pageInfo = api.page.info();
+                    const rowsCount = api.rows({
+                        page: 'current'
+                    }).data().length;
+
+                    if (pageInfo.pages <= 1 || rowsCount === 0) {
+                        $('#custom-mobile-pagination').addClass('d-none').removeClass('d-flex');
+                    } else {
+                        $('#custom-mobile-pagination').removeClass('d-none').addClass('d-flex');
+                    }
+
+                    const pageInfoText = `{{ __('Page :current of :total') }}`
+                        .replace(':current', pageInfo.page + 1)
+                        .replace(':total', pageInfo.pages || 1);
+                    $('#mobile-page-info').text(pageInfoText);
+
+                    $('#mobile-prev-btn').prop('disabled', pageInfo.page === 0).toggleClass('disabled',
+                        pageInfo.page === 0);
+                    $('#mobile-next-btn').prop('disabled', pageInfo.page >= pageInfo.pages - 1)
+                        .toggleClass('disabled', pageInfo.page >= pageInfo.pages - 1);
                 }
             });
 
-            // Wrap ONLY the table element in the responsive wrapper container dynamically
-            $('#serviceBookingTable').wrap('<div class="table-responsive px-0 py-2"></div>');
-
-            // Move button containers cleanly
-            table.buttons().container().appendTo('#customButtonsContainer');
-
-            // Implement static 350ms debounced filters execution with matching skeletons
-            $('.dataTables_filter input').unbind().on('keyup', function() {
-                const searchValue = this.value;
-                clearTimeout(window.searchTimeout);
-
-                $('#serviceBookingTable_wrapper').addClass('placeholder-glow');
-                let placeholderRows = '';
-                for (let i = 0; i < 5; i++) {
-                    placeholderRows += '<tr>' +
-                        '<td class="text-center"><div class="placeholder placeholder-xs col-12"></div></td>'
-                        .repeat(totalColumns) + '</tr>';
-                }
-                $('#serviceBookingTable tbody').html(placeholderRows);
-
-                window.searchTimeout = setTimeout(function() {
-                    table.search(searchValue).draw();
-                }, 350);
-            });
-
-            // Apply custom classes
-            const applyButtonClasses = () => {
-                document.querySelectorAll('.force-class-csv, .force-class-excel').forEach(btn => {
-                    btn.classList.remove('dt-button');
-                    btn.classList.add('btn', 'btn-primary', 'btn-sm', 'me-2');
+            // Native CSV Export Handler
+            $('#btn-export-csv').on('click', function() {
+                let csv = [
+                    '\uFEFF"#","Service Booking ID","Name","Email","Phone","Address","Check-in","Check-out","Guests","Notes","Booking Status"'
+                ];
+                table.rows({
+                    search: 'applied'
+                }).every(function(rowIdx, tableLoop, rowLoop) {
+                    let $node = $(this.node());
+                    let col0 = rowLoop + 1;
+                    let col1 = $node.find('td').eq(1).text().trim().replace(/"/g, '""');
+                    let col2 = $node.find('td').eq(2).text().trim().replace(/"/g, '""');
+                    let col3 = $node.find('td').eq(3).text().trim().replace(/"/g, '""');
+                    let col4 = $node.find('td').eq(4).text().trim().replace(/"/g, '""');
+                    let col5 = $node.find('td').eq(5).text().trim().replace(/"/g, '""');
+                    let col6 = $node.find('td').eq(6).text().trim().replace(/"/g, '""');
+                    let col7 = $node.find('td').eq(7).text().trim().replace(/"/g, '""');
+                    let col8 = $node.find('td').eq(8).text().trim().replace(/"/g, '""');
+                    let col9 = $node.find('td').eq(9).text().trim().replace(/"/g, '""');
+                    let col10 = $node.find('td').eq(10).text().trim().replace(/"/g, '""');
+                    csv.push(
+                        `"${col0}","${col1}","${col2}","${col3}","${col4}","${col5}","${col6}","${col7}","${col8}","${col9}","${col10}"`
+                        );
                 });
-            };
-            setTimeout(applyButtonClasses, 100);
+
+                let blob = new Blob([csv.join('\n')], {
+                    type: 'text/csv;charset=utf-8;'
+                });
+                let link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'service_booking_export.csv';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+
+            // Native Excel (.xls) Export Handler
+            $('#btn-export-excel').on('click', function() {
+                let tableHtml =
+                    '<table border="1"><thead><tr><th>#</th><th>Service Booking ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Address</th><th>Check-in</th><th>Check-out</th><th>Guests</th><th>Notes</th><th>Booking Status</th></tr></thead><tbody>';
+                table.rows({
+                    search: 'applied'
+                }).every(function(rowIdx, tableLoop, rowLoop) {
+                    let $node = $(this.node());
+                    let col0 = rowLoop + 1;
+                    let col1 = $node.find('td').eq(1).text().trim();
+                    let col2 = $node.find('td').eq(2).text().trim();
+                    let col3 = $node.find('td').eq(3).text().trim();
+                    let col4 = $node.find('td').eq(4).text().trim();
+                    let col5 = $node.find('td').eq(5).text().trim();
+                    let col6 = $node.find('td').eq(6).text().trim();
+                    let col7 = $node.find('td').eq(7).text().trim();
+                    let col8 = $node.find('td').eq(8).text().trim();
+                    let col9 = $node.find('td').eq(9).text().trim();
+                    let col10 = $node.find('td').eq(10).text().trim();
+                    tableHtml +=
+                        `<tr><td>${col0}</td><td>${col1}</td><td>${col2}</td><td>${col3}</td><td>${col4}</td><td>${col5}</td><td>${col6}</td><td>${col7}</td><td>${col8}</td><td>${col9}</td><td>${col10}</td></tr>`;
+                });
+                tableHtml += '</tbody></table>';
+
+                let blob = new Blob(['\uFEFF' + tableHtml], {
+                    type: 'application/vnd.ms-excel;charset=utf-8'
+                });
+                let link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'service_booking_export.xls';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+
+            // Mobile Pagination Click Handlers
+            $('#mobile-prev-btn').on('click', function(e) {
+                e.preventDefault();
+                table.page('previous').draw('page');
+            });
+
+            $('#mobile-next-btn').on('click', function(e) {
+                e.preventDefault();
+                table.page('next').draw('page');
+            });
         });
 
+        // 300ms Debounce search input logic
+        var serviceBookingSearchTimer;
+        $(document).on('input', '#serviceBookingTable_filter input', function() {
+            var value = this.value;
+            var table = $('#serviceBookingTable').DataTable();
+            clearTimeout(serviceBookingSearchTimer);
+            serviceBookingSearchTimer = setTimeout(function() {
+                table.search(value).draw();
+            }, 300);
+        });
+
+        // Modal Action Trigger Handlers
         function UpdateServiceBooking(id) {
             "use strict";
             $("#acceptServiceBookingModal").modal("show");

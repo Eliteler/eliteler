@@ -91,7 +91,7 @@ export default function NfcOrders({ orders, tab, search, counts }: Props) {
                                         <TableCell className="ps-4">
                                             <Link href={route("admin.order.show", order.id)} className="flex flex-col hover:underline">
                                                 <span className="font-mono text-xs font-medium">{order.id}</span>
-                                                <span className="text-xs text-muted-foreground" title={formatDate(order.date, "dd MMM yyyy, HH:mm")}>
+                                                <span className="text-xs text-muted-foreground" title={formatDate(order.date)}>
                                                     {fromNow(order.date)}
                                                 </span>
                                             </Link>

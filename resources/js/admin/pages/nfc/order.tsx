@@ -113,7 +113,7 @@ export default function NfcOrder({ order, statuses, openDialog }: Props) {
                             <DeliveryBadge status={order.delivery} />
                         </div>
                         <p className="text-sm text-muted-foreground">
-                            {t("Placed")} {formatDate(order.date, "dd MMM yyyy, HH:mm")}
+                            {t("Placed")} {formatDate(order.date)}
                             {order.customer && (
                                 <>
                                     {" · "}

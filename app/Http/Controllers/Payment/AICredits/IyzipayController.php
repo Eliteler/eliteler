@@ -6,6 +6,7 @@ use App\AiCredit;
 use App\AiCreditsPlan;
 use App\AiCreditsTransaction;
 use App\AppliedCoupon;
+use App\Classes\InvoiceNumber;
 use App\Coupon;
 use App\Http\Controllers\Controller;
 use App\Setting;
@@ -23,7 +24,6 @@ use Iyzipay\Model\PaymentGroup;
 use Iyzipay\Options;
 use Iyzipay\Request\CreateCheckoutFormInitializeRequest;
 use Iyzipay\Request\RetrieveCheckoutFormRequest;
-use Plugins\Zapier\Helpers\ZapierHelper;
 
 class IyzipayController extends Controller
 {
@@ -612,17 +612,8 @@ class IyzipayController extends Controller
                     )->first();
 
                 // Invoice Count
-                $invoice_count =
-                    AiCreditsTransaction::where(
-                        'invoice_prefix',
-                        $config[15]->config_value
-                    )->count();
-
-                $invoice_number =
-                    $invoice_count + 1;
-
                 // Update Transaction
-                AiCreditsTransaction::where(
+                $invoice_number = InvoiceNumber::assign('ai_credits_transactions', $config[15]->config_value, fn ($invoice_number) => AiCreditsTransaction::where(
                     'payment_transaction_id',
                     $token
                 )->update([
@@ -630,7 +621,7 @@ class IyzipayController extends Controller
                     'invoice_prefix' => $config[15]->config_value,
                     'invoice_number' => $invoice_number,
                     'payment_status' => 'paid',
-                ]);
+                ]));
 
                 // Update AI credits
                 $aiCredit = AiCredit::where('user_id', Auth::user()->user_id)->first();
@@ -684,7 +675,8 @@ class IyzipayController extends Controller
                 try {
                     Mail::to($encode['to_billing_email'])
                         ->send(new \App\Mail\SendEmailInvoice($details));
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
+                    report($e);
                 }
 
                 // Fetch customer details safely

@@ -263,7 +263,7 @@ class CustomerService
 
         try {
             Mail::to($user->email)
-                ->bcc(config('mail.from.address') ?? env('MAIL_FROM_ADDRESS'))
+                ->bcc(config('mail.from.address'))
                 ->send(new \App\Mail\AppointmentMail([
                     'status'          => '',
                     'emailSubject'    => $template->email_template_subject,
