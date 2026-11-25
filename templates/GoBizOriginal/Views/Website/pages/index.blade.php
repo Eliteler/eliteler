@@ -260,6 +260,12 @@
         </div>
     </section>
 
+    {{-- Our Work (cards marked by the admin) --}}
+    @include('GoBizOriginal::Website.includes.our-work')
+
+    {{-- Custom cards service --}}
+    @include('GoBizOriginal::Website.includes.custom-cards-service')
+
     {{-- Pricing --}}
     <section class="pt-12 pb-32 lg:px-24 overflow-hidden" id="pricing">
         <div class="container mx-auto px-4">

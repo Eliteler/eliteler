@@ -139,6 +139,23 @@ class CreatedCardsController extends Controller
         return redirect()->route($builder);
     }
 
+    /** Show or hide a card in the website "Our Work" section. */
+    public function toggleShowcase(Request $request, string $id)
+    {
+        $card = BusinessCard::where('card_id', $id)->where('card_type', 'vcard')->where('card_status', '!=', 'deleted')->first();
+
+        if (! $card) {
+            return back()->with('failed', __('Card not found!'));
+        }
+
+        $featured = ! (bool) $card->show_in_showcase;
+        BusinessCard::where('card_id', $id)->update(['show_in_showcase' => $featured ? 1 : 0]);
+
+        return back()->with('success', $featured
+            ? __(':title is now shown in Our Work on the website.', ['title' => $card->title])
+            : __(':title was removed from Our Work.', ['title' => $card->title]));
+    }
+
     /** Leave the customer context and return to the admin list. */
     public function leaveContext(Request $request)
     {
@@ -167,7 +184,7 @@ class CreatedCardsController extends Controller
         $query = $this->filter($base(), $filters)
             ->leftJoin('themes', 'themes.theme_id', '=', 'business_cards.theme_id')
             ->select([
-                'business_cards.card_id', 'business_cards.title', 'business_cards.card_url', 'business_cards.custom_domain',
+                'business_cards.card_id', 'business_cards.title', 'business_cards.card_url', 'business_cards.custom_domain', 'business_cards.show_in_showcase',
                 'business_cards.card_status', 'business_cards.status', 'business_cards.created_at', 'business_cards.theme_id',
                 'users.user_id as owner_id', 'users.name as owner_name', 'users.email as owner_email',
                 'users.plan_validity as owner_plan_validity', 'themes.theme_name',
@@ -193,6 +210,7 @@ class CreatedCardsController extends Controller
                 'title'        => $card->title,
                 'url'          => url($card->card_url),
                 'customDomain' => $card->custom_domain ?: null,
+                'featured'     => (bool) $card->show_in_showcase,
                 'theme'        => $card->theme_name,
                 'state'        => (string) $card->status !== '1' ? 'disabled' : ($card->card_status === 'activated' ? 'active' : 'inactive'),
                 'visits'       => (int) $card->visits,

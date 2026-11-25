@@ -174,6 +174,12 @@
                                             class="font-heading demo-nav-link mr-9 text-gray-900 hover:text-gray-700 {{ App::isLocale('ru') ? 'text-md' : 'text-lg' }} whitespace-nowrap">
                                             <a href="{{ route('home-locale') }}#features">{{ __('Features') }}</a>
                                         </li>
+                                        @if (count(showcase_cards()) > 0)
+                                        <li
+                                            class="font-heading demo-nav-link mr-9 text-gray-900 hover:text-gray-700 {{ App::isLocale('ru') ? 'text-md' : 'text-lg' }} whitespace-nowrap">
+                                            <a href="{{ route('home-locale') }}#our-work">{{ __('Our Work') }}</a>
+                                        </li>
+                                        @endif
                                         <li
                                             class="font-heading demo-nav-link mr-9 text-gray-900 hover:text-gray-700 {{ App::isLocale('ru') ? 'text-md' : 'text-lg' }} whitespace-nowrap">
                                             <a href="{{ route('home-locale') }}#pricing">{{ __('Pricing') }}</a>
@@ -444,6 +450,11 @@
                             <li class="mb-6"><a
                                     class="font-heading font-medium text-base text-gray-900 hover:text-gray-700"
                                     href="{{ route('home-locale') }}#features">{{ __('Features') }}</a></li>
+                            @if (count(showcase_cards()) > 0)
+                            <li class="mb-6"><a
+                                    class="font-heading font-medium text-base text-gray-900 hover:text-gray-700"
+                                    href="{{ route('home-locale') }}#our-work">{{ __('Our Work') }}</a></li>
+                            @endif
                             <li class="mb-6"><a
                                     class="font-heading font-medium text-base text-gray-900 hover:text-gray-700"
                                     href="{{ route('home-locale') }}#pricing">{{ __('Pricing') }}</a></li>

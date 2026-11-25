@@ -438,3 +438,42 @@ if (! function_exists('card_public_url')) {
         return rtrim(config('app.url'), '/') . '/' . $slug;
     }
 }
+
+if (! function_exists('showcase_cards')) {
+    /**
+     * Live cards marked by the admin as examples for the website "Our Work" section.
+     * Each item: title, subtitle, url, logo (or null), cover (or null).
+     */
+    function showcase_cards(int $limit = 12): array
+    {
+        static $cache = [];
+        if (isset($cache[$limit])) {
+            return $cache[$limit];
+        }
+
+        try {
+            $rows = \Illuminate\Support\Facades\DB::table('business_cards')
+                ->where('show_in_showcase', 1)
+                ->where('card_type', 'vcard')
+                ->where('card_status', 'activated')
+                ->where('status', '1')
+                ->orderByDesc('id')
+                ->limit($limit)
+                ->get(['card_id', 'card_url', 'custom_domain', 'title', 'sub_title', 'profile', 'cover', 'cover_type']);
+        } catch (\Throwable $e) {
+            return $cache[$limit] = [];
+        }
+
+        return $cache[$limit] = $rows->map(function ($card) {
+            $asset = fn ($path) => $path ? (preg_match('~^https?://~i', $path) ? $path : url(ltrim($path, '/'))) : null;
+
+            return (object) [
+                'title'    => (string) $card->title,
+                'subtitle' => trim(strip_tags((string) $card->sub_title)),
+                'url'      => card_public_url($card),
+                'logo'     => $asset($card->profile),
+                'cover'    => ($card->cover_type ?? 'photo') === 'photo' ? $asset($card->cover) : null,
+            ];
+        })->all();
+    }
+}

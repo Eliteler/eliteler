@@ -1,5 +1,5 @@
 import { Head, Link, router } from "@inertiajs/react";
-import { Contact, Copy, ExternalLink, Eye, Globe, MoreHorizontal, Pencil, Plus, Search, Store, UserRound, X } from "lucide-react";
+import { Contact, Copy, ExternalLink, Eye, Globe, MoreHorizontal, Pencil, Plus, Search, Star, Store, UserRound, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -37,6 +37,7 @@ type CardRow = {
     title: string;
     url: string;
     customDomain: string | null;
+    featured?: boolean;
     theme: string | null;
     state: CardState;
     visits: number;
@@ -232,6 +233,12 @@ export default function CardsIndex({ type, canCreate = false, cards, filters, co
                                                 >
                                                     {card.title}
                                                 </a>
+                                                {card.featured && (
+                                                    <span className="flex items-center gap-1 text-xs font-medium text-amber-600">
+                                                        <Star className="size-3 fill-current" />
+                                                        {t("Our Work")}
+                                                    </span>
+                                                )}
                                                 <span className="truncate text-xs text-muted-foreground" dir="ltr">
                                                     {card.url.replace(/^https?:\/\//, "")}
                                                 </span>
@@ -303,6 +310,16 @@ export default function CardsIndex({ type, canCreate = false, cards, filters, co
                                                             {t("View owner")}
                                                         </Link>
                                                     </DropdownMenuItem>
+                                                    {!isStore && (
+                                                        <DropdownMenuItem
+                                                            onSelect={() =>
+                                                                router.post(route("admin.cards.showcase", card.id), {}, { preserveScroll: true })
+                                                            }
+                                                        >
+                                                            <Star />
+                                                            {card.featured ? t("Remove from Our Work") : t("Show in Our Work")}
+                                                        </DropdownMenuItem>
+                                                    )}
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem onSelect={() => setCopying(card)}>
                                                         <Copy />
