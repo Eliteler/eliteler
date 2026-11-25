@@ -462,6 +462,7 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::get('created-cards', [CreatedCardsController::class, 'createdCards'])->name('created.cards')->middleware('user.page.permission:customers');
         Route::get('created-stores', [CreatedCardsController::class, 'createdStores'])->name('created.stores')->middleware('user.page.permission:customers');
         // Admin edits a customer's card/store in the user panel (no login-as; see AdminCardContext middleware)
+        Route::get('cards/new', [CreatedCardsController::class, 'createCard'])->name('cards.new')->middleware('user.page.permission:customers');
         Route::get('cards/leave-context', [CreatedCardsController::class, 'leaveContext'])->name('cards.leave')->middleware('user.page.permission:customers');
         Route::get('cards/{id}/edit', [CreatedCardsController::class, 'editCard'])->name('cards.edit')->middleware('user.page.permission:customers');
 

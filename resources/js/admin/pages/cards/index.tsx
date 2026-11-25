@@ -1,5 +1,5 @@
 import { Head, Link, router } from "@inertiajs/react";
-import { Contact, Copy, ExternalLink, Eye, Globe, MoreHorizontal, Pencil, Search, Store, UserRound, X } from "lucide-react";
+import { Contact, Copy, ExternalLink, Eye, Globe, MoreHorizontal, Pencil, Plus, Search, Store, UserRound, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -26,6 +26,7 @@ import { cn } from "@admin/lib/utils";
 import type { Paginated } from "@admin/types";
 
 import { CopyCardDialog } from "../customers/components/copy-card-dialog";
+import { CreateCardDialog } from "./create-card-dialog";
 
 type CardState = "active" | "inactive" | "disabled";
 type Tab = "all" | CardState;
@@ -47,6 +48,7 @@ type Filters = { tab: Tab; search: string; plan: string; theme: string; sort: st
 
 type Props = {
     type: "vcard" | "store";
+    canCreate?: boolean;
     cards: Paginated<CardRow>;
     filters: Filters;
     counts: Record<Tab, number>;
@@ -61,10 +63,11 @@ const STATE_STYLES: Record<CardState, string> = {
     disabled: "border-destructive/30 text-destructive",
 };
 
-export default function CardsIndex({ type, cards, filters, counts, themes }: Props) {
+export default function CardsIndex({ type, canCreate = false, cards, filters, counts, themes }: Props) {
     const { t } = useTranslation();
     const [search, setSearch] = useState(filters.search);
     const [copying, setCopying] = useState<CardRow | null>(null);
+    const [creating, setCreating] = useState(false);
     const firstRender = useRef(true);
     const isStore = type === "store";
     const routeName = isStore ? "admin.created.stores" : "admin.created.cards";
@@ -111,6 +114,14 @@ export default function CardsIndex({ type, cards, filters, counts, themes }: Pro
                         { label: t("Customers"), href: route("admin.customers", { status: "all" }) },
                         { label: title },
                     ]}
+                    actions={
+                        canCreate ? (
+                            <Button onClick={() => setCreating(true)}>
+                                <Plus />
+                                {isStore ? t("Create store") : t("Create business card")}
+                            </Button>
+                        ) : undefined
+                    }
                 />
 
                 <Tabs value={filters.tab} onValueChange={(tab) => visit({ tab: tab as Tab })}>
@@ -311,6 +322,7 @@ export default function CardsIndex({ type, cards, filters, counts, themes }: Pro
             </div>
 
             <CopyCardDialog card={copying} ownerId={copying?.owner.id ?? ""} onClose={() => setCopying(null)} />
+            <CreateCardDialog open={creating} type={type} onClose={() => setCreating(false)} />
         </>
     );
 }

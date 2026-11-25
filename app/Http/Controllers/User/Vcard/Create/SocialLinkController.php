@@ -92,6 +92,20 @@ class SocialLinkController extends Controller
                 if (count($request->icon) <= $plan_details->no_of_links) {
 
                     // Check dynamic fields foreach
+                    // Link types accept a bare domain (example.com, www.example.com/page): add https://
+                    $urlTypes = ['url', 'iframe', 'facebook', 'instagram', 'instagram-embed', 'linkedin', 'x-twitter', 'youtube', 'tiktok', 'telegram', 'snapchat', 'pinterest', 'discord', 'reddit', 'quora', 'threads', 'tumblr', 'g-review'];
+                    $linkValues = (array) $request->value;
+                    foreach ($linkValues as $linkKey => $linkValue) {
+                        $linkValue = trim((string) $linkValue);
+                        if (in_array($request->type[$linkKey] ?? '', $urlTypes, true)
+                            && $linkValue !== ''
+                            && ! preg_match('~^[a-z][a-z0-9+.-]*:~i', $linkValue)
+                            && preg_match('~^(www\.)?[a-z0-9-]+(\.[a-z0-9-]+)+([/?#].*)?$~i', $linkValue)) {
+                            $linkValues[$linkKey] = 'https://' . $linkValue;
+                        }
+                    }
+                    $request->merge(['value' => $linkValues]);
+
                     for ($i = 0; $i < count($request->icon); $i++) {
 
                         // Check dynamic fields

@@ -83,6 +83,62 @@ class CreatedCardsController extends Controller
         return redirect()->route($card->card_type === 'store' ? 'user.edit.store' : 'user.edit.card', $card->card_id);
     }
 
+    /**
+     * Start the card/store builder in the user panel on behalf of a customer
+     * (?customer=<user_id>) or in the administrator's own account (no customer).
+     * Only the super admin can act inside the user panel.
+     */
+    public function createCard(Request $request)
+    {
+        $type      = $request->query('type') === 'store' ? 'store' : 'vcard';
+        $listRoute = $type === 'store' ? 'admin.created.stores' : 'admin.created.cards';
+        $builder   = $type === 'store' ? 'user.create.store' : 'user.choose.card.type';
+
+        if ((int) $request->user()->role_id !== 1) {
+            return redirect()->route($listRoute)->with('failed', __('Only the main administrator can create cards for customers.'));
+        }
+
+        $customerId = (string) $request->query('customer', '');
+
+        // The administrator's own account
+        if ($customerId === '') {
+            $request->session()->forget('admin_card_context');
+
+            return redirect()->route($builder);
+        }
+
+        $owner = User::where('user_id', $customerId)->where('role_id', 2)->first();
+
+        if (! $owner) {
+            return redirect()->route($listRoute)->with('failed', __('Unable to find user account!'));
+        }
+
+        if ((int) $owner->status !== 1) {
+            return redirect()->route($listRoute)->with('failed', __(':name is not an active account.', ['name' => $owner->name]));
+        }
+
+        $plan = json_decode($owner->plan_details ?? '');
+
+        if (! $plan || ! $owner->plan_validity || Carbon::parse($owner->plan_validity)->isPast()) {
+            return redirect()->route($listRoute)->with('failed', __(':name has no active plan. Assign a plan to this customer first.', ['name' => $owner->name]));
+        }
+
+        $limit = (int) ($type === 'store' ? ($plan->no_of_stores ?? 0) : ($plan->no_of_vcards ?? 0));
+        $used  = BusinessCard::where('user_id', $owner->user_id)->where('card_type', $type)->where('card_status', 'activated')->count();
+
+        if ($limit !== 999 && $used >= $limit) {
+            return redirect()->route($listRoute)->with('failed', __(':name has reached the limit of their plan (:used of :limit).', ['name' => $owner->name, 'used' => $used, 'limit' => $limit]));
+        }
+
+        $request->session()->put('admin_card_context', [
+            'owner_id' => $owner->id,
+            'card_id'  => null,
+            'type'     => $type,
+        ]);
+
+        return redirect()->route($builder);
+    }
+
     /** Leave the customer context and return to the admin list. */
     public function leaveContext(Request $request)
     {
@@ -166,6 +222,7 @@ class CreatedCardsController extends Controller
 
         return Inertia::render('cards/index', [
             'type'    => $type,
+            'canCreate' => (int) $request->user()->role_id === 1,
             'cards'   => $cards,
             'filters' => $filters,
             'counts'  => collect(self::TABS)->mapWithKeys(fn ($tab) => [$tab => (int) $counts->{$tab}]),

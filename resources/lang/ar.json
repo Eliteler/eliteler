@@ -7001,5 +7001,13 @@
     "Location (without map)": "الموقع (بدون خريطة)",
     "For ex: https://maps.app.goo.gl/... or a written address": "مثال: https://maps.app.goo.gl/... أو عنوان مكتوب",
     "WhatsApp number to receive bookings": "رقم واتساب لاستقبال الحجوزات",
-    "After booking, the customer is taken to WhatsApp with the booking details for this number. Include the country code. Leave empty to use the WhatsApp link of the card.": "بعد الحجز يُحوَّل العميل إلى واتساب مع تفاصيل الحجز على هذا الرقم. أدخل رمز الدولة. اتركه فارغاً لاستخدام رابط واتساب البطاقة."
+    "After booking, the customer is taken to WhatsApp with the booking details for this number. Include the country code. Leave empty to use the WhatsApp link of the card.": "بعد الحجز يُحوَّل العميل إلى واتساب مع تفاصيل الحجز على هذا الرقم. أدخل رمز الدولة. اتركه فارغاً لاستخدام رابط واتساب البطاقة.",
+    "Create store": "إنشاء متجر",
+    "Continue": "متابعة",
+    "Create in my own account": "إنشاء في حسابي الإداري",
+    "Choose the customer who will own it. You continue in the builder on their behalf, without signing in as them.": "اختر العميل الذي ستكون له. تتابع الإنشاء نيابةً عنه دون تسجيل الدخول بحسابه.",
+    "Only the main administrator can create cards for customers.": "المدير الرئيسي فقط يستطيع إنشاء بطاقات للعملاء.",
+    ":name is not an active account.": "حساب :name غير مفعّل.",
+    ":name has no active plan. Assign a plan to this customer first.": ":name لا يملك خطة فعّالة. عيّن خطة لهذا العميل أولاً.",
+    ":name has reached the limit of their plan (:used of :limit).": ":name وصل إلى الحد المسموح في خطته (:used من :limit)."
 }

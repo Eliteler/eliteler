@@ -11217,5 +11217,12 @@
     "Location (without map)": "Location (without map)",
     "For ex: https://maps.app.goo.gl/... or a written address": "For ex: https://maps.app.goo.gl/... or a written address",
     "WhatsApp number to receive bookings": "WhatsApp number to receive bookings",
-    "After booking, the customer is taken to WhatsApp with the booking details for this number. Include the country code. Leave empty to use the WhatsApp link of the card.": "After booking, the customer is taken to WhatsApp with the booking details for this number. Include the country code. Leave empty to use the WhatsApp link of the card."
+    "After booking, the customer is taken to WhatsApp with the booking details for this number. Include the country code. Leave empty to use the WhatsApp link of the card.": "After booking, the customer is taken to WhatsApp with the booking details for this number. Include the country code. Leave empty to use the WhatsApp link of the card.",
+    "Continue": "Continue",
+    "Create in my own account": "Create in my own account",
+    "Choose the customer who will own it. You continue in the builder on their behalf, without signing in as them.": "Choose the customer who will own it. You continue in the builder on their behalf, without signing in as them.",
+    "Only the main administrator can create cards for customers.": "Only the main administrator can create cards for customers.",
+    ":name is not an active account.": ":name is not an active account.",
+    ":name has no active plan. Assign a plan to this customer first.": ":name has no active plan. Assign a plan to this customer first.",
+    ":name has reached the limit of their plan (:used of :limit).": ":name has reached the limit of their plan (:used of :limit)."
 }

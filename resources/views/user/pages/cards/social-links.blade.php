@@ -405,14 +405,14 @@
                 icon.value = "fas fa-link";
                 lbl.value = `{{ __('Website') }}`;
                 $("#displayIcon" + id).attr("class", "fas fa-link text-white");
-                textlbl.type = 'url';
+                textlbl.type = 'text';
             } else if (type == 'youtube') {
                 label = `{{ __('Video Title') }}`;
                 textlabel = `{{ __('For ex: https://www.youtube.com/watch?v=li5ths352') }}`;
                 icon.value = "fab fa-youtube";
                 lbl.value = `{{ __('Youtube') }}`;
                 $("#displayIcon" + id).attr("class", "fab fa-youtube text-white");
-                textlbl.type = 'url';
+                textlbl.type = 'text';
             } else if (type == 'map') {
                 label = `{{ __('California') }}`;
                 textlabel = `{!! __(
@@ -428,112 +428,112 @@
                 icon.value = "fab fa-facebook-f";
                 lbl.value = `{{ __('Facebook') }}`;
                 $("#displayIcon" + id).attr("class", "fab fa-facebook-f text-white");
-                textlbl.type = 'url';
+                textlbl.type = 'text';
             } else if (type == 'instagram') {
                 label = `{{ __('Instagram') }}`;
                 textlabel = `{{ __('For ex: https://instagram.com') }}`;
                 icon.value = "fab fa-instagram";
                 lbl.value = `{{ __('Instagram') }}`;
                 $("#displayIcon" + id).attr("class", "fab fa-instagram text-white");
-                textlbl.type = 'url';
+                textlbl.type = 'text';
             } else if (type == 'x-twitter') {
                 label = `{{ __('X (Twitter)') }}`;
                 textlabel = `{{ __('For ex: https://x.com') }}`;
                 icon.value = "fab fa-x-twitter";
                 lbl.value = `{{ __('X (Twitter)') }}`;
                 $("#displayIcon" + id).attr("class", "fab fa-x-twitter text-white");
-                textlbl.type = 'url';
+                textlbl.type = 'text';
             } else if (type == 'linkedin') {
                 label = `{{ __('LinkedIn') }}`;
                 textlabel = `{{ __('For ex: https://linkedin.com') }}`;
                 icon.value = "fab fa-linkedin-in";
                 lbl.value = `{{ __('LinkedIn') }}`;
                 $("#displayIcon" + id).attr("class", "fab fa-linkedin-in text-white");
-                textlbl.type = 'url';
+                textlbl.type = 'text';
             } else if (type == 'pinterest') {
                 label = `{{ __('Pinterest') }}`;
                 textlabel = `{{ __('For ex: https://pinterest.com') }}`;
                 icon.value = "fab fa-pinterest";
                 lbl.value = `{{ __('Pinterest') }}`;
                 $("#displayIcon" + id).attr("class", "fab fa-pinterest text-white");
-                textlbl.type = 'url';
+                textlbl.type = 'text';
             } else if (type == 'reddit') {
                 label = `{{ __('Reddit') }}`;
                 textlabel = `{{ __('For ex: https://reddit.com') }}`;
                 icon.value = "fab fa-reddit";
                 lbl.value = `{{ __('Reddit') }}`;
                 $("#displayIcon" + id).attr("class", "fab fa-reddit text-white");
-                textlbl.type = 'url';
+                textlbl.type = 'text';
             } else if (type == 'tiktok') {
                 label = `{{ __('Tiktok') }}`;
                 textlabel = `{{ __('For ex: https://tiktok.com') }}`;
                 icon.value = "fab fa-tiktok";
                 lbl.value = `{{ __('Tiktok') }}`;
                 $("#displayIcon" + id).attr("class", "fab fa-tiktok text-white");
-                textlbl.type = 'url';
+                textlbl.type = 'text';
             } else if (type == 'threads') {
                 label = `{{ __('Threads') }}`;
                 textlabel = `{{ __('For ex: https://threads.net') }}`;
                 icon.value = "fab fa-threads";
                 lbl.value = `{{ __('Threads') }}`;
                 $("#displayIcon" + id).attr("class", "fab fa-threads text-white");
-                textlbl.type = 'url';
+                textlbl.type = 'text';
             } else if (type == 'snapchat') {
                 label = `{{ __('Snapchat') }}`;
                 textlabel = `{{ __('For ex: https://snapchat.com') }}`;
                 icon.value = "fab fa-snapchat";
                 lbl.value = `{{ __('Snapchat') }}`;
                 $("#displayIcon" + id).attr("class", "fab fa-snapchat text-white");
-                textlbl.type = 'url';
+                textlbl.type = 'text';
             } else if (type == 'wechat') {
                 label = `{{ __('WeChat') }}`;
                 textlabel = `{{ __('For ex: https://wechat.com') }}`;
                 icon.value = "fab fa-weixin";
                 lbl.value = `{{ __('WeChat') }}`;
                 $("#displayIcon" + id).attr("class", "fab fa-weixin text-white");
-                textlbl.type = 'url';
+                textlbl.type = 'text';
             } else if (type == 'telegram') {
                 label = `{{ __('Telegram') }}`;
                 textlabel = `{{ __('For ex: https://telegram.org') }}`;
                 icon.value = "fab fa-telegram";
                 lbl.value = `{{ __('Telegram') }}`;
                 $("#displayIcon" + id).attr("class", "fab fa-telegram text-white");
-                textlbl.type = 'url';
+                textlbl.type = 'text';
             } else if (type == 'tumblr') {
                 label = `{{ __('Tumblr') }}`;
                 textlabel = `{{ __('For ex: https://tumblr.com') }}`;
                 icon.value = "fab fa-tumblr";
                 lbl.value = `{{ __('Tumblr') }}`;
                 $("#displayIcon" + id).attr("class", "fab fa-tumblr text-white");
-                textlbl.type = 'url';
+                textlbl.type = 'text';
             } else if (type == 'qq') {
                 label = `{{ __('QQ') }}`;
                 textlabel = `{{ __('For ex: https://qq.com') }}`;
                 icon.value = "fab fa-qq";
                 lbl.value = `{{ __('QQ') }}`;
                 $("#displayIcon" + id).attr("class", "fab fa-qq text-white");
-                textlbl.type = 'url';
+                textlbl.type = 'text';
             } else if (type == 'discord') {
                 label = `{{ __('Discord') }}`;
                 textlabel = `{{ __('For ex: https://discord.com') }}`;
                 icon.value = "fab fa-discord";
                 lbl.value = `{{ __('Discord') }}`;
                 $("#displayIcon" + id).attr("class", "fab fa-discord text-white");
-                textlbl.type = 'url';
+                textlbl.type = 'text';
             } else if (type == 'quora') {
                 label = `{{ __('Quora') }}`;
                 textlabel = `{{ __('For ex: https://quora.com') }}`;
                 icon.value = "fab fa-quora";
                 lbl.value = `{{ __('Quora') }}`;
                 $("#displayIcon" + id).attr("class", "fab fa-quora text-white");
-                textlbl.type = 'url';
+                textlbl.type = 'text';
             } else if (type == 'iframe') {
                 label = `{{ __('src Link') }}`;
                 textlabel = `{{ __('For ex: https://domain.com?feed=152856') }}`;
                 icon.value = "fas fa-rss";
                 lbl.value = `{{ __('iframe') }}`;
                 $("#displayIcon" + id).attr("class", "fas fa-rss text-white");
-                textlbl.type = 'url';
+                textlbl.type = 'text';
             } else if (type == 'g-review') {
                 label = `{{ __('Google Review') }}`;
                 textlabel =
@@ -541,7 +541,7 @@
                 icon.value = "fas fa-star";
                 lbl.value = `{{ __('Google Review') }}`;
                 $("#displayIcon" + id).attr("class", "fas fa-star text-white");
-                textlbl.type = 'url';
+                textlbl.type = 'text';
             }
 
             lbl.placeholder = label;

@@ -649,6 +649,9 @@
         });
     </script>
 
+    {{-- Thumbnail next to chosen images --}}
+    @include('user.includes.media-thumb')
+
     {{-- Clipboard success handles --}}
     <script>
         document.addEventListener('DOMContentLoaded', function() {

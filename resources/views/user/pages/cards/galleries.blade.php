@@ -459,4 +459,6 @@
             }
         });
     </script>
+    {{-- Thumbnail next to chosen images --}}
+    @include('user.includes.media-thumb')
 @endpush
