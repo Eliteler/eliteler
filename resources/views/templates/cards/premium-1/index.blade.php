@@ -998,7 +998,7 @@
 
                                 {{-- Download vCard --}}
                                 <li class="flex items-center cursor-pointer">
-                                    <a href="#" onclick="event.preventDefault(); downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500, '{{ addslashes($card_details->title) }}')" title="{{ __('Download QR as PNG') }}">
+                                    <a href="#" onclick="event.preventDefault(); downloadQr('{{ card_public_url($business_card_details) }}', 500, '{{ addslashes($card_details->title) }}')" title="{{ __('Download QR as PNG') }}">
                                         <div
                                             class="flex justify-center items-center content-center bg-{{ $business_card_details->theme_color }} h-16 w-16 rounded-full fill-current text-white">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
@@ -1164,7 +1164,7 @@
                     </a>
 
                     {{-- Save Contact --}}
-                    <a href="#" onclick="event.preventDefault(); downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500, '{{ addslashes($card_details->title) }}')" title="{{ __('Download QR as PNG') }}"
+                    <a href="#" onclick="event.preventDefault(); downloadQr('{{ card_public_url($business_card_details) }}', 500, '{{ addslashes($card_details->title) }}')" title="{{ __('Download QR as PNG') }}"
                         class="flex flex-grow items-center justify-center p-2 text-gray-50 hover:text-gray-50 bg-{{ $business_card_details->theme_color }}">
                         <div class="text-center">
                             <span class="block h-8 grid justify-items-center text-3xl leading-8">
@@ -1226,7 +1226,7 @@
                         <div class="modal-content py-4 text-left px-6">
                             <div class="justify-between items-center px-6 qr-code"></div>
                             <a id="download"
-                                onclick="downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500, '{{ addslashes($card_details->title) }}')"
+                                onclick="downloadQr('{{ card_public_url($business_card_details) }}', 500, '{{ addslashes($card_details->title) }}')"
                                 class="flex justify-center items-center content-center bg-{{ $business_card_details->theme_color }} mt-3 cursor-pointer h-16 w-16 rounded-full fill-current text-white qr-code-download">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
                                     viewBox="0 0 24 24" stroke="currentColor">
@@ -1734,7 +1734,7 @@
         window.onload = function() {
             "use strict";
 
-            updateQr(`{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}`);
+            updateQr(`{{ card_public_url($business_card_details) }}`);
         };
     </script>
     <script>

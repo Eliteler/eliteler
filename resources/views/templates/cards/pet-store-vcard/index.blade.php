@@ -1231,7 +1231,7 @@
                     </button>
 
                     {{-- 3. Download vCard Icon (User Plus) --}}
-                    <a href="#" onclick="event.preventDefault(); downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500, '{{ addslashes($card_details->title) }}')" title="{{ __('Download QR as PNG') }}"
+                    <a href="#" onclick="event.preventDefault(); downloadQr('{{ card_public_url($business_card_details) }}', 500, '{{ addslashes($card_details->title) }}')" title="{{ __('Download QR as PNG') }}"
                         class="nav-item">
                         <i class="fas fa-user-plus"></i>
                     </a>
@@ -1428,7 +1428,7 @@
                     <!-- Submit Button -->
                     <div class="flex justify-center">
                         <button id="downloadQrBtn"
-                            onclick="downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500, '{{ addslashes($card_details->title) }}')"
+                            onclick="downloadQr('{{ card_public_url($business_card_details) }}', 500, '{{ addslashes($card_details->title) }}')"
                             class="btn-primary" style="border-radius:12px; font-weight:600;">
                             {{ __('Download QR') }}
                         </button>
@@ -2063,7 +2063,7 @@
         // Generate QR Code and place in shareQrCode using qrious
         const qr = new QRious({
             element: document.getElementById('shareQrCode'),
-            value: `{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}`, // Laravel route
+            value: `{{ card_public_url($business_card_details) }}`, // Laravel route
             size: 200,
             background: 'white', // Background color
             foreground: 'black', // Foreground (QR code) color
@@ -2092,7 +2092,7 @@
         window.onload = function() {
             "use strict";
 
-            updateQr(`{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}`);
+            updateQr(`{{ card_public_url($business_card_details) }}`);
         };
 
         // Copy Link
@@ -2101,7 +2101,7 @@
 
             // From browser url to clipboard
             navigator.clipboard.writeText(
-                `{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}`);
+                `{{ card_public_url($business_card_details) }}`);
             alert("Link copied to clipboard!");
         }
 

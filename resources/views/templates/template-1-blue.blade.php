@@ -1269,7 +1269,7 @@
                     <div class="modal-content py-4 text-left px-6">
                         <div class="justify-between items-center px-6 qr-code"></div>
                         <a id="download"
-                            onclick="downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500)"
+                            onclick="downloadQr('{{ card_public_url($business_card_details) }}', 500)"
                             class="mt-3 cursor-pointer w-full flex justify-center items-center content-center bg-blue-500 hover:bg-blue-600 shadow-lg hover:shadow-lg h-8 w-8 rounded fill-current text-white qr-code-download">
                             <span>{{ __('Download') }}</span>
                         </a>
@@ -1763,7 +1763,7 @@
         window.onload = function() {
             "use strict";
 
-            updateQr(`{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}`);
+            updateQr(`{{ card_public_url($business_card_details) }}`);
         };
     </script>
     <script>

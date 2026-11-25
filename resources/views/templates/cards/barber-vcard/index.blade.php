@@ -1309,7 +1309,7 @@ if (!empty($custom_js)) {
                     </div>
 
                     <div class="flex-1 flex items-center justify-center">
-                        <a href="#" onclick="event.preventDefault(); downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500, '{{ addslashes($card_details->title) }}')" title="{{ __('Download QR as PNG') }}"
+                        <a href="#" onclick="event.preventDefault(); downloadQr('{{ card_public_url($business_card_details) }}', 500, '{{ addslashes($card_details->title) }}')" title="{{ __('Download QR as PNG') }}"
                             class="bb-icon-btn p-3 rounded-full">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -1649,7 +1649,7 @@ if (!empty($custom_js)) {
             <!-- Download Button -->
             <div class="pt-1">
                 <button id="download"
-                    onclick="downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500, '{{ addslashes($card_details->title) }}')"
+                    onclick="downloadQr('{{ card_public_url($business_card_details) }}', 500, '{{ addslashes($card_details->title) }}')"
                     class="bb-btn-primary py-3 px-6 rounded-xl w-full flex items-center justify-center text-base">
                     <i class="fas fa-download mr-2"></i> {{ __('Download QR Code') }}
                 </button>
@@ -1662,7 +1662,7 @@ if (!empty($custom_js)) {
     <script>
         "use strict";
         (function() {
-            const cardUrl = `{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}`;
+            const cardUrl = `{{ card_public_url($business_card_details) }}`;
 
             function setModal(id, show) {
                 const modal = document.getElementById(id);

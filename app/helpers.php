@@ -407,3 +407,34 @@ if (! function_exists('card_slider_delay')) {
         return is_numeric($seconds) && $seconds >= 0.5 && $seconds <= 60 ? (int) round($seconds * 1000) : $defaultMs;
     }
 }
+
+if (! function_exists('card_public_url')) {
+    /**
+     * The address visitors use for a card or store (what its QR code points to):
+     * subdomain when subdomains are enabled, else its custom domain, else /<card_url>.
+     * Same rules as SubdomainController::dynamicCard, without the redirect hop.
+     */
+    function card_public_url($card): string
+    {
+        static $subdomains = null;
+
+        $slug = (string) ($card->card_url ?? '');
+        if ($slug === '') {
+            return config('app.url') . route('dynamic.card', $card->card_id, false);
+        }
+
+        if ($subdomains === null) {
+            $subdomains = (string) \Illuminate\Support\Facades\DB::table('config')->where('config_key', 'subdomain_enabled')->value('config_value') === '1';
+        }
+
+        if ($subdomains) {
+            return route('subdomain.profile', $slug);
+        }
+
+        if (! empty($card->custom_domain)) {
+            return 'https://' . $card->custom_domain;
+        }
+
+        return rtrim(config('app.url'), '/') . '/' . $slug;
+    }
+}

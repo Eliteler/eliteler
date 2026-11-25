@@ -933,7 +933,7 @@
                         onclick="document.getElementById('booking-section')?.scrollIntoView({behavior:'smooth'})">
                         <i class="far fa-calendar-check"></i>
                     </button>
-                    <a href="#" onclick="event.preventDefault(); downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500, '{{ addslashes($card_details->title) }}')" title="{{ __('Download QR as PNG') }}"
+                    <a href="#" onclick="event.preventDefault(); downloadQr('{{ card_public_url($business_card_details) }}', 500, '{{ addslashes($card_details->title) }}')" title="{{ __('Download QR as PNG') }}"
                         class="nav-item">
                         <i class="fas fa-user-plus"></i>
                     </a>
@@ -1126,7 +1126,7 @@
 
                     {{-- Download button --}}
                     <button id="download"
-                        onclick="downloadQrStyled(this, '{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500)"
+                        onclick="downloadQrStyled(this, '{{ card_public_url($business_card_details) }}', 500)"
                         class="qr-download-btn">
                         <i class="fas fa-download"></i>
                         <span>{{ __('Download QR') }}</span>
@@ -1389,7 +1389,7 @@
 
         function copyLink() {
             navigator.clipboard.writeText(
-                `{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}`);
+                `{{ card_public_url($business_card_details) }}`);
             alert("{{ __('Link copied to clipboard!') }}");
         }
 
@@ -1408,14 +1408,14 @@
         // ── QR Code ──
         const qr = new QRious({
             element: document.getElementById('shareQrCode'),
-            value: `{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}`,
+            value: `{{ card_public_url($business_card_details) }}`,
             size: 200,
             background: 'white',
             foreground: 'black',
             level: 'H'
         });
         window.onload = function() {
-            updateQr(`{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}`);
+            updateQr(`{{ card_public_url($business_card_details) }}`);
         };
 
         // ── Nav active state ──

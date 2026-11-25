@@ -28,7 +28,7 @@
 
     <!-- Download Icon -->
     <div class="flex-1 flex items-center justify-center">
-        <a href="#" onclick="event.preventDefault(); downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500, '{{ addslashes($card_details->title) }}')" title="{{ __('Download QR as PNG') }}"
+        <a href="#" onclick="event.preventDefault(); downloadQr('{{ card_public_url($business_card_details) }}', 500, '{{ addslashes($card_details->title) }}')" title="{{ __('Download QR as PNG') }}"
             class="border border-green-600 p-3 rounded-2xl bg-green-200">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"

@@ -954,7 +954,7 @@
                         <p class="qr-hint"><i class="fas fa-qrcode"></i>{{ __('Point your camera to scan') }}</p>
                     </div>
                     <button id="download"
-                        onclick="downloadQrStyled(this,'{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}',500)"
+                        onclick="downloadQrStyled(this,'{{ card_public_url($business_card_details) }}',500)"
                         class="qr-download-btn">
                         <i class="fas fa-download"></i><span>{{ __('Download QR') }}</span>
                     </button>
@@ -1162,7 +1162,7 @@
 
         function copyLinkStyled(btn) {
             navigator.clipboard.writeText(
-                `{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}`).then(
+                `{{ card_public_url($business_card_details) }}`).then(
                 () => {
                     const icon = btn.querySelector('i'),
                         span = btn.querySelector('span');
@@ -1179,7 +1179,7 @@
 
         function copyLink() {
             navigator.clipboard.writeText(
-                `{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}`);
+                `{{ card_public_url($business_card_details) }}`);
             alert("{{ __('Link copied to clipboard!') }}");
         }
 
@@ -1197,14 +1197,14 @@
         // QR — black on yellow matching electrician theme
         const qr = new QRious({
             element: document.getElementById('shareQrCode'),
-            value: `{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}`,
+            value: `{{ card_public_url($business_card_details) }}`,
             size: 200,
             background: '#f4f5f7',
             foreground: '#111111',
             level: 'H'
         });
         window.onload = function() {
-            updateQr(`{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}`);
+            updateQr(`{{ card_public_url($business_card_details) }}`);
         };
 
         function downloadQrStyled(btn, url, size) {

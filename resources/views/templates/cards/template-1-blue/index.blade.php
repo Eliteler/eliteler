@@ -294,7 +294,7 @@
                                     <!-- Add to Contact -->
                                     <div class="w-1/3 md:w-1/3 px-2 mb-2 md:mb-0">
                                         <a class="flex justify-center py-2 text-sm text-white bg-blue-500 hover:bg-blue-600 rounded transition duration-200"
-                                            href="#" onclick="event.preventDefault(); downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500, '{{ addslashes($card_details->title) }}')" title="{{ __('Download QR as PNG') }}">
+                                            href="#" onclick="event.preventDefault(); downloadQr('{{ card_public_url($business_card_details) }}', 500, '{{ addslashes($card_details->title) }}')" title="{{ __('Download QR as PNG') }}">
                                             <svg xmlns="http://www.w3.org/2000/svg"
                                                 class="icon icon-tabler icon-tabler-address-book" width="24"
                                                 height="24" viewBox="0 0 24 24" stroke-width="2"
@@ -1281,7 +1281,7 @@
                     <div class="modal-content py-4 text-left px-6">
                         <div class="justify-between items-center px-6 qr-code"></div>
                         <a id="download"
-                            onclick="downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500, '{{ addslashes($card_details->title) }}')"
+                            onclick="downloadQr('{{ card_public_url($business_card_details) }}', 500, '{{ addslashes($card_details->title) }}')"
                             class="mt-3 cursor-pointer w-full flex justify-center items-center content-center bg-blue-500 hover:bg-blue-600 shadow-lg hover:shadow-lg h-8 w-8 rounded fill-current text-white qr-code-download">
                             <span>{{ __('Download') }}</span>
                         </a>
@@ -1779,7 +1779,7 @@
         window.onload = function() {
             "use strict";
 
-            updateQr(`{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}`);
+            updateQr(`{{ card_public_url($business_card_details) }}`);
         };
     </script>
     <script>

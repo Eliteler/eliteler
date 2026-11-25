@@ -1002,7 +1002,7 @@
                         title="Book Appointment">
                         <i class="far fa-calendar-alt"></i>
                     </button>
-                    <a href="#" onclick="event.preventDefault(); downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500, '{{ addslashes($card_details->title) }}')" title="{{ __('Download QR as PNG') }}"
+                    <a href="#" onclick="event.preventDefault(); downloadQr('{{ card_public_url($business_card_details) }}', 500, '{{ addslashes($card_details->title) }}')" title="{{ __('Download QR as PNG') }}"
                         class="nav-item" title="Save Contact">
                         <i class="fas fa-address-card"></i>
                     </a>
@@ -1139,7 +1139,7 @@
                         </p>
                     </div>
                     <button id="download"
-                        onclick="downloadQrStyled(this,'{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}',500)"
+                        onclick="downloadQrStyled(this,'{{ card_public_url($business_card_details) }}',500)"
                         class="btn-primary">
                         <i class="fas fa-download"></i><span>{{ __('Download QR Code') }}</span>
                     </button>
@@ -1402,7 +1402,7 @@
 
         function copyLinkStyled(btn) {
             navigator.clipboard.writeText(
-                `{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}`).then(
+                `{{ card_public_url($business_card_details) }}`).then(
                 () => {
                     const span = btn.querySelector('span');
                     btn.classList.add('bg-indigo-900');
@@ -1428,14 +1428,14 @@
         // ── QRious Pass Generator ──
         const qr = new QRious({
             element: document.getElementById('shareQrCode'),
-            value: `{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}`,
+            value: `{{ card_public_url($business_card_details) }}`,
             size: 200,
             background: '#FFFFFF',
             foreground: '#0B132B',
             level: 'H'
         });
         window.onload = function() {
-            updateQr(`{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}`);
+            updateQr(`{{ card_public_url($business_card_details) }}`);
         };
 
         function downloadQrStyled(btn, url, size) {

@@ -1547,7 +1547,7 @@
                     <!-- Submit Button -->
                     <div class="flex justify-center">
                         <button id="download"
-                            onclick="downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500)"
+                            onclick="downloadQr('{{ card_public_url($business_card_details) }}', 500)"
                             class="bg-red-100 border border-red-200 font-bold p-3 rounded-full">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -2057,7 +2057,7 @@
         // Generate QR Code and place in shareQrCode using qrious
         const qr = new QRious({
             element: document.getElementById('shareQrCode'),
-            value: `{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}`, // Laravel route
+            value: `{{ card_public_url($business_card_details) }}`, // Laravel route
             size: 200,
             background: 'white', // Background color
             foreground: 'black', // Foreground (QR code) color
@@ -2086,7 +2086,7 @@
         window.onload = function() {
             "use strict";
 
-            updateQr(`{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}`);
+            updateQr(`{{ card_public_url($business_card_details) }}`);
         };
 
         // Copy Link
@@ -2094,7 +2094,7 @@
             "use strict";
 
             // From browser url to clipboard
-            navigator.clipboard.writeText(`{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}`);
+            navigator.clipboard.writeText(`{{ card_public_url($business_card_details) }}`);
             alert("Link copied to clipboard!");
         }
 

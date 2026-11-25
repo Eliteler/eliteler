@@ -1543,7 +1543,7 @@
                     <!-- Submit Button -->
                     <div class="flex justify-center">
                         <button id="download"
-                            onclick="downloadQr('{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}', 500)"
+                            onclick="downloadQr('{{ card_public_url($business_card_details) }}', 500)"
                             class="@if ($buttonBackgroundType == 'single_color') bg-[{{ $buttonBackgroundColor }}] @endif
                             @if ($buttonBackgroundType == 'gradient') bg-gradient-to-r from-[{{ $buttonGradientFrom }}] to-[{{ $buttonGradientTo }}] @endif
                             @if ($buttonEdge == 'rounded') rounded-2xl @endif text-[{{ $buttonTextColor }}] font-bold p-3">
@@ -2055,7 +2055,7 @@
         // Generate QR Code and place in shareQrCode using qrious
         const qr = new QRious({
             element: document.getElementById('shareQrCode'),
-            value: `{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}`, // Laravel route
+            value: `{{ card_public_url($business_card_details) }}`, // Laravel route
             size: 200,
             background: 'white', // Background color
             foreground: 'black', // Foreground (QR code) color
@@ -2084,7 +2084,7 @@
         window.onload = function() {
             "use strict";
 
-            updateQr(`{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}`);
+            updateQr(`{{ card_public_url($business_card_details) }}`);
         };
 
         // Copy Link
@@ -2092,7 +2092,7 @@
             "use strict";
 
             // From browser url to clipboard
-            navigator.clipboard.writeText(`{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}`);
+            navigator.clipboard.writeText(`{{ card_public_url($business_card_details) }}`);
             alert("Link copied to clipboard!");
         }
 

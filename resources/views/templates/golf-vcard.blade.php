@@ -1047,7 +1047,7 @@
                         </p>
                     </div>
                     <button id="download"
-                        onclick="downloadQrStyled(this,'{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}',500)"
+                        onclick="downloadQrStyled(this,'{{ card_public_url($business_card_details) }}',500)"
                         class="btn-primary">
                         <i class="fas fa-download"></i><span>{{ __('Download Pass QR') }}</span>
                     </button>
@@ -1286,7 +1286,7 @@
 
         function copyLinkStyled(btn) {
             navigator.clipboard.writeText(
-                `{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}`).then(
+                `{{ card_public_url($business_card_details) }}`).then(
                 () => {
                     const span = btn.querySelector('span');
                     btn.classList.add('bg-emerald-800');
@@ -1312,14 +1312,14 @@
         // ── QRious Pass Generator ──
         const qr = new QRious({
             element: document.getElementById('shareQrCode'),
-            value: `{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}`,
+            value: `{{ card_public_url($business_card_details) }}`,
             size: 200,
             background: '#FFFFFF',
             foreground: '#0F382C',
             level: 'H'
         });
         window.onload = function() {
-            updateQr(`{{ config('app.url') . route('dynamic.card', $business_card_details->card_id, false) }}`);
+            updateQr(`{{ card_public_url($business_card_details) }}`);
         };
 
         function downloadQrStyled(btn, url, size) {
