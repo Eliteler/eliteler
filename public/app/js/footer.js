@@ -9,20 +9,30 @@ var scroll = new SmoothScroll('a[href*="#"]');
 function closeCookie() {
     $(".cookie-consent").fadeOut(300);
 }
-// Camera-like flash when the QR download button is pressed
-function qrFlash() {
+// Soft, repeating flash on the QR download buttons so visitors notice them before pressing
+(function () {
     "use strict";
-    var flash = document.createElement("div");
-    flash.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;background:#fff;opacity:0.95;z-index:2147483647;pointer-events:none;transition:opacity 0.5s ease-out;";
-    document.body.appendChild(flash);
-    requestAnimationFrame(function () {
-        requestAnimationFrame(function () { flash.style.opacity = "0"; });
-    });
-    setTimeout(function () { if (flash.parentNode) { flash.parentNode.removeChild(flash); } }, 650);
-}
+    function addPulse() {
+        var buttons = document.querySelectorAll('[onclick*="downloadQr"]');
+        if (!buttons.length) { return; }
+        if (!document.getElementById("qr-download-pulse-style")) {
+            var style = document.createElement("style");
+            style.id = "qr-download-pulse-style";
+            style.textContent =
+                "@keyframes qrDownloadPulse{" +
+                "0%,55%,100%{filter:brightness(1);box-shadow:0 0 0 0 transparent;}" +
+                "70%{filter:brightness(1.35);box-shadow:0 0 0 6px rgba(255,255,255,.55),0 0 14px 4px rgba(255,255,255,.45);}" +
+                "85%{filter:brightness(1.1);box-shadow:0 0 0 10px rgba(255,255,255,0),0 0 18px 8px rgba(255,255,255,0);}}" +
+                ".qr-download-pulse{animation:qrDownloadPulse 2.4s ease-in-out infinite;}" +
+                "@media (prefers-reduced-motion: reduce){.qr-download-pulse{animation:none;}}";
+            document.head.appendChild(style);
+        }
+        for (var i = 0; i < buttons.length; i++) { buttons[i].classList.add("qr-download-pulse"); }
+    }
+    if (document.readyState === "loading") { document.addEventListener("DOMContentLoaded", addPulse); } else { addPulse(); }
+})();
 function downloadQr(url, size, name) {
     "use strict";
-    qrFlash();
     
     var qrious = new QRious({ value: url, size: size });
     var qrDataURL = qrious.toDataURL();
