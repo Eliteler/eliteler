@@ -16,6 +16,8 @@
     .cc-section { padding: 5rem 0 3rem; overflow: hidden; }
     .cc-box { border-radius: 1.75rem; padding: 3rem 1.5rem; background: linear-gradient(135deg, #111827, #1f2937); color: #fff; position: relative; overflow: hidden; }
     .cc-box::after { content: ""; position: absolute; width: 22rem; height: 22rem; border-radius: 9999px; background: var(--cc-accent); opacity: .22; filter: blur(60px); top: -8rem; inset-inline-end: -6rem; pointer-events: none; }
+    .cc-box > * { position: relative; z-index: 1; }
+    .cc-box::after { z-index: 0; }
     .cc-kicker { margin-bottom: 1rem; font-weight: 600; font-size: .75rem; letter-spacing: .1em; text-transform: uppercase; color: #9ca3af; }
     .cc-title { font-weight: 600; font-size: 2.25rem; line-height: 1.2; margin-bottom: 1rem; overflow-wrap: break-word; }
     .cc-sub { max-width: 42rem; color: #d1d5db; line-height: 1.9; margin-bottom: 2.5rem; }
