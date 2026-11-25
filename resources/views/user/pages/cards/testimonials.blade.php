@@ -478,4 +478,6 @@
             }
         });
     </script>
+    {{-- Thumbnail + size hint next to image fields --}}
+    @include('user.includes.media-thumb', ['recommended' => '400 × 400 px'])
 @endpush

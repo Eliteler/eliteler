@@ -1058,19 +1058,19 @@ if (!empty($custom_js)) {
 
             <div class="grid grid-cols-5 gap-2.5 py-2">
                 <a href="{{ $shareComponent['facebook'] }}" target="_blank"
-                    class="p-3 rounded-xl border border-[#5F6F52]/30 text-[#5F6F52] hover:bg-[#5F6F52] hover:text-white transition-all"><i
+                    class="p-3 rounded-xl border border-[#5F6F52]/30 text-[#5F6F52] hover:bg-[#5F6F52] hover:text-white transition-all"><i style="color: #1877F2 !important;"
                         class="fab fa-facebook-f text-lg"></i></a>
                 <a href="{{ $shareComponent['twitter'] }}" target="_blank"
-                    class="p-3 rounded-xl border border-[#5F6F52]/30 text-[#5F6F52] hover:bg-[#5F6F52] hover:text-white transition-all"><i
+                    class="p-3 rounded-xl border border-[#5F6F52]/30 text-[#5F6F52] hover:bg-[#5F6F52] hover:text-white transition-all"><i style="color: #1DA1F2 !important;"
                         class="fab fa-twitter text-lg"></i></a>
                 <a href="{{ $shareComponent['linkedin'] }}" target="_blank"
-                    class="p-3 rounded-xl border border-[#5F6F52]/30 text-[#5F6F52] hover:bg-[#5F6F52] hover:text-white transition-all"><i
+                    class="p-3 rounded-xl border border-[#5F6F52]/30 text-[#5F6F52] hover:bg-[#5F6F52] hover:text-white transition-all"><i style="color: #0A66C2 !important;"
                         class="fab fa-linkedin-in text-lg"></i></a>
                 <a href="{{ $shareComponent['whatsapp'] }}" target="_blank"
-                    class="p-3 rounded-xl border border-[#5F6F52]/30 text-[#5F6F52] hover:bg-[#5F6F52] hover:text-white transition-all"><i
+                    class="p-3 rounded-xl border border-[#5F6F52]/30 text-[#5F6F52] hover:bg-[#5F6F52] hover:text-white transition-all"><i style="color: #25D366 !important;"
                         class="fab fa-whatsapp text-lg"></i></a>
                 <a href="{{ $shareComponent['telegram'] }}" target="_blank"
-                    class="p-3 rounded-xl border border-[#5F6F52]/30 text-[#5F6F52] hover:bg-[#5F6F52] hover:text-white transition-all"><i
+                    class="p-3 rounded-xl border border-[#5F6F52]/30 text-[#5F6F52] hover:bg-[#5F6F52] hover:text-white transition-all"><i style="color: #26A5E4 !important;"
                         class="fab fa-telegram-plane text-lg"></i></a>
             </div>
 

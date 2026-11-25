@@ -842,7 +842,7 @@
                                     <li class="flex cursor-pointer items-center">
                                         <div
                                             class="flex justify-center items-center content-center bg-gradient-to-br from-yellow-300 to-yellow-800 shadow-md hover:shadow-lg h-12 w-12 fill-current text-white">
-                                            <i class="fab fa-facebook"></i>
+                                            <i style="color: #1877F2 !important;" class="fab fa-facebook"></i>
                                         </div>
                                     </li>
                                 </a>
@@ -852,7 +852,7 @@
                                     <li class="flex cursor-pointer items-center">
                                         <div
                                             class="flex justify-center items-center content-center bg-gradient-to-br from-yellow-300 to-yellow-800 shadow-md hover:shadow-lg h-12 w-12 fill-current text-white">
-                                            <i class="fab fa-twitter"></i>
+                                            <i style="color: #1DA1F2 !important;" class="fab fa-twitter"></i>
                                         </div>
                                     </li>
                                 </a>
@@ -862,7 +862,7 @@
                                     <li class="flex cursor-pointer items-center">
                                         <div
                                             class="flex justify-center items-center content-center bg-gradient-to-br from-yellow-300 to-yellow-800 shadow-md hover:shadow-lg h-12 w-12 fill-current text-white">
-                                            <i class="fab fa-linkedin"></i>
+                                            <i style="color: #0A66C2 !important;" class="fab fa-linkedin"></i>
                                         </div>
                                     </li>
                                 </a>
@@ -872,7 +872,7 @@
                                     <li class="flex cursor-pointer items-center">
                                         <div
                                             class="flex justify-center items-center content-center bg-gradient-to-br from-yellow-300 to-yellow-800 shadow-md hover:shadow-lg h-12 w-12 fill-current text-white">
-                                            <i class="fab fa-telegram"></i>
+                                            <i style="color: #26A5E4 !important;" class="fab fa-telegram"></i>
                                         </div>
                                     </li>
                                 </a>
@@ -882,7 +882,7 @@
                                     <li class="flex cursor-pointer items-center">
                                         <div
                                             class="flex justify-center items-center content-center bg-gradient-to-br from-yellow-300 to-yellow-800 shadow-md hover:shadow-lg h-12 w-12 fill-current text-white">
-                                            <i class="fab fa-whatsapp"></i>
+                                            <i style="color: #25D366 !important;" class="fab fa-whatsapp"></i>
                                         </div>
                                     </li>
                                 </a>

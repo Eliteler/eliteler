@@ -1535,23 +1535,23 @@ if (!empty($custom_js)) {
             <div class="grid grid-cols-5 gap-3 text-center py-2">
                 <a href="{{ $shareComponent['facebook'] }}" target="_blank"
                     class="bb-icon-btn p-3 rounded-xl flex items-center justify-center hover:scale-105 transition-transform">
-                    <i class="fab fa-facebook-f text-xl"></i>
+                    <i style="color: #1877F2 !important;" class="fab fa-facebook-f text-xl"></i>
                 </a>
                 <a href="{{ $shareComponent['twitter'] }}" target="_blank"
                     class="bb-icon-btn p-3 rounded-xl flex items-center justify-center hover:scale-105 transition-transform">
-                    <i class="fab fa-twitter text-xl"></i>
+                    <i style="color: #1DA1F2 !important;" class="fab fa-twitter text-xl"></i>
                 </a>
                 <a href="{{ $shareComponent['linkedin'] }}" target="_blank"
                     class="bb-icon-btn p-3 rounded-xl flex items-center justify-center hover:scale-105 transition-transform">
-                    <i class="fab fa-linkedin-in text-xl"></i>
+                    <i style="color: #0A66C2 !important;" class="fab fa-linkedin-in text-xl"></i>
                 </a>
                 <a href="{{ $shareComponent['whatsapp'] }}" target="_blank"
                     class="bb-icon-btn p-3 rounded-xl flex items-center justify-center hover:scale-105 transition-transform">
-                    <i class="fab fa-whatsapp text-xl"></i>
+                    <i style="color: #25D366 !important;" class="fab fa-whatsapp text-xl"></i>
                 </a>
                 <a href="{{ $shareComponent['telegram'] }}" target="_blank"
                     class="bb-icon-btn p-3 rounded-xl flex items-center justify-center hover:scale-105 transition-transform">
-                    <i class="fab fa-telegram-plane text-xl"></i>
+                    <i style="color: #26A5E4 !important;" class="fab fa-telegram-plane text-xl"></i>
                 </a>
             </div>
 

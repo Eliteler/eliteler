@@ -1116,7 +1116,7 @@
                                 <div class="flex flex-wrap pt-6 -mx-2">
                                     <!-- Facebook -->
                                     <div class="w-1/5 md:w-1/5 px-2 mb-2 md:mb-0">
-                                        <a class="flex justify-center py-2 text-sm text-white bg-purple-500 hover:bg-purple-600 rounded transition duration-200"
+                                        <a class="flex justify-center py-2 text-sm text-white bg-purple-500 hover:bg-purple-600 rounded transition duration-200" style="background-color: #1877F2 !important;"
                                             href="{{ $shareComponent['facebook'] }}" target="_blank">
                                             <svg xmlns="http://www.w3.org/2000/svg"
                                                 class="icon icon-tabler icon-tabler-brand-facebook" width="24"
@@ -1133,7 +1133,7 @@
 
                                     <!-- X (Twitter) -->
                                     <div class="w-1/5 md:w-1/5 px-2 mb-2 md:mb-0">
-                                        <a class="flex justify-center py-2 text-sm text-white bg-purple-500 hover:bg-purple-600 rounded transition duration-200"
+                                        <a class="flex justify-center py-2 text-sm text-white bg-purple-500 hover:bg-purple-600 rounded transition duration-200" style="background-color: #1DA1F2 !important;"
                                             href="{{ $shareComponent['twitter'] }}" target="_blank">
                                             <svg xmlns="http://www.w3.org/2000/svg"
                                                 class="icon icon-tabler icon-tabler-brand-x" width="24"
@@ -1149,7 +1149,7 @@
 
                                     <!-- Linked In -->
                                     <div class="w-1/5 md:w-1/5 px-2 mb-2 md:mb-0">
-                                        <a class="flex justify-center py-2 text-sm text-white bg-purple-500 hover:bg-purple-600 rounded transition duration-200"
+                                        <a class="flex justify-center py-2 text-sm text-white bg-purple-500 hover:bg-purple-600 rounded transition duration-200" style="background-color: #0A66C2 !important;"
                                             href="{{ $shareComponent['linkedin'] }}" target="_blank">
                                             <svg xmlns="http://www.w3.org/2000/svg"
                                                 class="icon icon-tabler icon-tabler-brand-linkedin" width="24"
@@ -1170,7 +1170,7 @@
 
                                     <!-- Telegram -->
                                     <div class="w-1/5 md:w-1/5 px-2 mb-2 md:mb-0">
-                                        <a class="flex justify-center py-2 text-sm text-white bg-purple-500 hover:bg-purple-600 rounded transition duration-200"
+                                        <a class="flex justify-center py-2 text-sm text-white bg-purple-500 hover:bg-purple-600 rounded transition duration-200" style="background-color: #26A5E4 !important;"
                                             href="{{ $shareComponent['telegram'] }}" target="_blank">
                                             <svg xmlns="http://www.w3.org/2000/svg"
                                                 class="icon icon-tabler icon-tabler-brand-telegram" width="24"
@@ -1185,7 +1185,7 @@
 
                                     <!-- WhatsApp -->
                                     <div class="w-1/5 md:w-1/5 px-2 mb-2 md:mb-0">
-                                        <a class="flex justify-center py-2 text-sm text-white bg-purple-500 hover:bg-purple-600 rounded transition duration-200"
+                                        <a class="flex justify-center py-2 text-sm text-white bg-purple-500 hover:bg-purple-600 rounded transition duration-200" style="background-color: #25D366 !important;"
                                             href="{{ $shareComponent['whatsapp'] }}" target="_blank">
                                             <svg xmlns="http://www.w3.org/2000/svg"
                                                 class="icon icon-tabler icon-tabler-brand-whatsapp" width="24"

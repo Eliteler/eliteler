@@ -584,4 +584,6 @@
             subtree: true
         });
     </script>
+    {{-- Thumbnail + size hint next to image fields --}}
+    @include('user.includes.media-thumb', ['recommended' => '800 × 600 px'])
 @endpush

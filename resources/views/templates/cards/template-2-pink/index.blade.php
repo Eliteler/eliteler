@@ -1099,7 +1099,7 @@
                                 <div class="flex flex-wrap pt-6 -mx-2">
                                     <!-- Facebook -->
                                     <div class="w-full lg:py-1 px-2 mb-2 md:mb-0">
-                                        <a class="flex justify-center py-2 text-sm text-white bg-pink-500 hover:bg-pink-600 rounded transition duration-200"
+                                        <a class="flex justify-center py-2 text-sm text-white bg-pink-500 hover:bg-pink-600 rounded transition duration-200" style="background-color: #1877F2 !important;"
                                             href="{{ $shareComponent['facebook'] }}" target="_blank">
                                             <svg xmlns="http://www.w3.org/2000/svg"
                                                 class="icon icon-tabler icon-tabler-brand-facebook mr-2"
@@ -1117,7 +1117,7 @@
 
                                     <!-- X (Twitter) -->
                                     <div class="w-full lg:py-1 px-2 mb-2 md:mb-0">
-                                        <a class="flex justify-center py-2 text-sm text-white bg-pink-500 hover:bg-pink-600 rounded transition duration-200"
+                                        <a class="flex justify-center py-2 text-sm text-white bg-pink-500 hover:bg-pink-600 rounded transition duration-200" style="background-color: #1DA1F2 !important;"
                                             href="{{ $shareComponent['twitter'] }}" target="_blank">
                                             <svg xmlns="http://www.w3.org/2000/svg"
                                                 class="icon icon-tabler icon-tabler-brand-x mr-2" width="24"
@@ -1134,7 +1134,7 @@
 
                                     <!-- Linked In -->
                                     <div class="w-full lg:py-1 px-2 mb-2 md:mb-0">
-                                        <a class="flex justify-center py-2 text-sm text-white bg-pink-500 hover:bg-pink-600 rounded transition duration-200"
+                                        <a class="flex justify-center py-2 text-sm text-white bg-pink-500 hover:bg-pink-600 rounded transition duration-200" style="background-color: #0A66C2 !important;"
                                             href="{{ $shareComponent['linkedin'] }}" target="_blank">
                                             <svg xmlns="http://www.w3.org/2000/svg"
                                                 class="icon icon-tabler icon-tabler-brand-linkedin mr-2"
@@ -1156,7 +1156,7 @@
 
                                     <!-- Telegram -->
                                     <div class="w-full lg:py-1 px-2 mb-2 md:mb-0">
-                                        <a class="flex justify-center py-2 text-sm text-white bg-pink-500 hover:bg-pink-600 rounded transition duration-200"
+                                        <a class="flex justify-center py-2 text-sm text-white bg-pink-500 hover:bg-pink-600 rounded transition duration-200" style="background-color: #26A5E4 !important;"
                                             href="{{ $shareComponent['telegram'] }}" target="_blank">
                                             <svg xmlns="http://www.w3.org/2000/svg"
                                                 class="icon icon-tabler icon-tabler-brand-telegram mr-2"
@@ -1172,7 +1172,7 @@
 
                                     <!-- WhatsApp -->
                                     <div class="w-full lg:py-1 px-2 mb-2 md:mb-0">
-                                        <a class="flex justify-center py-2 text-sm text-white bg-pink-500 hover:bg-pink-600 rounded transition duration-200"
+                                        <a class="flex justify-center py-2 text-sm text-white bg-pink-500 hover:bg-pink-600 rounded transition duration-200" style="background-color: #25D366 !important;"
                                             href="{{ $shareComponent['whatsapp'] }}" target="_blank">
                                             <svg xmlns="http://www.w3.org/2000/svg"
                                                 class="icon icon-tabler icon-tabler-brand-whatsapp mr-2"

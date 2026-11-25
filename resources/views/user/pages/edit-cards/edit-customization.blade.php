@@ -293,7 +293,7 @@
                                         {{-- Fonts --}}
                                         <div class="mb-3">
                                             <label class="form-label">{{ __('Font Family') }}</label>
-                                            <div class="form-selectgroup">
+                                            <div>
                                                 @php
                                                     $fonts = [
                                                         'Pacifico',
@@ -350,18 +350,25 @@
                                                         'Markazi Text' => 'markazi-text',
                                                     ];
                                                 @endphp
-                                                @foreach ($fonts as $font)
-                                                    <label class="form-selectgroup-item">
-                                                        <input type="radio" name="font" value="{{ $font }}"
-                                                            onclick="updateCustomStyle('font')"
-                                                            class="form-selectgroup-input"
-                                                            {{ ($custom_styles['font_family'] ?? '') == $font ? 'checked' : '' }}>
-                                                        <span
-                                                            class="form-selectgroup-label {{ $fontClasses[$font] ?? '' }}">
-                                                            {{ $font }}
-                                                        </span>
-                                                    </label>
-                                                @endforeach
+                                                @php $arabicFontNames = ['Cairo', 'Tajawal', 'Almarai', 'Amiri', 'Noto Kufi Arabic', 'Noto Naskh Arabic', 'El Messiri', 'Changa', 'Readex Pro', 'IBM Plex Sans Arabic', 'Markazi Text']; $currentFont = $custom_styles['font_family'] ?? ''; @endphp
+                                                <select class="form-select" id="cardFont" name="font" style="max-width: 380px;"
+                                                    onchange="updateCustomStyle('font'); document.getElementById('cardFontPreview').style.fontFamily = '\'' + this.value + '\', \'' + (this.value === 'Spartan' ? 'League Spartan' : this.value) + '\', sans-serif';">
+                                                    <optgroup label="{{ __('Latin fonts') }}">
+                                                        @foreach ($fonts as $font)
+                                                            @if (!in_array($font, $arabicFontNames))
+                                                                <option value="{{ $font }}" class="{{ $fontClasses[$font] ?? '' }}" {{ $currentFont == $font ? 'selected' : '' }}>{{ $font }}</option>
+                                                            @endif
+                                                        @endforeach
+                                                    </optgroup>
+                                                    <optgroup label="{{ __('Arabic fonts') }}">
+                                                        @foreach ($fonts as $font)
+                                                            @if (in_array($font, $arabicFontNames))
+                                                                <option value="{{ $font }}" class="{{ $fontClasses[$font] ?? '' }}" {{ $currentFont == $font ? 'selected' : '' }}>{{ $font }}</option>
+                                                            @endif
+                                                        @endforeach
+                                                    </optgroup>
+                                                </select>
+                                                <div id="cardFontPreview" class="mt-2 px-3 py-2 border rounded" style="max-width: 380px; font-size: 18px; font-family: '{{ $currentFont }}', '{{ $currentFont == 'Spartan' ? 'League Spartan' : $currentFont }}', sans-serif;">Aa Bb Cc 123 — بطاقة رقمية</div>
                                             </div>
                                         </div>
 
@@ -536,6 +543,32 @@
                                         </div>
                                     </div>
 
+                                    {{-- Section: Sliders --}}
+                                    <div class="customization-section-card">
+                                        <div class="mb-3">
+                                            <h4 class="fw-bold text-dark mb-1">{{ __('Sliders speed') }}</h4>
+                                            <p class="text-muted small mb-0">{{ __('Seconds each slide stays before moving to the next one. Leave empty to keep the default.') }}</p>
+                                        </div>
+                                        <div class="row g-2">
+                                            <div class="col-6 col-md-3">
+                                                <label class="form-label" for="sliderSpeedServices">{{ __('Services slider (seconds)') }}</label>
+                                                <input type="number" min="0.5" max="60" step="0.5" class="form-control" id="sliderSpeedServices" value="{{ $custom_styles['slider_speed_services'] ?? '' }}" placeholder="2.5" onchange="updateCustomStyle('slider_speed_services')">
+                                            </div>
+                                            <div class="col-6 col-md-3">
+                                                <label class="form-label" for="sliderSpeedProducts">{{ __('Products slider (seconds)') }}</label>
+                                                <input type="number" min="0.5" max="60" step="0.5" class="form-control" id="sliderSpeedProducts" value="{{ $custom_styles['slider_speed_products'] ?? '' }}" placeholder="2.5" onchange="updateCustomStyle('slider_speed_products')">
+                                            </div>
+                                            <div class="col-6 col-md-3">
+                                                <label class="form-label" for="sliderSpeedGalleries">{{ __('Gallery slider (seconds)') }}</label>
+                                                <input type="number" min="0.5" max="60" step="0.5" class="form-control" id="sliderSpeedGalleries" value="{{ $custom_styles['slider_speed_galleries'] ?? '' }}" placeholder="3" onchange="updateCustomStyle('slider_speed_galleries')">
+                                            </div>
+                                            <div class="col-6 col-md-3">
+                                                <label class="form-label" for="sliderSpeedTestimonials">{{ __('Testimonials slider (seconds)') }}</label>
+                                                <input type="number" min="0.5" max="60" step="0.5" class="form-control" id="sliderSpeedTestimonials" value="{{ $custom_styles['slider_speed_testimonials'] ?? '' }}" placeholder="2" onchange="updateCustomStyle('slider_speed_testimonials')">
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     {{-- Section 4: Bottom Navigation Bar --}}
                                     <div class="customization-section-card mb-0">
                                         <div class="mb-3">
@@ -658,8 +691,12 @@
             formData.append('title2_font_size', $('#title2FontSize').val());
             formData.append('subtitle2_font_size', $('#subtitle2FontSize').val());
             formData.append('title2_font', $('#title2Font').val());
+            formData.append('slider_speed_services', $('#sliderSpeedServices').val());
+            formData.append('slider_speed_products', $('#sliderSpeedProducts').val());
+            formData.append('slider_speed_galleries', $('#sliderSpeedGalleries').val());
+            formData.append('slider_speed_testimonials', $('#sliderSpeedTestimonials').val());
             formData.append('profile_image_style', $('input[name="profile_image_style"]:checked').val());
-            formData.append('font', $('input[name="font"]:checked').val());
+            formData.append('font', $('#cardFont').val());
             formData.append('bg_style', $('input[name="bg_style"]:checked').val());
             formData.append('background_color', $('#colorPickerBackground').val());
             formData.append('gradient_from_color', $('#colorPickerBackgroundStart').val());

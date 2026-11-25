@@ -1043,19 +1043,19 @@
                     {{-- Social Icons ── --}}
                     <div class="share-icons">
                         <a href="{{ $shareComponent['facebook'] }}" target="_blank" title="Facebook">
-                            <i class="fab fa-facebook-f"></i>
+                            <i style="color: #1877F2 !important;" class="fab fa-facebook-f"></i>
                         </a>
                         <a href="{{ $shareComponent['twitter'] }}" target="_blank" title="Twitter">
-                            <i class="fab fa-twitter"></i>
+                            <i style="color: #1DA1F2 !important;" class="fab fa-twitter"></i>
                         </a>
                         <a href="{{ $shareComponent['linkedin'] }}" target="_blank" title="LinkedIn">
-                            <i class="fab fa-linkedin-in"></i>
+                            <i style="color: #0A66C2 !important;" class="fab fa-linkedin-in"></i>
                         </a>
                         <a href="{{ $shareComponent['whatsapp'] }}" target="_blank" title="WhatsApp">
-                            <i class="fab fa-whatsapp"></i>
+                            <i style="color: #25D366 !important;" class="fab fa-whatsapp"></i>
                         </a>
                         <a href="{{ $shareComponent['telegram'] }}" target="_blank" title="Telegram">
-                            <i class="fab fa-telegram-plane"></i>
+                            <i style="color: #26A5E4 !important;" class="fab fa-telegram-plane"></i>
                         </a>
                     </div>
 

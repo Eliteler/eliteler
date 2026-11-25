@@ -58,6 +58,23 @@ class EditCustomizationController extends Controller
 
         // Check result
         if (! $validator->fails()) {
+            // Slider speeds in seconds (services, products, gallery, testimonials), kept in custom_styles
+            $sliderKeys = ['slider_speed_services', 'slider_speed_products', 'slider_speed_galleries', 'slider_speed_testimonials'];
+            if (in_array($request->type, $sliderKeys, true)) {
+                $seconds      = $request->input($request->type);
+                $customStyles = json_decode(BusinessCard::where('card_id', $request->card_id)->first()->custom_styles, true) ?: [];
+
+                if (is_numeric($seconds) && (float) $seconds >= 0.5 && (float) $seconds <= 60) {
+                    $customStyles[$request->type] = round((float) $seconds, 1);
+                } else {
+                    unset($customStyles[$request->type]); // back to the theme default
+                }
+
+                BusinessCard::where('card_id', $request->card_id)->update(['custom_styles' => json_encode($customStyles)]);
+
+                return response()->json(['status' => 'success', 'type' => $request->type]);
+            }
+
             // Titles: alignment, font sizes and second-titles font (stored on the card itself, not in custom_styles)
             $titleColumns = ['title_align', 'title2_align', 'title_font_size', 'subtitle_font_size', 'title2_font_size', 'subtitle2_font_size', 'title2_font'];
             if (in_array($request->type, $titleColumns, true)) {

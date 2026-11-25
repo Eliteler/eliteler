@@ -7009,5 +7009,15 @@
     "Only the main administrator can create cards for customers.": "المدير الرئيسي فقط يستطيع إنشاء بطاقات للعملاء.",
     ":name is not an active account.": "حساب :name غير مفعّل.",
     ":name has no active plan. Assign a plan to this customer first.": ":name لا يملك خطة فعّالة. عيّن خطة لهذا العميل أولاً.",
-    ":name has reached the limit of their plan (:used of :limit).": ":name وصل إلى الحد المسموح في خطته (:used من :limit)."
+    ":name has reached the limit of their plan (:used of :limit).": ":name وصل إلى الحد المسموح في خطته (:used من :limit).",
+    "Sliders speed": "سرعة السلايدرات",
+    "Seconds each slide stays before moving to the next one. Leave empty to keep the default.": "عدد الثواني التي تبقى فيها كل شريحة قبل الانتقال للتالية. اتركه فارغاً للإبقاء على الافتراضي.",
+    "Services slider (seconds)": "سلايدر الخدمات (ثوانٍ)",
+    "Products slider (seconds)": "سلايدر المنتجات (ثوانٍ)",
+    "Gallery slider (seconds)": "سلايدر الصور (ثوانٍ)",
+    "Testimonials slider (seconds)": "سلايدر آراء العملاء (ثوانٍ)",
+    "Recommended size": "المقاس المُوصى به",
+    "Selected image": "الصورة المختارة",
+    "Latin fonts": "خطوط لاتينية",
+    "Arabic fonts": "خطوط عربية"
 }

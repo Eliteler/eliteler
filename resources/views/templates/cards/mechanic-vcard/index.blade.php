@@ -947,15 +947,15 @@
                     </div>
                     <p class="share-section-label">{{ __('Share on') }}</p>
                     <div class="share-icons">
-                        <a href="{{ $shareComponent['facebook'] }}" target="_blank"><i
+                        <a href="{{ $shareComponent['facebook'] }}" target="_blank"><i style="color: #1877F2 !important;"
                                 class="fab fa-facebook-f"></i></a>
-                        <a href="{{ $shareComponent['twitter'] }}" target="_blank"><i
+                        <a href="{{ $shareComponent['twitter'] }}" target="_blank"><i style="color: #1DA1F2 !important;"
                                 class="fab fa-twitter"></i></a>
-                        <a href="{{ $shareComponent['linkedin'] }}" target="_blank"><i
+                        <a href="{{ $shareComponent['linkedin'] }}" target="_blank"><i style="color: #0A66C2 !important;"
                                 class="fab fa-linkedin-in"></i></a>
-                        <a href="{{ $shareComponent['whatsapp'] }}" target="_blank"><i
+                        <a href="{{ $shareComponent['whatsapp'] }}" target="_blank"><i style="color: #25D366 !important;"
                                 class="fab fa-whatsapp"></i></a>
-                        <a href="{{ $shareComponent['telegram'] }}" target="_blank"><i
+                        <a href="{{ $shareComponent['telegram'] }}" target="_blank"><i style="color: #26A5E4 !important;"
                                 class="fab fa-telegram-plane"></i></a>
                     </div>
                     <button onclick="copyLinkStyled(this)" class="share-copy-btn"><i

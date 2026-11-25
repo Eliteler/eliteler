@@ -460,5 +460,5 @@
         });
     </script>
     {{-- Thumbnail next to chosen images --}}
-    @include('user.includes.media-thumb')
+    @include('user.includes.media-thumb', ['recommended' => '1280 × 720 px'])
 @endpush

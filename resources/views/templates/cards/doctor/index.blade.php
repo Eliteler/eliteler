@@ -1479,20 +1479,20 @@
                         <!-- Share via Social Media -->
                         <div class="flex justify-around text-[#121212]">
                             <a href="{{ $shareComponent['facebook'] }}" target="_blank" class="">
-                                <i class="fab fa-facebook fa-2x text-blue-500"></i>
+                                <i style="color: #1877F2 !important;" class="fab fa-facebook fa-2x text-blue-500"></i>
                             </a>
                             <a href="{{ $shareComponent['twitter'] }}" target="_blank" target="_blank"
                                 class="">
-                                <i class="fab fa-twitter fa-2x text-blue-500"></i>
+                                <i style="color: #1DA1F2 !important;" class="fab fa-twitter fa-2x text-blue-500"></i>
                             </a>
                             <a href="{{ $shareComponent['linkedin'] }}" target="_blank" class="">
-                                <i class="fab fa-linkedin fa-2x text-blue-500"></i>
+                                <i style="color: #0A66C2 !important;" class="fab fa-linkedin fa-2x text-blue-500"></i>
                             </a>
                             <a href="{{ $shareComponent['whatsapp'] }}" target="_blank" class="">
-                                <i class="fab fa-whatsapp fa-2x text-blue-500"></i>
+                                <i style="color: #25D366 !important;" class="fab fa-whatsapp fa-2x text-blue-500"></i>
                             </a>
                             <a href="{{ $shareComponent['telegram'] }}" target="_blank" class="">
-                                <i class="fab fa-telegram fa-2x text-blue-500"></i>
+                                <i style="color: #26A5E4 !important;" class="fab fa-telegram fa-2x text-blue-500"></i>
                             </a>
                         </div>
 

@@ -179,7 +179,7 @@
 
                                             <div id="coverChooser">
                                                 <label class="form-label required"
-                                                    for="cover">{{ __('Cover') }}</label>
+                                                    for="cover">{{ __('Cover') }} <small class="text-muted fw-normal">({{ __('Recommended size') }}: <span dir="ltr">1280 × 720 px</span>)</small></label>
                                                 <input type="file" class="form-control" id="cover"
                                                     accept=".jpeg,.jpg,.png,.gif,.svg">
                                                 <input type="hidden" name="cover" id="cropped_cover_input">
@@ -211,7 +211,7 @@
 
                                         <!-- Logo File Input -->
                                         <div class="col-md-6">
-                                            <label class="form-label required" for="logo">{{ __('Logo') }}</label>
+                                            <label class="form-label required" for="logo">{{ __('Logo') }} <small class="text-muted fw-normal">({{ __('Recommended size') }}: <span dir="ltr">512 × 512 px</span>)</small></label>
                                             <input type="file" class="form-control" id="logo"
                                                 accept=".jpeg,.jpg,.png,.gif,.svg" required>
                                             <input type="hidden" name="logo" id="cropped_logo_input">

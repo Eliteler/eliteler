@@ -570,7 +570,7 @@
                                             "640": { "slidesPerView": 1 }, 
                                             "1024": { "slidesPerView": 2 } 
                                             }'
-                                            space-between="20" class="mySwiper" autoplay-delay="2500"
+                                            space-between="20" class="mySwiper" autoplay-delay="{{ card_slider_delay($custom_styles, 'services', 2500) }}"
                                             autoplay-disable-on-interaction="false" loop="true">
                                             {{-- All services --}}
                                             @foreach ($service_details as $service_detail)
@@ -631,7 +631,7 @@
                                                 "640": { "slidesPerView": 1 }, 
                                                 "1024": { "slidesPerView": 2 } 
                                             }'
-                                            space-between="20" class="mySwiper" autoplay-delay="2500"
+                                            space-between="20" class="mySwiper" autoplay-delay="{{ card_slider_delay($custom_styles, 'products', 2500) }}"
                                             autoplay-disable-on-interaction="false" loop="true">
                                             {{-- All products --}}
                                             @foreach ($product_details as $product_detail)
@@ -729,7 +729,7 @@
                                         </div>
                                         <div>
                                             <swiper-container slides-per-view="1" class="mySwiper" loop="true"
-                                                autoplay-delay="3000" autoplay-disable-on-interaction="false">
+                                                autoplay-delay="{{ card_slider_delay($custom_styles, 'galleries', 3000) }}" autoplay-disable-on-interaction="false">
                                                 {{-- Slider images --}}
                                                 @foreach ($galleries_details as $galleries_detail)
                                                     <swiper-slide class="p-0.5">
@@ -1070,7 +1070,7 @@
                                                 class="text-3xl lg:text-4xl font-medium text-[{{ $custom_styles['heading_color'] }}]">
                                                 {{ __($testimonials[0]->title) }}</h2>
                                         </div>
-                                        <swiper-container class="mySwiper" autoplay-delay="2000"
+                                        <swiper-container class="mySwiper" autoplay-delay="{{ card_slider_delay($custom_styles, 'testimonials', 2000) }}"
                                             autoplay-disable-on-interaction="false">
                                             {{-- Client Reviews --}}
                                             @foreach ($testimonials as $testimonial)
@@ -1084,7 +1084,7 @@
                                                             "{{ $testimonial->review }}"
                                                         </p>
                                                         {{-- Image --}}
-                                                        <img class="w-16 h-16 mt-3 mb-1 object-cover {{ $custom_styles['profile_image_style'] == 'circle'
+                                                        <img class="w-28 h-28 mt-3 mb-2 object-cover {{ $custom_styles['profile_image_style'] == 'circle'
                                                             ? 'rounded-full'
                                                             : ($custom_styles['profile_image_style'] == 'square'
                                                                 ? 'rounded-none'
@@ -1511,19 +1511,19 @@
                     <!-- Share via Social Media -->
                     <div class="flex justify-around text-[{{ $buttonIconColor }}]">
                         <a href="{{ $shareComponent['facebook'] }}" target="_blank">
-                            <i class="fab fa-facebook fa-2x"></i>
+                            <i style="color: #1877F2 !important;" class="fab fa-facebook fa-2x"></i>
                         </a>
                         <a href="{{ $shareComponent['twitter'] }}" target="_blank">
-                            <i class="fab fa-twitter fa-2x"></i>
+                            <i style="color: #1DA1F2 !important;" class="fab fa-twitter fa-2x"></i>
                         </a>
                         <a href="{{ $shareComponent['linkedin'] }}" target="_blank">
-                            <i class="fab fa-linkedin fa-2x"></i>
+                            <i style="color: #0A66C2 !important;" class="fab fa-linkedin fa-2x"></i>
                         </a>
                         <a href="{{ $shareComponent['whatsapp'] }}" target="_blank">
-                            <i class="fab fa-whatsapp fa-2x"></i>
+                            <i style="color: #25D366 !important;" class="fab fa-whatsapp fa-2x"></i>
                         </a>
                         <a href="{{ $shareComponent['telegram'] }}" target="_blank">
-                            <i class="fab fa-telegram fa-2x"></i>
+                            <i style="color: #26A5E4 !important;" class="fab fa-telegram fa-2x"></i>
                         </a>
                     </div>
 

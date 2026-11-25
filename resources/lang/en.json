@@ -11224,5 +11224,15 @@
     "Only the main administrator can create cards for customers.": "Only the main administrator can create cards for customers.",
     ":name is not an active account.": ":name is not an active account.",
     ":name has no active plan. Assign a plan to this customer first.": ":name has no active plan. Assign a plan to this customer first.",
-    ":name has reached the limit of their plan (:used of :limit).": ":name has reached the limit of their plan (:used of :limit)."
+    ":name has reached the limit of their plan (:used of :limit).": ":name has reached the limit of their plan (:used of :limit).",
+    "Sliders speed": "Sliders speed",
+    "Seconds each slide stays before moving to the next one. Leave empty to keep the default.": "Seconds each slide stays before moving to the next one. Leave empty to keep the default.",
+    "Services slider (seconds)": "Services slider (seconds)",
+    "Products slider (seconds)": "Products slider (seconds)",
+    "Gallery slider (seconds)": "Gallery slider (seconds)",
+    "Testimonials slider (seconds)": "Testimonials slider (seconds)",
+    "Recommended size": "Recommended size",
+    "Selected image": "Selected image",
+    "Latin fonts": "Latin fonts",
+    "Arabic fonts": "Arabic fonts"
 }

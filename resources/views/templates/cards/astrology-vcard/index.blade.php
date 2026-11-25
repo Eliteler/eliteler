@@ -1068,19 +1068,19 @@
                     </p>
                     <div style="display:flex; justify-content:center; gap: 12px; margin-bottom: 20px;">
                         <a href="{{ $shareComponent['facebook'] }}" target="_blank" class="social-card"
-                            style="width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center;"><i
+                            style="width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center;"><i style="color: #1877F2 !important;"
                                 class="fab fa-facebook-f"></i></a>
                         <a href="{{ $shareComponent['twitter'] }}" target="_blank" class="social-card"
-                            style="width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center;"><i
+                            style="width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center;"><i style="color: #1DA1F2 !important;"
                                 class="fab fa-twitter"></i></a>
                         <a href="{{ $shareComponent['linkedin'] }}" target="_blank" class="social-card"
-                            style="width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center;"><i
+                            style="width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center;"><i style="color: #0A66C2 !important;"
                                 class="fab fa-linkedin-in"></i></a>
                         <a href="{{ $shareComponent['whatsapp'] }}" target="_blank" class="social-card"
-                            style="width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center;"><i
+                            style="width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center;"><i style="color: #25D366 !important;"
                                 class="fab fa-whatsapp"></i></a>
                         <a href="{{ $shareComponent['telegram'] }}" target="_blank" class="social-card"
-                            style="width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center;"><i
+                            style="width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center;"><i style="color: #26A5E4 !important;"
                                 class="fab fa-telegram-plane"></i></a>
                     </div>
                     <button onclick="copyLinkStyled(this)" class="btn-primary">

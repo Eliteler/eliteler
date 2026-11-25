@@ -394,3 +394,16 @@ if (! function_exists('card_title2_font_link')) {
         return '<link rel="stylesheet" href="' . e($url) . '">';
     }
 }
+
+if (! function_exists('card_slider_delay')) {
+    /**
+     * Autoplay delay (milliseconds) of a card slider. $which: services | products | galleries | testimonials.
+     * Uses custom_styles['slider_speed_<which>'] (seconds) when set, else the theme default.
+     */
+    function card_slider_delay($customStyles, string $which, int $defaultMs): int
+    {
+        $seconds = is_array($customStyles) ? ($customStyles['slider_speed_' . $which] ?? null) : null;
+
+        return is_numeric($seconds) && $seconds >= 0.5 && $seconds <= 60 ? (int) round($seconds * 1000) : $defaultMs;
+    }
+}
