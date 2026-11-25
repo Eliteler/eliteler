@@ -9,8 +9,20 @@ var scroll = new SmoothScroll('a[href*="#"]');
 function closeCookie() {
     $(".cookie-consent").fadeOut(300);
 }
+// Camera-like flash when the QR download button is pressed
+function qrFlash() {
+    "use strict";
+    var flash = document.createElement("div");
+    flash.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;background:#fff;opacity:0.95;z-index:2147483647;pointer-events:none;transition:opacity 0.5s ease-out;";
+    document.body.appendChild(flash);
+    requestAnimationFrame(function () {
+        requestAnimationFrame(function () { flash.style.opacity = "0"; });
+    });
+    setTimeout(function () { if (flash.parentNode) { flash.parentNode.removeChild(flash); } }, 650);
+}
 function downloadQr(url, size, name) {
     "use strict";
+    qrFlash();
     
     var qrious = new QRious({ value: url, size: size });
     var qrDataURL = qrious.toDataURL();
