@@ -304,7 +304,13 @@ Route::group(['middleware' => 'Installer'], function () {
     Route::group(['middleware' => 'frame.destroyer', 'scriptsanitizer', 'gobiz.common'], function () {
         Route::get('/', [HomeController::class, 'index'])->name('home-locale');
 
-        Auth::routes(['verify' => true]);
+        // Self-registration is closed: /register (GET and POST) goes to the application form (config/eliteler.php)
+        if (config('eliteler.register_url')) {
+            Auth::routes(['verify' => true, 'register' => false]);
+            Route::any('register', fn () => redirect()->away(config('eliteler.register_url')))->name('register');
+        } else {
+            Auth::routes(['verify' => true]);
+        }
 
         // "Back to admin" while signed in as a customer or staff member (any role, so outside the admin/user groups)
         Route::post('impersonate/leave', [\App\Http\Controllers\ImpersonationController::class, 'leave'])->name('impersonate.leave')->middleware('auth');
