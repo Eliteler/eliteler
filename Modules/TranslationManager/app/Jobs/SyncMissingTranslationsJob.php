@@ -52,6 +52,26 @@ class SyncMissingTranslationsJob implements ShouldQueue
         return "translation-manager:sync-status:{$targetLocale}";
     }
 
+    public static function stopRequestedKey(string $targetLocale): string
+    {
+        return "translation-manager:stop-requested:{$targetLocale}";
+    }
+
+    public static function requestStop(string $targetLocale): void
+    {
+        Cache::put(self::stopRequestedKey($targetLocale), true, now()->addMinutes(15));
+    }
+
+    public static function isStopRequested(string $targetLocale): bool
+    {
+        return (bool) Cache::get(self::stopRequestedKey($targetLocale), false);
+    }
+
+    public static function clearStopRequest(string $targetLocale): void
+    {
+        Cache::forget(self::stopRequestedKey($targetLocale));
+    }
+
     protected static function jobsFilePath(): string
     {
         return storage_path('app/translation-jobs.json');
@@ -59,7 +79,14 @@ class SyncMissingTranslationsJob implements ShouldQueue
 
     public function handle(MissingTranslationService $missingService): void
     {
-        // Log::info("SyncMissingTranslationsJob STARTED: {$this->sourceLocale} -> {$this->targetLocale}");
+        if (self::isStopRequested($this->targetLocale)) {
+            self::clearStopRequest($this->targetLocale);
+            $this->setStatus([
+                'state' => 'stopped',
+                'message' => __('Auto-translate stopped by user.'),
+            ]);
+            return;
+        }
 
         $startedAt = microtime(true);
 
@@ -69,8 +96,6 @@ class SyncMissingTranslationsJob implements ShouldQueue
         ]);
 
         try {
-            // Log::info("Detecting missing keys for {$this->targetLocale}…");
-
             // Execute translation batch with a 50-second cutoff for shared hosting
             $isCompleted = $missingService->syncMissingKeys(
                 $this->sourceLocale,
@@ -82,8 +107,6 @@ class SyncMissingTranslationsJob implements ShouldQueue
                     $estimatedSecondsLeft = (int) round($avgPerKey * $remaining);
                     $etaLabel = $this->formatDuration($estimatedSecondsLeft);
 
-                    // Log::info("SyncMissingTranslationsJob progress [{$this->targetLocale}]: {$done}/{$total} done, ETA {$etaLabel}");
-
                     $this->setStatus([
                         'state' => 'running',
                         'message' => "Translating {$done}/{$total} keys (est. {$etaLabel} remaining)",
@@ -92,19 +115,25 @@ class SyncMissingTranslationsJob implements ShouldQueue
                         'estimated_seconds_remaining' => $estimatedSecondsLeft,
                     ]);
                 },
-                50 // Run max 50 seconds before yielding
+                50, // Run max 50 seconds before yielding
+                fn() => self::isStopRequested($this->targetLocale)
             );
 
-            if ($isCompleted) {
-                // Log::info("SyncMissingTranslationsJob COMPLETED successfully for {$this->targetLocale}");
+            if (self::isStopRequested($this->targetLocale)) {
+                self::clearStopRequest($this->targetLocale);
+                $this->setStatus([
+                    'state' => 'stopped',
+                    'message' => __('Auto-translate stopped by user.'),
+                ]);
+                return;
+            }
 
+            if ($isCompleted) {
                 $this->setStatus([
                     'state' => 'completed',
                     'message' => __('Missing translations synced successfully.'),
                 ]);
             } else {
-                // Log::info("SyncMissingTranslationsJob batch paused due to time limit. Re-dispatching next batch for {$this->targetLocale}");
-
                 $this->setStatus([
                     'state' => 'running',
                     'message' => __('Batch limit reached. Continuing remaining keys in a new job…'),

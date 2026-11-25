@@ -99,7 +99,7 @@
                                                                 <label
                                                                     class="form-label required">{{ __('New Password') }}</label>
                                                                 <input type="password" class="form-control"
-                                                                    name="new_password"
+                                                                    name="new_password" maxlength="100"
                                                                     placeholder="{{ __('Enter new password') }}" required>
                                                             </div>
                                                         </div>
@@ -108,7 +108,7 @@
                                                                 <label
                                                                     class="form-label required">{{ __('Confirm Password') }}</label>
                                                                 <input type="password" class="form-control"
-                                                                    name="confirm_password"
+                                                                    name="confirm_password" maxlength="100"
                                                                     placeholder="{{ __('Enter password again') }}"
                                                                     required>
                                                             </div>

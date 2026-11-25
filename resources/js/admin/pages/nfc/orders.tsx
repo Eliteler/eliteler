@@ -1,4 +1,4 @@
-import { Head, Link, usePage } from "@inertiajs/react";
+import { Head, Link } from "@inertiajs/react";
 import { ImageIcon, PackageSearch } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@admin/components/ui/tooltip";
 import { useHideRevenue } from "@admin/hooks/use-hide-revenue";
 import { formatDate, fromNow } from "@admin/lib/date";
-import { formatCurrency } from "@admin/lib/format";
+import { useMoney } from "@admin/hooks/use-money";
 import type { Paginated } from "@admin/types";
 
 import { ListToolbar } from "@admin/components/list-toolbar";
@@ -25,10 +25,12 @@ type OrderRow = {
     image: string | null;
     quantity: number;
     amount: number | null; // null when revenue is hidden
+    currency: string | null;
     payment: string;
     method: string;
     delivery: string;
     hasLogo: boolean;
+    files?: { total: number; uploaded: number; required: number; missingRequired: number };
     customer: Customer | null;
 };
 
@@ -36,7 +38,7 @@ type Props = { orders: Paginated<OrderRow>; tab: string; search: string; counts:
 
 export default function NfcOrders({ orders, tab, search, counts }: Props) {
     const { t } = useTranslation();
-    const { currency } = usePage().props;
+    const money = useMoney();
     const hideRevenue = useHideRevenue();
 
     const tabs = [
@@ -51,12 +53,12 @@ export default function NfcOrders({ orders, tab, search, counts }: Props) {
 
     return (
         <>
-            <Head title={t("NFC card orders")} />
+            <Head title={t("Smart Product orders")} />
             <div className="flex flex-1 flex-col gap-6 p-4 lg:p-6">
                 <PageHeader
-                    title={t("NFC card orders")}
-                    description={t("Track physical NFC card orders from payment to delivery.")}
-                    breadcrumbs={[{ label: t("Dashboard"), href: route("admin.dashboard") }, { label: t("NFC card orders") }]}
+                    title={t("Smart Product orders")}
+                    description={t("Track Smart Product orders from payment to delivery.")}
+                    breadcrumbs={[{ label: t("Dashboard"), href: route("admin.dashboard") }, { label: t("Smart Product orders") }]}
                 />
 
                 <ListToolbar
@@ -113,18 +115,27 @@ export default function NfcOrders({ orders, tab, search, counts }: Props) {
                                                     {order.item}
                                                     {order.quantity > 1 && <span className="ms-1 text-muted-foreground">× {order.quantity}</span>}
                                                 </span>
-                                                {order.hasLogo && (
+                                                {order.files && order.files.total > 0 && (
                                                     <Tooltip>
                                                         <TooltipTrigger asChild>
-                                                            <ImageIcon className="size-3.5 text-muted-foreground" />
+                                                            <span
+                                                                className={`flex items-center gap-0.5 text-xs tabular-nums ${order.files.missingRequired > 0 ? "text-destructive" : "text-muted-foreground"}`}
+                                                            >
+                                                                <ImageIcon className="size-3.5" />
+                                                                {order.files.uploaded}/{order.files.total}
+                                                            </span>
                                                         </TooltipTrigger>
-                                                        <TooltipContent>{t("Customer uploaded a logo")}</TooltipContent>
+                                                        <TooltipContent>
+                                                            {order.files.missingRequired > 0
+                                                                ? `${order.files.missingRequired} ${t("required image assets missing")}`
+                                                                : t("Image assets uploaded / asked for")}
+                                                        </TooltipContent>
                                                     </Tooltip>
                                                 )}
                                             </div>
                                         </TableCell>
                                         {!hideRevenue && order.amount !== null && (
-                                            <TableCell className="text-end font-medium tabular-nums">{formatCurrency(order.amount, currency)}</TableCell>
+                                            <TableCell className="text-end font-medium tabular-nums">{money(order.amount, order.currency)}</TableCell>
                                         )}
                                         <TableCell className="hidden sm:table-cell">
                                             <PaymentBadge status={order.payment} />

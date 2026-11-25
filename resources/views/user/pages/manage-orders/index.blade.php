@@ -86,7 +86,7 @@
                         </h2>
                         <!-- Added helper subtitle under page heading -->
                         <div class="text-muted mt-1">
-                            {{ __('View and manage your registered NFC card orders and statuses.') }}
+                            {{ __('Track your Smart Product orders from payment to delivery.') }}
                         </div>
                     </div>
                 </div>
@@ -133,7 +133,7 @@
                                             <th>{{ __('Order Date') }}</th>
                                             <th>{{ __('Activation Code') }}</th>
                                             <th>{{ __('Order ID') }}</th>
-                                            <th>{{ __('Attachments') }}</th>
+                                            <th>{{ __('Print files') }}</th>
                                             <th>{{ __('Item') }}</th>
                                             <th>{{ __('Total') }}</th>
                                             <th>{{ __('Payment Status') }}</th>
@@ -264,6 +264,8 @@
                     {
                         data: 'nfc_card_logo',
                         name: 'nfc_card_orders.nfc_card_logo',
+                        orderable: false,
+                        searchable: false,
                         className: 'rc-info-next'
                     },
                     {

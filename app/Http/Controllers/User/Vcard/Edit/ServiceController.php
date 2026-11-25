@@ -48,7 +48,7 @@ class ServiceController extends Controller
         // Queries
         $plan = User::where('user_id', Auth::user()->user_id)->where('status', 1)->first();
         $plan_details = json_decode($plan->plan_details);
-        $business_card = BusinessCard::where('card_id', $id)->first();
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
 
         // Get all services
         $services = Service::where('card_id', $id)->orderBy('id', 'desc')->get();
@@ -123,6 +123,12 @@ class ServiceController extends Controller
     // Save new service
     public function saveService(Request $request)
     {
+        // Verify card belongs to user
+        $card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $request->card_id)->first();
+        if (!$card) {
+            return response()->json(['success' => false, 'error' => trans('Card not found!')], 403);
+        }
+
         // Validate the request data
         $validatedData = $request->validate([
             'service_image' => 'required|string', // Add appropriate validation rules
@@ -185,6 +191,14 @@ class ServiceController extends Controller
             ], 404);
         }
 
+        $isOwner = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $service->card_id)->exists();
+        if (!$isOwner) {
+            return response()->json([
+                'success' => false,
+                'message' => trans('Unauthorized action!')
+            ], 403);
+        }
+
         // Update service data
         $service->update([
             'service_image' => $request->input('service_image'),
@@ -205,6 +219,14 @@ class ServiceController extends Controller
         try {
             // Retrieve the service from the database
             $service = Service::findOrFail($id);
+
+            $isOwner = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $service->card_id)->exists();
+            if (!$isOwner) {
+                return response()->json([
+                    'success' => false,
+                    'message' => trans('Unauthorized action!')
+                ], 403);
+            }
 
             // Return a JSON response with the service data
             return response()->json([
@@ -227,6 +249,11 @@ class ServiceController extends Controller
         $service = Service::find($id);
 
         if ($service) {
+            $isOwner = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $service->card_id)->exists();
+            if (!$isOwner) {
+                return response()->json(['message' => trans('Unauthorized action!')], 403);
+            }
+
             $service->delete();
             return response()->json(['message' => trans('Service deleted successfully')], 200);
         } else {

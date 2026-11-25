@@ -330,21 +330,13 @@ class CardController extends Controller
     public function cardStatus(Request $request, $id)
     {
         // Queries
-        $businessCard = BusinessCard::where('card_id', $id)->first();
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
 
         // Check business card
-        if ($businessCard == null) {
+        if ($business_card == null) {
             return redirect()->route('user.cards')->with('failed', trans('Card not found!'));
         } else {
-
-            // Queries
-            $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
-
-            // Check business card
-            if ($business_card == null) {
-                return redirect()->route('user.cards')->with('failed', trans('Card not found!'));
-            } else {
-                // Check active cards
+            // Check active cards
                 if ($business_card->card_status == 'inactive') {
 
                     // Queries
@@ -457,14 +449,16 @@ class CardController extends Controller
                 }
             }
         }
-    }
 
     // Delete card
     public function deleteCard(Request $request)
     {
         // Check custom domain
-        BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $request->query('id'))->first();
         $businessCard = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $request->query('id'))->first();
+
+        if ($businessCard == null) {
+            return redirect()->route('user.cards')->with('failed', trans('Card not found!'));
+        }
 
         if ($businessCard->custom_domain == null) {
             // Delete

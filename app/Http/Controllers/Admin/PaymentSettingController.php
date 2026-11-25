@@ -38,8 +38,8 @@ class PaymentSettingController extends Controller
         try {
             // 1. PayPal (OAuth Token API)
             if ($id == '60964401751ab') {
-                $clientKey = trim($request->paypal_client_key);
-                $secret = trim($request->paypal_secret);
+                $clientKey = trim((string) $request->paypal_client_key);
+                $secret = trim((string) $request->paypal_secret);
                 $mode = $request->paypal_mode;
 
                 $url = ($mode === 'sandbox')
@@ -59,8 +59,8 @@ class PaymentSettingController extends Controller
 
             // 2. Razorpay (Fetch Payments API)
             if ($id == '60964410731d9') {
-                $clientKey = trim($request->razorpay_client_key);
-                $secret = trim($request->razorpay_secret);
+                $clientKey = trim((string) $request->razorpay_client_key);
+                $secret = trim((string) $request->razorpay_secret);
 
                 // Ping Razorpay server
                 $response = Http::withBasicAuth($clientKey, $secret)
@@ -74,8 +74,8 @@ class PaymentSettingController extends Controller
 
             // 3. Stripe (Balance API)
             if ($id == '60964410732t9') {
-                $pubKey = trim($request->stripe_publishable_key);
-                $secretKey = trim($request->stripe_secret);
+                $pubKey = trim((string) $request->stripe_publishable_key);
+                $secretKey = trim((string) $request->stripe_secret);
 
                 if (!str_starts_with($pubKey, 'pk_test_') && !str_starts_with($pubKey, 'pk_live_')) {
                     return response()->json(['success' => false, 'message' => 'Stripe: Invalid Publishable Key format. Must start with pk_test_ or pk_live_.']);
@@ -91,8 +91,8 @@ class PaymentSettingController extends Controller
 
             // 4. Paystack (Balance API)
             if ($id == '60964410736592') {
-                $pubKey = trim($request->paystack_public_key);
-                $secretKey = trim($request->paystack_secret);
+                $pubKey = trim((string) $request->paystack_public_key);
+                $secretKey = trim((string) $request->paystack_secret);
 
                 if (!str_starts_with($pubKey, 'pk_test_') && !str_starts_with($pubKey, 'pk_live_')) {
                     return response()->json(['success' => false, 'message' => 'Paystack: Invalid Public Key format. Must start with pk_test_ or pk_live_.']);
@@ -108,7 +108,7 @@ class PaymentSettingController extends Controller
 
             // 5. Mollie (Methods API)
             if ($id == '6096441071589632') {
-                $key = trim($request->mollie_key);
+                $key = trim((string) $request->mollie_key);
 
                 // Ping Mollie server
                 $response = Http::withToken($key)->get('https://api.mollie.com/v2/methods');
@@ -120,7 +120,7 @@ class PaymentSettingController extends Controller
 
             // 6. Mercado Pago (Payment Methods API)
             if ($id == '776111730465') {
-                $token = trim($request->mercado_pago_access_token);
+                $token = trim((string) $request->mercado_pago_access_token);
 
                 // Ping Mercado Pago server
                 $response = Http::withToken($token)->get('https://api.mercadopago.com/v1/payment_methods');
@@ -132,7 +132,7 @@ class PaymentSettingController extends Controller
 
             // 7. Flutterwave (Balance API)
             if ($id == '754201940107') {
-                $secKey = trim($request->flw_secret_key);
+                $secKey = trim((string) $request->flw_secret_key);
 
                 // Ping Flutterwave server
                 $response = Http::withToken($secKey)->get('https://api.flutterwave.com/v3/balances');
@@ -144,7 +144,7 @@ class PaymentSettingController extends Controller
 
             // 8. Xendit Check (Invoices Endpoint Verification)
             if ($id == '278523098674') {
-                $key = trim($request->xendit_secret_key);
+                $key = trim((string) $request->xendit_secret_key);
 
                 if (empty($key)) {
                     return response()->json(['success' => false, 'message' => 'Xendit Secret Key is required.']);
@@ -174,8 +174,8 @@ class PaymentSettingController extends Controller
 
             // 9. Cashfree Check (Endpoint Authentication)
             if ($id == '278523098675') {
-                $appId = trim($request->cashfree_app_id);
-                $secret = trim($request->cashfree_secret_key);
+                $appId = trim((string) $request->cashfree_app_id);
+                $secret = trim((string) $request->cashfree_secret_key);
                 $mode = $request->cashfree_mode;
 
                 if (empty($appId) || empty($secret)) {
@@ -212,9 +212,9 @@ class PaymentSettingController extends Controller
 
             // 10. Iyzipay Check (Smart Mode Detection & Authentication)
             if ($id == '278523098676') {
-                $apiKey = trim($request->iyzipay_api_key);
-                $secretKey = trim($request->iyzipay_secret_key);
-                $selectedMode = strtolower(trim($request->iyzipay_mode));
+                $apiKey = trim((string) $request->iyzipay_api_key);
+                $secretKey = trim((string) $request->iyzipay_secret_key);
+                $selectedMode = strtolower(trim((string) $request->iyzipay_mode));
 
                 if (empty($apiKey) || empty($secretKey)) {
                     return response()->json(['success' => false, 'message' => 'Both Iyzipay API Key and Secret Key are required.']);
@@ -280,9 +280,9 @@ class PaymentSettingController extends Controller
 
             // 11. Paddle Check (Universal Endpoint Authentication)
             if ($id == '5992737427969') {
-                $apiKey = trim($request->paddle_api_key);
-                $sellerId = trim($request->paddle_seller_id);
-                $clientToken = trim($request->paddle_client_side_token);
+                $apiKey = trim((string) $request->paddle_api_key);
+                $sellerId = trim((string) $request->paddle_seller_id);
+                $clientToken = trim((string) $request->paddle_client_side_token);
                 $isSandbox = ($request->paddle_environment === 'true');
 
                 if (empty($apiKey) || empty($sellerId) || empty($clientToken)) {
@@ -324,9 +324,9 @@ class PaymentSettingController extends Controller
 
             // 12. PhonePe (Merchant Verification Check)
             if ($id == '19065566166715') {
-                $merchantId = trim($request->clientId);
-                $saltKey = trim($request->clientSecret);
-                $saltIndex = trim($request->clientVersion);
+                $merchantId = trim((string) $request->clientId);
+                $saltKey = trim((string) $request->clientSecret);
+                $saltIndex = trim((string) $request->clientVersion);
 
                 // PhonePe status endpoint check using SHA256 signature
                 $endpoint = "/pg/v1/status/{$merchantId}/VERIFY_TEST_PING";
@@ -350,9 +350,9 @@ class PaymentSettingController extends Controller
 
             // 13. PayTR Check (Corrected get-token Parameters)
             if ($id == '5992737427970') {
-                $merchantId = trim($request->paytr_merchant_id);
-                $merchantKey = trim($request->paytr_merchant_key);
-                $merchantSalt = trim($request->paytr_merchant_salt_key);
+                $merchantId = trim((string) $request->paytr_merchant_id);
+                $merchantKey = trim((string) $request->paytr_merchant_key);
+                $merchantSalt = trim((string) $request->paytr_merchant_salt_key);
                 $mode = $request->paytr_mode ?? '1';
 
                 if (empty($merchantId) || empty($merchantKey) || empty($merchantSalt)) {
@@ -409,8 +409,8 @@ class PaymentSettingController extends Controller
 
             // 14. Toyyibpay (Bill Verification Check)
             if ($id == '767510608137') {
-                $secretKey = trim($request->toyyibpay_api_key);
-                $categoryCode = trim($request->toyyibpay_category_code);
+                $secretKey = trim((string) $request->toyyibpay_api_key);
+                $categoryCode = trim((string) $request->toyyibpay_category_code);
                 $baseUrl = ($request->toyyibpay_mode === 'sandbox') ? 'https://dev.toyyibpay.com' : 'https://toyyibpay.com';
 
                 // Ping Toyyibpay server

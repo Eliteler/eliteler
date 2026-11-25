@@ -18,4 +18,9 @@ use Illuminate\Database\Eloquent\Model;
 class NfcCardKey extends Model
 {
     use HasFactory;
+
+    protected $casts = [
+        'scan_count'      => 'integer',
+        'last_scanned_at' => 'datetime',
+    ];
 }

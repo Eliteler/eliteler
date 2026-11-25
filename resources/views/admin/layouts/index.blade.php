@@ -1,3 +1,6 @@
+@php
+    $settings = is_object($settings ?? null) ? $settings : \App\Services\GoBizCommonService::settings();
+@endphp
 <!doctype html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ App::isLocale('ar') || App::isLocale('ur') || App::isLocale('he') ? 'rtl' : 'ltr' }}">
 
@@ -146,9 +149,9 @@
     <script src="{{ asset('js/chart.js') }}"></script>
     @yield('css')
 
-    @if (isset($settings) && $settings)
+    @if (is_object($settings))
         {{-- Check Google Analytics is "enabled" --}}
-        @if (!empty($settings->google_analytics_id) && (Cookie::get('laravel_cookie_consent') === '1' || env('COOKIE_CONSENT_ENABLED') == ""))
+        @if (!empty($settings->google_analytics_id) && (Cookie::get('laravel_cookie_consent') === '1' || !config('cookie-consent.enabled') || env('COOKIE_CONSENT_ENABLED') == "" || env('COOKIE_CONSENT_ENABLED') == false))
             <!-- Global site tag (gtag.js) - Google Analytics -->
             <script async src="https://www.googletagmanager.com/gtag/js?id={{ $settings->google_analytics_id }}"></script>
             <script>
@@ -163,7 +166,7 @@
             </script>
         @endif
 
-        @if ($settings->google_adsense_code != 'DISABLE_ADSENSE_ONLY' && (Cookie::get('laravel_cookie_consent') === '1' || env('COOKIE_CONSENT_ENABLED') == ""))
+        @if (!empty($settings->google_adsense_code) && $settings->google_adsense_code !== 'DISABLE_ADSENSE_ONLY' && (Cookie::get('laravel_cookie_consent') === '1' || !config('cookie-consent.enabled') || env('COOKIE_CONSENT_ENABLED') == "" || env('COOKIE_CONSENT_ENABLED') == false))
             {{-- AdSense code --}}
             <script async
                 src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ $settings->google_adsense_code }}"
@@ -172,7 +175,7 @@
     @endif
 
     {{-- CSS/JS from admin settings --}}
-    @if (isset($settings) && $settings)
+    @if (is_object($settings))
         @php
             $custom_css = $settings->custom_css;
             $custom_js = $settings->custom_scripts;

@@ -16,7 +16,16 @@
             justify-content: center;
             padding-bottom: 14px;
             /* Snug, low bottom alignment */
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
             transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .pwa-backdrop-wrapper.show {
+            opacity: 1 !important;
+            visibility: visible !important;
+            pointer-events: auto !important;
         }
 
         @media (min-width: 768px) {
@@ -175,45 +184,74 @@
         (function() {
             "use strict";
 
-            let deferredPrompt = null;
-            const wrapper = document.getElementById('pwaBackdropWrapper');
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+            if (isStandalone) {
+                return;
+            }
 
+            let deferredPrompt = window.deferredPwaPrompt || window.deferredPrompt || null;
+            const wrapper = document.getElementById('pwaBackdropWrapper');
+            const dismissKey = 'pwa_dismissed_{{ $business_card_details->card_id ?? "store" }}';
+
+            function showPwaSheet() {
+                if (wrapper && !sessionStorage.getItem(dismissKey)) {
+                    wrapper.classList.add('show');
+                }
+            }
+
+            // Capture install prompt event if supported
             window.addEventListener('beforeinstallprompt', (e) => {
                 e.preventDefault();
                 deferredPrompt = e;
+                window.deferredPwaPrompt = e;
+                window.deferredPrompt = e;
+
+                setTimeout(showPwaSheet, 1500);
             });
+
+            // If prompt was already captured earlier on window
+            if (deferredPrompt) {
+                setTimeout(showPwaSheet, 1500);
+            }
 
             const installBtn = document.getElementById('pwaInstallBtn');
             if (installBtn) {
                 installBtn.addEventListener('click', async () => {
-                    if (deferredPrompt) {
-                        deferredPrompt.prompt();
-                        const {
-                            outcome
-                        } = await deferredPrompt.userChoice;
+                    const promptEvent = deferredPrompt || window.deferredPwaPrompt || window.deferredPrompt;
+                    if (promptEvent) {
+                        promptEvent.prompt();
+                        try {
+                            const { outcome } = await promptEvent.userChoice;
+                            if (outcome === 'accepted') {
+                                dismissPwaSheet();
+                            }
+                        } catch (err) {}
                         deferredPrompt = null;
+                        window.deferredPwaPrompt = null;
+                        window.deferredPrompt = null;
                         dismissPwaSheet();
                     } else {
-                        if (window.showStoreToast) {
-                            window.showStoreToast(
-                                "{{ __('To install: Tap Share icon and select Add to Home Screen') }}",
-                                "success");
-                        }
                         dismissPwaSheet();
                     }
                 });
             }
 
             window.dismissPwaSheet = function() {
+                try {
+                    sessionStorage.setItem(dismissKey, '1');
+                } catch (e) {}
+
                 if (wrapper) {
-                    wrapper.style.opacity = '0';
-                    wrapper.style.visibility = 'hidden';
-                    wrapper.style.pointerEvents = 'none';
-                    setTimeout(() => {
-                        if (wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
-                    }, 300);
+                    wrapper.classList.remove('show');
                 }
             };
+
+            window.addEventListener('appinstalled', () => {
+                dismissPwaSheet();
+                deferredPrompt = null;
+                window.deferredPwaPrompt = null;
+                window.deferredPrompt = null;
+            });
         })();
     </script>
 @endif

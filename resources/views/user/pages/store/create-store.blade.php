@@ -7,6 +7,46 @@
 
     {{-- Cropper CSS --}}
     <link href="{{ asset('css/cropper.min.css') }}" rel="stylesheet">
+
+    <style>
+        /* CRITICAL CROP FIX: Protect Cropper.js internal images from squishing / distortion */
+        .cropper-modal-container {
+            width: 100%;
+            max-height: 450px;
+            min-height: 260px;
+            overflow: hidden;
+            background-color: var(--tblr-dark, #0f172a);
+            border-radius: var(--tblr-border-radius-lg, 10px);
+            position: relative;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+            text-align: center;
+        }
+        .cropper-modal-container > img {
+            display: block;
+            max-width: 100%;
+            max-height: 450px;
+            margin: 0 auto;
+        }
+        .cropper-modal-container .cropper-container {
+            margin: 0 auto;
+            touch-action: none;
+        }
+        .cropper-modal-container .cropper-container img,
+        .cropper-container .cropper-view-box img,
+        .cropper-container .cropper-canvas img {
+            display: block !important;
+            max-width: none !important;
+            max-height: none !important;
+            min-width: 0 !important;
+            min-height: 0 !important;
+        }
+        .cropper-view-box,
+        .cropper-face {
+            border-radius: 0;
+        }
+    </style>
 @endsection
 
 @php
@@ -269,7 +309,7 @@
                                                 <input type="text" class="form-control font-monospace" name="link"
                                                     id="plink" placeholder="{{ __('my-awesome-store') }}"
                                                     value="{{ $plan_details->personalized_link ? old('link') : $cardId }}"
-                                                    autocomplete="off" minlength="3"
+                                                    autocomplete="off" minlength="3" aria-describedby="personalized-link-error"
                                                     @if ($plan_details->personalized_link) onkeyup="checkLink()"
                 oninput="convertToLink(this.value)"
                 required
@@ -294,6 +334,7 @@
                                                 </span>
                                             </div>
 
+                                            <div id="personalized-link-error" class="small text-danger" aria-live="polite"></div>
                                             <small class="form-hint">
                                                 {{ __('Only lowercase letters, numbers, and hyphens are permitted.') }}
                                             </small>
@@ -625,22 +666,23 @@
     </div>
 
     {{-- Logo Crop Modal --}}
-    <div id="cropLogoModal" class="modal modal-bg fade" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-md modal-dialog-centered" role="document">
-            <div class="modal-content border-0 shadow-lg">
-                <div class="modal-header">
-                    <h5 class="modal-title">{{ __('Crop Store Logo') }}</h5>
+    <div id="cropLogoModal" class="modal modal-bg fade" tabindex="-1" role="dialog" aria-hidden="true"
+        data-bs-backdrop="static">
+        <div class="modal-dialog modal-md modal-dialog-centered modal-dialog-scrollable" role="document">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+                <div class="modal-header border-bottom py-3 px-4">
+                    <h5 class="modal-title font-weight-bold mb-0 text-dark">{{ __('Crop Store Logo') }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body p-0">
-                    <div class="cropper-wrapper w-100"
-                        style="max-height: 420px; overflow: hidden; background: var(--tblr-bg-surface-secondary);">
-                        <img id="logoCropperImage" style="max-width: 100%; display: block;" alt="Logo crop image">
+                <div class="modal-body p-3">
+                    <div class="cropper-modal-container">
+                        <img id="logoCropperImage" alt="Crop Store Logo">
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
-                    <button type="button" class="btn btn-primary" id="applyLogoCrop">
+                <div class="modal-footer border-top py-3 px-4">
+                    <button type="button" class="btn btn-danger me-auto text-decoration-none fw-semibold"
+                        data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+                    <button type="button" class="btn btn-primary fw-semibold px-4" id="applyLogoCrop">
                         {{ __('Crop & Apply') }}
                     </button>
                 </div>
@@ -649,22 +691,23 @@
     </div>
 
     {{-- Banner Crop Modal --}}
-    <div id="cropBannerModal" class="modal modal-bg fade" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
-            <div class="modal-content border-0 shadow-lg">
-                <div class="modal-header">
-                    <h5 class="modal-title">{{ __('Crop Store Banner') }}</h5>
+    <div id="cropBannerModal" class="modal modal-bg fade" tabindex="-1" role="dialog" aria-hidden="true"
+        data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+                <div class="modal-header border-bottom py-3 px-4">
+                    <h5 class="modal-title font-weight-bold mb-0 text-dark">{{ __('Crop Store Banner') }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body p-0">
-                    <div class="cropper-wrapper w-100"
-                        style="max-height: 460px; overflow: hidden; background: var(--tblr-bg-surface-secondary);">
-                        <img id="bannerCropperImage" style="max-width: 100%; display: block;" alt="Banner crop image">
+                <div class="modal-body p-3">
+                    <div class="cropper-modal-container">
+                        <img id="bannerCropperImage" alt="Crop Store Banner">
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
-                    <button type="button" class="btn btn-primary" id="applyBannerCrop">
+                <div class="modal-footer border-top py-3 px-4">
+                    <button type="button" class="btn btn-danger me-auto text-decoration-none fw-semibold"
+                        data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+                    <button type="button" class="btn btn-primary fw-semibold px-4" id="applyBannerCrop">
                         {{ __('Crop & Add') }}
                     </button>
                 </div>
@@ -793,6 +836,8 @@
         if (!plinkInput) return;
         const plinkVal = plinkInput.value.trim();
         const statusBox = document.getElementById('status');
+        const linkError = document.getElementById('personalized-link-error');
+        linkError.textContent = '';
 
         if (plinkVal.length > 2) {
             fetch("{{ route('user.check.link') }}", {
@@ -807,6 +852,8 @@
                 })
                 .then(response => response.json())
                 .then(res => {
+                    if (plinkVal !== plinkInput.value.trim()) return;
+                    linkError.textContent = res.message || '';
                     if (res.status === 'success') {
                         statusBox.innerHTML = `
                                                                                     <span data-bs-toggle="tooltip" data-bs-placement="top" title="{{ __('Link is available') }}">
@@ -861,11 +908,16 @@
     });
 
     logoModalEl.addEventListener('shown.bs.modal', function() {
+        if (logoCropper) {
+            logoCropper.destroy();
+            logoCropper = null;
+        }
         logoCropper = new Cropper(document.getElementById('logoCropperImage'), {
             aspectRatio: 1,
             viewMode: 1,
             autoCropArea: 1,
-            background: false
+            responsive: true,
+            restore: false
         });
     });
 
@@ -874,6 +926,9 @@
             logoCropper.destroy();
             logoCropper = null;
         }
+        const img = document.getElementById('logoCropperImage');
+        if (img) img.src = '';
+        logoInput.value = '';
     });
 
     document.getElementById('applyLogoCrop').addEventListener('click', function() {
@@ -885,8 +940,14 @@
 
         const canvas = logoCropper.getCroppedCanvas({
             width: 512,
-            height: 512
+            height: 512,
+            imageSmoothingQuality: 'high'
         });
+        if (!canvas) {
+            btn.disabled = false;
+            btn.innerHTML = `{{ __('Crop & Apply') }}`;
+            return;
+        }
         canvas.toBlob(function(blob) {
             const formData = new FormData();
             formData.append('croppedImage', blob);
@@ -894,23 +955,34 @@
             fetch("{{ route('user.vcard.cropped.image') }}", {
                     method: 'POST',
                     headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
                     },
                     body: formData
                 })
                 .then(response => response.json())
                 .then(data => {
                     document.getElementById('logo_payload').value = data.imageUrl;
+
+                    // FIX: Remove 'required' attribute and reset custom validity so form submits smoothly
+                    $('#logoInput').prop('required', false);
+                    if (document.getElementById('logoInput')) {
+                        document.getElementById('logoInput').setCustomValidity('');
+                    }
+
                     const previewContainer = document.getElementById('logoPreviewContainer');
                     previewContainer.classList.remove('d-none');
                     previewContainer.innerHTML = `
-                                                                                <div class="media-preview-item">
-                                                                                    <img src="${data.imageUrl}" alt="{{ __('Store Logo') }}">
-                                                                                </div>
-                                                                            `;
+                        <div class="media-preview-item">
+                            <img src="${data.imageUrl}" alt="{{ __('Store Logo') }}">
+                        </div>
+                    `;
                     bootstrap.Modal.getInstance(logoModalEl).hide();
                 })
-                .catch(err => console.error('Logo upload error:', err))
+                .catch(err => {
+                    console.error('Logo upload error:', err);
+                    alert('{{ __('Failed to upload cropped image. Please try again.') }}');
+                })
                 .finally(() => {
                     btn.disabled = false;
                     btn.innerHTML = `{{ __('Crop & Apply') }}`;
@@ -948,11 +1020,16 @@
     }
 
     bannerModalEl.addEventListener('shown.bs.modal', function() {
+        if (bannerCropper) {
+            bannerCropper.destroy();
+            bannerCropper = null;
+        }
         bannerCropper = new Cropper(document.getElementById('bannerCropperImage'), {
             aspectRatio: 16 / 9,
-            viewMode: 2,
+            viewMode: 1,
             autoCropArea: 1,
-            responsive: true
+            responsive: true,
+            restore: false
         });
     });
 
@@ -961,6 +1038,9 @@
             bannerCropper.destroy();
             bannerCropper = null;
         }
+        const img = document.getElementById('bannerCropperImage');
+        if (img) img.src = '';
+        coverInput.value = '';
     });
 
     // Banner Cropping Event in Blade JS
@@ -973,16 +1053,23 @@
 
         const canvas = bannerCropper.getCroppedCanvas({
             width: 1920,
-            height: 1080
+            height: 1080,
+            imageSmoothingQuality: 'high'
         });
+        if (!canvas) {
+            btn.disabled = false;
+            btn.innerHTML = `{{ __('Crop & Add') }}`;
+            return;
+        }
         canvas.toBlob(function(blob) {
             const formData = new FormData();
-            formData.append('croppedImage', blob, `banner_${bannerIndex}.png`);
+            formData.append('croppedImage', blob, `banner_${bannerIndex}.jpg`);
 
             fetch("{{ route('user.store.cropped.images') }}", {
                     method: 'POST',
                     headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
                     },
                     body: formData
                 })
@@ -994,6 +1081,12 @@
                     // Set clean JSON in hidden input
                     document.getElementById('banner_payload').value = JSON.stringify(
                         uploadedBanners);
+
+                    // FIX: Remove 'required' attribute and reset custom validity so form submits smoothly
+                    $('#coverInput').prop('required', false);
+                    if (document.getElementById('coverInput')) {
+                        document.getElementById('coverInput').setCustomValidity('');
+                    }
 
                     const previewContainer = document.getElementById('bannerPreviewContainer');
                     previewContainer.classList.remove('d-none');
@@ -1009,12 +1102,15 @@
                         setTimeout(loadNextBannerFile, 350);
                     }
                 })
-                .catch(err => console.error('Banner upload error:', err))
+                .catch(err => {
+                    console.error('Banner upload error:', err);
+                    alert('{{ __('Failed to upload cropped image. Please try again.') }}');
+                })
                 .finally(() => {
                     btn.disabled = false;
                     btn.innerHTML = `{{ __('Crop & Add') }}`;
-                    });
-            }, 'image/png');
-        });
+                });
+        }, 'image/jpeg', 0.90);
+    });
     </script>
 @endpush

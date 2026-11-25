@@ -63,7 +63,7 @@ class BusinessHourController extends Controller
     public function saveBusinessHours(Request $request, $id)
     {
         // Queries
-        $business_card = BusinessCard::where('card_id', $id)->first();
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
 
         // Get plan details
         $plan = DB::table('users')->where('user_id', Auth::user()->user_id)->where('status', 1)->first();

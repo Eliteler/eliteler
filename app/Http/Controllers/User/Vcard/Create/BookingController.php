@@ -58,6 +58,12 @@ class BookingController extends Controller
     // Update service booking
     public function saveServiceBooking(Request $request, $id)
     {
+        // Verify card belongs to user
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
+        if (!$business_card) {
+            return redirect()->route('user.cards')->with('failed', trans('Card not found!'));
+        }
+
         $allDays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
         $selectedDays = $request->input('service_booking_available_days', []);
         $availableDays = [];
@@ -95,9 +101,6 @@ class BookingController extends Controller
         } elseif ($serviceBooking) {
             $serviceBooking->delete();
         }
-
-        // Queries
-        $business_card = BusinessCard::where('card_id', $id)->first();
 
         // Check business card
         $plan = User::where('user_id', Auth::user()->user_id)->where('status', 1)->first();

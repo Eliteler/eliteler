@@ -1180,7 +1180,7 @@ if (!empty($custom_js)) {
 
                 if (typeof setBtnLoading === 'function') setBtnLoading(btn, '{{ __('Opening...') }}');
 
-                window.open(`https://wa.me/${phoneNumber}?text={{ rawurlencode($shareContent ?? '') }}`, '_blank',
+                window.open(`https://wa.me/${phoneNumber}?text={{ $shareContent ?? '' }}`, '_blank',
                     'noopener');
 
                 setTimeout(() => {

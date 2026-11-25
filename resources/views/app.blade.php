@@ -2,7 +2,7 @@
 <html @class(['dark' => ($appearance ?? 'system') == 'dark'])>
 
 @php
-    $settings = DB::table('settings')->first();
+    $settings = is_object($settings ?? null) ? $settings : DB::table('settings')->first();
 @endphp
 
 <head>
@@ -38,11 +38,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300..700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/all.css') }}" />
 
-    @if (isset($settings) && $settings)
+    @if (is_object($settings))
         {{-- Check Google Analytics is "enabled" --}}
-        @if (
-            !empty($settings->google_analytics_id) &&
-                (Cookie::get('laravel_cookie_consent') === '1' || env('COOKIE_CONSENT_ENABLED') == ''))
+        @if (!empty($settings->google_analytics_id) && (Cookie::get('laravel_cookie_consent') === '1' || !config('cookie-consent.enabled') || env('COOKIE_CONSENT_ENABLED') == "" || env('COOKIE_CONSENT_ENABLED') == false))
             <!-- Global site tag (gtag.js) - Google Analytics -->
             <script async src="https://www.googletagmanager.com/gtag/js?id={{ $settings->google_analytics_id }}"></script>
             <script>
@@ -57,9 +55,7 @@
             </script>
         @endif
 
-        @if (
-            $settings->google_adsense_code != 'DISABLE_ADSENSE_ONLY' &&
-                (Cookie::get('laravel_cookie_consent') === '1' || env('COOKIE_CONSENT_ENABLED') == ''))
+        @if (!empty($settings->google_adsense_code) && $settings->google_adsense_code !== 'DISABLE_ADSENSE_ONLY' && (Cookie::get('laravel_cookie_consent') === '1' || !config('cookie-consent.enabled') || env('COOKIE_CONSENT_ENABLED') == "" || env('COOKIE_CONSENT_ENABLED') == false))
             {{-- AdSense code --}}
             <script async
                 src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ $settings->google_adsense_code }}"

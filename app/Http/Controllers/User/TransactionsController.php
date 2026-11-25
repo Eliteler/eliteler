@@ -68,6 +68,7 @@ class TransactionsController extends Controller
                     'plans.plan_name as item_name',
                     'transactions.payment_gateway_name as gateway',
                     'transactions.transaction_amount as amount',
+                    'transactions.transaction_currency as currency',
                     'transactions.payment_status as status',
                     'transactions.invoice_number as invoice_id',
                     'transactions.created_at as created_at'
@@ -86,6 +87,7 @@ class TransactionsController extends Controller
                     'nfc_card_designs.nfc_card_name as item_name',
                     'nfc_card_order_transactions.payment_method as gateway',
                     'nfc_card_order_transactions.amount as amount',
+                    'nfc_card_order_transactions.currency as currency',
                     'nfc_card_order_transactions.payment_status as status',
                     'nfc_card_order_transactions.nfc_card_order_transaction_id as invoice_id',
                     'nfc_card_order_transactions.created_at as created_at'
@@ -103,6 +105,7 @@ class TransactionsController extends Controller
                     DB::raw("COALESCE(ai_credits_plans.plan_name, 'AI Credits') as item_name"),
                     'ai_credits_transactions.payment_method as gateway',
                     'ai_credits_transactions.amount as amount',
+                    'ai_credits_transactions.currency as currency',
                     'ai_credits_transactions.payment_status as status',
                     'ai_credits_transactions.ai_credits_transaction_id as invoice_id',
                     'ai_credits_transactions.created_at as created_at'
@@ -162,7 +165,8 @@ class TransactionsController extends Controller
                     return '<span class="badge bg-slate-100 text-slate-600 px-2 py-1 fw-semibold">' . e(__($row->gateway ?? 'N/A')) . '</span>';
                 })
                 ->addColumn('transaction_amount', function ($row) {
-                    return '<span class="fw-bold text-dark">' . formatCurrency($row->amount) . '</span>';
+                    // In the currency it was paid in, not today's base currency
+                    return '<span class="fw-bold text-dark">' . e(formatMoney($row->amount, $row->currency)) . '</span>';
                 })
                 ->addColumn('payment_status', function ($row) {
                     $status = strtolower($row->status);
@@ -220,7 +224,15 @@ class TransactionsController extends Controller
     public function viewInvoice($id)
     {
         // Queries
-        $transaction = Transaction::where('gobiz_transaction_id', $id)->orWhere('transaction_id', $id)->first();
+        $transaction = Transaction::where(function ($query) use ($id) {
+                $query->where('gobiz_transaction_id', $id)
+                    ->orWhere('transaction_id', $id);
+            })
+            ->where(function ($query) {
+                $query->where('user_id', Auth::user()->id)
+                    ->orWhere('user_id', Auth::user()->user_id);
+            })
+            ->first();
 
         if ($transaction) {
             $settings = Setting::where('status', 1)->first();

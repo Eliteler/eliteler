@@ -40,7 +40,7 @@ class CustomizationController extends Controller
     public function customization(Request $request, $id)
     {
         // Queries
-        $business_card = BusinessCard::where('card_id', $id)->first();
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
         $plan          = User::where('user_id', Auth::user()->user_id)->where('status', 1)->first();
         $plan_details  = json_decode($plan->plan_details);
         $settings      = Setting::where('status', 1)->first();

@@ -43,7 +43,7 @@ class AdvancedSettingController extends Controller
     public function editAdvancedSetting(Request $request, $id)
     {
         // Queries
-        $business_card = BusinessCard::where('card_id', $id)->first();
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
         $settings = Setting::where('status', 1)->first();
 
         // Check business card
@@ -66,7 +66,7 @@ class AdvancedSettingController extends Controller
     public function updateAdvancedSetting(Request $request, $id)
     {
         // Queries
-        $business_card = BusinessCard::where('card_id', $id)->first();
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
 
         // Check business card
         if ($business_card == null) {
@@ -76,6 +76,11 @@ class AdvancedSettingController extends Controller
             $password = $request->password;
             if ($request->password_protected == "on") {
                 $password = null;
+            }
+
+            if (!empty($password) && strlen($password) > 100) {
+                return redirect()->route('user.edit.advanced.setting', $id)
+                    ->with('failed', trans('Password must not exceed 100 characters.'));
             }
 
             // Check pwa enable/disable
@@ -133,7 +138,7 @@ class AdvancedSettingController extends Controller
             ]);
 
             // Update
-            BusinessCard::where('card_id', $id)->update([
+            BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->update([
                 'password' => $password,
                 'custom_css' => $request->custom_css,
                 'custom_js' => $request->custom_js,

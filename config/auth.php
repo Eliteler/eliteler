@@ -114,4 +114,26 @@ return [
 
     'password_timeout' => 10800,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Privileged & System-Reserved Email Registration Restriction
+    |--------------------------------------------------------------------------
+    |
+    | Prevents public account creation with privileged, internal corporate,
+    | or system administrative email addresses to stop identity impersonation.
+    |
+    */
+    'reserved_emails' => [
+        'enabled'                => env('BLOCK_RESERVED_EMAILS', true),
+        'block_internal_domains' => env('BLOCK_INTERNAL_DOMAINS', true),
+        'scope'                  => env('RESERVED_EMAILS_SCOPE', 'internal_and_public'), // 'internal_and_public', 'internal_only', or 'all_domains'
+        'additional_prefixes'    => env('RESERVED_EMAIL_PREFIXES', ''),
+        'additional_domains'     => env('RESERVED_EMAIL_DOMAINS', ''),
+    ],
+
+    'disposable_emails' => [
+        'enabled'   => env('BLOCK_DISPOSABLE_EMAILS', true),
+        'whitelist' => env('DISPOSABLE_EMAILS_WHITELIST', ''),
+    ],
+
 ];

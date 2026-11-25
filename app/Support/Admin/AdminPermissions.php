@@ -34,10 +34,10 @@ class AdminPermissions
             'email_templates'      => 'Email templates',
             'marketing'            => 'Marketing',
         ],
-        'NFC cards' => [
-            'nfc_card_design'             => 'NFC card designs',
-            'nfc_card_orders'             => 'NFC card orders',
-            'nfc_card_order_transactions' => 'NFC card payments',
+        'Smart Products' => [
+            'nfc_card_design'             => 'Smart products',
+            'nfc_card_orders'             => 'Smart product orders',
+            'nfc_card_order_transactions' => 'Smart product payments',
             'nfc_card_key_generations'    => 'NFC activation keys',
         ],
         'System' => [

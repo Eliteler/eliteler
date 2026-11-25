@@ -25,6 +25,8 @@ use App\Setting;
 use App\StoreBusinessHour;
 use App\StoreCategory;
 use App\StoreProduct;
+use App\Support\Card\CardTheme;
+use App\Support\Store\StoreTheme;
 use App\Testimonial;
 use Artesaos\SEOTools\Facades\JsonLd;
 use Artesaos\SEOTools\Facades\OpenGraph;
@@ -33,12 +35,12 @@ use Artesaos\SEOTools\Facades\SEOTools;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
-use App\Support\Store\StoreTheme;
 
 class PreviewController extends Controller
 {
@@ -63,7 +65,11 @@ class PreviewController extends Controller
     public function index(Request $request, $id)
     {
         // Fetch card details regardless of active status for preview
-        $card_details = DB::table('business_cards')->where('card_id', $id)->where('status', 1)->first();
+        $card_details = DB::table('business_cards')
+            ->where('card_id', $id)
+            ->where('user_id', Auth::user()->user_id)
+            ->where('status', 1)
+            ->first();
 
         if (!$card_details) {
             return redirect()
@@ -234,9 +240,14 @@ class PreviewController extends Controller
                     OpenGraph::setUrl(url($business_card_details->card_url));
 
                     // PWA
+                    $profileImg = !empty($business_card_details->profile) ? url($business_card_details->profile) : asset('img/templates/all-categories.png');
                     $icons = [
+                        '192x192' => [
+                            'path'    => $profileImg,
+                            'purpose' => 'any',
+                        ],
                         '512x512' => [
-                            'path'    => url($business_card_details->profile),
+                            'path'    => $profileImg,
                             'purpose' => 'any',
                         ],
                     ];
@@ -309,8 +320,8 @@ class PreviewController extends Controller
                         $shareContent = str_replace("{ appName }", $config[0]->config_value, $shareContent);
                     }
 
-                    $url          = urlencode($url);
-                    $shareContent = urlencode($shareContent);
+                    $url          = rawurlencode($url);
+                    $shareContent = rawurlencode($shareContent);
 
                     $locale = Session::get('locale') ?? $business_card_details->card_lang ?? config('app.locale');
                     App::setLocale($locale);
@@ -324,7 +335,7 @@ class PreviewController extends Controller
                     $shareComponent['whatsapp'] = "https://api.whatsapp.com/send/?phone&text=$shareContent";
 
                     if ($plan_details['password_protected'] != 1) {
-                        BusinessCard::where('card_id', $business_card_details->card_id)->update(['password' => null]);
+                        BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $business_card_details->card_id)->update(['password' => null]);
                         Session::get('password_protected') == false;
                     }
 
@@ -439,9 +450,14 @@ class PreviewController extends Controller
                     OpenGraph::setUrl(url($business_card_details->card_url));
 
                     // PWA
+                    $profileImg = !empty($business_card_details->profile) ? url($business_card_details->profile) : asset('img/templates/all-categories.png');
                     $icons = [
+                        '192x192' => [
+                            'path'    => $profileImg,
+                            'purpose' => 'any',
+                        ],
                         '512x512' => [
-                            'path'    => url($business_card_details->profile),
+                            'path'    => $profileImg,
                             'purpose' => 'any',
                         ],
                     ];
@@ -503,8 +519,8 @@ class PreviewController extends Controller
                         $shareContent = str_replace("{ appName }", $config[0]->config_value, $shareContent);
                     }
 
-                    $url          = urlencode($url);
-                    $shareContent = urlencode($shareContent);
+                    $url          = rawurlencode($url);
+                    $shareContent = rawurlencode($shareContent);
 
                     $locale = Session::get('locale') ?? $business_card_details->card_lang ?? config('app.locale');
                     App::setLocale($locale);
@@ -525,23 +541,42 @@ class PreviewController extends Controller
                     try {
                         $google_wallet_details = DB::table('google_wallets_vcard')->where('card_id', $business_card_details->card_id)->first();
 
-                        if ($google_wallet_details) {
-                            $wallet_url = url()->to('/') . "/user/google-wallet/redirect/wallet?id=" . $google_wallet_details->google_wallet_id;
-                            $google_wallet_details->wallet_link = $wallet_url;
-                        }
+                        if ($google_wallet_details && !empty($google_wallet_details->google_wallet_id)) {
+                            $hasActiveWallet = DB::table('google_wallets')
+                                ->where('wallet_id', $google_wallet_details->google_wallet_id)
+                                ->where('status', 1)
+                                ->exists();
 
-                        $datas['google_wallet_details'] = $google_wallet_details;
+                            if ($hasActiveWallet) {
+                                $wallet_url = route('user.google-wallet.redirect') . '?id=' . $google_wallet_details->google_wallet_id;
+                                $google_wallet_details->wallet_link = $wallet_url;
+                                $datas['google_wallet_details'] = $google_wallet_details;
+                            } else {
+                                $business_card_details->is_google_wallet_hidden = 1;
+                                $datas['google_wallet_details'] = null;
+                            }
+                        } else {
+                            $business_card_details->is_google_wallet_hidden = 1;
+                            $datas['google_wallet_details'] = null;
+                        }
                     } catch (\Throwable $th) {
+                        $business_card_details->is_google_wallet_hidden = 1;
+                        $datas['google_wallet_details'] = null;
                     }
 
                     if ($plan_details['password_protected'] != 1) {
-                        BusinessCard::where('card_id', $business_card_details->card_id)->update(['password' => null]);
+                        BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $business_card_details->card_id)->update(['password' => null]);
                         Session::get('password_protected') == false;
                     }
 
                     // Render direct vCard template if called inside preview iframe
                     if ($request->has('frame')) {
-                        return view('templates.cards.' . $business_card_details->theme_code . '.index', $datas);
+                        $cardTheme = CardTheme::resolve($business_card_details->theme_code);
+                        $datas['cardTheme'] = $cardTheme;
+                        $datas['themeColor'] = $cardTheme->color;
+                        $datas['themeHexColor'] = $cardTheme->hex;
+
+                        return view('templates.cards.' . $cardTheme->view . '.index', $datas);
                     }
 
                     // Preview iframe URL pointing back with frame parameter
@@ -577,12 +612,15 @@ class PreviewController extends Controller
         ];
 
         foreach ($fill['icons'] as $size => $file) {
-            $fileInfo = pathinfo($file['path']);
+            $ext = strtolower(pathinfo($file['path'], PATHINFO_EXTENSION));
+            if (empty($ext) || !in_array($ext, ['png', 'jpg', 'jpeg', 'webp', 'svg', 'gif'], true)) {
+                $ext = 'png';
+            }
             $basicManifest['icons'][] = [
-                'src' => $file['path'],
-                'type' => 'image/' . $fileInfo['extension'],
-                'sizes' => $size,
-                'purpose' => $file['purpose']
+                'src'     => $file['path'],
+                'type'    => 'image/' . ($ext === 'jpg' ? 'jpeg' : $ext),
+                'sizes'   => $size,
+                'purpose' => $file['purpose'] ?? 'any',
             ];
         }
 

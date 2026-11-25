@@ -284,7 +284,7 @@
                                     </a>
                                 </li>
                                 <li class="breadcrumb-item active fw-semibold" aria-current="page">
-                                    {{ __('My NFC Cards') }}
+                                    {{ __('My Smart Products') }}
                                 </li>
                             </ol>
                         </nav>
@@ -292,10 +292,10 @@
 
                     <div class="col">
                         <h2 class="page-title text-reset fw-bold">
-                            {{ __('My NFC Cards') }}
+                            {{ __('My Smart Products') }}
                         </h2>
                         <div class="text-muted mt-1">
-                            {{ __('Manage, link, and activate your physical NFC-enabled cards and digital stores.') }}
+                            {{ __('Choose what each NFC card, stand or tag opens: a business card, a store or any link. See how often each one is tapped.') }}
                         </div>
                     </div>
 
@@ -351,9 +351,9 @@
                                 <tr>
                                     <th class="w-1">{{ __('#') }}</th>
                                     <th>{{ __('Date') }}</th>
-                                    <th>{{ __('NFC Card Name') }}</th>
-                                    <th>{{ __('Linked Card') }}</th>
-                                    <th>{{ __('Linked Status') }}</th>
+                                    <th>{{ __('Product') }}</th>
+                                    <th>{{ __('Opens') }}</th>
+                                    <th>{{ __('Taps') }}</th>
                                     <th class="w-1 text-end">{{ __('Action') }}</th>
                                 </tr>
                             </thead>
@@ -421,7 +421,7 @@
                                     </button>
                                 </div>
                                 <div class="col">
-                                    <a class="btn btn-danger w-100" id="status_id">
+                                    <a data-method="post" class="btn btn-danger w-100" id="status_id">
                                         {{ __('Yes, Proceed') }}
                                     </a>
                                 </div>
@@ -528,25 +528,27 @@
                     },
                     {
                         data: 'created_at',
-                        name: 'nfc_card_orders.created_at',
-                        searchable: true
-                    },
-                    {
-                        data: 'nfc_card_name',
-                        name: 'nfc_card_designs.nfc_card_name',
-                        orderable: false,
-                        searchable: true
-                    },
-                    {
-                        data: 'card_id',
-                        name: 'card_id',
-                        orderable: false,
+                        name: 'nfc_card_keys.created_at',
                         searchable: false
                     },
                     {
-                        data: 'link_status',
-                        name: 'nfc_card_keys.link_status',
-                        searchable: true
+                        data: 'product',
+                        name: 'product',
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-wrap'
+                    },
+                    {
+                        data: 'destination',
+                        name: 'destination',
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-wrap'
+                    },
+                    {
+                        data: 'scans',
+                        name: 'nfc_card_keys.scan_count',
+                        searchable: false
                     },
                     {
                         data: 'action',
@@ -658,8 +660,8 @@
 
             const modalMessage = document.getElementById("action_status");
             const message =
-                `{{ __('If you continue, the vcard/store link will be :status.', ['status' => '_status_place_']) }}`;
-            modalMessage.innerHTML = message.replace('_status_place_', status);
+                `{{ __('If you continue, this NFC tag will no longer open anything until you set a new destination.') }}`;
+            modalMessage.innerHTML = message;
 
             const link = document.getElementById("status_id");
             link.setAttribute("href", "{{ route('user.action.key.generation') }}?id=" + pageId + "&status=" + status);

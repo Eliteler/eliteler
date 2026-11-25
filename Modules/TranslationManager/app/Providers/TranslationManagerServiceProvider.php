@@ -19,6 +19,11 @@ class TranslationManagerServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__ . '/../../config/translation-manager.php', 'translation-manager');
+
+        require_once __DIR__ . '/TranslationPlaceholderProtector.php';
+        if (!class_exists('Modules\TranslationManager\App\Providers\TranslationPlaceholderProtector', false)) {
+            class_alias(TranslationPlaceholderProtector::class, 'Modules\TranslationManager\App\Providers\TranslationPlaceholderProtector');
+        }
     }
 
     public function boot(): void

@@ -48,6 +48,13 @@ class AICreditsCheckOutController extends Controller
             return redirect()->route('user.ai.credits.plans')->with('failed', __('This AI Credits plan does not exist.'));
         }
 
+        // React panel has its own checkout (payment errors come back here and are passed on too)
+        if (\App\Support\Plugins\UserPluginPage::reactPanel() && \Illuminate\Support\Facades\Route::has('user.dashboard.ai-credits.checkout')) {
+            session()->reflash();
+
+            return redirect()->route('user.dashboard.ai-credits.checkout', $plan->ai_credits_plan_id);
+        }
+
         $coupon_code = '';
 
         // Queries

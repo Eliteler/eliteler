@@ -222,8 +222,12 @@ export function PlanCard({
     const additional: Row[] = [
         { kind: "flag", label: t("Custom Domain"), on: f.custom_domain },
     ];
-    if (nfcEnabled)
-        additional.push({ kind: "always", label: t("Order NFC Card") });
+    if (nfcEnabled && plan.showSmartProducts)
+        additional.push({
+            kind: "flag",
+            label: t("Smart Products"),
+            on: f.nfc_card,
+        });
     additional.push(
         { kind: "storage", label: t("storage limit"), value: plan.storage },
         {

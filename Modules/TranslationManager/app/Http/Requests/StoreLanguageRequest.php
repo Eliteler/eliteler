@@ -26,7 +26,7 @@ class StoreLanguageRequest extends FormRequest
         return [
             'name' => 'required|string|max:100',
             'code' => ['required', 'string', 'regex:/^[a-z]{2,3}(_[A-Za-z]{2,4})?$/'],
-            'copy_from' => 'required|string|min:2',
+            'copy_from' => 'nullable|string',
         ];
     }
 }

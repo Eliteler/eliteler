@@ -14,6 +14,7 @@ namespace App\Http\Controllers\User\Vcard\Create;
 
 use App\BusinessCard;
 use App\Services\ReservedLinks;
+use App\Support\PersonalizedLink;
 use App\Helpers\StorageHelper;
 use App\Http\Controllers\Controller;
 use App\Setting;
@@ -160,38 +161,7 @@ class CreateController extends Controller
             $personalized_link = $cardId;
         }
 
-        // Remove spaces
-        $personalized_link = trim($personalized_link);
-
-        // Remove https:// or http://
-        $personalized_link = str_replace(
-            ['https://', 'http://'],
-            '',
-            $personalized_link
-        );
-
-        // Remove www.
-        $personalized_link = str_replace('www.', '', $personalized_link);
-
-        // Convert accented characters to ASCII
-        $personalized_link = iconv(
-            'UTF-8',
-            'ASCII//TRANSLIT//IGNORE',
-            $personalized_link
-        );
-
-        // Remove all characters except letters, numbers, and hyphens
-        $personalized_link = preg_replace(
-            '/[^a-zA-Z0-9-]/',
-            '',
-            $personalized_link
-        );
-
-        // Convert to lowercase
-        $personalized_link = strtolower($personalized_link);
-
-        // Card URL
-        $card_url = $personalized_link;
+        $card_url = PersonalizedLink::normalize($personalized_link);
 
         // a page of the site already uses this link (login, user, admin, ...)
         if (ReservedLinks::contains($card_url)) {
@@ -323,20 +293,22 @@ class CreateController extends Controller
     // Check unique card / store link
     public function checkLink(Request $request)
     {
-        // Requested link
-        $link           = $request->link;
-        $is_present     = DB::table('business_cards')->where('card_url', $link)->where('card_status', '!=', 'deleted')->count();
-        $resp           = [];
-        $resp['status'] = 'failed';
-
-        // Check (a link used by one of the site's own pages can't be taken either)
-        if ($is_present == 0 && ! ReservedLinks::contains($link)) {
-            $resp['status'] = 'success';
-        } else {
-            $resp['status'] = 'failed';
+        $link = $request->input('link');
+        $link = is_string($link) ? PersonalizedLink::normalize($link) : '';
+        if ($link === '') {
+            return response()->json(['status' => 'failed']);
         }
 
-        return response()->json($resp);
+        if (ReservedLinks::contains($link)) {
+            return response()->json(['status' => 'failed', 'message' => trans(ReservedLinks::MESSAGE)]);
+        }
+
+        $taken = DB::table('business_cards')
+            ->where('card_url', $link)
+            ->where('card_status', '!=', 'deleted')
+            ->exists();
+
+        return response()->json(['status' => $taken ? 'failed' : 'success']);
     }
 
     // Cropping image

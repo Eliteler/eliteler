@@ -14,6 +14,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Coupon;
 use App\Http\Controllers\Controller;
+use App\Support\BaseCurrency;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -142,7 +143,8 @@ class CouponsController extends Controller
             'ai_credits' => ['ai_credits_transactions', ['payment_transaction_id', 'ai_credits_transaction_id']],
             default      => ['transactions', ['transaction_id', 'gobiz_transaction_id']],
         };
-        $amountColumn = $coupon->used_for === 'plan' ? 'transaction_amount' : 'amount';
+        $amountColumn   = $coupon->used_for === 'plan' ? 'transaction_amount' : 'amount';
+        $currencyColumn = $coupon->used_for === 'plan' ? 'transaction_currency' : 'currency';
 
         // Select the required columns including customer_id alias before paginate
         $paginated = $this->appliedQuery($coupon)
@@ -162,7 +164,7 @@ class CouponsController extends Controller
         $rows = $paginated->getCollection();
         $refs = collect($refs);
         $paid = DB::table($table)->where(fn($q) => $refs->each(fn($c) => $q->orWhereIn($c, $rows->pluck('transaction_id'))))
-            ->get([...$refs->all(), $amountColumn . ' as amount', 'invoice_details']);
+            ->get([...$refs->all(), $amountColumn . ' as amount', $currencyColumn . ' as currency', 'invoice_details']);
 
         $lookup = [];
         foreach ($paid as $t) {
@@ -173,6 +175,7 @@ class CouponsController extends Controller
 
         return Inertia::render('coupons/usage', [
             'coupon' => $this->present($coupon, $this->itemNames()),
+            'stats'  => $this->usageStats($coupon, $table, $refs, $amountColumn, $currencyColumn),
             'uses'   => $paginated->through(function ($row) use ($lookup) {
                 $t       = $lookup[$row->transaction_id] ?? null;
                 $invoice = $t ? (json_decode($t->invoice_details ?? '', true) ?: []) : [];
@@ -183,10 +186,61 @@ class CouponsController extends Controller
                     'date'      => $row->created_at ? Carbon::parse($row->created_at)->toIso8601String() : null,
                     'customer'  => $row->customer_id ? ['id' => $row->customer_id, 'name' => $row->name, 'email' => $row->email] : null,
                     'paid'      => $t ? (float) $t->amount : null,
-                    'discount'  => $t && isset($invoice['discounted_price'], $invoice['invoice_amount']) ? max(0, (float) $invoice['discounted_price'] - (float) $invoice['invoice_amount']) : null,
+                    'currency'  => $t?->currency,
+                    'discount'  => $t ? self::couponDiscount($invoice) : null,
                 ];
             }),
         ]);
+    }
+
+    /**
+     * The coupon discount recorded on a payment. Checkout saves the discount
+     * amount itself in invoice_details.discounted_price (all coupon types),
+     * so it isn't worked out from the totals.
+     */
+    private static function couponDiscount(array $invoice): ?float
+    {
+        return isset($invoice['discounted_price']) ? max(0, (float) $invoice['discounted_price']) : null;
+    }
+
+    /**
+     * Totals over every use of the coupon (not just the page shown). Money
+     * adds up payments in the base currency only (no exchange rates).
+     *
+     * @param  \Illuminate\Support\Collection<int, string>  $refs
+     * @return array{uses: int, redeemed: int, discount: float, revenue: float}
+     */
+    private function usageStats(Coupon $coupon, string $table, $refs, string $amountColumn, string $currencyColumn): array
+    {
+        $counts = $this->appliedQuery($coupon)->selectRaw('COUNT(*) as uses, SUM(applied_coupons.status = 1) as redeemed')->first();
+        $ids    = $this->appliedQuery($coupon)->where('applied_coupons.status', 1)->pluck('applied_coupons.transaction_id')->filter()->unique()->values();
+
+        $discount = 0.0;
+        $revenue  = 0.0;
+        $seen     = [];
+
+        foreach ($ids->chunk(500) as $chunk) {
+            $rows = BaseCurrency::only(DB::table($table), $currencyColumn)
+                ->where(fn ($q) => $refs->each(fn ($c) => $q->orWhereIn($c, $chunk->all())))
+                ->get(['id', $amountColumn . ' as amount', 'invoice_details']);
+
+            foreach ($rows as $row) {
+                if (isset($seen[$row->id])) {
+                    continue;
+                }
+                $seen[$row->id] = true;
+
+                $revenue  += (float) $row->amount;
+                $discount += (float) self::couponDiscount(json_decode($row->invoice_details ?? '', true) ?: []);
+            }
+        }
+
+        return [
+            'uses'     => (int) $counts->uses,
+            'redeemed' => (int) $counts->redeemed,
+            'discount' => round($discount, 2),
+            'revenue'  => round($revenue, 2),
+        ];
     }
 
     // Kept for old clients: is the code taken? (JSON)

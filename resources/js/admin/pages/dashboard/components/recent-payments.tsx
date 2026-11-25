@@ -1,4 +1,3 @@
-import { usePage } from "@inertiajs/react";
 import { useTranslation } from "react-i18next";
 
 import { Badge } from "@admin/components/ui/badge";
@@ -6,13 +5,13 @@ import { Button } from "@admin/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@admin/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@admin/components/ui/table";
 import { fromNow } from "@admin/lib/date";
-import { formatCurrency } from "@admin/lib/format";
+import { useMoney } from "@admin/hooks/use-money";
 
 import { customerUrl, type DashboardLinks, type RecentPayment } from "../types";
 
 export function RecentPayments({ payments, links }: { payments: RecentPayment[]; links: DashboardLinks }) {
     const { t } = useTranslation();
-    const { currency } = usePage().props;
+    const money = useMoney();
 
     return (
         <Card className="gap-4 lg:col-span-2">
@@ -64,7 +63,7 @@ export function RecentPayments({ payments, links }: { payments: RecentPayment[];
                                         <TableCell className="text-end">
                                             <div className="flex flex-col items-end">
                                                 <span className="font-medium tabular-nums">
-                                                    {formatCurrency(payment.amount, currency)}
+                                                    {money(payment.amount, payment.currency)}
                                                 </span>
                                                 <span className="text-xs text-muted-foreground">{fromNow(payment.date)}</span>
                                             </div>

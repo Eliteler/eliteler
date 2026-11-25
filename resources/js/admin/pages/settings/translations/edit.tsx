@@ -1,5 +1,5 @@
 import { Head, router, useForm } from "@inertiajs/react";
-import { Languages, Loader2, Plus, Search, Sparkles } from "lucide-react";
+import { Languages, Loader2, Plus, Search, Sparkles, Square, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -43,13 +43,24 @@ export default function TranslationEditor({ language, source, files, file, filte
     const [confirmSync, setConfirmSync] = useState(false);
     const [adding, setAdding] = useState(false);
     const [syncStarting, setSyncStarting] = useState(false);
+    const [syncStopping, setSyncStopping] = useState(false);
+    const [currentSync, setCurrentSync] = useState<SyncState>(sync);
     const form = useForm<{ file: string; translations: Record<string, string> }>({ file, translations: {} });
     const changed = Object.keys(form.data.translations).length;
-    const busy = sync && ["queued", "running"].includes(sync.state);
+
+    // Keep currentSync in sync whenever Inertia prop updates
+    useEffect(() => {
+        setCurrentSync(sync);
+    }, [sync]);
+
+    const busy = currentSync && ["queued", "running"].includes(currentSync.state);
 
     const visit = (query: Record<string, string | number | undefined>) => {
-        if (changed && !window.confirm(t("You have unsaved changes. Leave without saving?"))) return;
-        router.get(route("translation-manager.edit", language.code), { file, filter, search: search || undefined, ...query }, { preserveScroll: true, preserveState: false });
+        router.get(
+            route("translation-manager.edit", language.code),
+            { file, filter, search: search || undefined, ...query },
+            { preserveScroll: true, preserveState: false }
+        );
     };
 
     // Debounced search
@@ -64,12 +75,53 @@ export default function TranslationEditor({ language, source, files, file, filte
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [search]);
 
-    // Refresh while a background translation runs
+    // Live, fast polling for background translation progress
     useEffect(() => {
         if (!busy) return;
-        const timer = window.setInterval(() => !changed && router.reload({ only: ["rows", "untranslated", "sync"] }), 5000);
-        return () => window.clearInterval(timer);
-    }, [busy, changed]);
+
+        let active = true;
+
+        const poll = async () => {
+            try {
+                const response = await fetch(
+                    route("translation-manager.sync-status", language.code),
+                    {
+                        headers: {
+                            Accept: "application/json",
+                            "X-Requested-With": "XMLHttpRequest",
+                        },
+                    }
+                );
+                if (!active || !response.ok) return;
+
+                const data: SyncState = await response.json();
+                if (!active) return;
+
+                if (data && data.state && data.state !== "idle") {
+                    setCurrentSync(data);
+
+                    if (["completed", "stopped", "failed"].includes(data.state)) {
+                        router.reload({
+                            only: ["rows", "untranslated", "sync"],
+                            preserveScroll: true,
+                            preserveState: true,
+                        });
+                    }
+                }
+            } catch (err) {
+                // Ignore transient network errors
+            }
+        };
+
+        // Poll immediately and then every 2 seconds
+        poll();
+        const timer = window.setInterval(poll, 2000);
+
+        return () => {
+            active = false;
+            window.clearInterval(timer);
+        };
+    }, [busy, language.code]);
 
     const setValue = (row: Row, value: string) =>
         form.setData("translations", (() => {
@@ -85,15 +137,52 @@ export default function TranslationEditor({ language, source, files, file, filte
             onSuccess: () => form.setData("translations", {}),
         });
 
-    const startSync = () =>
-        router.post(route("translation-manager.sync-missing", language.code), {}, {
-            preserveScroll: true,
-            onStart: () => setSyncStarting(true),
-            onFinish: () => {
-                setSyncStarting(false);
-                setConfirmSync(false);
-            },
+    const startSync = () => {
+        setCurrentSync({
+            state: "queued",
+            message: t("Waiting to start…"),
         });
+        setConfirmSync(false);
+        router.post(
+            route("translation-manager.sync-missing", language.code),
+            {},
+            {
+                preserveScroll: true,
+                onStart: () => setSyncStarting(true),
+                onFinish: () => {
+                    setSyncStarting(false);
+                },
+                onError: () => {
+                    setCurrentSync(null);
+                },
+            }
+        );
+    };
+
+    const stopSync = () => {
+        setCurrentSync({
+            state: "stopped",
+            message: t("Auto-translate stopped by user."),
+        });
+        router.post(
+            route("translation-manager.stop-sync", language.code),
+            {},
+            {
+                preserveScroll: true,
+                onStart: () => setSyncStopping(true),
+                onFinish: () => setSyncStopping(false),
+            }
+        );
+    };
+
+    const dismissSync = () => {
+        setCurrentSync(null);
+        router.post(
+            route("translation-manager.dismiss-sync", language.code),
+            {},
+            { preserveScroll: true }
+        );
+    };
 
     return (
         <>
@@ -112,30 +201,100 @@ export default function TranslationEditor({ language, source, files, file, filte
                         { label: language.name },
                     ]}
                     actions={
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                             <Button variant="outline" onClick={() => setAdding(true)}>
                                 <Plus />
                                 {t("Add text")}
                             </Button>
                             {!language.isSource && (
-                                <Button variant="outline" onClick={() => setConfirmSync(true)} disabled={!!busy || untranslated === 0}>
-                                    {busy ? <Loader2 className="animate-spin" /> : <Sparkles />}
-                                    {busy ? t("Translating…") : t("Auto-translate missing")}
-                                </Button>
+                                <>
+                                    {busy ? (
+                                        <Button
+                                            variant="destructive"
+                                            onClick={stopSync}
+                                            disabled={syncStopping}
+                                        >
+                                            {syncStopping ? (
+                                                <Loader2 className="animate-spin" />
+                                            ) : (
+                                                <Square className="size-3.5 fill-current" />
+                                            )}
+                                            {syncStopping ? t("Stopping…") : t("Stop auto-translate")}
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => setConfirmSync(true)}
+                                            disabled={untranslated === 0}
+                                        >
+                                            <Sparkles />
+                                            {t("Auto-translate missing")}
+                                        </Button>
+                                    )}
+                                </>
                             )}
                         </div>
                     }
                 />
 
                 {busy && (
-                    <Alert>
-                        <Loader2 className="animate-spin" />
-                        <AlertDescription>{sync?.message || t("Translating missing text in the background…")}</AlertDescription>
+                    <Alert className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                            <Loader2 className="animate-spin shrink-0" />
+                            <AlertDescription>{currentSync?.message || t("Translating missing text in the background…")}</AlertDescription>
+                        </div>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-destructive border-destructive/30 hover:bg-destructive/10 shrink-0"
+                            onClick={stopSync}
+                            disabled={syncStopping}
+                        >
+                            {syncStopping ? <Loader2 className="animate-spin" /> : <Square className="size-3 fill-current" />}
+                            {syncStopping ? t("Stopping…") : t("Stop")}
+                        </Button>
                     </Alert>
                 )}
-                {sync?.state === "failed" && (
-                    <Alert variant="destructive">
-                        <AlertDescription>{sync.message || t("Auto-translate stopped with an error.")}</AlertDescription>
+                {currentSync?.state === "stopped" && (
+                    <Alert className="flex items-center justify-between gap-3">
+                        <AlertDescription>{currentSync.message || t("Auto-translate was stopped.")}</AlertDescription>
+                        <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            className="h-6 w-6 text-muted-foreground hover:text-foreground shrink-0"
+                            onClick={dismissSync}
+                            aria-label={t("Dismiss")}
+                        >
+                            <X className="size-3.5" />
+                        </Button>
+                    </Alert>
+                )}
+                {currentSync?.state === "completed" && (
+                    <Alert className="flex items-center justify-between gap-3 border-success/30 text-success">
+                        <AlertDescription>{currentSync.message || t("Missing translations synced successfully.")}</AlertDescription>
+                        <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            className="h-6 w-6 text-muted-foreground hover:text-foreground shrink-0"
+                            onClick={dismissSync}
+                            aria-label={t("Dismiss")}
+                        >
+                            <X className="size-3.5" />
+                        </Button>
+                    </Alert>
+                )}
+                {currentSync?.state === "failed" && (
+                    <Alert variant="destructive" className="flex items-center justify-between gap-3">
+                        <AlertDescription>{currentSync.message || t("Auto-translate stopped with an error.")}</AlertDescription>
+                        <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            className="h-6 w-6 text-destructive-foreground/70 hover:text-destructive-foreground shrink-0"
+                            onClick={dismissSync}
+                            aria-label={t("Dismiss")}
+                        >
+                            <X className="size-3.5" />
+                        </Button>
                     </Alert>
                 )}
 

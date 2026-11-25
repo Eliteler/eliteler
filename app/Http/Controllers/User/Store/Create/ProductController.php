@@ -68,13 +68,13 @@ class ProductController extends Controller
 
             // Get plan details
             $plan = DB::table('users')->where('user_id', Auth::user()->user_id)->where('status', 1)->first();
-            $plan_details = json_decode($plan->plan_details);
+            $plan_details = !empty($plan->plan_details) ? json_decode($plan->plan_details) : null;
 
             // Check product image
-            if ($request->badge != null) {
+            if (is_array($request->badge)) {
 
                 // Check products limit
-                if (count($request->badge) <= $plan_details->no_of_store_products) {
+                if (count($request->badge) <= ($plan_details->no_of_store_products ?? 0)) {
 
                     // Delete previous products and their variations
                     DB::table('store_product_variants')->whereIn('product_id', StoreProduct::where('card_id', $id)->select('product_id'))->delete();

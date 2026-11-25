@@ -362,7 +362,7 @@
                                                 <path d="M16 16v-3a2 2 0 0 0 -4 0" />
                                             </svg>
                                         </a>
-                                        <a href="https://wa.me/?text={{ urlencode($referralMessage) }}"
+                                        <a href="https://wa.me/?text={{ rawurlencode($referralMessage) }}"
                                             class="btn-share btn-share-whatsapp" target="_blank" rel="noopener"
                                             data-bs-toggle="tooltip" title="{{ __('WhatsApp') }}">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"

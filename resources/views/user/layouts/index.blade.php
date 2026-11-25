@@ -6,6 +6,7 @@
 
     $config = DB::table('config')->get();
     $template_config = GoBizCommonService::gobizModernConfig();
+    $settings = is_object($settings ?? null) ? $settings : GoBizCommonService::settings();
 @endphp
 
 <!doctype html>
@@ -146,9 +147,8 @@
     </style>
 
     <link href="{{ asset('css/styles.css') }}" rel="stylesheet" />
-    <link href="{{ asset('css/custom.css') }}" rel="stylesheet" />
+    <link href="{{ asset('css/custom.css') }}?v={{ filemtime(public_path('css/custom.css')) }}" rel="stylesheet" />
     <link rel="stylesheet" href="{{ asset('css/wa.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
     <link href="{{ asset('css/fontawesome-iconpicker.min.css') }}" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 
@@ -164,9 +164,9 @@
     {{-- Custom CSS --}}
     @yield('css')
 
-    @if (isset($settings) && $settings)
+    @if (is_object($settings))
         {{-- Check Google Analytics is "enabled" --}}
-        @if (!empty($settings->google_analytics_id) && (Cookie::get('laravel_cookie_consent') === '1' || env('COOKIE_CONSENT_ENABLED') == ""))
+        @if (!empty($settings->google_analytics_id) && (Cookie::get('laravel_cookie_consent') === '1' || !config('cookie-consent.enabled') || env('COOKIE_CONSENT_ENABLED') == "" || env('COOKIE_CONSENT_ENABLED') == false))
             <!-- Global site tag (gtag.js) - Google Analytics -->
             <script async src="https://www.googletagmanager.com/gtag/js?id={{ $settings->google_analytics_id }}"></script>
             <script>
@@ -181,7 +181,7 @@
             </script>
         @endif
 
-        @if ($settings->google_adsense_code != 'DISABLE_ADSENSE_ONLY' && (Cookie::get('laravel_cookie_consent') === '1' || env('COOKIE_CONSENT_ENABLED') == ""))
+        @if (!empty($settings->google_adsense_code) && $settings->google_adsense_code !== 'DISABLE_ADSENSE_ONLY' && (Cookie::get('laravel_cookie_consent') === '1' || !config('cookie-consent.enabled') || env('COOKIE_CONSENT_ENABLED') == "" || env('COOKIE_CONSENT_ENABLED') == false))
             {{-- AdSense code --}}
             <script async
                 src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ $settings->google_adsense_code }}"
@@ -251,11 +251,11 @@
     @include('user.includes.plugin-widgets', ['panel' => 'blade'])
 
     {{-- Tawk.to Chat --}}
-    @if (isset($settings) && $settings)
+    @if (is_object($settings))
         @if (
             $settings->tawk_chat_bot_key != null && 
                 $config[40]->config_value != '1' &&
-                (Cookie::get('laravel_cookie_consent') === '1' || env('COOKIE_CONSENT_ENABLED') == ""))
+                (Cookie::get('laravel_cookie_consent') === '1' || !config('cookie-consent.enabled') || env('COOKIE_CONSENT_ENABLED') == "" || env('COOKIE_CONSENT_ENABLED') == false))
             <!--Start of Tawk.to Script-->
             <script>
                 (function($) {

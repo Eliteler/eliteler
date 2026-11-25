@@ -16,6 +16,7 @@ use App\User;
 use App\Setting;
 use App\Newsletter;
 use App\ContactForm;
+use App\BusinessCard;
 use App\BookedAppointment;
 use Illuminate\Http\Request;
 use App\ServiceBookingConfirmed;
@@ -43,6 +44,12 @@ class ContactController extends Controller
     // Contacts
     public function index(Request $request, $id)
     {
+        // Check card ownership
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
+        if (!$business_card) {
+            return redirect()->route('user.cards')->with('failed', trans('Card not found!'));
+        }
+
         // Queries
         $settings = Setting::where('status', 1)->first();
 

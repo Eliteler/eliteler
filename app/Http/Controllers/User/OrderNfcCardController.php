@@ -12,6 +12,8 @@
 
 namespace App\Http\Controllers\User;
 
+use App\Services\SmartProducts\OrderQuote;
+use App\Support\SmartProducts\SmartProductCatalog;
 use App\Plan;
 use App\User;
 use App\Gateway;
@@ -67,9 +69,14 @@ class OrderNfcCardController extends Controller
 
         if ($active_plan != null) {
             // Available NFC Cards
-            $availableNfcCards = NfcCardDesign::where('status', 1)->get();
+            $availableNfcCards = NfcCardDesign::where('status', 1)->orderBy('sort_order')->orderBy('id')->get();
 
-            return view('user.pages.order.nfc-card.index', compact('availableNfcCards', 'settings', 'config', 'currency'));
+            // Types that have products, for the filter
+            $productTypes = SmartProductCatalog::typeLabels()
+                ->only($availableNfcCards->pluck('product_type')->map(SmartProductCatalog::typeCode(...))->unique()->all())
+                ->all();
+
+            return view('user.pages.order.nfc-card.index', compact('availableNfcCards', 'settings', 'config', 'currency', 'productTypes'));
         } else {
             return redirect()->route('user.plans');
         }
@@ -78,6 +85,13 @@ class OrderNfcCardController extends Controller
     // Select a nfc card
     public function nfcCardCheckout(Request $request, $designId)
     {
+        // React panel has its own checkout (place-order errors come back here too)
+        if (\App\Support\Plugins\UserPluginPage::reactPanel()) {
+            session()->reflash();
+
+            return redirect()->route('user.dashboard.smart-products.checkout', $designId);
+        }
+
         // Default values
         $coupon_code = '';
 
@@ -93,7 +107,7 @@ class OrderNfcCardController extends Controller
         }
 
         // Get NFC Card details
-        $nfcCardDetails = NfcCardDesign::where('nfc_card_id', $designId)->first();
+        $nfcCardDetails = NfcCardDesign::where('nfc_card_id', $designId)->where('status', 1)->first();
 
         // NFC Card details existing in the database
         if (!$nfcCardDetails) {
@@ -105,10 +119,12 @@ class OrderNfcCardController extends Controller
             return redirect()->route('user.order.nfc.cards')->with('failed', __('This NFC card is out of stock.'));
         }
 
-        // Set total
-        $total = ((float) ($nfcCardDetails->nfc_card_price) * (float) ($config[25]->config_value) / 100) + (float) ($nfcCardDetails->nfc_card_price);
-        $total = number_format($total, 2, '.', '');
+        // Price for one item (the page recalculates when the quantity changes)
+        $quote = OrderQuote::make($nfcCardDetails, 1);
+        $total = number_format($quote->total, 2, '.', '');
+        $shippingFee       = (float) DB::table('config')->where('config_key', 'smart_product_shipping_fee')->value('config_value');
+        $freeShippingAbove = (float) DB::table('config')->where('config_key', 'smart_product_free_shipping_above')->value('config_value');
 
-        return view('user.pages.order.nfc-card.checkout', compact('nfcCardDetails', 'settings', 'config', 'currency', 'total', 'coupon_code', 'gateways'));
+        return view('user.pages.order.nfc-card.checkout', compact('nfcCardDetails', 'settings', 'config', 'currency', 'total', 'coupon_code', 'gateways', 'quote', 'shippingFee', 'freeShippingAbove'));
     }
 }

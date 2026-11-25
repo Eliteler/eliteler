@@ -1,5 +1,5 @@
-import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
-import { Download, FileText, KeyRound, Loader2, Mail, Printer, Truck } from "lucide-react";
+import { Head, Link, router, useForm } from "@inertiajs/react";
+import { Download, ExternalLink, FileText, KeyRound, Loader2, Mail, MousePointerClick, Printer, Truck } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -17,7 +17,7 @@ import { Separator } from "@admin/components/ui/separator";
 import { Switch } from "@admin/components/ui/switch";
 import { Textarea } from "@admin/components/ui/textarea";
 import { formatDate } from "@admin/lib/date";
-import { formatCurrency } from "@admin/lib/format";
+import { useMoney } from "@admin/hooks/use-money";
 
 import { DeliveryBadge, PaymentBadge } from "./components/status-badges";
 import { DELIVERY_LABELS, type Customer, type DeliveryStatus } from "./types";
@@ -32,20 +32,53 @@ type Order = {
     note: string | null;
     logo: string | null;
     tracking: Partial<Record<"number" | "courier" | "message", string>>;
-    item: { name: string; description: string | null; image: string | null; price: number | null; quantity: number };
+    item: { name: string; description: string | null; image: string | null; type: string | null; price: number | null; quantity: number };
     // Both null when revenue is hidden
-    pricing: { subtotal: number; taxName: string | null; taxRate: string | null; tax: number; coupon: string | null; discount: number; total: number } | null;
-    payment: { id: string; reference: string; method: string; status: string; currency: string; invoice: string | null } | null;
+    pricing: { subtotal: number; taxName: string | null; taxRate: string | null; tax: number; shipping: number; coupon: string | null; discount: number; total: number } | null;
+    payment: { id: string; reference: string; method: string; status: string; currency: string | null; invoice: string | null } | null;
     billing: Party;
     shipping: Party;
     taxId: string | null;
     customer: Customer | null;
-    keys: { key: string; url: string; linked: boolean; card: { title: string; url: string } | null; greeting: string }[];
+    keys: {
+        key: string;
+        url: string;
+        linked: boolean;
+        card: { title: string; url: string } | null;
+        greeting: string;
+        linkType: string;
+        target: string | null;
+        label: string | null;
+        scans: number;
+    }[];
     missingKeys: number;
+    assets: OrderAsset[];
+    assetsZip: string;
+    generatesKeys: boolean;
+    timeline: TimelineEntry[];
+    shippedAt: string | null;
+    deliveredAt: string | null;
     paid: boolean;
 };
 
-type Props = { order: Order; statuses: DeliveryStatus[]; openDialog: "delivery" | null };
+type OrderAsset = {
+    key: string;
+    name: string;
+    resolution: string;
+    required: boolean;
+    file: { url: string; type: "image" | "pdf"; name: string | null; uploaded: string | null; preview: boolean } | null;
+};
+
+type TimelineEntry = {
+    status: DeliveryStatus | "placed";
+    date: string | null;
+    message: string | null;
+    tracking: string | null;
+    courier: string | null;
+    notified: boolean;
+};
+
+type Props = { order: Order; statuses: DeliveryStatus[]; linkTypes: Record<string, string>; openDialog: "delivery" | null };
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
     return (
@@ -75,12 +108,13 @@ function Address({ title, party }: { title: string; party: Party }) {
     );
 }
 
-export default function NfcOrder({ order, statuses, openDialog }: Props) {
+export default function NfcOrder({ order, statuses, linkTypes, openDialog }: Props) {
     const { t } = useTranslation();
-    const { currency } = usePage().props;
+    const format = useMoney();
     const [deliveryOpen, setDeliveryOpen] = useState(openDialog === "delivery");
     const [generating, setGenerating] = useState(false);
-    const money = (value: number) => formatCurrency(value, currency);
+    // The order's payment currency (base currency when there is no payment yet)
+    const money = (value: number) => format(value, order.payment?.currency);
 
     const generateKeys = () =>
         router.post(route("admin.generate.nfc.keys", order.id), {}, {
@@ -99,7 +133,7 @@ export default function NfcOrder({ order, statuses, openDialog }: Props) {
                     </Link>
                     <span>/</span>
                     <Link href={route("admin.orders")} className="hover:text-foreground">
-                        {t("NFC card orders")}
+                        {t("Smart Product orders")}
                     </Link>
                     <span>/</span>
                     <span className="font-mono text-foreground">{order.id}</span>
@@ -147,7 +181,7 @@ export default function NfcOrder({ order, statuses, openDialog }: Props) {
                 {!order.paid && (
                     <Alert variant="warning" data-print="hide">
                         <AlertDescription className="text-foreground">
-                            {t("This order isn't paid yet. Delivery and NFC links become available once the payment is confirmed in NFC payments.")}
+                            {t("This order isn't paid yet. Delivery and NFC links become available once the payment is confirmed in Transactions.")}
                         </AlertDescription>
                     </Alert>
                 )}
@@ -162,7 +196,10 @@ export default function NfcOrder({ order, statuses, openDialog }: Props) {
                                 <div className="flex items-start gap-4">
                                     {order.item.image && <img src={order.item.image} alt="" className="h-16 w-24 shrink-0 rounded-md border object-cover" />}
                                     <div className="flex min-w-0 flex-1 flex-col gap-1">
-                                        <span className="font-medium">{order.item.name}</span>
+                                        <span className="flex flex-wrap items-center gap-2 font-medium">
+                                            {order.item.name}
+                                            {order.item.type && <Badge variant="secondary">{order.item.type}</Badge>}
+                                        </span>
                                         {order.item.description && <span className="line-clamp-2 text-sm text-muted-foreground">{order.item.description}</span>}
                                     </div>
                                     <div className="text-end text-sm tabular-nums">
@@ -179,6 +216,7 @@ export default function NfcOrder({ order, statuses, openDialog }: Props) {
                                                     {money(order.pricing.tax)}
                                                 </Row>
                                             )}
+                                            {order.pricing.shipping > 0 && <Row label={t("Shipping")}>{money(order.pricing.shipping)}</Row>}
                                             {order.pricing.coupon && (
                                                 <Row label={`${t("Coupon")} ${order.pricing.coupon}`}>
                                                     <span className="text-success">−{money(order.pricing.discount)}</span>
@@ -194,68 +232,88 @@ export default function NfcOrder({ order, statuses, openDialog }: Props) {
                             </CardContent>
                         </Card>
 
-                        <Card className="gap-4">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <KeyRound className="size-4" />
-                                    {t("NFC links")}
-                                </CardTitle>
-                                <CardDescription>
-                                    {t("Write each link onto one NFC card. When tapped, it opens the business card linked to that key.")}
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="flex flex-col gap-2">
-                                {order.keys.length === 0 && order.missingKeys === 0 && (
-                                    <p className="py-4 text-center text-sm text-muted-foreground">
-                                        {order.paid ? t("No NFC links yet.") : t("NFC links are created once the order is paid.")}
-                                    </p>
-                                )}
-                                {order.keys.map((key, index) => (
-                                    <div key={key.key} className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center">
-                                        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                                            <span className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                {t("Card")} {index + 1}
-                                                {key.linked ? (
-                                                    <Badge variant="outline" className="border-success/30 text-success">
-                                                        {t("Linked")}
-                                                    </Badge>
-                                                ) : (
-                                                    <Badge variant="outline">{t("Not linked yet")}</Badge>
-                                                )}
-                                                {key.card && (
-                                                    <a href={key.card.url} target="_blank" rel="noreferrer" className="truncate hover:underline">
-                                                        {key.card.title}
-                                                    </a>
-                                                )}
-                                            </span>
-                                            <span className="truncate font-mono text-sm select-all" dir="ltr">
-                                                {key.url}
-                                            </span>
+                        {order.generatesKeys && (
+                            <Card className="gap-4">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <KeyRound className="size-4" />
+                                        {t("NFC links")}
+                                    </CardTitle>
+                                    <CardDescription>
+                                        {t("Write each link onto one item's NFC chip. When tapped, it opens what the customer chose for that link.")}
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="flex flex-col gap-2">
+                                    {order.keys.length === 0 && order.missingKeys === 0 && (
+                                        <p className="py-4 text-center text-sm text-muted-foreground">
+                                            {order.paid ? t("No NFC links yet.") : t("NFC links are created once the order is paid.")}
+                                        </p>
+                                    )}
+                                    {order.keys.map((key, index) => (
+                                        <div key={key.key} className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center">
+                                            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                                                <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                    {key.label || `${t("Item")} ${index + 1}`}
+                                                    {key.linked ? (
+                                                        <Badge variant="outline" className="border-success/30 text-success">
+                                                            {t("Linked")}
+                                                        </Badge>
+                                                    ) : (
+                                                        <Badge variant="outline">{t("Not linked yet")}</Badge>
+                                                    )}
+                                                    {key.linkType === "vcard" && key.card && (
+                                                        <a href={key.card.url} target="_blank" rel="noreferrer" className="truncate hover:underline">
+                                                            {key.card.title}
+                                                        </a>
+                                                    )}
+                                                    {key.linkType !== "vcard" && (
+                                                        <span className="flex min-w-0 items-center gap-1">
+                                                            {linkTypes[key.linkType] ?? key.linkType}
+                                                            {key.target && (
+                                                                <a href={key.target} target="_blank" rel="noreferrer" className="truncate hover:underline" dir="ltr">
+                                                                    <ExternalLink className="inline size-3" /> {key.target}
+                                                                </a>
+                                                            )}
+                                                        </span>
+                                                    )}
+                                                    {key.scans > 0 && (
+                                                        <span className="flex items-center gap-1 tabular-nums">
+                                                            <MousePointerClick className="size-3" />
+                                                            {key.scans}
+                                                        </span>
+                                                    )}
+                                                </span>
+                                                <span className="truncate font-mono text-sm select-all" dir="ltr">
+                                                    {key.url}
+                                                </span>
+                                            </div>
+                                            <div data-print="hide" className="flex shrink-0 gap-1">
+                                                <CopyButton value={key.url} label={t("Copy link")} size="sm" variant="outline" />
+                                                <Button variant="outline" size="sm" asChild>
+                                                    <Link href={key.greeting}>
+                                                        <Mail />
+                                                        {t("Greeting letter")}
+                                                    </Link>
+                                                </Button>
+                                            </div>
                                         </div>
-                                        <div data-print="hide" className="flex shrink-0 gap-1">
-                                            <CopyButton value={key.url} label={t("Copy link")} size="sm" variant="outline" />
-                                            <Button variant="outline" size="sm" asChild>
-                                                <Link href={key.greeting}>
-                                                    <Mail />
-                                                    {t("Greeting letter")}
-                                                </Link>
+                                    ))}
+                                    {order.missingKeys > 0 && (
+                                        <div data-print="hide" className="flex flex-col items-start gap-2 rounded-lg border border-dashed p-3 sm:flex-row sm:items-center sm:justify-between">
+                                            <span className="text-sm text-muted-foreground">
+                                                {t(":count NFC links are missing for this order.").replace(":count", String(order.missingKeys))}
+                                            </span>
+                                            <Button size="sm" onClick={generateKeys} disabled={generating}>
+                                                {generating && <Loader2 className="animate-spin" />}
+                                                {t("Create NFC links")}
                                             </Button>
                                         </div>
-                                    </div>
-                                ))}
-                                {order.missingKeys > 0 && (
-                                    <div data-print="hide" className="flex flex-col items-start gap-2 rounded-lg border border-dashed p-3 sm:flex-row sm:items-center sm:justify-between">
-                                        <span className="text-sm text-muted-foreground">
-                                            {t(":count NFC links are missing for this order.").replace(":count", String(order.missingKeys))}
-                                        </span>
-                                        <Button size="sm" onClick={generateKeys} disabled={generating}>
-                                            {generating && <Loader2 className="animate-spin" />}
-                                            {t("Create NFC links")}
-                                        </Button>
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        )}
+
+                        <TimelineCard entries={order.timeline} />
                     </div>
 
                     <div className="flex flex-col gap-6">
@@ -277,6 +335,8 @@ export default function NfcOrder({ order, statuses, openDialog }: Props) {
                                     {order.tracking.number ? <span className="font-mono">{order.tracking.number}</span> : "—"}
                                 </Row>
                                 {order.tracking.message && <Row label={t("Message to customer")}>{order.tracking.message}</Row>}
+                                {order.shippedAt && <Row label={t("Shipped")}>{formatDate(order.shippedAt)}</Row>}
+                                {order.deliveredAt && <Row label={t("Delivered")}>{formatDate(order.deliveredAt)}</Row>}
                                 {order.note && <Row label={t("Customer's note")}>{order.note}</Row>}
                             </CardContent>
                         </Card>
@@ -309,29 +369,131 @@ export default function NfcOrder({ order, statuses, openDialog }: Props) {
                             </Card>
                         )}
 
-                        {order.logo && (
-                            <Card className="gap-4">
-                                <CardHeader>
-                                    <CardTitle>{t("Logo to print")}</CardTitle>
-                                    <CardDescription>{t("Uploaded by the customer for the card.")}</CardDescription>
-                                </CardHeader>
-                                <CardContent className="flex flex-col items-center gap-3">
-                                    <img src={order.logo} alt={t("Logo to print")} className="max-h-40 rounded-md border bg-white object-contain p-2" />
-                                    <Button variant="outline" size="sm" asChild data-print="hide">
-                                        <a href={order.logo} download>
-                                            <Download />
-                                            {t("Download logo")}
-                                        </a>
-                                    </Button>
-                                </CardContent>
-                            </Card>
-                        )}
+                        {order.assets.length > 0 && <AssetsCard assets={order.assets} zip={order.assetsZip} />}
                     </div>
                 </div>
             </div>
 
             <DeliveryDialog order={order} statuses={statuses} open={deliveryOpen} onOpenChange={setDeliveryOpen} />
         </>
+    );
+}
+
+/** Files the customer uploaded for printing, one row per asked-for asset. */
+function AssetsCard({ assets, zip }: { assets: OrderAsset[]; zip: string }) {
+    const { t } = useTranslation();
+    const uploaded = assets.filter((asset) => asset.file).length;
+    const missingRequired = assets.filter((asset) => asset.required && !asset.file).length;
+
+    return (
+        <Card className="gap-4">
+            <CardHeader>
+                <CardTitle>{t("Image assets")}</CardTitle>
+                <CardDescription>
+                    {uploaded}/{assets.length} {t("uploaded by the customer")}
+                    {missingRequired > 0 && (
+                        <span className="text-destructive">
+                            {" · "}
+                            {missingRequired} {t("required missing")}
+                        </span>
+                    )}
+                </CardDescription>
+                {uploaded > 0 && (
+                    <CardAction data-print="hide">
+                        <Button variant="outline" size="sm" asChild>
+                            <a href={zip}>
+                                <Download />
+                                {t("Download all")}
+                            </a>
+                        </Button>
+                    </CardAction>
+                )}
+            </CardHeader>
+            <CardContent className="flex flex-col gap-2">
+                {assets.map((asset) => (
+                    <div key={asset.key} className="flex items-center gap-3 rounded-lg border p-2">
+                        <span className="grid size-14 shrink-0 place-items-center overflow-hidden rounded-md border bg-white">
+                            {asset.file?.preview ? (
+                                <img src={asset.file.url} alt="" className="size-full object-contain p-1" />
+                            ) : asset.file ? (
+                                <FileText className="size-6 text-muted-foreground" />
+                            ) : (
+                                <span className="text-[0.65rem] text-muted-foreground">—</span>
+                            )}
+                        </span>
+                        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                            <span className="flex flex-wrap items-center gap-1.5 text-sm font-medium">
+                                {asset.name}
+                                {asset.required && (
+                                    <Badge variant="outline" className={asset.file ? "" : "border-destructive/40 text-destructive"}>
+                                        {asset.file ? t("Required") : t("Required · missing")}
+                                    </Badge>
+                                )}
+                            </span>
+                            {asset.resolution && <span className="text-xs text-muted-foreground">{asset.resolution}</span>}
+                            {asset.file?.uploaded && (
+                                <span className="text-xs text-muted-foreground">
+                                    {t("Uploaded")} {formatDate(asset.file.uploaded)}
+                                </span>
+                            )}
+                            {!asset.file && <span className="text-xs text-muted-foreground">{t("Not uploaded yet")}</span>}
+                        </div>
+                        {asset.file && (
+                            <Button variant="outline" size="icon-sm" asChild data-print="hide">
+                                <a href={asset.file.url} download aria-label={t("Download")}>
+                                    <Download />
+                                </a>
+                            </Button>
+                        )}
+                    </div>
+                ))}
+            </CardContent>
+        </Card>
+    );
+}
+
+function TimelineCard({ entries }: { entries: TimelineEntry[] }) {
+    const { t } = useTranslation();
+    const ordered = [...entries].reverse();
+
+    return (
+        <Card className="gap-4">
+            <CardHeader>
+                <CardTitle>{t("Timeline")}</CardTitle>
+                <CardDescription>{t("Status changes and what the customer was told. Newest first.")}</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ol className="relative flex flex-col gap-5 border-s ps-5">
+                    {ordered.map((entry, index) => (
+                        <li key={index} className="relative flex flex-col gap-1">
+                            <span
+                                className={`absolute -start-[1.6rem] top-1 size-2.5 rounded-full ring-4 ring-background ${index === 0 ? "bg-primary" : "bg-muted-foreground/40"}`}
+                            />
+                            <div className="flex flex-wrap items-center gap-2 text-sm">
+                                {entry.status === "placed" ? (
+                                    <span className="font-medium">{t("Order placed")}</span>
+                                ) : (
+                                    <DeliveryBadge status={entry.status} />
+                                )}
+                                <span className="text-xs text-muted-foreground">{formatDate(entry.date)}</span>
+                                {entry.notified && (
+                                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                        <Mail className="size-3" />
+                                        {t("Customer emailed")}
+                                    </span>
+                                )}
+                            </div>
+                            {(entry.courier || entry.tracking) && (
+                                <span className="text-xs text-muted-foreground">
+                                    {[entry.courier, entry.tracking].filter(Boolean).join(" · ")}
+                                </span>
+                            )}
+                            {entry.message && <p className="text-sm">{entry.message}</p>}
+                        </li>
+                    ))}
+                </ol>
+            </CardContent>
+        </Card>
     );
 }
 
@@ -360,6 +522,11 @@ function DeliveryDialog({
         event.preventDefault();
         form.post(route("admin.updated.order"), { preserveScroll: true, onSuccess: () => onOpenChange(false) });
     };
+
+    // Required print files still missing when moving the order into production
+    const missingFiles = order.assets.filter((asset) => asset.required && !asset.file);
+    const productionStatuses: DeliveryStatus[] = ["printing process begun", "shipped", "out for delivery", "delivered"];
+    const warnFiles = missingFiles.length > 0 && form.data.status !== order.delivery && productionStatuses.includes(form.data.status);
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -418,6 +585,16 @@ function DeliveryDialog({
                         />
                         <FieldError message={form.errors.delivery_message} />
                     </div>
+                    {warnFiles && (
+                        <Alert variant="warning">
+                            <AlertDescription className="text-foreground">
+                                {t(":count required print files are missing:").replace(":count", String(missingFiles.length))}{" "}
+                                <strong>{missingFiles.map((asset) => asset.name).join(", ")}</strong>
+                                {". "}
+                                {t("The customer can't upload them after this status. Continue anyway?")}
+                            </AlertDescription>
+                        </Alert>
+                    )}
                     <label className="flex cursor-pointer items-center justify-between gap-4 rounded-lg border p-3">
                         <span className="flex flex-col gap-0.5">
                             <span className="text-sm font-medium">{t("Email the customer")}</span>
@@ -431,7 +608,7 @@ function DeliveryDialog({
                         </Button>
                         <Button type="submit" disabled={form.processing}>
                             {form.processing && <Loader2 className="animate-spin" />}
-                            {t("Save")}
+                            {warnFiles ? t("Save anyway") : t("Save")}
                         </Button>
                     </div>
                 </form>

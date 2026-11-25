@@ -31,7 +31,7 @@
         "jeroendesloovere/vcard": "^1.7.4",
         "joedixon/laravel-translation": "^1.1.2",
         "jorenvanhocht/laravel-share": "^4.2.0",
-        "laravel/framework": "12.69",
+        "laravel/framework": "12.72.0",
         "laravel/socialite": "^5.24.3",
         "laravel/tinker": "^2.8.2",
         "laravel/ui": "^4.0",

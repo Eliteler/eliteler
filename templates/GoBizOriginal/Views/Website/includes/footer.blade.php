@@ -81,7 +81,7 @@
                         @if ($config[76]->config_value == '1' && $config[97]->config_value == '1')
                             <li class="mb-4"><a
                                     class="font-heading font-medium text-base text-gray-900 hover:text-gray-700"
-                                    href="{{ route('nfc.cards') }}">{{ __('NFC Card Ordering') }}</a></li>
+                                    href="{{ route('nfc.cards') }}">{{ __('Smart Products') }}</a></li>
                         @endif
                         {{-- Directory Listing --}}
                         @if (plugin_active('Directory') && Route::has('directory'))

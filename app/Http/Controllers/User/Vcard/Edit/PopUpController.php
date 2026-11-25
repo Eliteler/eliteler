@@ -47,7 +47,7 @@ class PopUpController extends Controller
         $plan = DB::table('users')->where('user_id', Auth::user()->user_id)->where('status', 1)->first();
         $plan_details = json_decode($plan->plan_details);
         $settings = Setting::where('status', 1)->first();
-        $business_card = BusinessCard::where('card_id', $id)->first();
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
 
         // Check business card
         if ($business_card == null) {
@@ -64,7 +64,7 @@ class PopUpController extends Controller
     public function updatePopups(Request $request, $id)
     {
         // Queries
-        $business_card = BusinessCard::where('card_id', $id)->first();
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
 
         // Check business card
         $plan = DB::table('users')->where('user_id', Auth::user()->user_id)->where('status', 1)->first();
@@ -133,7 +133,7 @@ class PopUpController extends Controller
             }
 
             // Update popups
-            BusinessCard::where('card_id', $id)->update([
+            BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->update([
                 'is_newsletter_pop_active' => $is_newsletter_pop_active,
                 'is_info_pop_active' => $is_info_pop_active,
             ]);

@@ -86,7 +86,8 @@ class StoreOrderController extends Controller
         $order_number = "OD" . preg_replace('/\D/', '', Str::uuid());
 
         // Invoice prefix
-        $invoice_prefix = isset(json_decode($storeDetails->description)->invoice_prefix) ? json_decode($storeDetails->description)->invoice_prefix : 'INV-';
+        $storeDesc = !empty($storeDetails->description) ? json_decode($storeDetails->description) : null;
+        $invoice_prefix = $storeDesc->invoice_prefix ?? 'INV-';
 
         // Delivery details (Generate JSON)
         $deliveryDetails = [];

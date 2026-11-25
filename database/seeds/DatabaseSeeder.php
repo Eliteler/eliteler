@@ -4,6 +4,8 @@ use Database\Seeders\AiCreditSeeder;
 use Database\Seeders\BlogCategoryTableSeeder;
 use Database\Seeders\CountriesTableSeeder;
 use Database\Seeders\EmailTempleteTableSeeder;
+use Database\Seeders\PersonalizedLinkExcludeSeeder;
+use Database\Seeders\SmartProductTypeSeeder;
 use Illuminate\Database\Seeder;
 use PHPUnit\Framework\Constraint\Count;
 
@@ -29,5 +31,7 @@ class DatabaseSeeder extends Seeder
         $this->call(EmailTempleteTableSeeder::class);
         $this->call(CountriesTableSeeder::class);
         $this->call(AiCreditSeeder::class);
+        $this->call(SmartProductTypeSeeder::class);
+        $this->call(PersonalizedLinkExcludeSeeder::class);
     }
 }

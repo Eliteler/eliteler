@@ -250,7 +250,7 @@
                                     <div class="datagrid-item mx-3 my-1">
                                         <div class="datagrid-title">{{ __('Total') }}</div>
                                         <div class="datagrid-content fw-bold text-primary">
-                                            {{ formatCurrency(json_decode($order->order_details)->invoice_amount) }}
+                                            {{ formatMoney(json_decode($order->order_details)->invoice_amount, $order->currency) }}
                                         </div>
                                     </div>
                                 </div>
@@ -279,23 +279,28 @@
                                     <tbody class="fw-bold">
                                         <tr>
                                             <td>
+                                                @if ($photo)
+                                                    <img src="{{ asset($photo) }}" alt="" width="56" height="56"
+                                                        class="rounded border float-start me-3 d-none d-sm-block"
+                                                        style="object-fit: cover;">
+                                                @endif
                                                 <p class="strong mb-1">
                                                     {{ json_decode($order->order_details)->order_item }}
                                                 </p>
                                                 <div class="text-secondary d-none d-sm-block">{!! nl2br(e(wordwrap(json_decode($order->order_details)->order_description, 100, "\n"))) !!}</div>
                                             </td>
                                             <td class="text-end">
-                                                {{ formatCurrency(json_decode($order->order_details)->price) }}</td>
+                                                {{ formatMoney(json_decode($order->order_details)->price, $order->currency) }}</td>
                                             <td class="text-end">{{ json_decode($order->order_details)->order_quantity }}
                                             </td>
                                             <td class="text-end">
-                                                {{ formatCurrency(json_decode($order->order_details)->price * json_decode($order->order_details)->order_quantity) }}
+                                                {{ formatMoney(json_decode($order->order_details)->price * json_decode($order->order_details)->order_quantity, $order->currency) }}
                                             </td>
                                         </tr>
                                         <tr>
                                             <td colspan="3" class="strong text-end">{{ __('Subtotal') }}</td>
                                             <td class="text-end">
-                                                {{ formatCurrency(json_decode($order->order_details)->subtotal) }}</td>
+                                                {{ formatMoney(json_decode($order->order_details)->subtotal, $order->currency) }}</td>
                                         </tr>
                                         @if (json_decode($order->order_details)->tax_value != null)
                                             <tr>
@@ -303,7 +308,7 @@
                                                         class="text-secondary">{{ __(json_decode($order->order_details)->tax_name) }}
                                                         : {{ json_decode($order->order_details)->tax_value }}%</small></td>
                                                 <td class="text-end">
-                                                    {{ formatCurrency(json_decode($order->order_details)->tax_amount) }}
+                                                    {{ formatMoney(json_decode($order->order_details)->tax_amount, $order->currency) }}
                                                 </td>
                                             </tr>
                                         @endif
@@ -313,7 +318,7 @@
                                                     {{ __('Before Applied Coupon') }}
                                                 </td>
                                                 <td class="text-end">
-                                                    {{ formatCurrency(json_decode($order->order_details)->subtotal + json_decode($order->order_details)->tax_amount) }}
+                                                    {{ formatMoney(json_decode($order->order_details)->subtotal + json_decode($order->order_details)->tax_amount, $order->currency) }}
                                                 </td>
                                             </tr>
                                             <tr>
@@ -322,7 +327,15 @@
                                                         {{ json_decode($order->order_details)->applied_coupon }}</small>
                                                 </td>
                                                 <td class="text-end">
-                                                    -{{ formatCurrency(json_decode($order->order_details)->discounted_price) }}
+                                                    -{{ formatMoney(json_decode($order->order_details)->discounted_price, $order->currency) }}
+                                                </td>
+                                            </tr>
+                                        @endif
+                                        @if ((float) (json_decode($order->order_details)->shipping_amount ?? 0) > 0)
+                                            <tr>
+                                                <td colspan="3" class="strong text-end">{{ __('Shipping') }}</td>
+                                                <td class="text-end">
+                                                    {{ formatMoney(json_decode($order->order_details)->shipping_amount, $order->currency) }}
                                                 </td>
                                             </tr>
                                         @endif
@@ -330,13 +343,126 @@
                                             <td colspan="3" class="strong text-end text-heading">{{ __('Total') }}
                                             </td>
                                             <td class="text-end text-primary">
-                                                {{ formatCurrency(json_decode($order->order_details)->invoice_amount) }}
+                                                {{ formatMoney(json_decode($order->order_details)->invoice_amount, $order->currency) }}
                                             </td>
                                         </tr>
                                     </tbody>
                                 </table>
                             </div>
 
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Image assets (print files) --}}
+                @if (count($assets))
+                    @php
+                        $missingRequired = collect($assets)->filter(fn ($a) => $a['required'] && ! $a['file'])->count();
+                    @endphp
+                    <div class="row mt-3 d-print-none" id="image-assets">
+                        <div class="col-12">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-header bg-transparent">
+                                    <div>
+                                        <h3 class="card-title">{{ __('Image assets') }}</h3>
+                                        <div class="text-secondary small mt-1">
+                                            @if ($canUpload)
+                                                {{ __('Upload the files we need to print your product. Images (JPG, PNG, WebP, SVG) or PDF.') }}
+                                            @else
+                                                {{ __('Files can only be uploaded or changed while the order is processing or on hold.') }}
+                                            @endif
+                                        </div>
+                                    </div>
+                                    @if ($missingRequired > 0)
+                                        <span class="badge bg-red-100 text-red-700 ms-auto">{{ __(':count required missing', ['count' => $missingRequired]) }}</span>
+                                    @endif
+                                </div>
+                                <div class="list-group list-group-flush">
+                                    @foreach ($assets as $asset)
+                                        <div class="list-group-item">
+                                            <div class="row align-items-center g-3">
+                                                <div class="col-auto">
+                                                    <span class="avatar avatar-md bg-light border">
+                                                        @if ($asset['file'] && $asset['file']['preview'])
+                                                            <img src="{{ $asset['file']['url'] }}" alt="" style="object-fit: contain; width: 100%; height: 100%;">
+                                                        @elseif ($asset['file'])
+                                                            <span class="text-secondary small fw-bold">{{ strtoupper(pathinfo($asset['file']['path'], PATHINFO_EXTENSION)) }}</span>
+                                                        @else
+                                                            <span class="text-secondary">—</span>
+                                                        @endif
+                                                    </span>
+                                                </div>
+                                                <div class="col">
+                                                    <div class="fw-bold">
+                                                        {{ $asset['name'] }}
+                                                        @if ($asset['required'])
+                                                            <span class="badge {{ $asset['file'] ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }} ms-1">{{ $asset['file'] ? __('Required') : __('Required · missing') }}</span>
+                                                        @endif
+                                                    </div>
+                                                    @if ($asset['resolution'])
+                                                        <div class="text-secondary small">{{ __('Suggested') }}: {{ $asset['resolution'] }}</div>
+                                                    @endif
+                                                    @if ($asset['file'])
+                                                        <a href="{{ $asset['file']['url'] }}" target="_blank" rel="noopener" class="small text-decoration-none">{{ $asset['file']['name'] ?: __('View file') }}</a>
+                                                    @else
+                                                        <div class="small text-secondary">{{ __('Not uploaded yet') }}</div>
+                                                    @endif
+                                                </div>
+                                                @if ($canUpload)
+                                                    <div class="col-12 col-md-auto">
+                                                        <form action="{{ route('user.order.nfc.card.asset.upload', [$order->nfc_card_order_id, $asset['key']]) }}"
+                                                            method="post" enctype="multipart/form-data" class="js-asset-form">
+                                                            @csrf
+                                                            <label class="btn {{ $asset['file'] ? 'btn-outline-primary' : 'btn-primary' }} btn-sm mb-0">
+                                                                {{ $asset['file'] ? __('Replace') : __('Upload') }}
+                                                                <input type="file" name="file" class="d-none js-asset-file"
+                                                                    accept=".jpg,.jpeg,.png,.webp,.svg,.pdf,image/jpeg,image/png,image/webp,image/svg+xml,application/pdf">
+                                                            </label>
+                                                        </form>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+                {{-- Order Timeline --}}
+                <div class="row mt-3 d-print-none">
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-header bg-transparent">
+                                <h3 class="card-title">{{ __('Order timeline') }}</h3>
+                            </div>
+                            <div class="card-body">
+                                <ul class="steps steps-vertical">
+                                    @foreach (array_reverse($timeline) as $index => $entry)
+                                        <li class="step-item {{ $index === 0 ? 'active' : '' }}">
+                                            <div class="h4 m-0">
+                                                @if ($entry['status'] === 'placed')
+                                                    {{ __('Order placed') }}
+                                                @else
+                                                    {{ __(ucwords($entry['status'] === 'printing process begun' ? 'printing' : $entry['status'])) }}
+                                                @endif
+                                            </div>
+                                            <div class="text-secondary small">
+                                                {{ $entry['date'] ? formatDateForUser(\Carbon\Carbon::parse($entry['date'])) : '' }}
+                                            </div>
+                                            @if ($entry['courier'] || $entry['tracking'])
+                                                <div class="text-secondary small">
+                                                    {{ collect([$entry['courier'], $entry['tracking']])->filter()->implode(' · ') }}
+                                                </div>
+                                            @endif
+                                            @if ($entry['message'])
+                                                <div class="mt-1">{{ $entry['message'] }}</div>
+                                            @endif
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -347,3 +473,20 @@
         @include('user.includes.footer')
     </div>
 @endsection
+
+@push('custom-js')
+    <script>
+        "use strict";
+        // Image assets: upload as soon as a file is picked
+        document.querySelectorAll('.js-asset-file').forEach(function(input) {
+            input.addEventListener('change', function() {
+                if (!input.files.length) return;
+                var label = input.closest('label');
+                label.classList.add('disabled');
+                label.firstChild.textContent = '{{ __('Uploading…') }} ';
+                input.closest('form').submit();
+            });
+        });
+    </script>
+@endpush
+

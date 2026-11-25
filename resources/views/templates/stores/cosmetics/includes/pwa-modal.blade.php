@@ -142,17 +142,15 @@
                 const installBtn = document.getElementById('btnPwaInstall');
                 if (installBtn) {
                     installBtn.addEventListener('click', async function() {
-                        if (pwaPromptEvent) {
-                            pwaPromptEvent.prompt();
+                        const promptEvent = pwaPromptEvent || window.deferredPwaPrompt || window.deferredPrompt;
+                        if (promptEvent) {
+                            promptEvent.prompt();
                             const {
                                 outcome
-                            } = await pwaPromptEvent.userChoice;
+                            } = await promptEvent.userChoice;
                             pwaPromptEvent = null;
                             closePwaModal(null, true);
                         } else {
-                            // Safari / iOS Fallback instruction
-                            alert(
-                                "{{ __('To install, tap the Share or Menu icon in your browser and select Add to Home Screen.') }}");
                             closePwaModal(null, true);
                         }
                     });

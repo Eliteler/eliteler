@@ -66,6 +66,7 @@ class ReferralWithdrawalRequestController extends Controller
         $page->through(fn($row) => [
             'id'       => $row->referral_withdraw_request_id,
             'amount'   => (float) $row->amount,
+            'currency' => $row->currency,
             'details'  => ReferralService::payoutDetails($row->bank_details),
             'notes'    => $row->notes,
             'status'   => array_search((int) $row->payment_status, self::TABS, true) ?: 'pending',

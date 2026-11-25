@@ -2,7 +2,7 @@
 
 @section('css')
     {{-- Products CSS --}}
-    <link rel="stylesheet" href="{{ asset('css/products.css') }}" />
+    <link rel="stylesheet" href="{{ asset('css/products.css') }}?v={{ filemtime(public_path('css/products.css')) }}" />
 
     {{-- Dropzone CSS --}}
     <link rel="stylesheet" href="{{ asset('css/dropzone.min.css') }}">
@@ -10,6 +10,59 @@
     {{-- Dropzone JS & Clipboard --}}
     <script src="{{ asset('js/dropzone.min.js') }}"></script>
     <script src="{{ asset('js/clipboard.min.js') }}"></script>
+
+    <style>
+        /* Responsive scrollable modal fix for desktop and mobile viewports */
+        .modal-dialog-scrollable {
+            height: calc(100% - 3.5rem) !important;
+        }
+
+        .modal-dialog-scrollable .modal-content {
+            max-height: calc(100vh - 3.5rem) !important;
+            height: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+
+        .modal-dialog-scrollable .modal-header {
+            flex-shrink: 0 !important;
+        }
+
+        .modal-dialog-scrollable .modal-body {
+            overflow-y: auto !important;
+            flex: 1 1 auto !important;
+            max-height: calc(100vh - 12rem) !important;
+        }
+
+        .modal-dialog-scrollable .modal-footer {
+            flex-shrink: 0 !important;
+            margin-top: auto !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            background-color: var(--tblr-bg-surface-secondary, #f8fafc) !important;
+            border-top: 1px solid var(--tblr-border-color, #e2e8f0) !important;
+            padding: 1rem 1.5rem !important;
+            z-index: 2 !important;
+        }
+
+        @media (max-width: 767.98px) {
+            .modal-dialog-scrollable .modal-footer {
+                flex-direction: column-reverse !important;
+                gap: 10px !important;
+                padding: 1.25rem !important;
+                width: 100% !important;
+            }
+
+            .modal-dialog-scrollable .modal-footer .btn,
+            .modal-dialog-scrollable .modal-footer button {
+                width: 100% !important;
+                margin: 0 !important;
+                text-align: center !important;
+                justify-content: center !important;
+            }
+        }
+    </style>
 @endsection
 
 @section('content')
@@ -163,7 +216,7 @@
     {{-- Add Product Modal --}}
     <div class="modal modal-bg fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalLabel"
         aria-hidden="true" data-bs-backdrop="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold text-dark" id="addProductModalLabel">{{ __('Add Product') }}</h5>
@@ -312,7 +365,7 @@
     {{-- Edit Product Modal --}}
     <div class="modal modal-bg fade" id="editProductModal" tabindex="-1" aria-labelledby="editProductModalLabel"
         aria-hidden="true" data-bs-backdrop="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold text-dark" id="editProductModalLabel">{{ __('Edit Product') }}</h5>

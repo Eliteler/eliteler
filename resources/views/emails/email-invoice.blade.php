@@ -527,6 +527,19 @@
                                                                     </td>
                                                                 </tr>
                                                             @endif
+                                                            @if (!empty($details['shipping_amount']) && (float) $details['shipping_amount'] > 0)
+                                                                <tr>
+                                                                    <td width="80%" class="purchase_footer" valign="middle">
+                                                                        <p
+                                                                            class="f-fallback purchase_total purchase_total--label">
+                                                                            {{ __('Shipping') }}</p>
+                                                                    </td>
+                                                                    <td width="20%" class="purchase_footer" valign="middle">
+                                                                        <p class="f-fallback purchase_total">
+                                                                            {{ $details['invoice_currency'] }} {{ $details['shipping_amount'] }}</p>
+                                                                    </td>
+                                                                </tr>
+                                                            @endif
                                                             <tr>
                                                                 <td width="80%" class="purchase_footer" valign="middle">
                                                                     <p

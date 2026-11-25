@@ -45,7 +45,7 @@ class PaymentLinkController extends Controller
     public function paymentLinks(Request $request, $id)
     {
         // Queries
-        $business_card = BusinessCard::where('card_id', $id)->first();
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
 
         // Check business card
         if ($business_card == null) {

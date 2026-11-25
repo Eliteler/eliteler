@@ -64,6 +64,8 @@ class ReferralController extends Controller
                     'referrer'   => $row->referrer_name ? ['id' => $row->referred_user_id, 'name' => $row->referrer_name, 'email' => $row->referrer_email] : null,
                     'subscribed' => (int) $row->is_subscribed === 1,
                     'commission' => (int) $row->is_subscribed === 1 ? AdminPermissions::amount((float) ($scheme['referral_amount'] ?? 0)) : null,
+                    // Currency the commission was earned in (none recorded: base currency)
+                    'currency'   => $scheme['currency'] ?? null,
                     'date'       => $row->created_at ? Carbon::parse($row->created_at)->toIso8601String() : null,
                 ];
             });

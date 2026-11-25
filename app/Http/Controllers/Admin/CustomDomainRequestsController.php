@@ -34,8 +34,9 @@ class CustomDomainRequestsController extends Controller
     }
 
     // Custom domain requests
-    public function customDomainRequests(Request $request, $status)
+    public function customDomainRequests(Request $request, $status = 'all')
     {
+        $status = $status ?? 'all';
         if (! array_key_exists($status, self::TABS)) {
             return redirect()->route('admin.custom.domain.requests', ['status' => 'all']);
         }

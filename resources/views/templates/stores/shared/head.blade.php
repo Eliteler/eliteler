@@ -33,6 +33,13 @@
 @if (!empty($plan_details) && $plan_details['pwa'] == 1 && $business_card_details->is_enable_pwa == 1)
     @laravelPWA
     @isset($manifest)
-        <link rel="manifest" href="{{ $manifest }}">
+        <link rel="manifest" href="{{ asset($manifest) }}">
     @endisset
+    <script>
+        window.addEventListener('beforeinstallprompt', function(e) {
+            e.preventDefault();
+            window.deferredPwaPrompt = e;
+            window.deferredPrompt = e;
+        });
+    </script>
 @endif

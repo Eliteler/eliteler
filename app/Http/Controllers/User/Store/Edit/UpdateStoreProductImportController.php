@@ -53,7 +53,8 @@ class UpdateStoreProductImportController extends Controller
             ]);
         }
 
-        $result = ProductCsv::import($request->file('csv_file')->getRealPath(), $store, json_decode(Auth::user()->plan_details));
+        $planDetails = !empty(Auth::user()->plan_details) ? json_decode(Auth::user()->plan_details) : null;
+        $result = ProductCsv::import($request->file('csv_file')->getRealPath(), $store, $planDetails);
 
         // Return errors (one per line) or success
         if ($result['errors'] !== []) {

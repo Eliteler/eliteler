@@ -1,5 +1,15 @@
 <?php
 
+/*
+ |--------------------------------------------------------------------------
+ | GoBiz vCard SaaS
+ |--------------------------------------------------------------------------
+ | Developed by NativeCode © 2021 - https://nativecode.in
+ | All rights reserved
+ | Unauthorized distribution is prohibited
+ |--------------------------------------------------------------------------
+*/
+
 namespace App\Console;
 
 use Illuminate\Support\Facades\DB;
@@ -15,6 +25,7 @@ class Kernel extends ConsoleKernel
      */
     protected $commands = [
         Commands\PlanExpiryCron::class,
+        Commands\AuditPrivilegedEmailsCommand::class,
     ];
 
     /**

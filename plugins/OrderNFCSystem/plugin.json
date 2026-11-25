@@ -1,13 +1,13 @@
 {
     "plugin_id": "OrderNFCSystem",
-    "name": "NFC Card Ordering System",
-    "description": "Let customers order NFC business cards from your website.",
-    "version": "1.2.0",
+    "name": "Smart Products Ordering System",
+    "description": "Sell NFC cards, stands, tags and other smart products to your customers, with shipping and order tracking.",
+    "version": "1.3.0",
     "img": "nfc_card.png",
     "main_route": "admin.plugin.status.nfc.cards.order",
     "requires_admin": "1",
     "platform": "gobiz-saas",
-    "min_version": "28.0.0",
+    "min_version": "29.1.0",
     "admin_pages": {
         "settings": "dist/settings.js"
     },

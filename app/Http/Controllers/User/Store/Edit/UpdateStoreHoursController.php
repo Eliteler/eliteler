@@ -61,6 +61,12 @@ class UpdateStoreHoursController extends Controller
     // Update store hours
     public function updateHours(Request $request)
     {
+        // Verify store belongs to authenticated user
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $request->store_id)->first();
+        if ($business_card == null) {
+            return redirect()->route('user.stores')->with('failed', trans('Store not found!'));
+        }
+
         // Delete business hours
         StoreBusinessHour::where('store_id', $request->store_id)->delete();
 

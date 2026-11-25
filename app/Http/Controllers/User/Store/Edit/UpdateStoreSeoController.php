@@ -109,7 +109,7 @@ class UpdateStoreSeoController extends Controller
         ]);
 
         // Update
-        BusinessCard::where('card_id', $request->store_id)->update([
+        BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $request->store_id)->update([
             'seo_configurations' => $seoConfig,
         ]);
 

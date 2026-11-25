@@ -1,6 +1,28 @@
 @extends('user.layouts.index', ['header' => false, 'nav' => false, 'demo' => true])
 
 @section('css')
+<style>
+        @media print {
+            .container {
+                max-width: 100% !important;
+            }
+
+            #gobiz-support-widget {
+                display: none !important;
+            }
+
+            #invoice-card,
+            #invoice-card.card,
+            #invoice-card #invoice,
+            #invoice-card .card-body {
+                border: none !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                outline: none !important;
+                background: transparent !important;
+            }
+        }
+    </style>
     <script src="{{ asset('js/html2pdf.bundle.min.js') }}"></script>
     <script>
         function generatePDF() {
@@ -113,7 +135,7 @@
                     </div>
                 @endif
 
-                <div class="card card-lg">
+                <div class="card card-lg border-0 shadow-sm" id="invoice-card">
                     {{-- Invoice parameters --}}
                     @include('partials.invoice', [
                         // General configurations
@@ -121,7 +143,7 @@
                         'config' => $config,
                         'currencies' => $currencies,
                         'transaction' => $transaction,
-                    
+
                         // Sender details (From)
                         'fromName' => $fromName,
                         'fromAddress' => $fromAddress,
@@ -131,7 +153,7 @@
                         'fromEmail' => $fromEmail,
                         'fromPhone' => $fromPhone,
                         'fromVat' => $fromVat,
-                    
+
                         // Customer details (To / Bill To)
                         'toName' => $toName,
                         'toAddress' => $toAddress,
@@ -141,7 +163,7 @@
                         'toEmail' => $toEmail,
                         'toPhone' => $toPhone,
                         'toVat' => $toVat,
-                    
+
                         // Plan & Line item details
                         'planDetails' => $planDetails,
                         'itemTitle' =>
@@ -151,9 +173,10 @@
                             ' ' .
                             __('AI Credit'),
                         'itemQty' => 1,
-                        'itemRate' => $planDetails->plan_price ?? 0,
-                        'itemAmount' => $planDetails->plan_price ?? 0,
-                    
+                        // What was paid (before tax), not the pack's current price
+                        'itemRate' => $billing['subtotal'] ?? ($planDetails->plan_price ?? 0),
+                        'itemAmount' => $billing['subtotal'] ?? ($planDetails->plan_price ?? 0),
+
                         // Billing summary
                         'billing' => $billing,
                     ])

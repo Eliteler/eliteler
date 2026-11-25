@@ -20,10 +20,9 @@ use App\Http\Controllers\Controller;
 use App\NfcCardDesign;
 use App\Plan;
 use App\Services\PluginManager;
+use App\Services\SmartProducts\OrderQuote;
 use App\User;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -31,6 +30,19 @@ use Illuminate\Support\Str;
 
 class PaymentController extends Controller
 {
+    /**
+     * First version of each payment plugin whose NFC checkout charges the
+     * shipping fee (uses OrderQuote). Older versions are refused while a
+     * shipping fee applies, so they can't undercharge.
+     */
+    private const SHIPPING_READY_PLUGINS = [
+        'eSewa'      => '1.5.0',
+        'Moneroo'    => '1.5.0',
+        'Coinbase'   => '1.7.0',
+        'SSLCommerz' => '1.3.0',
+        'AmwalPay'   => '1.4.0',
+    ];
+
     protected $pluginManager;
 
     /**
@@ -56,7 +68,11 @@ class PaymentController extends Controller
         }
 
         // NFC Card
-        $nfcCard = NfcCardDesign::where('nfc_card_id', $nfcId)->first();
+        $nfcCard = NfcCardDesign::where('nfc_card_id', $nfcId)->where('status', 1)->first();
+
+        if (! $nfcCard) {
+            return redirect()->route('user.order.nfc.cards')->with('failed', __('NFC Card not found.'));
+        }
 
         // Check stock
         if ($nfcCard->available_stocks <= 0) {
@@ -168,38 +184,29 @@ class PaymentController extends Controller
 
                 /*
                 |--------------------------------------------------------------------------
-                | Plugin Provider
-                |--------------------------------------------------------------------------
-                */
-
-                $configPath = config_path('app.php');
-                $configContent = file_get_contents($configPath);
-
-                if (strpos($configContent, 'App\Providers\PluginServiceProvider::class,') === false) {
-                    $updatedConfig = preg_replace(
-                        "/('providers' => \[)(.*?)(\n\s*\],)/s",
-                        "$1$2\n        App\Providers\PluginServiceProvider::class,$3",
-                        $configContent
-                    );
-
-                    file_put_contents($configPath, $updatedConfig);
-
-                    Artisan::call('config:clear');
-                }
-
-                /*
-                |--------------------------------------------------------------------------
                 | Coupon
                 |--------------------------------------------------------------------------
                 */
 
-                $couponDetails = Coupon::where('used_for', 'nfc')->where('coupon_id', $request->applied_coupon)->first();
+                $couponDetails = !empty(trim($request->applied_coupon ?? ''))
+                    ? Coupon::where('used_for', 'nfc')
+                        ->where(function ($query) use ($request) {
+                            $code = trim($request->applied_coupon);
+                            $query->where('coupon_id', $code)
+                                ->orWhere('coupon_code', $code);
+                        })
+                        ->first()
+                    : null;
 
-                $couponId = $couponDetails->coupon_code;
-
-                if ($couponId == '') {
-                    $couponId = ' ';
+                // A coupon that is no longer valid (expired, used up, other product) is dropped
+                if ($couponDetails && OrderQuote::couponError($couponDetails, $nfcCard, Auth::user())) {
+                    $couponDetails = null;
                 }
+
+                $couponId = $couponDetails?->coupon_code ?: ' ';
+
+                // The price is always worked out here, never taken from the form
+                $quote = OrderQuote::make($nfcCard, $quantity, $couponDetails, Auth::user());
 
                 /*
                 |--------------------------------------------------------------------------
@@ -207,7 +214,7 @@ class PaymentController extends Controller
                 |--------------------------------------------------------------------------
                 */
 
-                if ((float) $request->payment_gateway_amount <= 0) {
+                if ($quote->total <= 0) {
 
                     $zeroOrder = new ZeroOrderNFC();
                     $zeroOrder->zero($couponId, $nfcCard, $nfcId, $plan, $payment_mode, $quantity);
@@ -222,6 +229,12 @@ class PaymentController extends Controller
                 */
 
                 if (!empty($plugin) && ($plugin['plugin_id'] == $payment_mode->plugin_id)) {
+                    $minimum = self::SHIPPING_READY_PLUGINS[$plugin['plugin_id']] ?? null;
+
+                    if ($quote->shipping > 0 && $minimum && version_compare($plugin['version'] ?? '0', $minimum, '<')) {
+                        return redirect()->route('user.order.nfc.card.checkout', $nfcId)->with('failed', __('This payment method needs an update before it can be used. Please choose another payment method.'));
+                    }
+
                     $route = Str::lower('nfc.' . $plugin['plugin_id']) . '.checkout';
                     return redirect()->route($route, compact('nfcId', 'couponId', 'quantity'));
                 }
@@ -264,11 +277,6 @@ class PaymentController extends Controller
     // Checkout coupon
     public function coupon(Request $request, $designId)
     {
-        // Config
-        $config = DB::table('config')->get();
-
-        $taxPercentage = (float) $config[25]->config_value;
-
         // Coupon code
         $couponCode = Str::upper($request->coupon_code);
 
@@ -276,7 +284,7 @@ class PaymentController extends Controller
         $quantity = max((int) $request->quantity, 1);
 
         // Get NFC Card
-        $nfcCardDetails = NfcCardDesign::where('nfc_card_id', $designId)->first();
+        $nfcCardDetails = NfcCardDesign::where('nfc_card_id', $designId)->where('status', 1)->first();
 
         // Check NFC Card exists
         if (!$nfcCardDetails) {
@@ -300,88 +308,16 @@ class PaymentController extends Controller
             ]);
         }
 
-        // Check coupon expiry
-        if ($couponDetails->coupon_expired_on < Carbon::now()) {
+        // Expiry, product, usage limits
+        if ($error = OrderQuote::couponError($couponDetails, $nfcCardDetails, Auth::user())) {
             return response()->json([
                 'success' => false,
-                'message' => trans('Coupon expired!'),
+                'message' => $error,
             ]);
         }
 
-        // Check if coupon is applicable for this specific NFC Card or all NFC Cards
-        $allowedCards = json_decode($couponDetails->plan_id, true);
-        if (!is_array($allowedCards)) {
-            $allowedCards = $couponDetails->plan_id ? [$couponDetails->plan_id] : ['all'];
-        }
-
-        if (!in_array('all', $allowedCards) && !in_array($nfcCardDetails->nfc_card_id, $allowedCards)) {
-            return response()->json([
-                'success' => false,
-                'message' => trans('This coupon is not applicable for the selected NFC Card!'),
-            ]);
-        }
-
-        // User usage limit
-        $userCouponCount = AppliedCoupon::where('user_id', Auth::user()->id)
-            ->where('coupon_id', $couponDetails->coupon_id)
-            ->where('status', 1)
-            ->count();
-
-        if ($userCouponCount >= $couponDetails->coupon_user_usage_limit) {
-            return response()->json([
-                'success' => false,
-                'message' => trans('Coupon already used.'),
-            ]);
-        }
-
-        // Total usage limit
-        $totalCouponCount = AppliedCoupon::where('coupon_id', $couponDetails->coupon_id)
-            ->where('status', 1)
-            ->count();
-
-        if ($totalCouponCount >= $couponDetails->coupon_total_usage_limit) {
-            return response()->json([
-                'success' => false,
-                'message' => trans('Total number of users already reached.'),
-            ]);
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Price Calculation
-        |--------------------------------------------------------------------------
-        */
-
-        // Unit price
-        $unitPrice = (float) $nfcCardDetails->nfc_card_price;
-
-        // Subtotal
-        $subtotal = $unitPrice * $quantity;
-
-        // Tax
-        $taxAmount = ($subtotal * $taxPercentage) / 100;
-
-        // Subtotal including tax
-        $subtotalWithTax = $subtotal + $taxAmount;
-
-        // Discount
-        $discountPrice = 0;
-
-        if ($couponDetails->coupon_type == 'fixed') {
-            $discountPrice = (float) $couponDetails->coupon_amount;
-        } else {
-            // Percentage coupon is applied to subtotal + GST
-            $discountPrice = ($subtotalWithTax * (float) $couponDetails->coupon_amount) / 100;
-        }
-
-        // Prevent discount from exceeding subtotal + tax
-        $discountPrice = min($discountPrice, $subtotalWithTax);
-
-        // Grand Total
-        $total = $subtotalWithTax - $discountPrice;
-
-        // Prevent negative total
-        $total = max($total, 0);
+        // Same calculation as the payment gateways
+        $quote = OrderQuote::make($nfcCardDetails, $quantity, $couponDetails, Auth::user());
 
         return response()->json([
             'success' => true,
@@ -389,10 +325,11 @@ class PaymentController extends Controller
             'coupon_code' => $couponCode,
             'coupon_id' => $couponDetails->coupon_id,
             'quantity' => $quantity,
-            'subtotal' => round($subtotal, 2),
-            'taxAmount' => round($taxAmount, 2),
-            'discountPrice' => round($discountPrice, 2),
-            'total' => round($total, 2),
+            'subtotal' => $quote->subtotal,
+            'taxAmount' => $quote->tax,
+            'discountPrice' => $quote->discount,
+            'shipping' => $quote->shipping,
+            'total' => $quote->total,
         ]);
     }
 }

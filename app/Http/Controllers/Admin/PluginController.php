@@ -13,6 +13,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\Admin\MarketplaceCatalog;
 use App\Services\GoBizCommonService;
 use App\Services\PackageZip;
 use App\Services\PluginManager;
@@ -62,51 +63,72 @@ class PluginController extends Controller
         $this->middleware('auth');
     }
 
-    public function index(Request $request)
+    public function index(Request $request, MarketplaceCatalog $marketplace)
     {
-        $tab    = in_array($request->query('tab'), ['all', 'builtIn', 'added'], true) ? $request->query('tab') : 'all';
-        $search = trim((string) $request->query('search', ''));
+        $requestedSearch = $request->query('search');
+        $search = is_string($requestedSearch) ? trim($requestedSearch) : '';
 
         $this->pluginManager->loadPlugins();
+        $manifests = $this->pluginManager->getPlugins();
+        $catalog = $marketplace->read('plugins');
+        $updates = $marketplace->availableUpdates('plugins', $catalog['versions'] ?? null, $manifests);
+        $listings = $catalog['listings'] ?? [];
+        $tab = match ($request->query('tab')) {
+            'builtIn' => 'builtIn',
+            'added' => 'added',
+            'updates' => $updates === null ? 'all' : 'updates',
+            'marketplace' => $listings === [] ? 'all' : 'marketplace',
+            default => 'all',
+        };
 
-        $allPlugins = collect($this->pluginManager->getPlugins())->map(function ($plugin) use ($request) {
+        $allPlugins = collect($manifests)->map(function ($plugin) use ($request, $updates) {
             $image = ! empty($plugin['img']) && File::exists(public_path('img/plugins/' . $plugin['img'])) ? $plugin['img'] : 'default.png';
             $route = $plugin['main_route'] ?? null;
             $id    = (string) ($plugin['plugin_id'] ?? basename($plugin['path']));
 
             return [
-                'id'          => $id,
-                'name'        => __($plugin['name'] ?? basename($plugin['path'])),
-                'description' => isset($plugin['description']) ? __($plugin['description']) : null,
-                'version'     => $plugin['version'] ?? null,
-                'image'       => asset('img/plugins/' . $image),
-                'settingsUrl' => $plugin['legacy']
+                'id'            => $id,
+                'name'          => __($plugin['name'] ?? basename($plugin['path'])),
+                'description'   => isset($plugin['description']) ? __($plugin['description']) : null,
+                'version'       => $plugin['version'] ?? null,
+                'updateVersion' => $updates[$id] ?? null,
+                'image'         => asset('img/plugins/' . $image),
+                'settingsUrl'   => $plugin['legacy']
                     ? route('admin.plugin.update-required', $id)
                     : ($route && Route::has($route) && $this->canOpen($route, $request) ? route($route) : null),
-                'builtIn'     => in_array($plugin['plugin_id'] ?? '', self::BUILT_IN, true),
-                'legacy'      => $plugin['legacy'],
+                'builtIn'       => in_array($plugin['plugin_id'] ?? '', self::BUILT_IN, true),
+                'legacy'        => $plugin['legacy'],
             ];
         })->sortBy(fn($plugin) => mb_strtolower($plugin['name']))->values();
 
         $counts = [
-            'all'     => $allPlugins->count(),
-            'builtIn' => $allPlugins->where('builtIn', true)->count(),
-            'added'   => $allPlugins->where('builtIn', false)->count(),
+            'all'         => $allPlugins->count(),
+            'builtIn'     => $allPlugins->where('builtIn', true)->count(),
+            'added'       => $allPlugins->where('builtIn', false)->count(),
+            'updates'     => $updates === null ? null : count($updates),
+            'marketplace' => count($listings),
         ];
 
-        // Filter plugins based on active tab and search
-        $filtered = $allPlugins
-            ->when($tab === 'builtIn', fn($c) => $c->where('builtIn', true))
-            ->when($tab === 'added', fn($c) => $c->where('builtIn', false))
-            ->when($search !== '', function ($c) use ($search) {
-                $term = mb_strtolower($search);
-                return $c->filter(fn($p) => str_contains(mb_strtolower($p['name']), $term) || str_contains(mb_strtolower((string) $p['description']), $term));
-            })
-            ->values();
+        $filtered = match ($tab) {
+            'builtIn' => $allPlugins->where('builtIn', true),
+            'added' => $allPlugins->where('builtIn', false),
+            'updates' => $allPlugins->whereNotNull('updateVersion'),
+            'marketplace' => collect($listings),
+            default => $allPlugins,
+        };
+        if ($search !== '') {
+            $term = mb_strtolower($search);
+            $filtered = $filtered->filter(fn ($item) =>
+                str_contains(mb_strtolower($item['name']), $term)
+                || str_contains(mb_strtolower((string) $item['description']), $term)
+            );
+        }
 
-        // Paginate filtered plugins collection
-        $currentPage  = Paginator::resolveCurrentPage() ?: 1;
-        $currentItems = $filtered->slice(($currentPage - 1) * self::PER_PAGE, self::PER_PAGE)->values();
+        $currentPage = min(Paginator::resolveCurrentPage(), max(1, (int) ceil($filtered->count() / self::PER_PAGE)));
+        $currentItems = $filtered->forPage($currentPage, self::PER_PAGE)->values();
+        if ($tab === 'marketplace') {
+            $currentItems = $marketplace->listingsFor($currentItems, $allPlugins, 'settingsUrl');
+        }
 
         $paginated = new LengthAwarePaginator(
             $currentItems,
@@ -117,8 +139,8 @@ class PluginController extends Controller
         );
 
         return Inertia::render('plugins/index', [
-            'plugins'     => $paginated,
-            'allPlugins'  => $allPlugins,
+            'plugins'     => $tab === 'marketplace' ? null : $paginated,
+            'marketplace' => $tab === 'marketplace' ? $paginated : null,
             'tab'         => $tab,
             'search'      => $search,
             'counts'      => $counts,
@@ -298,6 +320,16 @@ class PluginController extends Controller
 
             PackageZip::extract($zip, $root, base_path('plugins/' . $folder));
             $zip->close();
+
+            // Auto-trigger plugin installer if the plugin provides one
+            $controllerClass = "Plugins\\{$folder}\\Controllers\\{$folder}Controller";
+            if (class_exists($controllerClass) && method_exists($controllerClass, 'install')) {
+                try {
+                    $controllerClass::install();
+                } catch (\Throwable) {
+                    // ignore
+                }
+            }
         } finally {
             File::delete($zipPath);
         }

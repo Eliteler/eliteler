@@ -23,6 +23,8 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\NfcCardKey;
 use App\Services\GoBizCommonService;
+use App\Services\Security\DisposableEmailService;
+use App\Services\Security\ReservedEmailService;
 use App\Support\Impersonation;
 use App\Support\Zapier;
 use Illuminate\Support\Facades\Auth;
@@ -80,7 +82,7 @@ class LoginController extends Controller
     {
         $rules = [
             $this->username() => 'required|string',
-            'password' => 'required|string',
+            'password' => 'required|string|max:100',
         ];
 
         // Check if reCAPTCHA is active in environment config
@@ -329,6 +331,24 @@ class LoginController extends Controller
                 }
             }
         } else {
+            // Prevent registration of reserved or privileged email addresses via OAuth
+            $reservedCheck = ReservedEmailService::checkEmail($email);
+            if (! $reservedCheck['allowed']) {
+                if ($platform == 'app') {
+                    return redirect()->away("gobiz://auth/login");
+                }
+                return redirect('/login')->with('error', $reservedCheck['message'] ?? trans('This email prefix is reserved. Please use a different email address.'));
+            }
+
+            // Prevent registration of disposable or bot email domains via OAuth
+            $disposableCheck = DisposableEmailService::checkEmail($email);
+            if (! $disposableCheck['allowed']) {
+                if ($platform == 'app') {
+                    return redirect()->away("gobiz://auth/login");
+                }
+                return redirect('/login')->with('error', $disposableCheck['message'] ?? trans('Disposable or temporary email addresses are not permitted. Please use a valid email.'));
+            }
+
             // Generate standard secure unique user_id
             $newUserId = uniqid();
 

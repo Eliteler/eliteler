@@ -44,6 +44,12 @@ class ServiceBookingController extends Controller
     // Service Booking
     public function serviceBooking(Request $request, $id)
     {
+        // Check card ownership
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
+        if (!$business_card) {
+            return redirect()->route('user.cards')->with('failed', trans('Card not found!'));
+        }
+
         // Queries
         $settings = Setting::where('status', 1)->first();
 
@@ -86,15 +92,19 @@ class ServiceBookingController extends Controller
 
         // Check service booking
         if ($service == null) {
-            return redirect()->route('user.all.service.booking', $service->vcard_id)->with('failed', trans('Service booking not found!'));
+            return redirect()->route('user.cards')->with('failed', trans('Service booking not found!'));
+        }
+
+        // Business name with vcard URL from business_cards table (enforce ownership)
+        $businessDetails = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $service->vcard_id)->first();
+        if (!$businessDetails) {
+            return redirect()->route('user.cards')->with('failed', trans('Card not found!'));
         }
 
         // Update service booking
         $service->service_booking_confirmed_status = 'confirmed';
         $service->save();
 
-        // Business name with vcard URL from business_cards table
-        $businessDetails = BusinessCard::where('card_id', $service->vcard_id)->first();
         $businessName = $businessDetails->title;
         $businessVcardUrl = url($businessDetails->card_url);
 
@@ -166,15 +176,19 @@ class ServiceBookingController extends Controller
 
         // Check service booking
         if ($service == null) {
-            return redirect()->route('user.all.service.booking', $service->vcard_id)->with('failed', trans('Service booking not found!'));
+            return redirect()->route('user.cards')->with('failed', trans('Service booking not found!'));
+        }
+
+        // Business name with vcard URL from business_cards table (enforce ownership)
+        $businessDetails = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $service->vcard_id)->first();
+        if (!$businessDetails) {
+            return redirect()->route('user.cards')->with('failed', trans('Card not found!'));
         }
 
         // Update service booking
         $service->service_booking_confirmed_status = 'rejected';
         $service->save();
 
-        // Business name with vcard URL from business_cards table
-        $businessDetails = BusinessCard::where('card_id', $service->vcard_id)->first();
         $businessName = $businessDetails->title;
         $businessVcardUrl = url($businessDetails->card_url);
 
@@ -222,15 +236,19 @@ class ServiceBookingController extends Controller
 
         // Check service booking
         if ($service == null) {
-            return redirect()->route('user.all.service.booking', $service->vcard_id)->with('failed', trans('Service booking not found!'));
+            return redirect()->route('user.cards')->with('failed', trans('Service booking not found!'));
+        }
+
+        // Business name with vcard URL from business_cards table (enforce ownership)
+        $businessDetails = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $service->vcard_id)->first();
+        if (!$businessDetails) {
+            return redirect()->route('user.cards')->with('failed', trans('Card not found!'));
         }
 
         // Update service booking
         $service->service_booking_confirmed_status = 'completed';
         $service->save();
 
-        // Business name with vcard URL from business_cards table
-        $businessDetails = BusinessCard::where('card_id', $service->vcard_id)->first();
         $businessName = $businessDetails->title;
         $businessVcardUrl = url($businessDetails->card_url);
 
@@ -278,11 +296,11 @@ class ServiceBookingController extends Controller
 
         // Check service booking
         if ($service == null) {
-            return redirect()->route('user.all.service.booking', $service->vcard_id)->with('failed', trans('Service booking not found!'));
+            return redirect()->route('user.cards')->with('failed', trans('Service booking not found!'));
         }
 
-        // Business name with vcard URL from business_cards table
-        $businessDetails = BusinessCard::where('card_id', $service->vcard_id)->first();
+        // Business name with vcard URL from business_cards table (enforce ownership)
+        $businessDetails = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $service->vcard_id)->first();
         if (!$businessDetails) {
             return redirect()->back()->with('failed', trans('Business details not found.'));
         }

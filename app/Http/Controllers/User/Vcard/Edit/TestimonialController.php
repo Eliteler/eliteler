@@ -45,7 +45,7 @@ class TestimonialController extends Controller
         // Queries
         $plan = DB::table('users')->where('user_id', Auth::user()->user_id)->where('status', 1)->first();
         $plan_details = json_decode($plan->plan_details);
-        $business_card = BusinessCard::where('card_id', $id)->first();
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
 
         // Check business card
         if ($business_card == null) {
@@ -69,7 +69,7 @@ class TestimonialController extends Controller
     public function updateTestimonial(Request $request, $id)
     {
         // Queries
-        $business_card = BusinessCard::where('card_id', $id)->first();
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
 
         // Check business card
         if ($business_card == null) {
@@ -78,13 +78,13 @@ class TestimonialController extends Controller
 
             // Get plan details
             $plan = DB::table('users')->where('user_id', Auth::user()->user_id)->where('status', 1)->first();
-            $plan_details = json_decode($plan->plan_details);
+            $plan_details = !empty($plan->plan_details) ? json_decode($plan->plan_details) : null;
 
             // Check reviewer name
-            if ($request->reviewer_name != null) {
+            if (is_array($request->reviewer_name)) {
 
                 // Check Testimonials limit
-                if (count($request->reviewer_name) <= $plan_details->no_testimonials) {
+                if (count($request->reviewer_name) <= ($plan_details->no_testimonials ?? 0)) {
 
                     // Get temporary title before delete
                     $temp_title = Testimonial::where('card_id', $id)->first();

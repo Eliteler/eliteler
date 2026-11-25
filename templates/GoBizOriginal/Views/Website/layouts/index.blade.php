@@ -1,5 +1,8 @@
 @php
     use Illuminate\Support\Facades\DB;
+    use App\Services\GoBizCommonService;
+
+    $settings = is_object($settings ?? null) ? $settings : GoBizCommonService::settings();
 
     // Queries
     $supportPage = DB::table('pages')->where('page_name', 'footer')->orWhere('page_name', 'contact')->get();
@@ -29,7 +32,7 @@
     @endif
 
     {{-- Google verification --}}
-    @if (isset($setting) && $setting)
+    @if (isset($setting) && $setting && is_object($settings))
         <meta name="google-site-verification" content="{{ $settings->google_key }}">
         <link rel="icon" href="{{ asset($settings->favicon) }}" sizes="96x96" type="image/png" />
     @endif
@@ -51,9 +54,9 @@
     <script type="text/javascript" src="{{ asset('gobiz_original_assets/js/alpine.min.js') }}"></script>
     <script type="text/javascript" src="{{ asset('gobiz_original_assets/js/sweetalert.min.js') }}"></script>
 
-    @if (isset($setting) && $setting)
+    @if (is_object($settings))
         {{-- Check Google Analytics is "enabled" --}}
-        @if (!empty($settings->google_analytics_id) && (Cookie::get('laravel_cookie_consent') === '1' || env('COOKIE_CONSENT_ENABLED') == ""))
+        @if (!empty($settings->google_analytics_id) && (Cookie::get('laravel_cookie_consent') === '1' || !config('cookie-consent.enabled') || env('COOKIE_CONSENT_ENABLED') == "" || env('COOKIE_CONSENT_ENABLED') == false))
             <!-- Global site tag (gtag.js) - Google Analytics -->
             <script async src="https://www.googletagmanager.com/gtag/js?id={{ $settings->google_analytics_id }}"></script>
             <script>
@@ -68,7 +71,7 @@
             </script>
         @endif
 
-        @if ($settings->google_adsense_code != 'DISABLE_ADSENSE_ONLY' && (Cookie::get('laravel_cookie_consent') === '1' || env('COOKIE_CONSENT_ENABLED') == ""))
+        @if (!empty($settings->google_adsense_code) && $settings->google_adsense_code !== 'DISABLE_ADSENSE_ONLY' && (Cookie::get('laravel_cookie_consent') === '1' || !config('cookie-consent.enabled') || env('COOKIE_CONSENT_ENABLED') == "" || env('COOKIE_CONSENT_ENABLED') == false))
             {{-- AdSense code --}}
             <script async
                 src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ $settings->google_adsense_code }}"
@@ -77,7 +80,7 @@
     @endif
 
     {{-- Pusher --}}
-    @if (env('PUSHER_BEAMS_ENABLED') == '1' && (Cookie::get('laravel_cookie_consent') === '1' || env('COOKIE_CONSENT_ENABLED') == ""))
+    @if (env('PUSHER_BEAMS_ENABLED') == '1' && (Cookie::get('laravel_cookie_consent') === '1' || !config('cookie-consent.enabled') || env('COOKIE_CONSENT_ENABLED') == "" || env('COOKIE_CONSENT_ENABLED') == false))
         <script src="{{ asset('gobiz_original_assets/js/pusher.js') }}"></script>
         <script>
             document.addEventListener('DOMContentLoaded', function() {
@@ -175,11 +178,11 @@
     @endif
 
     {{-- Tawk.to Chat --}}
-    @if (isset($settings) && $settings)
+    @if (is_object($settings))
         @if (
             $settings->tawk_chat_bot_key != null &&
                 $config[40]->config_value != '1' &&
-                (Cookie::get('laravel_cookie_consent') === '1' || env('COOKIE_CONSENT_ENABLED') == ""))
+                (Cookie::get('laravel_cookie_consent') === '1' || !config('cookie-consent.enabled') || env('COOKIE_CONSENT_ENABLED') == "" || env('COOKIE_CONSENT_ENABLED') == false))
             <!--Start of Tawk.to Script-->
             <script>
                 (function($) {

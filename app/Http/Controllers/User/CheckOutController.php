@@ -265,6 +265,14 @@ class CheckOutController extends Controller
 
                     return redirect()->route('user.plans')->with('success', trans($selected_plan->plan_name) . ' ' . trans('Trial Plan Activated!'));
                 } else {
+                    // React panel has its own checkout for paid plans (every check above
+                    // has run; payment errors come back here and are passed on too)
+                    if (\App\Support\Plugins\UserPluginPage::reactPanel() && \Illuminate\Support\Facades\Route::has('user.dashboard.plans.checkout')) {
+                        session()->reflash();
+
+                        return redirect()->route('user.dashboard.plans.checkout', $selected_plan->plan_id);
+                    }
+
                     // Queries
                     $settings = Setting::where('status', 1)->first();
                     $config = DB::table('config')->get();

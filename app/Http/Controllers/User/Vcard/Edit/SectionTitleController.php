@@ -45,7 +45,7 @@ class SectionTitleController extends Controller
         // Get plan & card info
         $plan = User::where('user_id', Auth::user()->user_id)->where('status', 1)->first();
         $plan_details = json_decode($plan->plan_details);
-        $business_card = BusinessCard::where('card_id', $id)->first();
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
         $settings      = Setting::where('status', 1)->first();
 
         if (!$business_card) {
@@ -97,6 +97,11 @@ class SectionTitleController extends Controller
     // Update section title
     public function updateSectionTitle(Request $request, $id)
     {
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
+        if (!$business_card) {
+            return redirect()->route('user.cards')->with('failed', trans('Card not found!'));
+        }
+
         $validator = Validator::make($request->all(), [
             'titles' => 'required|array',
             'titles.*' => 'required|string|max:255',

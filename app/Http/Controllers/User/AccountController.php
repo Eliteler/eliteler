@@ -15,6 +15,9 @@ namespace App\Http\Controllers\User;
 use App\BusinessCard;
 use App\Helpers\StorageHelper;
 use App\Http\Controllers\Controller;
+use App\Rules\NotDisposableEmail;
+use App\Rules\NotReservedEmail;
+use App\Services\Security\ReservedEmailService;
 use App\Setting;
 use App\User;
 use Illuminate\Http\Request;
@@ -64,10 +67,16 @@ class AccountController extends Controller
     {
         // Check profile image
         if ($request->profile_picture == null) {
+            $emailRules = ['required', 'string', 'email'];
+            if ((int) Auth::user()->role_id === 2) {
+                $emailRules[] = new NotReservedEmail();
+                $emailRules[] = new NotDisposableEmail();
+            }
+
             // Validate
             $validator = Validator::make($request->all(), [
                 'name'  => 'required',
-                'email' => 'required'
+                'email' => $emailRules,
             ]);
 
             if ($validator->fails()) {
@@ -137,9 +146,13 @@ class AccountController extends Controller
     {
         // Validate
         $validator = Validator::make($request->all(), [
-            'new_password'     => 'required',
-            'confirm_password' => 'required',
+            'new_password'     => 'required|string|min:6|max:100',
+            'confirm_password' => 'required|string|min:6|max:100',
         ]);
+
+        if ($validator->fails()) {
+            return back()->with('failed', $validator->messages()->all()[0])->withInput();
+        }
 
         // Check password and confirm password
         if ($request->new_password == $request->confirm_password) {
@@ -147,10 +160,6 @@ class AccountController extends Controller
             User::where('user_id', Auth::user()->user_id)->update([
                 'password' => bcrypt($request->new_password),
             ]);
-
-            if ($validator->fails()) {
-                return back()->with('failed', $validator->messages()->all()[0])->withInput();
-            }
 
             return redirect()->route('user.change.password')->with('success', trans('Updated!'));
         } else {

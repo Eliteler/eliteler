@@ -6,6 +6,7 @@ import { formatCurrency, formatNumber } from "@admin/lib/format";
 import { cn } from "@admin/lib/utils";
 
 import { change, type Kpis } from "../types";
+import { OtherCurrencies } from "./other-currencies";
 import { TrendBadge } from "./trend-badge";
 
 export function KpiCards({ kpis, periodLabel }: { kpis: Kpis; periodLabel: string }) {
@@ -21,8 +22,10 @@ export function KpiCards({ kpis, periodLabel }: { kpis: Kpis; periodLabel: strin
                       title: t("Revenue"),
                       value: formatCurrency(kpis.revenue.current, currency),
                       trend: change(kpis.revenue),
-                      note: t("Plans, NFC cards and AI credits"),
+                      note: t("Plans, smart products and AI credits"),
                       sub: `${t("Previous period")}: ${formatCurrency(kpis.revenue.previous, currency)}`,
+                      // Other currencies aren't added to the total (no exchange rates)
+                      others: kpis.revenue.others,
                   },
               ]
             : []),
@@ -67,6 +70,7 @@ export function KpiCards({ kpis, periodLabel }: { kpis: Kpis; periodLabel: strin
                         <div className="text-muted-foreground">
                             {card.trend !== null ? `${card.sub} (${periodLabel})` : card.sub}
                         </div>
+                        {"others" in card && card.others && <OtherCurrencies others={card.others} />}
                     </CardFooter>
                 </Card>
             ))}

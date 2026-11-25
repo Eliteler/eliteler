@@ -234,7 +234,7 @@ class CustomerPlanService
             'transaction_id' => $transaction->gobiz_transaction_id,
             'invoice_id'     => ($transaction->invoice_prefix ?? 'INV-') . $transaction->invoice_number,
             'plan_name'      => $plan->plan_name,
-            'currency'       => $config->get('currency', 'USD'),
+            'currency'       => $transaction->transaction_currency ?: $config->get('currency', 'USD'),
             'amount'         => $transaction->transaction_amount,
             'payment_method' => 'Offline (Admin Upgrade)',
         ]);
@@ -254,7 +254,8 @@ class CustomerPlanService
             'from_billing_zipcode' => $config->get('invoice_zipcode'),
             'gobiz_transaction_id' => $transaction->gobiz_transaction_id,
             'to_billing_name'      => $user->billing_name,
-            'invoice_currency'     => $config->get('currency'),
+            // An older pending payment keeps the currency it was made in
+            'invoice_currency'     => $transaction->transaction_currency ?: $config->get('currency'),
             'subtotal'             => round((float) $invoice['subtotal'], 2),
             'tax_amount'           => round((float) $invoice['tax_amount'], 2),
             'applied_coupon'       => null,

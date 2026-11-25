@@ -8,6 +8,8 @@ export type NavLink = {
     svg?: string | null;
     /** Unread count shown next to the title (0 = none) */
     badge?: number;
+    /** Short label next to the title, e.g. "New" */
+    tag?: string | null;
     inertia: boolean;
     action: NavAction | null;
     isActive: boolean;
@@ -17,6 +19,8 @@ export type NavGroup = {
     title: string;
     icon: string;
     isActive: boolean;
+    /** Short label next to the title, e.g. "New" */
+    tag?: string | null;
     items: NavLink[];
 };
 
@@ -40,6 +44,9 @@ export type CurrencySettings = {
     decimals: number;
     format: string;
 };
+
+/** Symbol rules per ISO code (all currencies, disabled ones too). */
+export type CurrencyMap = Record<string, { symbol: string; symbolFirst: boolean }>;
 
 export type AdminUser = {
     id: number;
@@ -73,6 +80,8 @@ export type SharedProps = {
     };
     navigation: NavSection[];
     currency: CurrencySettings;
+    /** Named so it doesn't clash with the customer panel's `currencies` list (shared PageProps type). */
+    currencySymbols: CurrencyMap;
     locale: {
         current: string;
         dir: "ltr" | "rtl";

@@ -1,9 +1,8 @@
-import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
+import { Head, router, useForm, usePage } from "@inertiajs/react";
 import {
     ArrowUpCircle,
     ArrowUpRight,
     CheckCircle2,
-    ExternalLink,
     FileText,
     LayoutTemplate,
     Loader2,
@@ -13,13 +12,19 @@ import {
     Trash2,
     Upload,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { ConfirmDialog } from "@admin/components/confirm-dialog";
 import { EmptyState } from "@admin/components/empty-state";
 import { FieldError } from "@admin/components/field-error";
 import { PageHeader } from "@admin/components/page-header";
+import { Pagination } from "@admin/components/pagination";
+import { MarketplaceCard, type MarketplaceItem } from "@admin/components/marketplace-card";
+import {
+    MarketplaceUpdateBadge,
+    MarketplaceUpdateButton,
+} from "@admin/components/marketplace-update";
 import { ZipDropzone } from "@admin/components/zip-dropzone";
 import { Badge } from "@admin/components/ui/badge";
 import { Button } from "@admin/components/ui/button";
@@ -38,18 +43,14 @@ import {
     DropdownMenuTrigger,
 } from "@admin/components/ui/dropdown-menu";
 import { Tabs, TabsList, TabsTrigger } from "@admin/components/ui/tabs";
-import {
-    loadMarketplace,
-    openMarketplacePage,
-    type MarketItem,
-} from "@admin/lib/marketplace";
 import { cn } from "@admin/lib/utils";
-import type { PluginNotice } from "@admin/types";
+import type { Paginated, PluginNotice } from "@admin/types";
 
 type Template = {
     id: string;
     name: string;
     version: string | null;
+    updateVersion: string | null;
     image: string | null;
     active: boolean;
     builtIn: boolean;
@@ -58,50 +59,34 @@ type Template = {
     legacy: boolean;
 };
 
-type PaginationLinks = {
-    url: string | null;
-    label: string;
-    active: boolean;
-};
-
-type Paginated<T> = {
-    data: T[];
-    links: PaginationLinks[];
-    current_page: number;
-    last_page: number;
-    from: number | null;
-    to: number | null;
-    total: number;
-};
-
 type Props = {
-    templates: Paginated<Template> | Template[];
+    templates: Paginated<Template> | null;
+    activeTemplateName: string | null;
+    marketplace: Paginated<MarketplaceItem> | null;
+    tab: "installed" | "updates" | "marketplace";
+    counts: { installed: number; updates: number | null; marketplace: number };
     maxUploadKb: number;
 };
 
-type Tab = "installed" | "marketplace";
-
-const MARKETPLACE_DATA = "https://gobizsaas.com/data/templates.json";
-
 type Pending = { template: Template; action: "activate" | "delete" };
 
-export default function WebTemplates({ templates, maxUploadKb }: Props) {
+export default function WebTemplates({
+    templates,
+    activeTemplateName,
+    marketplace,
+    tab,
+    counts,
+    maxUploadKb,
+}: Props) {
     const { t } = useTranslation();
     const [uploading, setUploading] = useState(false);
     const [pending, setPending] = useState<Pending | null>(null);
     const [processing, setProcessing] = useState(false);
 
-    // Safely extract templates list whether paginated or plain array
-    const templateList: Template[] = Array.isArray(templates)
-        ? templates
-        : templates && Array.isArray(templates.data)
-          ? templates.data
-          : [];
+    const templateList = templates?.data ?? [];
+    const marketplaceItems = marketplace?.data ?? [];
+    const pagination = marketplace ?? templates;
 
-    // Extract pagination metadata
-    const pagination = Array.isArray(templates) ? null : templates;
-
-    const active = templateList.find((template) => template.active);
     const { flash } = usePage().props;
     const [notice, setNotice] = useState<PluginNotice | null>(null);
 
@@ -111,27 +96,12 @@ export default function WebTemplates({ templates, maxUploadKb }: Props) {
         [flash.template_notice],
     );
 
-    const [tab, setTab] = useState<Tab>("installed");
-    const [market, setMarket] = useState<MarketItem[] | null>(null);
-    const [loadingMarket, setLoadingMarket] = useState(false);
-    const installed = useMemo(
-        () => new Map(templateList.map((template) => [template.id, template])),
-        [templateList],
-    );
-
-    // Loaded once per visit; if the list can't be loaded, open the marketplace website instead
-    const openMarketplace = async () => {
-        if (market) return setTab("marketplace");
-
-        setLoadingMarket(true);
-        try {
-            setMarket(await loadMarketplace(MARKETPLACE_DATA, "template_id"));
-            setTab("marketplace");
-        } catch {
-            openMarketplacePage();
-        } finally {
-            setLoadingMarket(false);
-        }
+    const changeTab = (value: string) => {
+        router.get(
+            route("admin.web-templates"),
+            value === "installed" ? {} : { tab: value },
+            { preserveState: true, preserveScroll: true, replace: true },
+        );
     };
 
     const run = () => {
@@ -181,62 +151,49 @@ export default function WebTemplates({ templates, maxUploadKb }: Props) {
                     }
                 />
 
-                <Tabs
-                    value={tab}
-                    onValueChange={(value) =>
-                        value === "marketplace"
-                            ? openMarketplace()
-                            : setTab(value as Tab)
-                    }
-                >
-                    <TabsList>
+                <Tabs value={tab} onValueChange={changeTab}>
+                    <TabsList className="h-auto flex-wrap justify-start">
                         <TabsTrigger value="installed">
                             {t("Installed")}
                             <span className="text-muted-foreground tabular-nums">
-                                {pagination
-                                    ? pagination.total
-                                    : templateList.length}
+                                {counts.installed}
                             </span>
                         </TabsTrigger>
-                        <TabsTrigger
-                            value="marketplace"
-                            disabled={loadingMarket}
-                            aria-busy={loadingMarket}
-                        >
-                            {loadingMarket ? (
-                                <Loader2 className="animate-spin" />
-                            ) : (
-                                <Store />
-                            )}
-                            {t("Marketplace")}
-                            {market ? (
+                        {counts.updates !== null && (
+                            <TabsTrigger value="updates">
+                                {t("Updates")}
                                 <span className="text-muted-foreground tabular-nums">
-                                    {market.length}
+                                    {counts.updates}
                                 </span>
-                            ) : (
-                                <Badge className="h-4 px-1.5 text-[10px] leading-none">
-                                    {t("New")}
-                                </Badge>
-                            )}
-                        </TabsTrigger>
+                            </TabsTrigger>
+                        )}
+                        {counts.marketplace > 0 && (
+                            <TabsTrigger value="marketplace">
+                                <Store />
+                                {t("Marketplace")}
+                                <span className="text-muted-foreground tabular-nums">{counts.marketplace}</span>
+                            </TabsTrigger>
+                        )}
                     </TabsList>
                 </Tabs>
 
                 {tab === "marketplace" ? (
                     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                        {(market ?? []).map((item) => (
-                            <MarketplaceCard
-                                key={item.id}
-                                item={item}
-                                installed={installed.get(item.id)}
-                            />
+                        {marketplaceItems.map((item) => (
+                            <MarketplaceCard key={item.id} item={item} template />
                         ))}
                     </div>
                 ) : templateList.length === 0 ? (
                     <EmptyState
-                        icon={LayoutTemplate}
-                        title={t("No templates installed")}
-                        description={t("Install a template from a .zip file.")}
+                        icon={tab === "updates" ? ArrowUpCircle : LayoutTemplate}
+                        title={
+                            tab === "updates"
+                                ? t("No template updates available")
+                                : t("No templates installed")
+                        }
+                        description={
+                            tab === "installed" ? t("Install a template from a .zip file.") : undefined
+                        }
                     />
                 ) : (
                     <>
@@ -268,6 +225,9 @@ export default function WebTemplates({ templates, maxUploadKb }: Props) {
                                                 {t("Live on your website")}
                                             </Badge>
                                         )}
+                                        <MarketplaceUpdateBadge
+                                            version={template.updateVersion}
+                                        />
                                     </div>
                                     <CardContent className="flex items-start justify-between gap-2 p-4">
                                         <div className="flex min-w-0 flex-col gap-0.5">
@@ -332,6 +292,9 @@ export default function WebTemplates({ templates, maxUploadKb }: Props) {
                                             )}
                                     </CardContent>
                                     <CardFooter className="mt-auto flex flex-wrap gap-2 border-t p-3">
+                                        {template.updateVersion && (
+                                            <MarketplaceUpdateButton />
+                                        )}
                                         {template.pagesUrl && (
                                             <Button
                                                 variant="outline"
@@ -376,59 +339,9 @@ export default function WebTemplates({ templates, maxUploadKb }: Props) {
                             ))}
                         </div>
 
-                        {/* Pagination navigation controls */}
-                        {pagination && pagination.last_page > 1 && (
-                            <div className="flex flex-col items-center justify-between gap-4 border-t pt-4 sm:flex-row">
-                                <p className="text-sm text-muted-foreground">
-                                    {t("Showing :from to :to of :total results")
-                                        .replace(
-                                            ":from",
-                                            String(pagination.from ?? 0),
-                                        )
-                                        .replace(
-                                            ":to",
-                                            String(pagination.to ?? 0),
-                                        )
-                                        .replace(
-                                            ":total",
-                                            String(pagination.total),
-                                        )}
-                                </p>
-                                <div className="flex flex-wrap items-center gap-1">
-                                    {pagination.links.map((link, index) => {
-                                        if (!link.url) {
-                                            return (
-                                                <span
-                                                    key={index}
-                                                    className="inline-flex h-9 min-w-9 items-center justify-center rounded-md border border-transparent px-3 text-sm text-muted-foreground/50 opacity-50"
-                                                    dangerouslySetInnerHTML={{
-                                                        __html: link.label,
-                                                    }}
-                                                />
-                                            );
-                                        }
-                                        return (
-                                            <Link
-                                                key={index}
-                                                href={link.url}
-                                                preserveScroll
-                                                className={cn(
-                                                    "inline-flex h-9 min-w-9 items-center justify-center rounded-md border px-3 text-sm font-medium transition-colors",
-                                                    link.active
-                                                        ? "border-primary bg-primary text-primary-foreground"
-                                                        : "border-input bg-background hover:bg-muted text-foreground",
-                                                )}
-                                                dangerouslySetInnerHTML={{
-                                                    __html: link.label,
-                                                }}
-                                            />
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        )}
                     </>
                 )}
+                {pagination && <Pagination data={pagination} className="border-t pt-4" preserveState />}
             </div>
 
             <Dialog open={uploading} onOpenChange={setUploading}>
@@ -526,7 +439,7 @@ export default function WebTemplates({ templates, maxUploadKb }: Props) {
                               "Visitors see the new design right away. :current stays installed, so you can switch back.",
                           ).replace(
                               ":current",
-                              active?.name ?? t("The current template"),
+                              activeTemplateName ?? t("The current template"),
                           )
                         : t(
                               "The template's files are deleted from the server. You can install it again later.",
@@ -542,79 +455,6 @@ export default function WebTemplates({ templates, maxUploadKb }: Props) {
                 onConfirm={run}
             />
         </>
-    );
-}
-
-function MarketplaceCard({
-    item,
-    installed,
-}: {
-    item: MarketItem;
-    installed?: Template;
-}) {
-    const { t } = useTranslation();
-    const [logoFailed, setLogoFailed] = useState(false);
-
-    return (
-        <Card className="gap-0 overflow-hidden py-0">
-            <div className="flex aspect-[16/10] items-center justify-center overflow-hidden border-b bg-muted">
-                {item.logo && !logoFailed ? (
-                    <img
-                        src={item.logo}
-                        alt=""
-                        loading="lazy"
-                        onError={() => setLogoFailed(true)}
-                        className="size-full object-cover object-top"
-                    />
-                ) : (
-                    <LayoutTemplate className="size-10 text-muted-foreground" />
-                )}
-            </div>
-            <CardContent className="flex min-w-0 flex-col gap-1 p-4">
-                <div className="flex items-center gap-2">
-                    <span className="truncate font-medium" title={item.name}>
-                        {item.name}
-                    </span>
-                    {installed && (
-                        <Badge
-                            variant="outline"
-                            className="ms-auto shrink-0 border-success/30 text-success"
-                        >
-                            <CheckCircle2 />
-                            {t("Installed")}
-                        </Badge>
-                    )}
-                </div>
-                {item.description && (
-                    <p className="line-clamp-2 text-sm text-muted-foreground">
-                        {item.description}
-                    </p>
-                )}
-            </CardContent>
-            <CardFooter className="mt-auto flex justify-end gap-2 border-t p-3">
-                {installed ? (
-                    installed.pagesUrl && (
-                        <Button variant="outline" size="sm" asChild>
-                            <a href={installed.pagesUrl}>
-                                <ExternalLink />
-                                {t("Open")}
-                            </a>
-                        </Button>
-                    )
-                ) : (
-                    <Button size="sm" asChild>
-                        <a
-                            href={item.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            {t("Download")}
-                            <ArrowUpRight />
-                        </a>
-                    </Button>
-                )}
-            </CardFooter>
-        </Card>
     );
 }
 

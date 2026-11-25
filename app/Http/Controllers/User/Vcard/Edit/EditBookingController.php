@@ -42,7 +42,7 @@ class EditBookingController extends Controller
     // Edit Booking
     public function editBooking(Request $request, $id)
     {
-        $business_card = BusinessCard::where('card_id', $id)->first();
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
         $user = Auth::user();
         $plan = User::where('user_id', $user->user_id)->where('status', 1)->first();
         $settings = Setting::where('status', 1)->first();
@@ -75,6 +75,12 @@ class EditBookingController extends Controller
     // Update Booking
     public function updateBooking(Request $request, $id)
     {
+        // Check business card belongs to user
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
+        if (!$business_card) {
+            return redirect()->route('user.cards')->with('failed', trans('Card not found!'));
+        }
+
         $allDays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
         $selectedDays = $request->input('service_booking_available_days', []);
         $availableDays = [];
@@ -111,9 +117,6 @@ class EditBookingController extends Controller
         } elseif ($serviceBooking) {
             $serviceBooking->delete();
         }
-
-        // Queries
-        $business_card = BusinessCard::where('card_id', $id)->first();
 
         // Check business card
         $plan = User::where('user_id', Auth::user()->user_id)->where('status', 1)->first();

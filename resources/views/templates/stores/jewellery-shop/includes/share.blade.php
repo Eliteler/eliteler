@@ -8,7 +8,7 @@
     // URL-encoded strings for social sharing
     $encodedTitle = urlencode($shareTitle);
     $encodedUrl = urlencode($shareUrl);
-    $waShareText = urlencode("💎 Check out {$shareTitle} on {$brandTitle}:\n{$shareUrl}");
+    $waShareText = rawurlencode("💎 Check out {$shareTitle} on {$brandTitle}:\n{$shareUrl}");
 
     // Dynamic Social Share Endpoints
     $waShareLink = "https://api.whatsapp.com/send?text={$waShareText}";

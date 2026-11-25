@@ -23,7 +23,7 @@ class WebsiteNFCCardOrderController extends Controller
         }
 
         // Available NFC Cards
-        $availableNfcCards = NfcCardDesign::where('status', 1)->get();
+        $availableNfcCards = NfcCardDesign::where('status', 1)->orderBy('sort_order')->orderBy('id')->get();
 
         return view($web_template . '::Website.pages.nfc-order.index', compact('availableNfcCards', 'settings', 'config'));
     }

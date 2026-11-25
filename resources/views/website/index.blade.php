@@ -439,13 +439,13 @@
                                             {{ __('Custom Domain') }}</p>
                                         <span class="bg-green-100 text-green-800 text-xs font-medium mx-1 me-2 px-2 py-0.5 rounded dark:bg-green-900 dark:text-green-300">{{ __('New') }}</span>
                                     </li>
-                                    {{-- NFC Card --}}
-                                    @if($config[76]->config_value == '1')
+                                    {{-- Smart Products (module on, listed by the plan) --}}
+                                    @if($config[76]->config_value == '1' && (int) ($plan->show_nfc_card_feature ?? 1) === 1)
                                     <li class="flex items-center font-heading font-medium text-base text-gray-400">
                                         <i class="ti ti-{{ __($plan->nfc_card == '1' ? 'check' : 'x') }} mr-2.5 text-{{ $plan->nfc_card == '1' || $plan->recommended == 1 ? 'green-500' : 'gray-400' }}"
                                             style="font-size: 20px;"></i>
                                         <p class="text-{{ $plan->recommended == 1 ? 'white' : 'black' }}">
-                                            {{ __('Order NFC Card') }}</p>
+                                            {{ __('Smart Products') }}</p>
                                         <span class="bg-green-100 text-green-800 text-xs font-medium mx-1 me-2 px-2 py-0.5 rounded dark:bg-green-900 dark:text-green-300">{{ __('New') }}</span>
                                     </li>
                                     @endif

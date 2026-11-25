@@ -1,5 +1,6 @@
 import { Head, useForm, usePage } from "@inertiajs/react";
-import { Check, Loader2 } from "lucide-react";
+import { Check, ExternalLink, Loader2 } from "lucide-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Combobox, type ComboboxOption } from "@admin/components/combobox";
@@ -14,6 +15,13 @@ import {
     CardHeader,
     CardTitle,
 } from "@admin/components/ui/card";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@admin/components/ui/dialog";
 import { Input } from "@admin/components/ui/input";
 import { Label } from "@admin/components/ui/label";
 import {
@@ -27,6 +35,12 @@ import { Switch } from "@admin/components/ui/switch";
 import { Textarea } from "@admin/components/ui/textarea";
 import { ACCENTS, type Accent, saveAccent } from "@admin/lib/theme";
 import { cn } from "@admin/lib/utils";
+import { router } from "@inertiajs/react";
+
+import {
+    PersonalizedLinkSettings,
+    type PersonalizedLinkSettingsProps,
+} from "./components/personalized-link-settings";
 
 type Values = {
     app_theme: string;
@@ -61,6 +75,7 @@ type Props = {
         languages: ComboboxOption[];
     };
     maxUploadKb: number;
+    personalizedLinks: PersonalizedLinkSettingsProps;
 };
 
 type FormData = Values & {
@@ -74,10 +89,10 @@ export default function GeneralSettings({
     images,
     options,
     maxUploadKb,
+    personalizedLinks,
 }: Props) {
     const { t } = useTranslation();
 
-    // Explicitly set default app_theme fallback to prevent undefined values
     const form = useForm<FormData>({
         ...values,
         app_theme: values.app_theme || "blue",
@@ -86,6 +101,7 @@ export default function GeneralSettings({
         favi_icon: null,
     });
     const { data, setData, errors } = form;
+
     const timezones = options.timezones.map((zone) => ({
         value: zone,
         label: zone.replaceAll("_", " "),
@@ -103,8 +119,21 @@ export default function GeneralSettings({
     const isThemeChanged = data.app_theme !== (values.app_theme || "blue");
     const canSubmit = form.isDirty || isThemeChanged;
 
+    // Changing the base currency: confirm first and list what to review
+    const [confirmCurrency, setConfirmCurrency] = useState(false);
+    const currencyChanged = data.currency !== values.currency;
+
     const submit = (event: React.FormEvent) => {
         event.preventDefault();
+        if (currencyChanged) {
+            setConfirmCurrency(true);
+            return;
+        }
+        send();
+    };
+
+    const send = () => {
+        setConfirmCurrency(false);
         form.transform((current) => ({
             ...current,
             show_website: current.show_website ? 1 : 0,
@@ -114,13 +143,15 @@ export default function GeneralSettings({
         form.post(route("admin.change.general.settings"), {
             forceFormData: true,
             preserveScroll: true,
-            onSuccess: () =>
+            onSuccess: () => {
                 setData((current) => ({
                     ...current,
                     site_logo: null,
                     site_logo_light: null,
                     favi_icon: null,
-                })),
+                }));
+                router.reload({ only: ["locale"] });
+            },
         });
     };
 
@@ -304,6 +335,8 @@ export default function GeneralSettings({
                             }
                         />
                     </Section>
+
+                    <PersonalizedLinkSettings {...personalizedLinks} />
 
                     <Section
                         title={t("Language and region")}
@@ -594,7 +627,139 @@ export default function GeneralSettings({
                     </Button>
                 </div>
             </form>
+
+            <CurrencyChangeDialog
+                open={confirmCurrency}
+                from={values.currency}
+                to={data.currency}
+                processing={form.processing}
+                onCancel={() => setConfirmCurrency(false)}
+                onConfirm={send}
+            />
         </>
+    );
+}
+
+/**
+ * Shown before the base currency changes. Past payments keep the currency
+ * they were paid in, but prices are plain numbers: after the switch they are
+ * read in the new currency, so the admin should review them.
+ */
+function CurrencyChangeDialog({
+    open,
+    from,
+    to,
+    processing,
+    onCancel,
+    onConfirm,
+}: {
+    open: boolean;
+    from: string;
+    to: string;
+    processing: boolean;
+    onCancel: () => void;
+    onConfirm: () => void;
+}) {
+    const { t } = useTranslation();
+    const { features, permissions } = usePage().props;
+    const can = (key: string) => permissions[key] === true;
+
+    // Only what this site uses and this admin can open
+    const items = [
+        {
+            show: can("plans"),
+            label: t("Plan prices"),
+            href: route("admin.plans"),
+        },
+        {
+            show: features.nfc && can("nfc_card_design"),
+            label: t("Smart Product prices and the shipping fee"),
+            href: route("admin.designs"),
+        },
+        {
+            show: features.aibuilder,
+            label: t("AI credit packs"),
+            href: route("admin.ai.credits.plans"),
+        },
+        {
+            show: can("coupons"),
+            label: t("Fixed-amount coupons"),
+            href: route("admin.coupons"),
+        },
+        {
+            show: features.referral,
+            label: t("Referral commission and minimum withdrawal"),
+            href: route("admin.referral.system.configuration"),
+        },
+    ].filter((item) => item.show);
+
+    return (
+        <Dialog open={open} onOpenChange={(value) => !value && onCancel()}>
+            <DialogContent className="sm:max-w-lg">
+                <DialogHeader>
+                    <DialogTitle>
+                        {t("Change the currency from :from to :to?")
+                            .replace(":from", from)
+                            .replace(":to", to)}
+                    </DialogTitle>
+                    <DialogDescription>
+                        {t(
+                            "Past payments, invoices and orders keep the currency they were paid in. Nothing is converted.",
+                        )}
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div className="flex flex-col gap-3 text-sm">
+                    {items.length > 0 && (
+                        <>
+                            <p>
+                                {t(
+                                    "Prices are saved as plain numbers, so after the change they are read in :to. Review them:",
+                                ).replace(":to", to)}
+                            </p>
+                            <ul className="flex flex-col gap-1.5">
+                                {items.map((item) => (
+                                    <li key={item.label}>
+                                        <a
+                                            href={item.href}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="inline-flex items-center gap-1.5 font-medium hover:underline"
+                                        >
+                                            {item.label}
+                                            <ExternalLink className="size-3.5 text-muted-foreground" />
+                                        </a>
+                                    </li>
+                                ))}
+                            </ul>
+                        </>
+                    )}
+                    <p className="text-muted-foreground">
+                        {t(
+                            "Revenue totals count :to payments only; :from payments are listed separately.",
+                        )
+                            .replace(":to", to)
+                            .replace(":from", from)}
+                        {features.referral &&
+                            ` ${t("Referral balances earned in :from stay in the history but can't be withdrawn.").replace(":from", from)}`}
+                    </p>
+                </div>
+
+                <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                    <Button
+                        variant="outline"
+                        onClick={onCancel}
+                        disabled={processing}
+                    >
+                        {t("Cancel")}
+                    </Button>
+                    <Button onClick={onConfirm} disabled={processing}>
+                        {processing && <Loader2 className="animate-spin" />}
+                        {t("Change currency")}
+                    </Button>
+                </div>
+            </DialogContent>
+        </Dialog>
     );
 }
 

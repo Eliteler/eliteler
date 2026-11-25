@@ -6,6 +6,21 @@
             .container {
                 max-width: 100% !important;
             }
+
+            #gobiz-support-widget {
+                display: none !important;
+            }
+
+            #invoice-card,
+            #invoice-card.card,
+            #invoice-card #invoice,
+            #invoice-card .card-body {
+                border: none !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                outline: none !important;
+                background: transparent !important;
+            }
         }
     </style>
     <script src="{{ asset('js/html2pdf.bundle.min.js') }}"></script>
@@ -122,7 +137,7 @@
                     </div>
                 @endif
 
-                <div class="card card-lg">
+                <div class="card card-lg border-0 shadow-sm" id="invoice-card">
                     {{-- Invoice parameters --}}
                     @php
                         // Ensure billing details array is safely extracted
@@ -140,13 +155,15 @@
                             'payment_transaction_id' => $transaction->transaction_id,
                         ];
 
+                        // Price actually paid (before tax), in the payment's currency. The plan's
+                        // current price or currency may have changed since.
+                        $paidPrice = (float) ($billingData['subtotal'] ?? $planDetails->plan_price);
+
                         // Build dynamic item title
                         $itemTitle =
                             __($planDetails->plan_name) .
                             ' - ' .
-                            (function_exists('formatCurrency')
-                                ? formatCurrency($planDetails->plan_price)
-                                : $planDetails->plan_price) .
+                            formatMoney($paidPrice, $normalizedTransaction->currency) .
                             '/' .
                             $term;
                     @endphp
@@ -181,11 +198,14 @@
                     
                         // Line item details
                         'itemTitle' => $itemTitle,
+                        'itemQty' => 1,
+                        'itemRate' => $paidPrice,
+                        'itemAmount' => $paidPrice,
                         'planDetails' => (object) [
                             'plan_name' => $itemTitle,
                             'no_of_ai_credits' => null,
                             'quantity' => 1,
-                            'plan_price' => $planDetails->plan_price,
+                            'plan_price' => $paidPrice,
                         ],
                     
                         // Billing summary

@@ -10,7 +10,7 @@
  |--------------------------------------------------------------------------
 */
 
-namespace Modules\TranslationManager\App\Providers;
+namespace Modules\TranslationManager\app\Providers;
 
 /**
  * TranslationPlaceholderProtector
@@ -227,4 +227,8 @@ class TranslationPlaceholderProtector
 
         return $index - 1;
     }
+}
+
+if (!class_exists('Modules\TranslationManager\App\Providers\TranslationPlaceholderProtector', false)) {
+    class_alias(TranslationPlaceholderProtector::class, 'Modules\TranslationManager\App\Providers\TranslationPlaceholderProtector');
 }

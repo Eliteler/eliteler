@@ -1,11 +1,12 @@
 import { Head, Link, router, useForm } from "@inertiajs/react";
 import axios from "axios";
-import { KeyRound, Link2, Link2Off, Loader2, Mail, MoreHorizontal, Plus, Trash2 } from "lucide-react";
+import { Copy, KeyRound, Link2, Link2Off, Loader2, Mail, MoreHorizontal, Nfc, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { ConfirmDialog } from "@admin/components/confirm-dialog";
 import { CopyButton } from "@admin/components/copy-button";
+import { WriteNfcDialog } from "@admin/components/write-nfc-dialog";
 import { EmptyState } from "@admin/components/empty-state";
 import { FieldError } from "@admin/components/field-error";
 import { PageHeader } from "@admin/components/page-header";
@@ -26,6 +27,7 @@ import { Label } from "@admin/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@admin/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@admin/components/ui/table";
 import { formatDate } from "@admin/lib/date";
+import { toast } from "@admin/lib/toast";
 import { cn } from "@admin/lib/utils";
 import type { Paginated } from "@admin/types";
 
@@ -65,6 +67,17 @@ export default function NfcKeys({ keys, filters, counts, plans, designs, open }:
         open?.startsWith("link:") ? (keys.data.find((row) => row.id === open.slice(5)) ?? null) : null,
     );
     const [pending, setPending] = useState<{ row: KeyRow; action: "unlink" | "delete" } | null>(null);
+    // NFC link being written to a tag (Write to NFC tag)
+    const [writing, setWriting] = useState<string | null>(null);
+
+    const copyKey = async (key: string) => {
+        try {
+            await navigator.clipboard.writeText(key);
+            toast.success(t("Copied to clipboard"));
+        } catch {
+            toast.error(t("Could not copy. Select the text and copy it manually."));
+        }
+    };
     const [processing, setProcessing] = useState(false);
 
     const run = () => {
@@ -155,8 +168,14 @@ export default function NfcKeys({ keys, filters, counts, plans, designs, open }:
                                     <TableRow key={row.id}>
                                         <TableCell className="ps-4">
                                             <div className="flex items-center gap-1">
-                                                <span className="font-mono text-sm font-medium select-all">{row.key}</span>
-                                                <CopyButton value={row.key} label={t("Copy key")} />
+                                                <div className="flex min-w-0 flex-col">
+                                                    <span className="font-mono text-sm font-medium select-all">{row.key}</span>
+                                                    {/* Full link to write onto the chip */}
+                                                    <span className="max-w-[260px] truncate font-mono text-xs text-muted-foreground select-all" dir="ltr" title={row.url}>
+                                                        {row.url}
+                                                    </span>
+                                                </div>
+                                                <CopyButton value={row.url} label={t("Copy NFC link")} />
                                             </div>
                                         </TableCell>
                                         <TableCell className="hidden max-w-[260px] md:table-cell">
@@ -205,7 +224,6 @@ export default function NfcKeys({ keys, filters, counts, plans, designs, open }:
                                         <TableCell className="hidden text-sm text-muted-foreground xl:table-cell">{formatDate(row.created)}</TableCell>
                                         <TableCell className="pe-4 text-end">
                                             <div className="flex justify-end gap-1">
-                                                <CopyButton value={row.url} label={t("Copy NFC link")} />
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
                                                         <Button variant="ghost" size="icon-sm" aria-label={t("Actions")}>
@@ -213,6 +231,15 @@ export default function NfcKeys({ keys, filters, counts, plans, designs, open }:
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end" className="w-52">
+                                                        <DropdownMenuItem onSelect={() => setWriting(row.url)}>
+                                                            <Nfc />
+                                                            {t("Write to NFC tag")}
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onSelect={() => void copyKey(row.key)}>
+                                                            <Copy />
+                                                            {t("Copy key")}
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
                                                         <DropdownMenuItem asChild>
                                                             <Link href={route("admin.key.greeting.letter", row.key)}>
                                                                 <Mail />
@@ -254,6 +281,7 @@ export default function NfcKeys({ keys, filters, counts, plans, designs, open }:
 
             <GenerateDialog open={generateOpen} onOpenChange={setGenerateOpen} plans={plans} designs={designs} />
             <LinkDialog row={linking} onClose={() => setLinking(null)} />
+            <WriteNfcDialog url={writing} open={writing !== null} onOpenChange={(open) => !open && setWriting(null)} />
             <ConfirmDialog
                 open={pending !== null}
                 onOpenChange={(value) => !value && setPending(null)}

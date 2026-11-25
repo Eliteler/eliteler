@@ -29,6 +29,12 @@ class PluginServiceProvider extends ServiceProvider
 
     public function boot()
     {
+        // Empty database (installer, first `php artisan migrate`): plugins set up
+        // their own tables from core tables, so they wait until those exist
+        if (! \App\Support\CoreDatabase::ready()) {
+            return;
+        }
+
         $pluginManager = app(PluginManager::class);
 
         // Legacy (Blade admin) plugins boot too: only their admin pages are locked

@@ -61,11 +61,6 @@ class TransactionNfcCardController extends Controller
             // Confirm "nfc_card" feature is actively compiled inside current subscription
             if (isset($active_plan->nfc_card) && $active_plan->nfc_card == 1) {
                 if ($request->ajax()) {
-                    // Pre-compile currency mapping data prior to iteration processing
-                    $currencies = Currency::where('status', 1)->pluck('symbol', 'iso_code')->toArray();
-                    $configCurrencyCode = isset($config[1]) ? $config[1]->config_value : 'USD';
-                    $currencySymbol = $currencies[$configCurrencyCode] ?? '$';
-
                     // Query builder instance passed directly to DataTable to enable database-level filtering/pagination
                     $nfc_card_transactions = NfcCardOrderTransaction::join('nfc_card_orders', 'nfc_card_order_transactions.nfc_card_order_id', '=', 'nfc_card_orders.nfc_card_order_id')
                         ->join('nfc_card_designs', 'nfc_card_orders.nfc_card_id', '=', 'nfc_card_designs.nfc_card_id')
@@ -76,6 +71,7 @@ class TransactionNfcCardController extends Controller
                             'nfc_card_order_transactions.payment_transaction_id',
                             'nfc_card_order_transactions.payment_method',
                             'nfc_card_order_transactions.amount',
+                            'nfc_card_order_transactions.currency',
                             'nfc_card_order_transactions.payment_status',
                             'nfc_card_order_transactions.created_at',
                             'users.id as fetched_user_id',
@@ -123,9 +119,10 @@ class TransactionNfcCardController extends Controller
                                 e(trans($transaction->payment_method)) .
                                 '</span>';
                         })
-                        ->editColumn('amount', function ($transaction) use ($currencySymbol) {
+                        ->editColumn('amount', function ($transaction) {
+                            // In the currency it was paid in, not today's base currency
                             return '<span class="fw-bold text-dark">' .
-                                e($currencySymbol) . number_format($transaction->amount, 2) .
+                                e(formatMoney($transaction->amount, $transaction->currency)) .
                                 '</span>';
                         })
                         ->editColumn('payment_status', function ($transaction) {
@@ -196,7 +193,11 @@ class TransactionNfcCardController extends Controller
             ->join('nfc_card_designs', 'nfc_card_orders.nfc_card_id', '=', 'nfc_card_designs.nfc_card_id')
             ->join('users', 'nfc_card_orders.user_id', '=', 'users.id')
             ->select('nfc_card_order_transactions.*', 'users.*', 'nfc_card_orders.nfc_card_order_id', 'nfc_card_orders.nfc_card_id', 'nfc_card_designs.nfc_card_name', 'nfc_card_designs.nfc_card_price', 'nfc_card_orders.status', 'nfc_card_orders.created_at', 'nfc_card_orders.updated_at', 'nfc_card_orders.order_details')
-            ->where('nfc_card_order_transactions.nfc_card_order_transaction_id', $transaction)->orWhere('nfc_card_order_transactions.payment_transaction_id', $transaction)->where('nfc_card_orders.user_id', Auth::user()->id)
+            ->where(function ($query) use ($transaction) {
+                $query->where('nfc_card_order_transactions.nfc_card_order_transaction_id', $transaction)
+                      ->orWhere('nfc_card_order_transactions.payment_transaction_id', $transaction);
+            })
+            ->where('nfc_card_orders.user_id', Auth::user()->id)
             ->first();
 
         // Check if the transaction exists

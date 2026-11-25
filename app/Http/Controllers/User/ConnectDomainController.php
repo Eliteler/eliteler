@@ -148,7 +148,7 @@ class ConnectDomainController extends Controller
                     'status' => "",
                     'emailSubject' => $emailTemplateDetails->email_template_subject,
                     'emailContent' => $emailTemplateDetails->email_template_content,
-                    'actionlink' => route('admin.custom.domain.requests'),
+                    'actionlink' => route('admin.custom.domain.requests', ['status' => 'pending']),
                     'appname' => config('app.name'),
                 ];
 

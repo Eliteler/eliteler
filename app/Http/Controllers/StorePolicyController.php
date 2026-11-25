@@ -142,8 +142,8 @@ class StorePolicyController extends Controller
                 $shareContent = str_replace("{ appName }", $config[0]->config_value, $shareContent);
             }
 
-            $url          = urlencode($url);
-            $shareContent = urlencode($shareContent);
+            $url          = rawurlencode($url);
+            $shareContent = rawurlencode($shareContent);
 
             // Set locale if not same as business card locale.
             $locale = Session::get('locale') ?? $business_card_details->card_lang ?? config('app.locale');

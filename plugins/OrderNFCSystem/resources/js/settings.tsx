@@ -1,17 +1,26 @@
 /*
- | NFC card ordering — admin settings.
+ | Smart Products ordering — admin settings.
  | Built into ../../dist with `npm run plugin:build -- OrderNFCSystem` and shipped in the zip.
  */
-import { Head, Link, useForm } from "@inertiajs/react";
+import { Head, Link, useForm, usePage } from "@inertiajs/react";
 import { Loader2, Nfc } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, FieldError, Input, Label, PageHeader, Switch } from "@gobiz/admin";
 
-type Values = { enable_disable_nfc_card_order: boolean; enable_disable_nfc_card_order_website: boolean; nfc_character_limit: string };
+type Values = {
+    enable_disable_nfc_card_order: boolean;
+    enable_disable_nfc_card_order_website: boolean;
+    nfc_character_limit: string;
+    smart_product_shipping_fee: string;
+    smart_product_free_shipping_above: string;
+};
+
+type Currency = { symbol?: string };
 
 export default function OrderNfcSettings({ values }: { values: Values }) {
     const { t } = useTranslation();
+    const { currency } = usePage().props as { currency?: Currency };
     const form = useForm(values);
     const { data, setData, errors } = form;
 
@@ -35,23 +44,47 @@ export default function OrderNfcSettings({ values }: { values: Values }) {
         </div>
     );
 
+    const money = (id: "smart_product_shipping_fee" | "smart_product_free_shipping_above", label: string, hint: string) => (
+        <div className="flex flex-col gap-2">
+            <Label htmlFor={id}>{label}</Label>
+            <div className="relative">
+                {currency?.symbol && (
+                    <span className="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">{currency.symbol}</span>
+                )}
+                <Input
+                    id={id}
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={data[id]}
+                    onChange={(event) => setData(id, event.target.value)}
+                    aria-invalid={!!errors[id]}
+                    className={currency?.symbol ? "ps-8" : undefined}
+                    required
+                />
+            </div>
+            <p className="text-xs text-muted-foreground">{hint}</p>
+            <FieldError message={errors[id]} />
+        </div>
+    );
+
     return (
         <>
-            <Head title={t("NFC card ordering")} />
+            <Head title={t("Smart Products")} />
             <form onSubmit={submit} className="flex flex-1 flex-col gap-6 p-4 lg:p-6">
                 <PageHeader
-                    title={t("NFC card ordering")}
-                    description={t("Let customers order physical NFC cards linked to their business card.")}
+                    title={t("Smart Products")}
+                    description={t("Sell NFC cards, stands, tags and other smart products to your customers.")}
                     breadcrumbs={[
                         { label: t("Dashboard"), href: route("admin.dashboard") },
                         { label: t("Plugins"), href: route("admin.plugins") },
-                        { label: t("NFC card ordering") },
+                        { label: t("Smart Products") },
                     ]}
                     actions={
                         <Button type="button" variant="secondary" asChild>
                             <Link href={route("admin.designs")}>
                                 <Nfc />
-                                {t("NFC card designs")}
+                                {t("Products")}
                             </Link>
                         </Button>
                     }
@@ -63,15 +96,26 @@ export default function OrderNfcSettings({ values }: { values: Values }) {
                             <CardTitle>{t("Ordering")}</CardTitle>
                         </CardHeader>
                         <CardContent className="flex flex-col gap-5">
-                            {toggle("enable_disable_nfc_card_order", t("Let customers order NFC cards"), t("Customers can order cards from their dashboard."))}
-                            {toggle("enable_disable_nfc_card_order_website", t("Show NFC cards on the website"), t("Adds the NFC cards section to your public website. Needs ordering turned on."))}
+                            {toggle("enable_disable_nfc_card_order", t("Let customers order Smart Products"), t("Customers can order products from their dashboard."))}
+                            {toggle("enable_disable_nfc_card_order_website", t("Show Smart Products on the website"), t("Adds the Smart Products section to your public website. Needs ordering turned on."))}
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{t("Shipping")}</CardTitle>
+                            <CardDescription>{t("A flat fee added once to every order, whatever the quantity. Set it to 0 for free shipping.")}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="grid gap-5 sm:grid-cols-2">
+                            {money("smart_product_shipping_fee", t("Shipping fee"), t("0 = free shipping."))}
+                            {money("smart_product_free_shipping_above", t("Free shipping for orders above"), t("Order subtotal before tax. 0 = never free."))}
                         </CardContent>
                     </Card>
 
                     <Card>
                         <CardHeader>
                             <CardTitle>{t("Activation keys")}</CardTitle>
-                            <CardDescription>{t("Each card comes with a key the customer types in to activate it. Longer keys are harder to guess.")}</CardDescription>
+                            <CardDescription>{t("Each product with an NFC chip comes with a key the customer types in to activate it. Longer keys are harder to guess.")}</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div className="flex flex-col gap-2 sm:max-w-xs">

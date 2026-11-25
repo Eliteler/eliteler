@@ -135,7 +135,7 @@
     {{-- Add Category Modal --}}
     <div class="modal modal-bg fade" id="addCategoryModal" tabindex="-1" aria-labelledby="addCategoryModalLabel"
         aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
             <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold" id="addCategoryModalLabel">{{ __('Add New Category') }}</h5>
@@ -200,7 +200,7 @@
     {{-- Edit Category Modal --}}
     <div class="modal modal-bg fade" id="editCategoryModal" tabindex="-1" aria-labelledby="editCategoryModalLabel"
         aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
             <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold" id="editCategoryModalLabel">{{ __('Edit Category') }}</h5>

@@ -61,7 +61,9 @@ class AdminSharedProps
             'features'    => $features,
             'navigation'  => $user ? AdminNavigation::for($user, $request, $permissions, $features) : [],
             'currency'    => self::currency($config),
-            'locale'      => self::locale(),
+            // Named currencySymbols: `currencies` is a list on the customer panel
+            'currencySymbols' => self::currencies(),
+            'locale'      => fn() => self::locale(),
             'flash'       => [
                 'success'                => fn() => $request->session()->get('success'),
                 'failed'                 => fn() => $request->session()->get('failed'),
@@ -133,5 +135,20 @@ class AdminSharedProps
             'decimals'    => (int) ($config['currency_decimals_place'] ?? 2),
             'format'      => $config['currency_format_type'] ?? '1,234,567.89',
         ];
+    }
+
+    /**
+     * Symbol for every currency, disabled ones too, keyed by ISO code. Past
+     * payments are shown in the currency they were paid in (see formatMoney()
+     * in resources/js/admin/lib/format.ts), not the current base currency.
+     */
+    private static function currencies(): array
+    {
+        return Currency::get(['iso_code', 'symbol', 'symbol_first'])
+            ->mapWithKeys(fn($c) => [strtoupper($c->iso_code) => [
+                'symbol'      => (string) $c->symbol,
+                'symbolFirst' => ($c->symbol_first ?? 'true') !== 'false',
+            ]])
+            ->all();
     }
 }

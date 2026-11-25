@@ -5,6 +5,7 @@ namespace App\Services\Admin;
 use App\AiCreditsTransaction;
 use App\BusinessCard;
 use App\NfcCardOrderTransaction;
+use App\Support\BaseCurrency;
 use App\Transaction;
 use App\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -17,8 +18,11 @@ use Illuminate\Support\Facades\Schema;
  * Admin dashboard metrics.
  *
  * Data notes (verified against the live schema, see README "Database rules"):
- * - Amounts are stored in the base currency (plan price incl. tax), whatever
- *   transactions.transaction_currency says, so they can be summed.
+ * - Each payment row keeps the currency it was paid in (transaction_currency /
+ *   currency); nothing is converted. Changing the base currency doesn't touch
+ *   old rows, so revenue totals only add up payments in the current base
+ *   currency (rows with an empty or unknown code count as base, the same as
+ *   formatMoney()); other currencies are listed per currency.
  * - transactions.transaction_amount is varchar: use PLAN_AMOUNT.
  * - Revenue = money actually collected: successful plan payments excluding the
  *   FREE and TRIAL gateways (activations that carry the list price but no
@@ -29,6 +33,8 @@ class DashboardMetricsService
     public const PERIODS = ['7d', '30d', '90d', '12m'];
 
     public const DEFAULT_PERIOD = '30d';
+
+    private ?string $baseCurrency = null;
 
     private const PLAN_AMOUNT = '(transaction_amount + 0)';
 
@@ -102,6 +108,9 @@ class DashboardMetricsService
             'revenue' => [
                 'current'  => round($revenue($current), 2),
                 'previous' => round($revenue($previous), 2),
+                'currency' => $this->baseCurrency(),
+                // Payments in the period made in other currencies (not converted)
+                'others'   => $this->otherCurrencies($current),
             ],
         ] : [];
 
@@ -133,11 +142,11 @@ class DashboardMetricsService
         $series = $this->emptySeries($p, ['plans' => 0.0, 'nfc' => 0.0, 'ai' => 0.0]);
 
         $sources = [
-            'plans' => $this->paidPlanPayments()->whereBetween('created_at', $range)
+            'plans' => $this->inBaseCurrency($this->paidPlanPayments(), 'transactions.transaction_currency')->whereBetween('created_at', $range)
                 ->selectRaw('DATE(created_at) as date, SUM(' . self::PLAN_AMOUNT . ') as total'),
-            'nfc' => NfcCardOrderTransaction::where('payment_status', 'success')->whereBetween('created_at', $range)
+            'nfc' => $this->inBaseCurrency($this->paidNfcPayments(), 'currency')->whereBetween('created_at', $range)
                 ->selectRaw('DATE(created_at) as date, SUM(amount) as total'),
-            'ai' => AiCreditsTransaction::where('payment_status', 'paid')->whereBetween('created_at', $range)
+            'ai' => $this->inBaseCurrency($this->paidAiPayments(), 'currency')->whereBetween('created_at', $range)
                 ->selectRaw('DATE(created_at) as date, SUM(amount) as total'),
         ];
 
@@ -190,7 +199,8 @@ class DashboardMetricsService
     {
         return $this->paidPlanPayments()
             ->whereBetween('created_at', self::range([$p['start'], $p['end']]))
-            ->selectRaw('payment_gateway_name as name, SUM(' . self::PLAN_AMOUNT . ') as revenue, COUNT(*) as payments')
+            // Revenue counts base-currency payments only; payments counts them all
+            ->selectRaw('payment_gateway_name as name, SUM(CASE WHEN ' . self::baseCurrencySql('transactions.transaction_currency') . ' THEN ' . self::PLAN_AMOUNT . ' ELSE 0 END) as revenue, COUNT(*) as payments')
             ->groupBy('payment_gateway_name')
             ->orderByDesc('revenue')
             ->get()
@@ -336,6 +346,7 @@ class DashboardMetricsService
                 'transactions.gobiz_transaction_id',
                 'transactions.desciption',
                 'transactions.payment_gateway_name',
+                'transactions.transaction_currency',
                 'transactions.created_at',
                 'users.id as customer_id',
                 'users.name',
@@ -353,6 +364,7 @@ class DashboardMetricsService
                 'plan'       => $row->desciption,
                 'gateway'    => $row->payment_gateway_name,
                 'amount'     => round((float) $row->amount, 2),
+                'currency'   => $row->transaction_currency,
                 'date'       => Carbon::parse($row->created_at)->toIso8601String(),
             ])
             ->all();
@@ -427,9 +439,79 @@ class DashboardMetricsService
     {
         $range = self::range($range);
 
-        return (float) $this->paidPlanPayments()->whereBetween('created_at', $range)->sum(DB::raw(self::PLAN_AMOUNT))
-            + (float) NfcCardOrderTransaction::where('payment_status', 'success')->whereBetween('created_at', $range)->sum('amount')
-            + (float) AiCreditsTransaction::where('payment_status', 'paid')->whereBetween('created_at', $range)->sum('amount');
+        return (float) $this->inBaseCurrency($this->paidPlanPayments(), 'transactions.transaction_currency')->whereBetween('created_at', $range)->sum(DB::raw(self::PLAN_AMOUNT))
+            + (float) $this->inBaseCurrency($this->paidNfcPayments(), 'currency')->whereBetween('created_at', $range)->sum('amount')
+            + (float) $this->inBaseCurrency($this->paidAiPayments(), 'currency')->whereBetween('created_at', $range)->sum('amount');
+    }
+
+    /**
+     * Collected payments in currencies other than the base one, per currency,
+     * largest first. Not converted: there are no exchange rates.
+     *
+     * @return array<int, array{code: string, total: float}>
+     */
+    public function otherCurrencies(array $range): array
+    {
+        $range  = self::range($range);
+        $totals = [];
+
+        $sources = [
+            [$this->paidPlanPayments(), 'transactions.transaction_currency', self::PLAN_AMOUNT],
+            [$this->paidNfcPayments(), 'currency', 'amount'],
+            [$this->paidAiPayments(), 'currency', 'amount'],
+        ];
+
+        foreach ($sources as [$query, $column, $amount]) {
+            $rows = $query->whereBetween('created_at', $range)
+                ->whereRaw('NOT ' . self::baseCurrencySql($column))
+                ->selectRaw("UPPER({$column}) as code, SUM({$amount}) as total")
+                ->groupBy('code')
+                ->pluck('total', 'code');
+
+            foreach ($rows as $code => $total) {
+                $totals[$code] = ($totals[$code] ?? 0) + (float) $total;
+            }
+        }
+
+        arsort($totals);
+
+        return collect($totals)
+            ->map(fn ($total, $code) => ['code' => (string) $code, 'total' => round($total, 2)])
+            ->values()
+            ->all();
+    }
+
+    /** The admin's current base currency (ISO code). */
+    public function baseCurrency(): string
+    {
+        return $this->baseCurrency ??= BaseCurrency::code();
+    }
+
+    /** Limit a payment query to rows paid in the base currency. */
+    private function inBaseCurrency(Builder $query, string $column): Builder
+    {
+        return $query->whereRaw(self::baseCurrencySql($column));
+    }
+
+    /**
+     * SQL condition (no bindings) for "paid in the base currency". Empty or
+     * unknown codes count as base, like formatMoney(). See BaseCurrency::sql().
+     */
+    public static function baseCurrencySql(string $column): string
+    {
+        return BaseCurrency::sql($column);
+    }
+
+    /** Successful Smart Product (NFC) payments. */
+    private function paidNfcPayments(): Builder
+    {
+        return NfcCardOrderTransaction::where('payment_status', 'success');
+    }
+
+    /** Paid AI credit purchases. */
+    private function paidAiPayments(): Builder
+    {
+        return AiCreditsTransaction::where('payment_status', 'paid');
     }
 
     private function emptySeries(array $p, array $values): array

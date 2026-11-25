@@ -326,7 +326,7 @@
                 @if ($config[76]->config_value == '1' && $active_plan)
                     <li class="nav-item-header text-uppercase text-muted px-3 mt-3 mb-1"
                         style="font-size: 0.72rem; letter-spacing: 0.05rem; font-weight: 600;">
-                        {{ __('NFC MANAGEMENT') }}
+                        {{ __('SMART PRODUCTS') }}
                     </li>
 
                     {{-- Order NFC Card --}}
@@ -346,7 +346,7 @@
                                 </svg>
                             </span>
                             <span class="nav-link-title">
-                                {{ __('Order NFC Card') }}
+                                {{ __('Order Smart Products') }}
                             </span>
                         </a>
                     </li>
@@ -392,7 +392,7 @@
                                 </svg>
                             </span>
                             <span class="nav-link-title">
-                                {{ __('My NFC Cards') }}
+                                {{ __('My Smart Products') }}
                             </span>
                         </a>
                     </li>

@@ -85,6 +85,7 @@ class PlanService
         foreach (self::COMMON_FEATURES as $field) {
             $rules[$field] = 'boolean';
         }
+        $rules['show_nfc_card_feature'] = 'boolean';
 
         if ($vcard) {
             foreach (self::VCARD_LIMITS as $field) {
@@ -162,6 +163,8 @@ class PlanService
         foreach (self::COMMON_FEATURES as $field) {
             $plan->{$field} = (int) ($data[$field] ?? false);
         }
+        // Whether "Smart Products" (nfc_card) is listed in the pricing points
+        $plan->show_nfc_card_feature = (int) ($data['show_nfc_card_feature'] ?? true);
 
         if ($type !== 'STORE') {
             foreach (self::VCARD_LIMITS as $field) {
@@ -233,6 +236,7 @@ class PlanService
             'trialAiCredits' => (int) $plan->trial_ai_credits,
             'googleWallet'   => (bool) $plan->google_wallet,
             'googleWallets'  => (int) $plan->no_of_google_wallets,
+            'showSmartProducts' => (bool) ($plan->show_nfc_card_feature ?? true),
         ];
 
         foreach ([ ...self::VCARD_LIMITS, ...self::STORE_LIMITS] as $field) {

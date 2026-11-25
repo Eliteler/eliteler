@@ -69,13 +69,14 @@ class GoBizOriginalServiceProvider extends ServiceProvider
             $settings = GoBizCommonService::settings();
 
             DB::table('gobiz_original_config')->insert([
-                'template_color' => getConfigData('app_theme'),
-                'theme_slider'   => getConfigData('show_home_slider'),
-                'banner_image'   => getConfigData('primary_image'),
-                'auth_image'     => getConfigData('secondary_image'),
-                'app_action'     => getConfigData('app_action'),
-                'app_heading'    => getConfigData('app_heading'),
-                'app_description'=> getConfigData('app_description'),
+                // Fresh install: config may still be empty, so fall back to the defaults
+                'template_color' => getConfigData('app_theme') ?? $defaultConfig->template_color,
+                'theme_slider'   => getConfigData('show_home_slider') ?? $defaultConfig->theme_slider,
+                'banner_image'   => getConfigData('primary_image') ?? '',
+                'auth_image'     => getConfigData('secondary_image') ?? '',
+                'app_action'     => getConfigData('app_action') ?? $defaultConfig->app_action,
+                'app_heading'    => getConfigData('app_heading') ?? $defaultConfig->app_heading,
+                'app_description'=> getConfigData('app_description') ?? $defaultConfig->app_description,
                 'google_play_store_link' => getConfigData('google_play_store_link'),
                 'apple_app_store_link'   => getConfigData('apple_app_store_link'),
                 'custom_css'     => $settings->custom_css ?? null,
@@ -90,6 +91,10 @@ class GoBizOriginalServiceProvider extends ServiceProvider
             ]);
 
             $tableExists = true;
+        }
+
+        if (! app()->runningInConsole() || Schema::hasColumn('pages', 'template_id')) {
+            $this->ensureSmartProductHomeCopy();
         }
 
         if (getConfigData('web_template') !== 'GoBizOriginal') {
@@ -107,6 +112,64 @@ class GoBizOriginalServiceProvider extends ServiceProvider
                 $view->with('template_config', $defaultConfig);
             }
         });
+    }
+
+    private function ensureSmartProductHomeCopy(): void
+    {
+        // Keep these defaults in sync with the root SQL migration for manual updates.
+        $defaults = [
+            'badge' => 'Smart Products',
+            'title' => 'Smart NFC Products For Your Business',
+            'desc'  => 'NFC cards, review stands, tags and more. Each one opens your business card, store or any link with a tap, and you can change it any time.',
+        ];
+
+        $home = DB::table('pages')->where('template_id', 'GoBizOriginal')->where('page_name', 'home');
+        $smartProducts = (clone $home)->where('section_name', 'smart_products')
+            ->whereIn('section_title', array_keys($defaults));
+
+        if (! array_diff_key($defaults, array_flip($smartProducts->pluck('section_title')->all()))) {
+            return;
+        }
+
+        // Wait for the last original homepage field so the new rows follow the existing fields.
+        $pricingId = $home->where('section_name', 'pricing')->where('section_title', 'pricing_subtitle')
+            ->orderBy('id')->value('id');
+
+        if ($pricingId === null) {
+            return;
+        }
+
+        DB::transaction(function () use ($pricingId, $smartProducts, $defaults) {
+            $pricing = DB::table('pages')->where('id', $pricingId)->lockForUpdate()->first();
+
+            if ($pricing === null) {
+                return;
+            }
+
+            $existing = $smartProducts->lockForUpdate()->pluck('section_title')->all();
+            $timestamp = now();
+            $rows = [];
+
+            foreach (array_diff_key($defaults, array_flip($existing)) as $field => $content) {
+                $rows[] = [
+                    'template_id'     => 'GoBizOriginal',
+                    'page_name'       => 'home',
+                    'section_name'    => 'smart_products',
+                    'section_title'   => $field,
+                    'section_content' => $content,
+                    'title'           => $pricing->title,
+                    'description'     => $pricing->description,
+                    'keywords'        => $pricing->keywords,
+                    'status'          => 'active',
+                    'created_at'      => $timestamp,
+                    'updated_at'      => $timestamp,
+                ];
+            }
+
+            if ($rows) {
+                DB::table('pages')->insert($rows);
+            }
+        }, 3);
     }
 
     public function register() {}

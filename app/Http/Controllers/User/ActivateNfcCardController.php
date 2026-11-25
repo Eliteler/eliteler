@@ -39,6 +39,11 @@ class ActivateNfcCardController extends Controller
     // Activate NFC Card
     public function index()
     {
+        // React panel: activation is on the "NFC cards" page there
+        if (\App\Support\Plugins\UserPluginPage::reactPanel()) {
+            return redirect()->route('user.dashboard.nfc-cards', request()->filled('id') ? ['code' => request()->query('id')] : []);
+        }
+
         // Queries
         $settings = Setting::where('status', 1)->first();
         $config = DB::table('config')->get();
@@ -100,6 +105,10 @@ class ActivateNfcCardController extends Controller
         $updateNFCKey = NfcCardKey::where('unqiue_key', $request->activationCode)->update([
             'card_id' => $businessCard->card_id,
             'link_status' => 'linked',
+            // Smart Products: owner + what the tag opens (business card or store)
+            'user_id' => Auth::id(),
+            'link_type' => $businessCard->card_type === 'store' ? 'store' : 'vcard',
+            'link_target' => null,
             'status' => 1,
             'updated_at' => Carbon::now()
         ]);

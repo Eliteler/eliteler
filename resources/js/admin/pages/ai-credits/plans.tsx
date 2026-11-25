@@ -311,7 +311,8 @@ export default function AiCreditPlans({ plans, inApp, open }: Props) {
                                             </span>{" "}
                                             {t("sold")}
                                         </span>
-                                        <span className="text-muted-foreground">
+                                        {/* Revenue counts base-currency payments only; "sold" counts all */}
+                                        <span className="text-muted-foreground" title={t(":code payments only").replace(":code", currency.code)}>
                                             <span className="font-medium text-foreground tabular-nums">
                                                 {formatCurrency(
                                                     pack.revenue,

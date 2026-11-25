@@ -50,7 +50,7 @@ class ProductController extends Controller
         // Queries
         $plan = DB::table('users')->where('user_id', Auth::user()->user_id)->where('status', 1)->first();
         $plan_details = json_decode($plan->plan_details);
-        $business_card = BusinessCard::where('card_id', $id)->first();
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
 
         // Check business card
         if ($business_card == null) {
@@ -125,6 +125,12 @@ class ProductController extends Controller
     // Save new service
     public function saveVProduct(Request $request)
     {
+        // Verify card belongs to user
+        $card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $request->card_id)->first();
+        if (!$card) {
+            return response()->json(['success' => false, 'error' => trans('Card not found!')], 403);
+        }
+
         // Validate the request data
         $validatedData = $request->validate([
             'product_image' => 'required|string', // Add appropriate validation rules
@@ -187,6 +193,14 @@ class ProductController extends Controller
             ], 404);
         }
 
+        $isOwner = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $product->card_id)->exists();
+        if (!$isOwner) {
+            return response()->json([
+                'success' => false,
+                'message' => trans('Unauthorized action!')
+            ], 403);
+        }
+
         // Update product data
         VcardProduct::where('id', $request->input('product_id'))->update([
             'badge' => $request->input('product_badge'),
@@ -212,6 +226,14 @@ class ProductController extends Controller
             // Retrieve the product from the database
             $product = VcardProduct::findOrFail($id);
 
+            $isOwner = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $product->card_id)->exists();
+            if (!$isOwner) {
+                return response()->json([
+                    'success' => false,
+                    'message' => trans('Unauthorized action!')
+                ], 403);
+            }
+
             // Return a JSON response with the product data
             return response()->json([
                 'success' => true,
@@ -233,6 +255,11 @@ class ProductController extends Controller
         $product = VcardProduct::find($id);
 
         if ($product) {
+            $isOwner = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $product->card_id)->exists();
+            if (!$isOwner) {
+                return response()->json(['message' => trans('Unauthorized action!')], 403);
+            }
+
             $product->delete();
             return response()->json(['message' => trans('Product deleted successfully')], 200);
         } else {

@@ -5,6 +5,7 @@ namespace App\Services\Admin;
 use App\ReferralWithdrawRequest;
 use App\ReferralWithdrawTransaction;
 use App\User;
+use App\Support\BaseCurrency;
 use App\Support\Zapier;
 use Illuminate\Support\Facades\DB;
 
@@ -27,10 +28,15 @@ class ReferralService
 
     public const REJECTED = -1;
 
-    /** @return array<string, float> referrer user_id => commission earned */
+    /**
+     * Commission earned in the current base currency (earnings in other
+     * currencies, from before a currency change, are left out: no conversion).
+     *
+     * @return array<string, float> referrer user_id => commission earned
+     */
     public function earnings(?array $userIds = null): array
     {
-        return DB::table('referrals')
+        return BaseCurrency::only(DB::table('referrals'), BaseCurrency::REFERRAL_CURRENCY)
             ->where('status', 1)->where('is_registered', 1)->where('is_subscribed', 1)
             ->when($userIds, fn ($q) => $q->whereIn('referred_user_id', $userIds))
             ->selectRaw("referred_user_id, SUM(CAST(JSON_UNQUOTE(JSON_EXTRACT(referral_scheme, '$.referral_amount')) AS DECIMAL(15,2))) as total")
@@ -40,10 +46,14 @@ class ReferralService
             ->all();
     }
 
-    /** @return array<string, float> user_id => amount already paid out */
+    /**
+     * Paid out in the current base currency.
+     *
+     * @return array<string, float> user_id => amount already paid out
+     */
     public function paidOut(?array $userIds = null): array
     {
-        return DB::table('referral_withdraw_requests')
+        return BaseCurrency::only(DB::table('referral_withdraw_requests'), 'currency')
             ->where('status', 1)->where('payment_status', self::TRANSFERRED)
             ->when($userIds, fn ($q) => $q->whereIn('user_id', $userIds))
             ->selectRaw('user_id, SUM(amount) as total')
@@ -97,6 +107,7 @@ class ReferralService
             (float) $request->amount,
             self::payoutDetails($request->bank_details),
             [self::ACCEPTED => 'Accepted', self::REJECTED => 'Rejected', self::TRANSFERRED => 'Transferred'][$status] ?? 'Processed',
+            $request->currency,
         );
     }
 }

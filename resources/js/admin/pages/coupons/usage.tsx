@@ -20,7 +20,7 @@ import {
     TableRow,
 } from "@admin/components/ui/table";
 import { formatDate } from "@admin/lib/date";
-import { formatCurrency } from "@admin/lib/format";
+import { useMoney } from "@admin/hooks/use-money";
 import { cn } from "@admin/lib/utils";
 import type { Paginated } from "@admin/types";
 
@@ -33,19 +33,26 @@ type Use = {
     date: string | null;
     customer: { id: string; name: string; email: string } | null;
     paid: number | null;
+    /** Currency the payment was made in (null: not paid). */
+    currency: string | null;
     discount: number | null;
 };
 
+/** Totals over every use (server-side); money is base currency only. */
+type Stats = { uses: number; redeemed: number; discount: number; revenue: number };
+
 export default function CouponUsage({
     coupon,
+    stats: totals,
     uses,
 }: {
     coupon: Coupon;
+    stats: Stats;
     uses: Paginated<Use> | Use[];
 }) {
     const { t } = useTranslation();
     const { currency } = usePage().props;
-    const money = (value: number) => formatCurrency(value, currency);
+    const money = useMoney();
 
     // Safely extract uses list whether paginated or plain array
     const useList: Use[] = Array.isArray(uses)
@@ -56,18 +63,15 @@ export default function CouponUsage({
 
     const pagination = Array.isArray(uses) ? null : uses;
 
-    const redeemed = useList.filter((use) => use.redeemed);
-    const saved = redeemed.reduce((sum, use) => sum + (use.discount ?? 0), 0);
-    const revenue = redeemed.reduce((sum, use) => sum + (use.paid ?? 0), 0);
-
+    // Totals cover every use, not just this page; money counts base-currency payments only
     const stats = [
-        { label: t("Redeemed"), value: `${redeemed.length} / ${coupon.total}` },
+        { label: t("Redeemed"), value: `${totals.redeemed} / ${coupon.total}` },
         {
             label: t("Started but not paid"),
-            value: String(useList.length - redeemed.length),
+            value: String(totals.uses - totals.redeemed),
         },
-        { label: t("Discount given"), value: money(saved) },
-        { label: t("Revenue with this code"), value: money(revenue) },
+        { label: t("Discount given"), value: money(totals.discount) },
+        { label: t("Revenue with this code"), value: money(totals.revenue) },
     ];
 
     return (
@@ -170,7 +174,7 @@ export default function CouponUsage({
                                         </TableCell>
                                         <TableCell className="text-end tabular-nums">
                                             {use.discount !== null
-                                                ? money(use.discount)
+                                                ? money(use.discount, use.currency)
                                                 : "—"}
                                         </TableCell>
                                         <TableCell className="hidden pe-4 text-end text-sm text-muted-foreground sm:table-cell">

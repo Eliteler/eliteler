@@ -12,100 +12,52 @@
 
 namespace App\Http\Controllers;
 
-use App\BusinessCard;
 use App\NfcCardKey;
 use App\Services\GoBizCommonService;
+use App\Services\SmartProducts\ChipLinks;
 use Illuminate\Http\Request;
 
+/**
+ * /nfc/{key}: the address written on every Smart Product chip. Opens the
+ * business card, store or link the owner chose (App\Services\SmartProducts\ChipLinks)
+ * and counts the tap. Never change this URL: it is printed on chips.
+ */
 class ReadNfcCardController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function readNfcCard(Request $request, $id)
     {
-        // Queries
-        $settings = GoBizCommonService::settings();
-        $config   = GoBizCommonService::config();
-
-        // Get NFC Card Key details
         $nfcCardKey = NfcCardKey::where('unqiue_key', $id)->first();
 
         if (! $nfcCardKey) {
-            // title
-            $title = __('NFC Card Not Linked!');
-
-            // description
-            $description = __('This NFC card isn\'t connected to any of your active links.');
-
-            // meta
-            $meta = [
-                'title'       => $title,
-                'description' => $description,
-                'keywords'    => '',
-                'robots'      => 'noindex, nofollow',
-            ];
-
-            $web_template = getConfigData('web_template');
-
-            return view(
-                $web_template . '::Website.pages.nfc.index',
-                compact('settings', 'config', 'title', 'description', 'meta')
-            );
+            return $this->notLinked();
         }
 
-        // Get business card details
-        if ($nfcCardKey->card_id != null) {
-            $businessCardDetails = BusinessCard::where('card_id', $nfcCardKey->card_id)->first();
+        ChipLinks::recordScan($nfcCardKey);
 
-            if (! $businessCardDetails) {
-                // title
-                $title = __('NFC Card Not Linked!');
+        $destination = ChipLinks::destination($nfcCardKey);
 
-                // description
-                $description = __('This NFC card isn\'t connected to any of your active links.');
+        return $destination ? redirect()->away($destination) : $this->notLinked();
+    }
 
-                // meta
-                $meta = [
-                    'title'       => $title,
-                    'description' => $description,
-                    'keywords'    => '',
-                    'robots'      => 'noindex, nofollow',
-                ];
+    private function notLinked()
+    {
+        $settings = GoBizCommonService::settings();
+        $config   = GoBizCommonService::config();
 
-                return view('website.pages.nfc.index', compact('settings', 'config', 'title', 'description', 'meta'));
-            }
+        $title       = __('NFC Card Not Linked!');
+        $description = __('This NFC card isn\'t connected to any of your active links.');
+        $meta        = [
+            'title'       => $title,
+            'description' => $description,
+            'keywords'    => '',
+            'robots'      => 'noindex, nofollow',
+        ];
 
-            if ($businessCardDetails->custom_domain == null) {
-                $live = $config[46]->config_value == '1' ? route('subdomain.profile', $businessCardDetails->card_url) : route('profile', $businessCardDetails->card_url);
-            } else {
-                $live = 'https://www.' . $businessCardDetails->custom_domain . '/';
-            }
+        $web_template = getConfigData('web_template');
 
-            return redirect()->to($live);
-        } else {
-            // title
-            $title = __('NFC Card Not Linked!');
-
-            // description
-            $description = __('This NFC card isn\'t connected to any of your active links.');
-
-            // meta
-            $meta = [
-                'title'       => $title,
-                'description' => $description,
-                'keywords'    => '',
-                'robots'      => 'noindex, nofollow',
-            ];
-
-            $web_template = getConfigData('web_template');
-
-            return view(
-                $web_template . '::Website.pages.nfc.index',
-                compact('settings', 'config', 'title', 'description', 'meta')
-            );
-        }
+        return view(
+            $web_template . '::Website.pages.nfc.index',
+            compact('settings', 'config', 'title', 'description', 'meta')
+        );
     }
 }

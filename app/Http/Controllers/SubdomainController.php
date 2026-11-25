@@ -26,6 +26,7 @@ use App\Setting;
 use App\StoreBusinessHour;
 use App\StoreCategory;
 use App\StoreProduct;
+use App\Support\Card\CardTheme;
 use App\Testimonial;
 use Artesaos\SEOTools\Facades\JsonLd;
 use Artesaos\SEOTools\Facades\OpenGraph;
@@ -282,9 +283,14 @@ class SubdomainController extends Controller
                         OpenGraph::setUrl(url($startUrl));
 
                         // PWA
+                        $profileImg = !empty($business_card_details->profile) ? url($business_card_details->profile) : asset('img/templates/all-categories.png');
                         $icons = [
+                            '192x192' => [
+                                'path'    => $profileImg,
+                                'purpose' => 'any',
+                            ],
                             '512x512' => [
-                                'path'    => url($business_card_details->profile),
+                                'path'    => $profileImg,
                                 'purpose' => 'any',
                             ],
                         ];
@@ -363,8 +369,8 @@ class SubdomainController extends Controller
                             $shareContent = str_replace("{ appName }", $config[0]->config_value, $shareContent);
                         }
 
-                        $url          = urlencode($url);
-                        $shareContent = urlencode($shareContent);
+                        $url          = rawurlencode($url);
+                        $shareContent = rawurlencode($shareContent);
 
                         // Set locale if not same as business card locale.
                         $locale = Session::get('locale') ?? $business_card_details->card_lang ?? config('app.locale');
@@ -503,9 +509,14 @@ class SubdomainController extends Controller
                         OpenGraph::setUrl(url($startUrl));
 
                         // PWA
+                        $profileImg = !empty($business_card_details->profile) ? url($business_card_details->profile) : asset('img/templates/all-categories.png');
                         $icons = [
+                            '192x192' => [
+                                'path'    => $profileImg,
+                                'purpose' => 'any',
+                            ],
                             '512x512' => [
-                                'path'    => url($business_card_details->profile),
+                                'path'    => $profileImg,
                                 'purpose' => 'any',
                             ],
                         ];
@@ -571,8 +582,8 @@ class SubdomainController extends Controller
                             $shareContent = str_replace("{ appName }", $config[0]->config_value, $shareContent);
                         }
 
-                        $url          = urlencode($url);
-                        $shareContent = urlencode($shareContent);
+                        $url          = rawurlencode($url);
+                        $shareContent = rawurlencode($shareContent);
 
                         // Set locale if not same as business card locale.
                         $locale = Session::get('locale') ?? $business_card_details->card_lang ?? config('app.locale');
@@ -596,14 +607,27 @@ class SubdomainController extends Controller
                             // Google Wallet Details
                             $google_wallet_details = DB::table('google_wallets_vcard')->where('card_id', $business_card_details->card_id)->first();
 
-                            if ($google_wallet_details) {
-                                $wallet_url = url()->to('/') . "/user/google-wallet/redirect/wallet?id=" . $google_wallet_details->google_wallet_id;
-                                $google_wallet_details->wallet_link = $wallet_url;
-                            }
+                            if ($google_wallet_details && !empty($google_wallet_details->google_wallet_id)) {
+                                $hasActiveWallet = DB::table('google_wallets')
+                                    ->where('wallet_id', $google_wallet_details->google_wallet_id)
+                                    ->where('status', 1)
+                                    ->exists();
 
-                            // Push google wallet details in datas
-                            $datas['google_wallet_details'] = $google_wallet_details;
+                                if ($hasActiveWallet) {
+                                    $wallet_url = route('user.google-wallet.redirect') . '?id=' . $google_wallet_details->google_wallet_id;
+                                    $google_wallet_details->wallet_link = $wallet_url;
+                                    $datas['google_wallet_details'] = $google_wallet_details;
+                                } else {
+                                    $business_card_details->is_google_wallet_hidden = 1;
+                                    $datas['google_wallet_details'] = null;
+                                }
+                            } else {
+                                $business_card_details->is_google_wallet_hidden = 1;
+                                $datas['google_wallet_details'] = null;
+                            }
                         } catch (\Throwable $th) {
+                            $business_card_details->is_google_wallet_hidden = 1;
+                            $datas['google_wallet_details'] = null;
                         }
 
                         // Check password protected is enabled in user purchased plan
@@ -615,7 +639,12 @@ class SubdomainController extends Controller
                             Session::get('password_protected') == false;
                         }
 
-                        return view('templates.cards.' . $business_card_details->theme_code . '.index', $datas);
+                        $cardTheme = CardTheme::resolve($business_card_details->theme_code);
+                        $datas['cardTheme'] = $cardTheme;
+                        $datas['themeColor'] = $cardTheme->color;
+                        $datas['themeHexColor'] = $cardTheme->hex;
+
+                        return view('templates.cards.' . $cardTheme->view . '.index', $datas);
                     } else {
                         return redirect()->route('user.edit.card', $card_details->id)->with('failed', trans('Please fill out the basic business details.'));
                     }
@@ -667,12 +696,15 @@ class SubdomainController extends Controller
         ];
 
         foreach ($fill['icons'] as $size => $file) {
-            $fileInfo = pathinfo($file['path']);
+            $ext = strtolower(pathinfo($file['path'], PATHINFO_EXTENSION));
+            if (empty($ext) || !in_array($ext, ['png', 'jpg', 'jpeg', 'webp', 'svg', 'gif'], true)) {
+                $ext = 'png';
+            }
             $basicManifest['icons'][] = [
-                'src' => $file['path'],
-                'type' => 'image/' . $fileInfo['extension'],
-                'sizes' => $size,
-                'purpose' => $file['purpose']
+                'src'     => $file['path'],
+                'type'    => 'image/' . ($ext === 'jpg' ? 'jpeg' : $ext),
+                'sizes'   => $size,
+                'purpose' => $file['purpose'] ?? 'any',
             ];
         }
 

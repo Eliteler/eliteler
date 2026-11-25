@@ -1,9 +1,8 @@
-import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
+import { Head, router, useForm, usePage } from "@inertiajs/react";
 import {
     ArrowUpCircle,
     ArrowUpRight,
     CheckCircle2,
-    ExternalLink,
     Loader2,
     Puzzle,
     Search,
@@ -11,7 +10,7 @@ import {
     Trash2,
     Upload,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { ConfirmDialog } from "@admin/components/confirm-dialog";
@@ -19,6 +18,12 @@ import { EmptyState } from "@admin/components/empty-state";
 import { FieldError } from "@admin/components/field-error";
 import { ZipDropzone } from "@admin/components/zip-dropzone";
 import { PageHeader } from "@admin/components/page-header";
+import { Pagination } from "@admin/components/pagination";
+import { MarketplaceCard, type MarketplaceItem } from "@admin/components/marketplace-card";
+import {
+    MarketplaceUpdateBadge,
+    MarketplaceUpdateButton,
+} from "@admin/components/marketplace-update";
 import { Badge } from "@admin/components/ui/badge";
 import { Button } from "@admin/components/ui/button";
 import { Card, CardContent, CardFooter } from "@admin/components/ui/card";
@@ -31,83 +36,52 @@ import {
 } from "@admin/components/ui/dialog";
 import { Input } from "@admin/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@admin/components/ui/tabs";
-import {
-    loadMarketplace,
-    openMarketplacePage,
-    type MarketItem,
-} from "@admin/lib/marketplace";
 import { cn } from "@admin/lib/utils";
-import type { PluginNotice } from "@admin/types";
+import type { Paginated, PluginNotice } from "@admin/types";
 
 type Plugin = {
     id: string;
     name: string;
     description: string | null;
     version: string | null;
+    updateVersion: string | null;
     image: string;
     settingsUrl: string | null;
     builtIn: boolean;
     legacy: boolean;
 };
 
-type PaginationLinks = {
-    url: string | null;
-    label: string;
-    active: boolean;
-};
-
-type Paginated<T> = {
-    data: T[];
-    links: PaginationLinks[];
-    current_page: number;
-    last_page: number;
-    from: number | null;
-    to: number | null;
-    total: number;
-};
-
-type Tab = "all" | "builtIn" | "added" | "marketplace";
+type Tab = "all" | "builtIn" | "added" | "updates" | "marketplace";
 
 type Props = {
-    plugins: Paginated<Plugin> | Plugin[];
-    allPlugins?: Plugin[];
-    tab?: Tab;
-    search?: string;
-    counts?: { all: number; builtIn: number; added: number };
+    plugins: Paginated<Plugin> | null;
+    marketplace: Paginated<MarketplaceItem> | null;
+    tab: Tab;
+    search: string;
+    counts: { all: number; builtIn: number; added: number; updates: number | null; marketplace: number };
     maxUploadKb: number;
 };
 
-const MARKETPLACE_DATA = "https://gobizsaas.com/data/plugins.json";
-
 export default function Plugins({
     plugins,
-    allPlugins,
-    tab: serverTab = "all",
-    search: initialSearch = "",
-    counts: serverCounts,
+    marketplace,
+    tab,
+    search: initialSearch,
+    counts,
     maxUploadKb,
 }: Props) {
     const { t } = useTranslation();
-    const [tab, setTab] = useState<Tab>(serverTab);
     const [search, setSearch] = useState(initialSearch);
     const [uploading, setUploading] = useState(false);
     const [removing, setRemoving] = useState<Plugin | null>(null);
     const [processing, setProcessing] = useState(false);
     const { flash } = usePage().props;
     const [notice, setNotice] = useState<PluginNotice | null>(null);
-    const [market, setMarket] = useState<MarketItem[] | null>(null);
-    const [loadingMarket, setLoadingMarket] = useState(false);
-    const firstRender = useRef(true);
+    const searchTimer = useRef<number | undefined>(undefined);
 
-    // Safely extract plugin list whether paginated or plain array
-    const pluginList: Plugin[] = Array.isArray(plugins)
-        ? plugins
-        : plugins && Array.isArray(plugins.data)
-          ? plugins.data
-          : [];
-
-    const pagination = Array.isArray(plugins) ? null : plugins;
-    const fullPlugins = allPlugins ?? pluginList;
+    const pluginList = plugins?.data ?? [];
+    const marketplaceItems = marketplace?.data ?? [];
+    const pagination = marketplace ?? plugins;
 
     // An uploaded zip that wasn't installed (old Blade version, or older than installed)
     useEffect(
@@ -115,36 +89,7 @@ export default function Plugins({
         [flash.plugin_notice],
     );
 
-    const counts = serverCounts ?? {
-        all: fullPlugins.length,
-        builtIn: fullPlugins.filter((p) => p.builtIn).length,
-        added: fullPlugins.filter((p) => !p.builtIn).length,
-    };
-
-    const installed = useMemo(
-        () => new Map(fullPlugins.map((plugin) => [plugin.id, plugin])),
-        [fullPlugins],
-    );
-
-    const visibleMarket = useMemo(() => {
-        const term = search.trim().toLowerCase();
-        return (market ?? []).filter(
-            (plugin) =>
-                !term ||
-                plugin.name.toLowerCase().includes(term) ||
-                plugin.description?.toLowerCase().includes(term),
-        );
-    }, [market, search]);
-
-    const visit = (next: { tab?: Tab; search?: string }) => {
-        const nextTab = next.tab ?? tab;
-        const nextSearch = next.search ?? search;
-
-        if (nextTab === "marketplace") {
-            openMarketplace();
-            return;
-        }
-
+    const visit = (nextTab: Tab, nextSearch = search) => {
         router.get(
             route("admin.plugins"),
             {
@@ -157,30 +102,12 @@ export default function Plugins({
 
     // Debounce search
     useEffect(() => {
-        if (firstRender.current) {
-            firstRender.current = false;
-            return;
-        }
-        if (tab === "marketplace") return;
-        const timer = window.setTimeout(() => visit({ search }), 300);
+        if (search === initialSearch) return;
+        const timer = window.setTimeout(() => visit(tab, search), 300);
+        searchTimer.current = timer;
         return () => window.clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [search]);
-
-    // Loaded once per visit; if the list can't be loaded, open the marketplace website instead
-    const openMarketplace = async () => {
-        if (market) return setTab("marketplace");
-
-        setLoadingMarket(true);
-        try {
-            setMarket(await loadMarketplace(MARKETPLACE_DATA, "plugin_id"));
-            setTab("marketplace");
-        } catch {
-            openMarketplacePage();
-        } finally {
-            setLoadingMarket(false);
-        }
-    };
 
     const remove = () => {
         if (!removing) return;
@@ -222,16 +149,11 @@ export default function Plugins({
                     <Tabs
                         value={tab}
                         onValueChange={(value) => {
-                            const newTab = value as Tab;
-                            setTab(newTab);
-                            if (newTab !== "marketplace") {
-                                visit({ tab: newTab });
-                            } else {
-                                openMarketplace();
-                            }
+                            window.clearTimeout(searchTimer.current);
+                            visit(value as Tab);
                         }}
                     >
-                        <TabsList>
+                        <TabsList className="h-auto flex-wrap justify-start">
                             {(
                                 [
                                     ["all", t("All")],
@@ -246,27 +168,21 @@ export default function Plugins({
                                     </span>
                                 </TabsTrigger>
                             ))}
-                            <TabsTrigger
-                                value="marketplace"
-                                disabled={loadingMarket}
-                                aria-busy={loadingMarket}
-                            >
-                                {loadingMarket ? (
-                                    <Loader2 className="animate-spin" />
-                                ) : (
-                                    <Store />
-                                )}
-                                {t("Marketplace")}
-                                {market ? (
+                            {counts.updates !== null && (
+                                <TabsTrigger value="updates">
+                                    {t("Updates")}
                                     <span className="text-muted-foreground tabular-nums">
-                                        {market.length}
+                                        {counts.updates}
                                     </span>
-                                ) : (
-                                    <Badge className="h-4 px-1.5 text-[10px] leading-none">
-                                        {t("New")}
-                                    </Badge>
-                                )}
-                            </TabsTrigger>
+                                </TabsTrigger>
+                            )}
+                            {counts.marketplace > 0 && (
+                                <TabsTrigger value="marketplace">
+                                    <Store />
+                                    {t("Marketplace")}
+                                    <span className="text-muted-foreground tabular-nums">{counts.marketplace}</span>
+                                </TabsTrigger>
+                            )}
                         </TabsList>
                     </Tabs>
                     <div className="relative sm:w-64">
@@ -281,32 +197,29 @@ export default function Plugins({
                 </div>
 
                 {tab === "marketplace" ? (
-                    visibleMarket.length === 0 ? (
-                        <EmptyState
-                            icon={Store}
-                            title={t("No plugins match your search")}
-                        />
-                    ) : (
+                    marketplaceItems.length > 0 ? (
                         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                            {visibleMarket.map((plugin) => (
-                                <MarketplaceCard
-                                    key={plugin.id}
-                                    plugin={plugin}
-                                    installed={installed.get(plugin.id)}
-                                />
+                            {marketplaceItems.map((item) => (
+                                <MarketplaceCard key={item.id} item={item} />
                             ))}
                         </div>
+                    ) : (
+                        <EmptyState icon={Store} title={t("No plugins match your search")} />
                     )
                 ) : pluginList.length === 0 ? (
                     <EmptyState
-                        icon={Puzzle}
+                        icon={tab === "updates" ? ArrowUpCircle : Puzzle}
                         title={
-                            search
-                                ? t("No plugins match your search")
-                                : t("No plugins installed")
+                            tab === "updates"
+                                ? initialSearch && counts.updates
+                                    ? t("No plugin updates match your search")
+                                    : t("No plugin updates available")
+                                : initialSearch
+                                  ? t("No plugins match your search")
+                                  : t("No plugins installed")
                         }
                         description={
-                            !search && fullPlugins.length === 0
+                            tab !== "updates" && !initialSearch && counts.all === 0
                                 ? t(
                                       "Install a plugin from a .zip file to add features.",
                                   )
@@ -317,7 +230,16 @@ export default function Plugins({
                     <>
                         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                             {pluginList.map((plugin) => (
-                                <Card key={plugin.id} className="gap-0 py-0">
+                                <Card
+                                    key={plugin.id}
+                                    className={cn(
+                                        "relative gap-0 py-0",
+                                        plugin.updateVersion && "pt-8",
+                                    )}
+                                >
+                                    <MarketplaceUpdateBadge
+                                        version={plugin.updateVersion}
+                                    />
                                     <CardContent className="flex flex-1 items-start gap-3 p-4">
                                         <div className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-white p-1.5">
                                             <img
@@ -389,6 +311,9 @@ export default function Plugins({
                                                 <Trash2 />
                                             </Button>
                                         )}
+                                        {plugin.updateVersion && (
+                                            <MarketplaceUpdateButton />
+                                        )}
                                         {plugin.settingsUrl && (
                                             <Button
                                                 variant="outline"
@@ -406,59 +331,9 @@ export default function Plugins({
                             ))}
                         </div>
 
-                        {/* Pagination navigation controls */}
-                        {pagination && pagination.last_page > 1 && (
-                            <div className="flex flex-col items-center justify-between gap-4 border-t pt-4 sm:flex-row">
-                                <p className="text-sm text-muted-foreground">
-                                    {t("Showing :from to :to of :total results")
-                                        .replace(
-                                            ":from",
-                                            String(pagination.from ?? 0),
-                                        )
-                                        .replace(
-                                            ":to",
-                                            String(pagination.to ?? 0),
-                                        )
-                                        .replace(
-                                            ":total",
-                                            String(pagination.total),
-                                        )}
-                                </p>
-                                <div className="flex flex-wrap items-center gap-1">
-                                    {pagination.links.map((link, index) => {
-                                        if (!link.url) {
-                                            return (
-                                                <span
-                                                    key={index}
-                                                    className="inline-flex h-9 min-w-9 items-center justify-center rounded-md border border-transparent px-3 text-sm text-muted-foreground/50 opacity-50"
-                                                    dangerouslySetInnerHTML={{
-                                                        __html: link.label,
-                                                    }}
-                                                />
-                                            );
-                                        }
-                                        return (
-                                            <Link
-                                                key={index}
-                                                href={link.url}
-                                                preserveScroll
-                                                className={cn(
-                                                    "inline-flex h-9 min-w-9 items-center justify-center rounded-md border px-3 text-sm font-medium transition-colors",
-                                                    link.active
-                                                        ? "border-primary bg-primary text-primary-foreground"
-                                                        : "border-input bg-background hover:bg-muted text-foreground",
-                                                )}
-                                                dangerouslySetInnerHTML={{
-                                                    __html: link.label,
-                                                }}
-                                            />
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        )}
                     </>
                 )}
+                {pagination && <Pagination data={pagination} className="border-t pt-4" preserveState />}
             </div>
 
             <Dialog open={uploading} onOpenChange={setUploading}>
@@ -552,84 +427,6 @@ export default function Plugins({
                 onConfirm={remove}
             />
         </>
-    );
-}
-
-function MarketplaceCard({
-    plugin,
-    installed,
-}: {
-    plugin: MarketItem;
-    installed?: Plugin;
-}) {
-    const { t } = useTranslation();
-    const [logoFailed, setLogoFailed] = useState(false);
-
-    return (
-        <Card className="gap-0 py-0">
-            <CardContent className="flex flex-1 items-start gap-3 p-4">
-                <div className="flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-white p-1.5">
-                    {plugin.logo && !logoFailed ? (
-                        <img
-                            src={plugin.logo}
-                            alt=""
-                            loading="lazy"
-                            onError={() => setLogoFailed(true)}
-                            className="max-h-full max-w-full object-contain"
-                        />
-                    ) : (
-                        <Puzzle className="size-5 text-muted-foreground" />
-                    )}
-                </div>
-                <div className="flex min-w-0 flex-1 flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                        <span
-                            className="truncate font-medium"
-                            title={plugin.name}
-                        >
-                            {plugin.name}
-                        </span>
-                        {installed && (
-                            <Badge
-                                variant="outline"
-                                className="ms-auto shrink-0 border-success/30 text-success"
-                            >
-                                <CheckCircle2 />
-                                {t("Installed")}
-                            </Badge>
-                        )}
-                    </div>
-                    {plugin.description && (
-                        <p className="line-clamp-2 text-sm text-muted-foreground">
-                            {plugin.description}
-                        </p>
-                    )}
-                </div>
-            </CardContent>
-            <CardFooter className="flex items-center justify-end gap-2 border-t p-3">
-                {installed ? (
-                    installed.settingsUrl && (
-                        <Button variant="outline" size="sm" asChild>
-                            <a href={installed.settingsUrl}>
-                                <ExternalLink />
-                                {t("Open")}
-                            </a>
-                        </Button>
-                    )
-                ) : (
-                    <Button size="sm" asChild>
-                        <a
-                            href={plugin.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            {t("Download")}
-                            <ArrowUpRight />
-                        </a>
-                    </Button>
-                )}
-            </CardFooter>
-        </Card>
     );
 }
 

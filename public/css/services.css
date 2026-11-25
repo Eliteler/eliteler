@@ -87,6 +87,7 @@
     background-color: var(--tblr-bg-surface, #ffffff) !important;
     border-bottom: 1px solid var(--tblr-border-color, #e2e8f0) !important;
     padding: 1.25rem 1.5rem !important;
+    flex-shrink: 0 !important;
 }
 
 .modal-body {
@@ -98,6 +99,33 @@
     background-color: var(--tblr-bg-surface-secondary, #f8fafc) !important;
     border-top: 1px solid var(--tblr-border-color, #e2e8f0) !important;
     padding: 1rem 1.5rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-shrink: 0 !important;
+    z-index: 2 !important;
+}
+
+/* Scrollable Modal Support to Prevent Footer Cutoff on Desktop & Small Screens */
+.modal-dialog-scrollable .modal-content {
+    max-height: calc(100vh - 3.5rem) !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.modal-dialog-scrollable .modal-header {
+    flex-shrink: 0 !important;
+}
+
+.modal-dialog-scrollable .modal-body {
+    overflow-y: auto !important;
+    flex: 1 1 auto !important;
+    max-height: calc(100vh - 12rem) !important;
+}
+
+.modal-dialog-scrollable .modal-footer {
+    flex-shrink: 0 !important;
+    margin-top: auto !important;
 }
 
 /* ===== Screenshot-matched Table Styling ===== */

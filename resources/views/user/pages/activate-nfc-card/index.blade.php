@@ -16,7 +16,7 @@
                             </li>
                             <li class="breadcrumb-item">
                                 <a href="{{ route('user.manage.nfc.cards') }}" class="text-decoration-none">
-                                    {{ __('My NFC Cards') }}
+                                    {{ __('My Smart Products') }}
                                 </a>
                             </li>
                             <li class="breadcrumb-item active" aria-current="page">
@@ -77,7 +77,7 @@
                                     <div class="row g-3">
                                         {{-- Fetch activation code parameter --}}
                                         @php
-                                            $activationCode = request()->get('id', '');
+                                            $activationCode = request()->query('id', '');
                                         @endphp
 
                                         {{-- NFC Card Activation Code --}}

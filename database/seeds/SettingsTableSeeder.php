@@ -28,7 +28,14 @@ class SettingsTableSeeder extends Seeder
             "google_analytics_id" => "",
             "site_name" => "GoBiz",
             "site_logo" => "img/logo.png",
-            "favicon" => "img/favicon.png"
+            "favicon" => "img/favicon.png",
+            // Mail settings (required columns; changed later on the SMTP settings page)
+            "name" => "GoBiz",
+            "address" => "",
+            "driver" => "smtp",
+            "host" => "",
+            "port" => 587,
+            "encryption" => "tls",
         ]);
     }
 }

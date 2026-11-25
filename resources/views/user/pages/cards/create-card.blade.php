@@ -7,7 +7,46 @@
         integrity="sha512-KGtsnWohFUg0oksKq7p7eDgA1Rw2nBfqhGJn463/rGhtUY825dBqGexj8eP04LwfnsSW6dNAHAlOqKJKquHsnw=="
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <link rel="stylesheet" href="{{ asset('css/all.css') }}" />
-    <link rel="stylesheet" href="{{ asset('css/digital-business-card.css') }}" />
+    <link rel="stylesheet" href="{{ asset('css/digital-business-card.css') }}?v={{ file_exists(public_path('css/digital-business-card.css')) ? filemtime(public_path('css/digital-business-card.css')) : time() }}" />
+    <style>
+        /* CRITICAL CROP FIX: Protect Cropper.js internal images from squishing / distortion */
+        .cropper-modal-container {
+            width: 100%;
+            max-height: 450px;
+            min-height: 260px;
+            overflow: hidden;
+            background-color: var(--tblr-dark, #0f172a);
+            border-radius: var(--tblr-border-radius-lg, 10px);
+            position: relative;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+            text-align: center;
+        }
+        .cropper-modal-container > img {
+            display: block;
+            max-width: 100%;
+            max-height: 450px;
+            margin: 0 auto;
+        }
+        .cropper-modal-container .cropper-container {
+            margin: 0 auto;
+            touch-action: none;
+        }
+        .cropper-modal-container .cropper-container img,
+        .cropper-container .cropper-view-box img,
+        .cropper-container .cropper-canvas img {
+            display: block !important;
+            max-width: none !important;
+            max-height: none !important;
+            min-width: 0 !important;
+            min-height: 0 !important;
+        }
+        .cropper-view-box,
+        .cropper-face {
+            border-radius: 0;
+        }
+    </style>
 @endsection
 
 @php
@@ -15,8 +54,8 @@
     $type = Request::get('type') ? Request::get('type') : 'business';
 
     if ($type == 'business') {
-        $defaultImage = asset('img/vCards/beauty-salon.webp');
-        $themeId = '588969111170';
+        $defaultImage = asset('img/vCards/astrology-vcard.webp');
+        $themeId = '588969111172';
     } elseif ($type == 'personal') {
         $defaultImage = asset('img/vCards/personal-gray.png');
         $themeId = '588969111021';
@@ -263,7 +302,7 @@
                                                 <input type="text" class="form-control font-monospace" name="link"
                                                     id="plink" placeholder="{{ __('Personalized Link') }}"
                                                     value="{{ $plan_details->personalized_link ? old('link') : $cardId }}"
-                                                    minlength="3"
+                                                    minlength="3" aria-describedby="personalized-link-error"
                                                     @if ($plan_details->personalized_link) onkeyup="checkLink()"
                 oninput="convertToLink(this.value)"
                 required
@@ -286,6 +325,7 @@
                                                     </svg>
                                                 </span>
                                             </div>
+                                            <div id="personalized-link-error" class="small text-danger" aria-live="polite"></div>
                                         </div>
 
                                         <!-- Subtitle -->
@@ -499,7 +539,7 @@
     {{-- Crop Profile Logo Modal --}}
     <div class="modal modal-bg fade" id="cropModal" tabindex="-1" role="dialog" aria-hidden="true"
         data-bs-backdrop="static">
-        <div class="modal-dialog modal-md modal-dialog-centered" role="document">
+        <div class="modal-dialog modal-md modal-dialog-centered modal-dialog-scrollable" role="document">
             <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
                 <div class="modal-header border-bottom py-3 px-4">
                     <h5 class="modal-title font-weight-bold mb-0 text-dark">{{ __('Crop Profile Logo') }}</h5>
@@ -524,7 +564,7 @@
     {{-- Crop Cover Image Modal --}}
     <div class="modal modal-bg fade" id="cropCoverModal" tabindex="-1" role="dialog" aria-hidden="true"
         data-bs-backdrop="static">
-        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
             <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
                 <div class="modal-header border-bottom py-3 px-4">
                     <h5 class="modal-title font-weight-bold mb-0 text-dark">{{ __('Crop Cover Image') }}</h5>
@@ -609,6 +649,7 @@
 
         function checkLink() {
             var plink = $('#plink').val();
+            var linkError = $('#personalized-link-error').text('');
             if (plink.length > 0) {
                 $.ajax({
                     url: "{{ route('user.check.link') }}",
@@ -618,6 +659,8 @@
                         link: plink
                     },
                 }).done(function(res) {
+                    if (plink !== $('#plink').val()) return;
+                    linkError.text(res.message || '');
                     if (res.status == 'success') {
                         $('#status').html(
                             '<span class="text-success"><svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2l4 -4"/></svg></span>'
@@ -673,19 +716,25 @@
 
     // Profile Image Cropper
     $(document).ready(function() {
-        var cropper;
+        var profileCropper = null;
         $('#cropModal').on('shown.bs.modal', function() {
-            cropper = new Cropper(document.getElementById('croppedImage'), {
+            if (profileCropper) {
+                profileCropper.destroy();
+                profileCropper = null;
+            }
+            profileCropper = new Cropper(document.getElementById('croppedImage'), {
                 aspectRatio: 1,
                 viewMode: 1, // Restrict crop box within image boundaries
-                autoCropArea: 0.9,
+                autoCropArea: 1,
                 responsive: true,
                 restore: false
             });
         }).on('hidden.bs.modal', function() {
-            if (cropper) {
-                cropper.destroy();
+            if (profileCropper) {
+                profileCropper.destroy();
+                profileCropper = null;
             }
+            $('#croppedImage').attr('src', '');
             $('#logo').val(''); // Reset file input
         });
 
@@ -703,12 +752,17 @@
 
         // Profile Image Crop & Upload
         $('#crop').click(function() {
+            if (!profileCropper) return;
             var $btn = $(this).prop('disabled', true).text('Uploading...');
-            var canvas = cropper.getCroppedCanvas({
+            var canvas = profileCropper.getCroppedCanvas({
                 width: 512,
                 height: 512,
                 imageSmoothingQuality: 'high'
             });
+            if (!canvas) {
+                $btn.prop('disabled', false).text('Apply Crop');
+                return;
+            }
             canvas.toBlob(function(blob) {
                 var formData = new FormData();
                 formData.append('croppedImage', blob);
@@ -716,7 +770,8 @@
                     url: '{{ route('user.vcard.cropped.image') }}',
                     method: 'POST',
                     headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
                     },
                     data: formData,
                     processData: false,
@@ -733,6 +788,9 @@
                         $("#logoPreview").css('background-image', 'url(' + canvas
                             .toDataURL() + ')');
                     },
+                    error: function(err) {
+                        alert('{{ __('Failed to upload cropped image. Please try again.') }}');
+                    },
                     complete: function() {
                         $btn.prop('disabled', false).text('Apply Crop');
                     }
@@ -743,19 +801,25 @@
 
     // Cover Image Cropper
     $(document).ready(function() {
-        var cropper;
+        var coverCropper = null;
         $('#cropCoverModal').on('shown.bs.modal', function() {
-            cropper = new Cropper(document.getElementById('croppedCoverImage'), {
+            if (coverCropper) {
+                coverCropper.destroy();
+                coverCropper = null;
+            }
+            coverCropper = new Cropper(document.getElementById('croppedCoverImage'), {
                 aspectRatio: 16 / 9,
                 viewMode: 1, // Restrict crop box within image boundaries
-                autoCropArea: 0.9,
+                autoCropArea: 1,
                 responsive: true,
                 restore: false
             });
         }).on('hidden.bs.modal', function() {
-            if (cropper) {
-                cropper.destroy();
+            if (coverCropper) {
+                coverCropper.destroy();
+                coverCropper = null;
             }
+            $('#croppedCoverImage').attr('src', '');
             $('#cover').val(''); // Reset file input
         });
 
@@ -773,18 +837,24 @@
 
         // Cover Image Crop & Upload
         $('#coverCrop').click(function() {
+            if (!coverCropper) return;
             var $btn = $(this).prop('disabled', true).text('Uploading...');
-            var canvas = cropper.getCroppedCanvas({
+            var canvas = coverCropper.getCroppedCanvas({
                 imageSmoothingQuality: 'high'
             });
+            if (!canvas) {
+                $btn.prop('disabled', false).text('Apply Crop');
+                return;
+            }
             canvas.toBlob(function(blob) {
                 var formData = new FormData();
-                formData.append('croppedImage', blob);
+                formData.append('croppedImage', blob, 'cover.jpg');
                 $.ajax({
                     url: '{{ route('user.vcard.cropped.image') }}',
                     method: 'POST',
                     headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
                     },
                     data: formData,
                     processData: false,
@@ -803,11 +873,14 @@
                         $("#coverPreview").css('background-image', 'url(' + canvas
                             .toDataURL() + ')');
                     },
+                    error: function(err) {
+                        alert('{{ __('Failed to upload cropped image. Please try again.') }}');
+                    },
                     complete: function() {
                         $btn.prop('disabled', false).text('Apply Crop');
                     }
                 });
-            });
+            }, 'image/jpeg', 0.90);
         });
     });
 
