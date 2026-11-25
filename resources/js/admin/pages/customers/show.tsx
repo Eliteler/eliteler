@@ -50,7 +50,8 @@ import {
     TooltipTrigger,
 } from "@admin/components/ui/tooltip";
 import { formatDate, fromNow } from "@admin/lib/date";
-import { formatCurrency, formatNumber } from "@admin/lib/format";
+import { formatNumber } from "@admin/lib/format";
+import { useMoney } from "@admin/hooks/use-money";
 import { cn } from "@admin/lib/utils";
 
 import { CopyCardDialog } from "./components/copy-card-dialog";
@@ -75,6 +76,7 @@ type Payment = {
     description: string;
     gateway: string;
     amount: number;
+    currency: string | null;
     status: string;
     date: string | null;
     invoice: string | null;
@@ -85,6 +87,7 @@ type NfcOrder = {
     item: string | null;
     quantity: number;
     amount: number | null; // null when revenue is hidden
+    currency: string | null;
     status: string;
     date: string | null;
 };
@@ -94,6 +97,7 @@ type NfcPayment = {
     reference: string | null;
     gateway: string;
     amount: number;
+    currency: string | null;
     status: string;
     date: string | null;
 };
@@ -102,6 +106,7 @@ type AiPayment = {
     plan: string | null;
     gateway: string;
     amount: number;
+    currency: string | null;
     status: string;
     date: string | null;
 };
@@ -208,7 +213,7 @@ function EmptyRow({ colSpan, text }: { colSpan: number; text: string }) {
 export default function CustomerShow(props: Props) {
     const { t } = useTranslation();
     const pageState = usePage();
-    const { currency, locale } = pageState.props;
+    const { locale } = pageState.props;
     const { customer, plans, activeTab, activity, tabCounts } = props;
     const dir = locale.dir;
 
@@ -217,7 +222,8 @@ export default function CustomerShow(props: Props) {
     );
     const [copying, setCopying] = useState<CardRow | null>(null);
 
-    const money = (value: number) => formatCurrency(value, currency);
+    // Past payments keep their own currency; prices without a code use the base currency
+    const money = useMoney();
     const deleted = customer.state === "deleted";
 
     const getQueryParams = () =>
@@ -430,7 +436,7 @@ export default function CustomerShow(props: Props) {
                                         <StatusPill status={payment.status} />
                                     </TableCell>
                                     <TableCell className="text-end font-medium tabular-nums">
-                                        {money(payment.amount)}
+                                        {money(payment.amount, payment.currency)}
                                     </TableCell>
                                     <TableCell className="text-end">
                                         {payment.invoice && (
@@ -515,7 +521,7 @@ export default function CustomerShow(props: Props) {
                                               </TableCell>
                                               {!props.hideRevenue && order.amount !== null && (
                                                   <TableCell className="text-end font-medium tabular-nums">
-                                                      {money(order.amount)}
+                                                      {money(order.amount, order.currency)}
                                                   </TableCell>
                                               )}
                                           </TableRow>
@@ -574,7 +580,7 @@ export default function CustomerShow(props: Props) {
                                                   />
                                               </TableCell>
                                               <TableCell className="text-end font-medium tabular-nums">
-                                                  {money(payment.amount)}
+                                                  {money(payment.amount, payment.currency)}
                                               </TableCell>
                                           </TableRow>
                                       ))}
@@ -636,7 +642,7 @@ export default function CustomerShow(props: Props) {
                                                   />
                                               </TableCell>
                                               <TableCell className="text-end font-medium tabular-nums">
-                                                  {money(payment.amount)}
+                                                  {money(payment.amount, payment.currency)}
                                               </TableCell>
                                           </TableRow>
                                       ))}

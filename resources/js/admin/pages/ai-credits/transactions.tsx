@@ -1,4 +1,4 @@
-import { Head, Link, router, usePage } from "@inertiajs/react";
+import { Head, Link, router } from "@inertiajs/react";
 import { CheckCircle2, Clock, FileText, MoreHorizontal, Receipt, XCircle } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -14,7 +14,7 @@ import { Card } from "@admin/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@admin/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@admin/components/ui/table";
 import { formatDate, fromNow } from "@admin/lib/date";
-import { formatCurrency } from "@admin/lib/format";
+import { useMoney } from "@admin/hooks/use-money";
 import { cn } from "@admin/lib/utils";
 import type { Paginated } from "@admin/types";
 
@@ -25,6 +25,7 @@ type Purchase = {
     credits: number | null;
     method: string;
     amount: number;
+    currency: string | null;
     status: string;
     date: string | null;
     customer: { id: string; name: string; email: string } | null;
@@ -44,7 +45,7 @@ const LABELS: Record<string, string> = {
 
 export default function AiCreditPurchases({ transactions, tab, search, counts }: Props) {
     const { t } = useTranslation();
-    const { currency } = usePage().props;
+    const money = useMoney();
     const [pending, setPending] = useState<{ row: Purchase; status: "paid" | "pending" | "failed" } | null>(null);
     const [processing, setProcessing] = useState(false);
 
@@ -143,7 +144,7 @@ export default function AiCreditPurchases({ transactions, tab, search, counts }:
                                             )}
                                         </TableCell>
                                         <TableCell className="hidden sm:table-cell">{row.method}</TableCell>
-                                        <TableCell className="text-end font-medium tabular-nums">{formatCurrency(row.amount, currency)}</TableCell>
+                                        <TableCell className="text-end font-medium tabular-nums">{money(row.amount, row.currency)}</TableCell>
                                         <TableCell>
                                             <Badge
                                                 variant="outline"

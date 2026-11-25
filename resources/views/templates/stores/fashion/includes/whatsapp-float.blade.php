@@ -279,7 +279,7 @@
                 <strong>{{ __('Hello!') }}</strong> 👋<br>
                 {{ __('Have any questions about our collection? We are ready to help you.') }}
             </div>
-            <a href="https://api.whatsapp.com/send/?phone={{ $cleanPhone }}&text={{ urlencode(__('Hello, I would like to enquire about your products.')) }}"
+            <a href="https://api.whatsapp.com/send/?phone={{ $cleanPhone }}&text={{ rawurlencode(__('Hello, I would like to enquire about your products.')) }}"
                 class="fashion-wa-link-btn" target="_blank" rel="noopener noreferrer">
                 <i class="ti ti-brand-whatsapp fs-2 text-success"></i>
                 <span>{{ __('Start Conversation') }}</span>

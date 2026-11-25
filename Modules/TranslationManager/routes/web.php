@@ -28,6 +28,8 @@ Route::middleware(['web', 'auth', 'admin', 'twofactor', 'user.page.permission:tr
         Route::post('/add-key', [TranslationManagerController::class, 'addKey'])->name('add-key')->middleware('demo.mode'); // New route to append key
         Route::get('/{locale}/missing', [TranslationManagerController::class, 'missing'])->name('missing');
         Route::post('/{locale}/sync-missing', [TranslationManagerController::class, 'syncMissing'])->name('sync-missing')->middleware('demo.mode');
+        Route::post('/{locale}/stop-sync', [TranslationManagerController::class, 'stopSync'])->name('stop-sync')->middleware('demo.mode');
+        Route::post('/{locale}/dismiss-sync', [TranslationManagerController::class, 'dismissSync'])->name('dismiss-sync')->middleware('demo.mode');
         Route::get('/sync-status/active', [TranslationManagerController::class, 'activeSyncStatuses'])->name('sync-status.active');
         Route::get('/{locale}/sync-status', [TranslationManagerController::class, 'syncStatus'])->name('sync-status'); // Poll background sync job progress
         Route::get('/{locale}/export', [TranslationManagerController::class, 'export'])->name('export');

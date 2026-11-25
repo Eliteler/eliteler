@@ -12,6 +12,9 @@
 
 namespace App\Http\Controllers\User;
 
+use App\Services\SmartProducts\OrderAssets;
+use Illuminate\Validation\ValidationException;
+
 use App\Currency;
 use App\Helpers\StorageHelper;
 use App\Http\Controllers\Controller;
@@ -40,6 +43,13 @@ class ManageOrderNfcCardController extends Controller
     // Manage NFC Card orders
     public function index(Request $request)
     {
+        // React panel has its own orders page
+        if (! $request->ajax() && \App\Support\Plugins\UserPluginPage::reactPanel()) {
+            session()->reflash();
+
+            return redirect()->route('user.dashboard.nfc-orders');
+        }
+
         // Queries
         $settings = Setting::where('status', 1)->first();
         $config = DB::table('config')->get();
@@ -48,10 +58,6 @@ class ManageOrderNfcCardController extends Controller
         if ($config[76]->config_value == '0') {
             return abort(404);
         }
-
-        // Currency symbol
-        $currencies = Currency::where('status', 1)->pluck('symbol', 'iso_code')->toArray();
-        $symbol = $currencies[$config[1]->config_value] ?? '';
 
         // Check if the user has a plan
         $active_plan = Plan::where('plan_id', Auth::user()->plan_id)->first();
@@ -73,8 +79,10 @@ class ManageOrderNfcCardController extends Controller
                         'nfc_card_orders.updated_at',
                         'nfc_card_order_transactions.payment_status',
                         'nfc_card_order_transactions.amount',
+                        'nfc_card_order_transactions.currency',
                         'nfc_card_designs.nfc_card_name',
-                        'nfc_card_designs.nfc_card_price'
+                        'nfc_card_designs.nfc_card_price',
+                        'nfc_card_designs.allow_logo_upload'
                     )
                     ->where('nfc_card_orders.user_id', Auth::user()->id)
                     ->orderBy('nfc_card_order_transactions.created_at', 'desc');
@@ -150,25 +158,25 @@ class ManageOrderNfcCardController extends Controller
                         }
                     })
                     ->editColumn('nfc_card_logo', function ($order) {
-                        if (!empty($order->nfc_card_logo)) {
-                            $output = '<a href="' . asset($order->nfc_card_logo) . '" class="fw-bold" data-bs-toggle="tooltip" data-bs-placement="top" title="' . trans('Download') . '" download>
-                                    <img src="' . asset($order->nfc_card_logo) . '" class="img-fluid rounded border" width="40" height="40" style="object-fit: cover;" alt="NFC Card Attachment">
-                                </a>';
+                        // Image assets: uploaded / asked for, linking to the order's upload section
+                        $files = OrderAssets::summary($order);
 
-                            if ($order->order_status == 'processing' || $order->order_status == 'hold') {
-                                $output .= '<br><a href="' . route('user.upload.nfc.card.logo', $order->nfc_card_order_id) . '" class="fw-bold btn small-btn text-success bg-white mt-1 border">' . __('Re-upload') . '</a>';
-                            }
-                            return $output;
-                        } elseif ($order->order_status == 'printing process begun' || $order->order_status == 'processing' || $order->order_status == 'hold') {
-                            return '<a href="' . route('user.upload.nfc.card.logo', $order->nfc_card_order_id) . '" class="fw-bold btn small-btn text-success bg-white border">' . __('Upload') . '</a>';
+                        if ($files['total'] === 0) {
+                            return '<span class="text-muted">-</span>';
                         }
-                        return '<span class="text-muted">-</span>';
+
+                        $class = $files['missingRequired'] > 0 ? 'text-danger' : ($files['uploaded'] === $files['total'] ? 'text-success' : 'text-secondary');
+                        $label = $files['uploaded'] . '/' . $files['total'];
+                        $hint  = $files['missingRequired'] > 0 ? ' · ' . e(__(':count required missing', ['count' => $files['missingRequired']])) : '';
+
+                        return '<a href="' . route('user.order.nfc.card.view', $order->nfc_card_order_id) . '#image-assets" class="fw-bold text-decoration-none ' . $class . '">' . $label . '</a><div class="small text-secondary">' . $hint . '</div>';
                     })
                     ->editColumn('nfc_card_name', function ($order) {
                         return '<span class="fw-bold text-dark">' . $order->nfc_card_name . '</span>';
                     })
                     ->editColumn('nfc_card_price', function ($order) {
-                        return '<span class="fw-bold text-dark">' . formatCurrency($order->amount) . '</span>';
+                        // In the currency the order was paid in
+                        return '<span class="fw-bold text-dark">' . e(formatMoney($order->amount, $order->currency)) . '</span>';
                     })
                     ->editColumn('payment_status', function ($order) {
                         if ($order->payment_status == 'success') {
@@ -240,9 +248,6 @@ class ManageOrderNfcCardController extends Controller
             return abort(404);
         }
 
-        $currencies = Currency::where('status', 1)->pluck('symbol', 'iso_code')->toArray();
-        $symbol = $currencies[$config[1]->config_value] ?? '';
-
         // Check if the user has a plan
         $active_plan = Plan::where('plan_id', Auth::user()->plan_id)->first();
         $plan = User::where('user_id', Auth::user()->user_id)->first();
@@ -262,75 +267,76 @@ class ManageOrderNfcCardController extends Controller
             return redirect()->route('user.manage.nfc.orders')->with('failed', __('Order not found!'));
         }
 
-        return view('user.pages.manage-orders.view', compact('order', 'settings', 'config', 'symbol'));
+        // Smart Products: timeline, product photo, logo option
+        $orderModel = NfcCardOrder::where('nfc_card_order_id', $order->nfc_card_order_id)->first();
+        $design     = \App\NfcCardDesign::where('nfc_card_id', $order->nfc_card_id)->first();
+        $timeline   = \App\Support\SmartProducts\OrderHistory::timeline($orderModel);
+        $photo      = $design?->photos()[0] ?? null;
+        $allowLogo  = $design?->allow_logo_upload !== false;
+
+        // Image assets: what the order asks for and what's uploaded
+        $files     = OrderAssets::files($orderModel);
+        $assets    = array_map(fn ($asset) => $asset + [
+            'file' => isset($files[$asset['key']]) ? $files[$asset['key']] + [
+                'url'     => StorageHelper::url($files[$asset['key']]['path']),
+                // SVG is never shown inline (it can carry scripts)
+                'preview' => $files[$asset['key']]['type'] === 'image' && ! str_ends_with(strtolower($files[$asset['key']]['path']), '.svg'),
+            ] : null,
+        ], OrderAssets::requirements($orderModel));
+        $canUpload = OrderAssets::canUpload($orderModel, Auth::user());
+
+        return view('user.pages.manage-orders.view', compact('order', 'settings', 'config', 'timeline', 'photo', 'allowLogo', 'assets', 'canUpload'));
     }
 
-    // Upload NFC card logo
+    // Old "upload logo" page: uploads are on the order page now (Image assets)
     public function uploadNfcCardLogo($nfcId)
     {
-        // Queries
-        $settings = Setting::where('status', 1)->first();
-        $config = DB::table('config')->get();
-
-        // Check enable nfc card order system
-        if ($config[76]->config_value == '0') {
-            return abort(404);
-        }
-
-        // Check if the user has a plan
-        $active_plan = Plan::where('plan_id', Auth::user()->plan_id)->first();
-        $plan = User::where('user_id', Auth::user()->user_id)->first();
-        $active_plan = json_decode($plan->plan_details);
-
-        // Get the order and transaction and user tables (joins)
-        $order = NfcCardOrder::join('nfc_card_order_transactions', 'nfc_card_orders.nfc_card_order_id', '=', 'nfc_card_order_transactions.nfc_card_order_id')
-            ->join('nfc_card_designs', 'nfc_card_orders.nfc_card_id', '=', 'nfc_card_designs.nfc_card_id')
-            ->join('users', 'nfc_card_orders.user_id', '=', 'users.id')
-            ->select('nfc_card_order_transactions.*', 'users.*', 'nfc_card_orders.order_details', 'nfc_card_orders.nfc_card_order_id', 'nfc_card_orders.nfc_card_id', 'nfc_card_designs.nfc_card_name', 'nfc_card_designs.nfc_card_price', 'nfc_card_orders.delivery_address', 'nfc_card_orders.order_status', 'nfc_card_orders.status', 'nfc_card_orders.created_at', 'nfc_card_orders.updated_at')
-            ->where('nfc_card_order_transactions.status', '!=', 2)
-            ->where('nfc_card_orders.nfc_card_order_id', $nfcId)->where('nfc_card_orders.user_id', Auth::user()->id)
-            ->first();
-
-        // Check if the order exists
-        if (!$order) {
-            return redirect()->route('user.manage.nfc.orders')->with('failed', __('Order not found!'));
-        }
-
-        // Check if the order status is "processing" or "hold"
-        if ($order->order_status != 'processing' && $order->order_status != 'hold') {
-            return redirect()->route('user.manage.nfc.orders')->with('failed', __('Unable to re-upload NFC card attachment. Order status is not "Processing" or "Holding".'));
-        }
-
-        return view('user.pages.manage-orders.upload-nfc-card-logo', compact('order', 'settings', 'config'));
+        return redirect()->to(route('user.order.nfc.card.view', $nfcId) . '#image-assets');
     }
 
-    // Update NFC card logo
+    // Old logo form (kept for old links): stores the file as the order's logo / first image asset
     public function updateNfcCardLogo(Request $request, $nfcId)
     {
-        // Check if the order exists
-        $order = NfcCardOrder::where('nfc_card_order_id', $nfcId)->first();
+        $order = NfcCardOrder::where('nfc_card_order_id', $nfcId)->where('user_id', Auth::id())->first();
 
-        // Check if the order exists
-        if (!$order) {
+        if (! $order || ! $request->hasFile('nfc_card_logo')) {
             return redirect()->route('user.manage.nfc.orders')->with('failed', __('Order not found!'));
         }
 
-        // Check if the order status is "processing" or "hold"
-        if ($order->order_status != 'processing' && $order->order_status != 'hold') {
-            return redirect()->route('user.manage.nfc.orders')->with('failed', __('Unable to re-upload NFC card attachment. Order status is not "Processing" or "Holding".'));
+        $requirements = OrderAssets::requirements($order);
+        $key          = collect($requirements)->firstWhere('key', 'logo')['key'] ?? ($requirements[0]['key'] ?? 'logo');
+
+        return $this->storeAsset($order, $key, $request->file('nfc_card_logo'));
+    }
+
+    // Upload or replace the file of one image asset
+    public function uploadAsset(Request $request, $id, $key)
+    {
+        $order = NfcCardOrder::where('nfc_card_order_id', $id)->where('user_id', Auth::id())->first();
+
+        if (! $order) {
+            return redirect()->route('user.manage.nfc.orders')->with('failed', __('Order not found!'));
         }
 
-        // Upload NFC card logo
-        if ($request->hasFile('nfc_card_logo') && $request->file('nfc_card_logo')->isValid()) {
-            // Upload NFC card logo and get relative path (e.g., 'storage/nfc-cards/filename.png')
-            $nfcCardLogoUrl = StorageHelper::uploadImage($request->file('nfc_card_logo'), 'nfc-cards');
-
-            // Update logo in database
-            NfcCardOrder::where('nfc_card_order_id', $nfcId)->update([
-                'nfc_card_logo' => $nfcCardLogoUrl,
-            ]);
+        if (! $request->hasFile('file')) {
+            return redirect()->to(route('user.order.nfc.card.view', $id) . '#image-assets')->with('failed', __('Choose a file to upload.'));
         }
 
-        return redirect()->route('user.manage.nfc.orders')->with('success', __('NFC Card Logo updated successfully!'));
+        return $this->storeAsset($order, (string) $key, $request->file('file'));
+    }
+
+    private function storeAsset(NfcCardOrder $order, string $key, $file)
+    {
+        $back = route('user.order.nfc.card.view', $order->nfc_card_order_id) . '#image-assets';
+
+        try {
+            $summary = OrderAssets::store($order, $key, $file, Auth::user());
+        } catch (ValidationException $e) {
+            return redirect()->to($back)->with('failed', collect($e->errors())->flatten()->first());
+        }
+
+        return redirect()->to($back)->with('success', $summary['missingRequired'] > 0
+            ? __('File uploaded. :count required file(s) still missing.', ['count' => $summary['missingRequired']])
+            : __('File uploaded. Thank you!'));
     }
 }

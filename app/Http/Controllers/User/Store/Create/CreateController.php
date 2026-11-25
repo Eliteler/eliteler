@@ -14,6 +14,7 @@ namespace App\Http\Controllers\User\Store\Create;
 
 use App\BusinessCard;
 use App\Services\ReservedLinks;
+use App\Support\PersonalizedLink;
 use App\Currency;
 use App\Helpers\StorageHelper;
 use App\Http\Controllers\Controller;
@@ -138,32 +139,10 @@ class CreateController extends Controller
             $personalized_link = $cardId;
         }
 
-        // Clean Personalized Link
-        $personalized_link = trim($personalized_link);
-
-        // Remove https://, http:// and www.
-        $personalized_link = str_replace(
-            ['https://', 'http://', 'www.'],
-            '',
-            $personalized_link
-        );
-
-        // Convert accented characters to ASCII
-        $personalized_link = iconv(
-            'UTF-8',
-            'ASCII//TRANSLIT//IGNORE',
-            $personalized_link
-        );
-
-        // Remove all characters except letters, numbers, and hyphens
-        $personalized_link = preg_replace(
-            '/[^a-zA-Z0-9-]/',
-            '',
-            $personalized_link
-        );
-
-        // Convert to lowercase
-        $personalized_link = strtolower($personalized_link);
+        $card_url = PersonalizedLink::normalize($personalized_link);
+        if (ReservedLinks::contains($card_url)) {
+            return redirect()->route('user.create.store')->with('failed', trans(ReservedLinks::MESSAGE))->withInput();
+        }
 
         // Queries
         $cards = BusinessCard::where('user_id', Auth::user()->user_id)
@@ -235,14 +214,6 @@ class CreateController extends Controller
             'whatsapp_msg' => $request->whatsapp_msg,
             'currency'     => $request->currency,
         ];
-
-        // Unique Store URL
-        $card_url = $personalized_link;
-
-        // a page of the site already uses this link (login, user, admin, ...)
-        if (ReservedLinks::contains($card_url)) {
-            return redirect()->route('user.create.store')->with('failed', trans(ReservedLinks::MESSAGE));
-        }
 
         // Check existing card URL
         $current_card = BusinessCard::where('card_url', $card_url)
@@ -356,9 +327,10 @@ class CreateController extends Controller
     // Cropping image
     public function storeCroppedImage(Request $request)
     {
-        // Validate image 
+        // Validate image with fallback to 5MB for high-res banners
+        $maxSize = max((int) env('SIZE_LIMIT', 2048), 5120);
         $request->validate([
-            'croppedImage' => 'required|image|mimes:jpeg,png,jpg,gif,svg,webp|max:' . env('SIZE_LIMIT', 10240),
+            'croppedImage' => 'required|image|mimes:jpeg,png,jpg,gif,svg,webp|max:' . $maxSize,
         ]);
 
         // Upload cropped image using StorageHelper and get relative path

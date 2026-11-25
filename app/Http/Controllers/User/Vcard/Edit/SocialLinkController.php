@@ -42,7 +42,7 @@ class SocialLinkController extends Controller
     public function socialLinks(Request $request, $id)
     {
         // Queries
-        $business_card = BusinessCard::where('card_id', $id)->first();
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
 
         // Check business card
         if ($business_card == null) {
@@ -76,7 +76,7 @@ class SocialLinkController extends Controller
     public function updateSocialLinks(Request $request, $id)
     {
         // Queries
-        $business_card = BusinessCard::where('card_id', $id)->first();
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
 
         // Check business card
         if ($business_card == null) {
@@ -93,10 +93,10 @@ class SocialLinkController extends Controller
 
                 // Get plan details
                 $plan         = DB::table('users')->where('user_id', Auth::user()->user_id)->where('status', 1)->first();
-                $plan_details = json_decode($plan->plan_details);
+                $plan_details = !empty($plan->plan_details) ? json_decode($plan->plan_details) : null;
 
                 // Check social links limit
-                if (count($request->icon) <= $plan_details->no_of_links) {
+                if (is_array($request->icon) && count($request->icon) <= ($plan_details->no_of_links ?? 0)) {
 
                     // Check dynamic fields foreach
                     // Link types accept a bare domain (example.com, www.example.com/page): add https://

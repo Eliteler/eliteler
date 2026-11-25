@@ -13,7 +13,6 @@
 namespace App\Http\Middleware;
 
 use App\Support\Admin\AdminPermissions;
-use App\Support\Plugins\PluginExtensions;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -31,24 +30,19 @@ class UserPagePermission
         // Fetch current user's details
         $user = Auth::user();
 
-        // Plugin permissions (plugin.json "permissions") aren't stored for every admin yet
-        $plugin = array_intersect($permissions, array_keys(PluginExtensions::permissions()));
-        if ($user && $plugin && array_filter(array_intersect_key(AdminPermissions::for($user), array_flip($plugin)))) {
-            return $next($request);
-        }
-
-        // Check if user exists and has permissions
-        if ($user && $user->permissions) {
-            $allowedPermissions = json_decode($user->permissions, true);
+        if ($user) {
+            // Same list the admin menu uses: stored permissions + defaults for keys never
+            // stored (e.g. admins created before a feature existed, fresh installs) +
+            // plugin permissions. A key explicitly turned off stays off.
+            $allowed = AdminPermissions::for($user);
 
             // Money areas are closed to admins with revenue hidden
             if (AdminPermissions::hidesRevenue($user)) {
                 $permissions = array_diff($permissions, AdminPermissions::REVENUE_AREAS);
             }
 
-            // Check if any of the provided permissions are allowed
             foreach ($permissions as $permission) {
-                if (array_key_exists($permission, $allowedPermissions) && $allowedPermissions[$permission]) {
+                if (! empty($allowed[$permission])) {
                     return $next($request);
                 }
             }

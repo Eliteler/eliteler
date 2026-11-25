@@ -124,6 +124,12 @@ class UpdateStoreCategoryController extends Controller
     // Save category
     public function saveCategory(Request $request)
     {
+        // Verify store belongs to authenticated user
+        $store = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $request->store_id)->first();
+        if (!$store) {
+            return response()->json(['success' => false, 'message' => trans('Store not found!')], 403);
+        }
+
         $plan = DB::table('users')
             ->where('user_id', Auth::user()->user_id)
             ->where('status', 1)
@@ -187,6 +193,21 @@ class UpdateStoreCategoryController extends Controller
             // Retrieve the category from the database
             $category = StoreCategory::where('category_id', $id)->first();
 
+            if (!$category) {
+                return response()->json([
+                    'success' => false,
+                    'message' => trans('Category not found!')
+                ], 404);
+            }
+
+            $isOwner = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $category->store_id)->exists();
+            if (!$isOwner) {
+                return response()->json([
+                    'success' => false,
+                    'message' => trans('Unauthorized action!')
+                ], 403);
+            }
+
             // Return a JSON response with the category data
             return response()->json([
                 'success' => true,
@@ -212,6 +233,14 @@ class UpdateStoreCategoryController extends Controller
                 'success' => false,
                 'message' => trans('Category not found.')
             ], 404);
+        }
+
+        $isOwner = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $category->store_id)->exists();
+        if (!$isOwner) {
+            return response()->json([
+                'success' => false,
+                'message' => trans('Unauthorized action!')
+            ], 403);
         }
 
         // Update category data
@@ -253,8 +282,23 @@ class UpdateStoreCategoryController extends Controller
     // Delete category
     public function deleteStoreCategory($id)
     {
+        $category = StoreCategory::where('category_id', $id)->first();
+
+        if (!$category) {
+            return response()->json(['message' => trans('Category not found')], 404);
+        }
+
+        $isOwner = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $category->store_id)->exists();
+        if (!$isOwner) {
+            return response()->json(['message' => trans('Unauthorized action!')], 403);
+        }
+
+        if (!empty($category->thumbnail)) {
+            StorageHelper::deleteFile($category->thumbnail);
+        }
+
         // Delete
-        StoreCategory::where('category_id', $id)->delete();
+        $category->delete();
 
         return response()->json(['message' => trans('Category deleted successfully')], 200);
     }

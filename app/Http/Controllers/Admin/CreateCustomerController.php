@@ -53,7 +53,7 @@ class CreateCustomerController extends Controller
         $data = $request->validate([
             'full_name'      => 'required|string|max:255',
             'email'          => 'required|email|max:255|unique:users,email',
-            'password'       => 'required|string|min:6',
+            'password'       => 'required|string|min:6|max:100',
             'plan_id'        => ['nullable', Rule::exists('plans', 'plan_id')->where('status', 1)],
             'status'         => 'required|in:0,1',
             'welcome_email'  => 'boolean',

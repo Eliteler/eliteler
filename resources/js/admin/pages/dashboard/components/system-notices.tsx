@@ -1,25 +1,71 @@
 import { Link } from "@inertiajs/react";
 import { Info, LifeBuoy, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 
 import { Alert, AlertDescription } from "@admin/components/ui/alert";
 import { Button } from "@admin/components/ui/button";
 
-import type { SystemNotice } from "../types";
+import type { MarketplaceNotice, SystemNotice } from "../types";
 
 const RENEW_SUPPORT_URL = "https://gobizsaas.com/renew-support";
+const NOTICE_LINK_CLASS = "font-medium underline underline-offset-4";
 
-/** Software update / support plan notices from the license server (DashboardController systemNotice). */
-export function SystemNotices({ notice }: { notice: SystemNotice | null }) {
+function MarketplaceUpdateMessage({ plugins, templates }: MarketplaceNotice) {
+    const { t } = useTranslation();
+    const pluginUpdates = plugins
+        ? t(plugins.count === 1 ? "{{total}} plugin update" : "{{total}} plugin updates", {
+              total: plugins.count.toLocaleString(),
+          })
+        : null;
+    const templateUpdates = templates
+        ? t(templates.count === 1 ? "{{total}} template update" : "{{total}} template updates", {
+              total: templates.count.toLocaleString(),
+          })
+        : null;
+
+    if (plugins && templates) {
+        return (
+            <Trans
+                i18nKey="<plugins>{{pluginUpdates}}</plugins> and <templates>{{templateUpdates}}</templates> are available."
+                values={{ pluginUpdates, templateUpdates }}
+                components={{
+                    plugins: <Link href={plugins.url} className={NOTICE_LINK_CLASS} />,
+                    templates: <Link href={templates.url} className={NOTICE_LINK_CLASS} />,
+                }}
+            />
+        );
+    }
+
+    const category = plugins ?? templates;
+    if (!category) return null;
+
+    return (
+        <Trans
+            i18nKey={
+                category.count === 1
+                    ? "<updates>{{label}}</updates> is available."
+                    : "<updates>{{label}}</updates> are available."
+            }
+            values={{ label: pluginUpdates ?? templateUpdates }}
+            components={{ updates: <Link href={category.url} className={NOTICE_LINK_CLASS} /> }}
+        />
+    );
+}
+
+export function SystemNotices({
+    notice,
+    marketplace,
+}: {
+    notice: SystemNotice | null;
+    marketplace: MarketplaceNotice | null;
+}) {
     const { t } = useTranslation();
     const [dismissed, setDismissed] = useState<string[]>([]);
 
-    if (!notice) return null;
-
     const notices: { key: string; icon: typeof Info; variant: "info" | "warning"; content: ReactNode }[] = [];
 
-    if (notice.updateAvailable) {
+    if (notice?.updateAvailable) {
         notices.push({
             key: "update",
             icon: Info,
@@ -27,7 +73,7 @@ export function SystemNotices({ notice }: { notice: SystemNotice | null }) {
             content: (
                 <>
                     {notice.latestVersion ? t("Version :version is available.").replace(":version", notice.latestVersion) : t("A new version is available.")}{" "}
-                    <Link href={route("admin.check", { install: 1 })} className="font-medium underline underline-offset-4">
+                    <Link href={route("admin.check", { install: 1 })} className={NOTICE_LINK_CLASS}>
                         {t("Install")}
                     </Link>
                 </>
@@ -35,7 +81,16 @@ export function SystemNotices({ notice }: { notice: SystemNotice | null }) {
         });
     }
 
-    if (notice.supportExpired) {
+    if (marketplace) {
+        notices.push({
+            key: "marketplace",
+            icon: Info,
+            variant: "info",
+            content: <MarketplaceUpdateMessage {...marketplace} />,
+        });
+    }
+
+    if (notice?.supportExpired) {
         notices.push({
             key: "support",
             icon: LifeBuoy,
@@ -43,7 +98,7 @@ export function SystemNotices({ notice }: { notice: SystemNotice | null }) {
             content: (
                 <>
                     {t("Your support plan has ended.")}{" "}
-                    <a href={RENEW_SUPPORT_URL} target="_blank" rel="noreferrer" className="font-medium underline underline-offset-4">
+                    <a href={RENEW_SUPPORT_URL} target="_blank" rel="noreferrer" className={NOTICE_LINK_CLASS}>
                         {t("Renew")}
                     </a>
                 </>

@@ -237,7 +237,7 @@
     {{-- Update Order Status Modal --}}
     <div class="modal modal-bg fade" id="updateOrderStatusModal" tabindex="-1"
         aria-labelledby="updateOrderStatusModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold" id="updateOrderStatusModalLabel">{{ __('Update Order Status') }}</h5>
@@ -283,7 +283,7 @@
     {{-- Update Payment Status Modal --}}
     <div class="modal modal-bg fade" id="markAsPaidModal" tabindex="-1" aria-labelledby="markAsPaidModalLabel"
         aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold" id="markAsPaidModalLabel">{{ __('Update Payment Status') }}</h5>

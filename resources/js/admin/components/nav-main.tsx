@@ -17,6 +17,16 @@ import type { NavEntry, NavGroup, NavSection } from "@admin/types";
 
 const isGroup = (entry: NavEntry): entry is NavGroup => "items" in entry;
 
+/** "New" style label next to a menu title (hidden when the sidebar is collapsed to icons) */
+function NavTag({ label }: { label?: string | null }) {
+    if (!label) return null;
+    return (
+        <span className="ms-auto rounded-full bg-success/15 px-1.5 text-[0.65rem] leading-5 font-semibold text-success uppercase group-data-[collapsible=icon]:hidden">
+            {label}
+        </span>
+    );
+}
+
 export function NavMain({ sections }: { sections: NavSection[] }) {
     return (
         <>
@@ -32,7 +42,8 @@ export function NavMain({ sections }: { sections: NavSection[] }) {
                                             <SidebarMenuButton tooltip={entry.title} isActive={entry.isActive}>
                                                 <NavIcon name={entry.icon} />
                                                 <span>{entry.title}</span>
-                                                <ChevronRight className="ms-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 rtl:rotate-180 rtl:group-data-[state=open]/collapsible:rotate-90" />
+                                                <NavTag label={entry.tag} />
+                                                <ChevronRight className={`${entry.tag ? "" : "ms-auto "}transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 rtl:rotate-180 rtl:group-data-[state=open]/collapsible:rotate-90`} />
                                             </SidebarMenuButton>
                                         </CollapsibleTrigger>
                                         <CollapsibleContent>
@@ -56,6 +67,7 @@ export function NavMain({ sections }: { sections: NavSection[] }) {
                                         <NavLink href={entry.href} inertia={entry.inertia} action={entry.action}>
                                             <NavIcon name={entry.icon} svg={entry.svg} />
                                             <span>{entry.title}</span>
+                                            <NavTag label={entry.tag} />
                                             {!!entry.badge && (
                                                 <span className="ms-auto rounded-full bg-primary px-1.5 text-[0.68rem] leading-5 font-medium text-primary-foreground tabular-nums group-data-[collapsible=icon]:hidden">
                                                     {entry.badge > 99 ? "99+" : entry.badge}

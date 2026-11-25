@@ -12,9 +12,11 @@
 
 namespace Modules\TranslationManager\app\Services;
 
+require_once __DIR__ . '/../Providers/TranslationPlaceholderProtector.php';
+
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Modules\TranslationManager\App\Providers\TranslationPlaceholderProtector;
+use Modules\TranslationManager\app\Providers\TranslationPlaceholderProtector;
 
 class MissingTranslationService
 {
@@ -70,7 +72,8 @@ class MissingTranslationService
         string $sourceLocale,
         string $targetLocale,
         ?callable $onProgress = null,
-        int $maxExecutionSeconds = 50
+        int $maxExecutionSeconds = 50,
+        ?callable $stopCheck = null
     ): bool {
         $startTime = microtime(true);
         $missing = $this->detectMissingKeys($sourceLocale, $targetLocale);
@@ -94,6 +97,14 @@ class MissingTranslationService
             $hasUnsavedChanges = false;
 
             foreach ($keysToSync as $key => $val) {
+                // Check if user requested to stop auto-translation
+                if ($stopCheck && $stopCheck()) {
+                    if ($hasUnsavedChanges) {
+                        $this->writer->writeTranslations($targetLocale, $group, $type, $targetTranslations);
+                    }
+                    return false;
+                }
+
                 // Check if execution time has reached the threshold
                 if ((microtime(true) - $startTime) >= $maxExecutionSeconds) {
                     if ($hasUnsavedChanges) {
@@ -114,6 +125,12 @@ class MissingTranslationService
 
                 if ($onProgress) {
                     $onProgress($done, $total);
+                }
+
+                // Check again right after translation in case stop was clicked during the API call
+                if ($stopCheck && $stopCheck()) {
+                    $this->writer->writeTranslations($targetLocale, $group, $type, $targetTranslations);
+                    return false;
                 }
 
                 // Prevent hitting rate limits on free translation endpoints

@@ -5,6 +5,7 @@ namespace App\Services\Admin\Nfc;
 use App\NfcCardKey;
 use App\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -28,7 +29,7 @@ class NfcKeyService
         return max(6, (int) DB::table('config')->where('config_key', 'nfc_character_limit')->value('config_value') ?: 12);
     }
 
-    public function newKey(string $type, ?string $planId = null, ?string $designId = null): NfcCardKey
+    public function newKey(string $type, ?string $planId = null, ?string $designId = null, ?string $linkType = null): NfcCardKey
     {
         $key                         = new NfcCardKey();
         $key->nfc_card_key_id        = uniqid();
@@ -39,6 +40,10 @@ class NfcKeyService
 
         if ($planId && $designId) {
             $key->key_status = 'active';
+        }
+
+        if ($linkType && Schema::hasColumn('nfc_card_keys', 'link_type')) {
+            $key->link_type = $linkType;
         }
 
         $key->save();

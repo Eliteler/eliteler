@@ -74,7 +74,7 @@ export default function Dashboard(props: DashboardProps) {
                     </div>
                 </div>
 
-                <SystemNotices notice={props.systemNotice} />
+                <SystemNotices notice={props.systemNotice} marketplace={props.marketplaceNotice} />
 
                 <div className={cn("flex flex-col gap-4 transition-opacity md:gap-6", loading && "pointer-events-none opacity-60")}>
                     <KpiCards kpis={props.kpis} periodLabel={periodLabel} />
@@ -96,7 +96,7 @@ export default function Dashboard(props: DashboardProps) {
                     ) : (
                         <>
                             <div className="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-3">
-                                <RevenueChart data={props.revenueSeries ?? []} />
+                                <RevenueChart data={props.revenueSeries ?? []} others={props.kpis.revenue?.others ?? []} />
                                 <AttentionCard items={props.attention} />
                             </div>
 
@@ -107,7 +107,7 @@ export default function Dashboard(props: DashboardProps) {
 
                             <div className="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-3">
                                 <RecentPayments payments={props.recentPayments ?? []} links={props.links} />
-                                <GatewaysCard gateways={props.gateways ?? []} />
+                                <GatewaysCard gateways={props.gateways ?? []} others={props.kpis.revenue?.others ?? []} />
                             </div>
 
                             <div className="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-3">

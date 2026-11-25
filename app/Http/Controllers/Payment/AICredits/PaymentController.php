@@ -19,7 +19,6 @@ use App\Http\Controllers\Controller;
 use App\Services\PluginManager;
 use App\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -53,6 +52,12 @@ class PaymentController extends Controller
             // Get payment gateway details
             $payment_mode = Gateway::where('payment_gateway_id', $request->payment_gateway_id)->first();
 
+            // Unknown or removed gateway: back to this pack's checkout (checked before
+            // $payment_mode is used; the route needs the pack id)
+            if ($payment_mode == null) {
+                return redirect()->route('user.ai.credits.checkout', $planId)->with('failed', trans('Select a payment method not available. Please choose another payment method.'));
+            }
+
             // Get all plugins
             $plugins = $this->pluginManager->active();
 
@@ -64,7 +69,7 @@ class PaymentController extends Controller
 
             // Check payment mode
             if ($payment_mode == null) {
-                return redirect()->route('user.ai.credits.checkout')->with('failed', trans('Select a payment method not available. Please choose another payment method.'));
+                return redirect()->route('user.ai.credits.checkout', $planId)->with('failed', trans('Select a payment method not available. Please choose another payment method.'));
             } else {
                 // Validate request
                 $validator = Validator::make($request->all(), [
@@ -102,28 +107,6 @@ class PaymentController extends Controller
                     'type' => $request->type ?? "",
                     'vat_number' => $request->vat_number ?? ""
                 ]);
-
-                // Insert plugins provider in config file
-                $configPath = config_path('app.php');
-
-                // Read the current config file
-                $configContent = file_get_contents($configPath);
-
-                // Check if the provider already exists to avoid duplication
-                if (strpos($configContent, 'App\Providers\PluginServiceProvider::class,') === false) {
-                    // Find the last occurrence of the providers array and insert before the closing bracket ]
-                    $updatedConfig = preg_replace(
-                        "/('providers' => \[)(.*?)(\n\s*\],)/s",
-                        "$1$2\n        App\Providers\PluginServiceProvider::class,$3",
-                        $configContent
-                    );
-
-                    // Write back the updated config file
-                    file_put_contents($configPath, $updatedConfig);
-
-                    // Clear config cache to apply changes
-                    Artisan::call('config:clear');
-                }
 
                 // Coupon ID
                 $couponId = $request->applied_coupon;

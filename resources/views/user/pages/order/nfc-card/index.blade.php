@@ -30,19 +30,19 @@
                                 </a>
                             </li>
                             <li class="breadcrumb-item active" aria-current="page">
-                                {{ __('Order NFC Card') }}
+                                {{ __('Order Smart Products') }}
                             </li>
                         </ol>
                     </nav>
                     <div class="col">
                         <!-- Page Title -->
                         <h2 class="page-title">
-                            {{ __('Order NFC Card') }}
+                            {{ __('Order Smart Products') }}
                         </h2>
 
                         <!-- Descriptive Subtitle -->
                         <div class="text-muted mt-1">
-                            {{ __('Choose from our highly durable premium card layouts and design selections to order your custom physical NFC card.') }}
+                            {{ __('NFC cards, stands, tags and more. Tap-ready products that open your business card, store or any link.') }}
                         </div>
                     </div>
                 </div>
@@ -77,37 +77,66 @@
                     </div>
                 @endif
 
+                {{-- Type filter --}}
+                @if (count($productTypes) > 1)
+                    <div class="btn-list mb-3" id="productTypeFilter">
+                        <button type="button" class="btn btn-sm btn-primary" data-type="all">{{ __('All') }}</button>
+                        @foreach ($productTypes as $type => $label)
+                            <button type="button" class="btn btn-sm" data-type="{{ $type }}">{{ $label }}</button>
+                        @endforeach
+                    </div>
+                @endif
+
                 <div class="row g-3">
                     {{-- Check NFC card designs --}}
                     @if (count($availableNfcCards) > 0)
                         {{-- Nfc cards loop --}}
                         @foreach ($availableNfcCards as $nfcCard)
-                            <div class="col-sm-6 col-md-4 col-lg-3">
+                            @php
+                                $photos = $nfcCard->photos();
+                                $type = \App\Support\SmartProducts\SmartProductCatalog::typeCode($nfcCard->product_type);
+                            @endphp
+                            <div class="col-sm-6 col-md-4 col-lg-3 js-product" data-type="{{ $type }}">
                                 <div class="card border-0 shadow-sm h-100 overflow-hidden">
-                                    <!-- Front image front cover photo -->
-                                    <a href="{{ asset($nfcCard->nfc_card_front_image) }}" data-fslightbox="gallery"
-                                        data-fslightbox-gallery="gallery">
-                                        <div class="ratio ratio-16x9">
-                                            <img src="{{ asset($nfcCard->nfc_card_front_image) }}"
-                                                alt="{{ __($nfcCard->nfc_card_name) }}" class="card-img-top object-cover">
-                                        </div>
-                                    </a>
-                                    <!-- Back image overlay loading gallery -->
-                                    <a href="{{ asset($nfcCard->nfc_card_back_image) }}" data-fslightbox="gallery"
-                                        data-fslightbox-gallery="gallery" class="d-none">
-                                        <img src="{{ asset($nfcCard->nfc_card_back_image) }}"
-                                            alt="{{ __($nfcCard->nfc_card_name) }}">
-                                    </a>
+                                    {{-- Photos (first = cover; the rest open in the lightbox) --}}
+                                    @foreach ($photos as $i => $photo)
+                                        <a href="{{ asset($photo) }}" data-fslightbox="product-{{ $nfcCard->nfc_card_id }}"
+                                            class="{{ $i === 0 ? 'position-relative d-block' : 'd-none' }}">
+                                            @if ($i === 0)
+                                                <div class="ratio ratio-4x3">
+                                                    <img src="{{ asset($photo) }}" alt="{{ __($nfcCard->nfc_card_name) }}"
+                                                        class="card-img-top object-cover"
+                                                        @if (! $nfcCard->inStock()) style="filter: grayscale(.6);" @endif>
+                                                </div>
+                                                @if (! $nfcCard->inStock())
+                                                    <span class="badge bg-danger text-white position-absolute bottom-0 start-0 m-2">
+                                                        {{ __('Out of Stock') }}
+                                                    </span>
+                                                @endif
+                                                <span class="badge bg-white text-dark position-absolute top-0 start-0 m-2">
+                                                    {{ $productTypes[$type] ?? __('Generic') }}
+                                                </span>
+                                                @if (count($photos) > 1)
+                                                    <span class="badge bg-dark-lt position-absolute bottom-0 end-0 m-2">
+                                                        {{ count($photos) }} {{ __('photos') }}
+                                                    </span>
+                                                @endif
+                                            @endif
+                                        </a>
+                                    @endforeach
 
                                     <div class="card-body">
                                         <h3 class="card-title">{{ __($nfcCard->nfc_card_name) }}</h3>
                                         <p class="text-secondary description small">
-                                            {{ __($nfcCard->nfc_card_description) }}
+                                            {{ __($nfcCard->short_description ?: $nfcCard->nfc_card_description) }}
                                         </p>
                                         <div class="d-flex align-items-center mt-3">
                                             <span class="text-secondary me-2 small">{{ __('Price:') }}</span>
                                             <span
-                                                class="h3 mb-0 text-primary fw-bold">{{ formatCurrency($nfcCard->nfc_card_price) }}</span>
+                                                class="h3 mb-0 text-primary fw-bold">{{ $nfcCard->nfc_card_price > 0 ? formatCurrency($nfcCard->nfc_card_price) : __('Free') }}</span>
+                                            @if ($nfcCard->compare_at_price && $nfcCard->compare_at_price > $nfcCard->nfc_card_price)
+                                                <span class="text-secondary text-decoration-line-through ms-2 small">{{ formatCurrency($nfcCard->compare_at_price) }}</span>
+                                            @endif
                                         </div>
                                     </div>
 
@@ -380,4 +409,19 @@
 {{-- Custom scripts pushed inside correct stack --}}
 @push('custom-js')
     <script src="{{ asset('js/fslightbox.js') }}"></script>
+    <script>
+        "use strict";
+        document.addEventListener('DOMContentLoaded', function() {
+            const filter = document.getElementById('productTypeFilter');
+            if (!filter) return;
+            filter.addEventListener('click', function(e) {
+                const button = e.target.closest('button[data-type]');
+                if (!button) return;
+                filter.querySelectorAll('button').forEach((b) => b.classList.toggle('btn-primary', b === button));
+                document.querySelectorAll('.js-product').forEach((card) => {
+                    card.classList.toggle('d-none', button.dataset.type !== 'all' && card.dataset.type !== button.dataset.type);
+                });
+            });
+        });
+    </script>
 @endpush

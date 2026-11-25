@@ -9,7 +9,47 @@
     <link rel="stylesheet" href="{{ asset('css/all.css') }}" />
 
     {{-- Digital Business Card CSS --}}
-    <link rel="stylesheet" href="{{ asset('css/digital-business-card.css') }}" />
+    <link rel="stylesheet" href="{{ asset('css/digital-business-card.css') }}?v={{ file_exists(public_path('css/digital-business-card.css')) ? filemtime(public_path('css/digital-business-card.css')) : time() }}" />
+
+    <style>
+        /* CRITICAL CROP FIX: Protect Cropper.js internal images from squishing / distortion */
+        .cropper-modal-container {
+            width: 100%;
+            max-height: 450px;
+            min-height: 260px;
+            overflow: hidden;
+            background-color: var(--tblr-dark, #0f172a);
+            border-radius: var(--tblr-border-radius-lg, 10px);
+            position: relative;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+            text-align: center;
+        }
+        .cropper-modal-container > img {
+            display: block;
+            max-width: 100%;
+            max-height: 450px;
+            margin: 0 auto;
+        }
+        .cropper-modal-container .cropper-container {
+            margin: 0 auto;
+            touch-action: none;
+        }
+        .cropper-modal-container .cropper-container img,
+        .cropper-container .cropper-view-box img,
+        .cropper-container .cropper-canvas img {
+            display: block !important;
+            max-width: none !important;
+            max-height: none !important;
+            min-width: 0 !important;
+            min-height: 0 !important;
+        }
+        .cropper-view-box,
+        .cropper-face {
+            border-radius: 0;
+        }
+    </style>
 
     {{-- TinyMCE CSS --}}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/7.0.1/tinymce.min.js"
@@ -274,6 +314,7 @@
                                                             name="link" id="plink"
                                                             placeholder="{{ __('Personalized Link') }}"
                                                             value="{{ $business_card->card_url }}" minlength="2"
+                                                            aria-describedby="personalized-link-error"
                                                             readonly
                                                             @if (!$plan_details->personalized_link) data-bs-toggle="tooltip"
                 data-bs-placement="top"
@@ -315,6 +356,7 @@
                                                         @endif
                                                     </div>
 
+                                                    <div id="personalized-link-error" class="small text-danger" aria-live="polite"></div>
                                                     <small class="form-hint text-muted mt-1">
                                                         {{ __('Live Link') }} :
                                                         <a href="{{ url($business_card->card_url) }}" target="_blank"
@@ -603,7 +645,7 @@
     {{-- Crop Profile Logo Modal --}}
     <div class="modal modal-bg fade" id="cropModal" tabindex="-1" role="dialog" aria-hidden="true"
         data-bs-backdrop="static">
-        <div class="modal-dialog modal-md modal-dialog-centered" role="document">
+        <div class="modal-dialog modal-md modal-dialog-centered modal-dialog-scrollable" role="document">
             <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
                 <div class="modal-header border-bottom py-3 px-4">
                     <h5 class="modal-title font-weight-bold mb-0 text-dark">{{ __('Crop Profile Logo') }}</h5>
@@ -627,7 +669,7 @@
     {{-- Crop Cover Image Modal --}}
     <div class="modal modal-bg fade" id="cropCoverModal" tabindex="-1" role="dialog" aria-hidden="true"
         data-bs-backdrop="static">
-        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
             <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
                 <div class="modal-header border-bottom py-3 px-4">
                     <h5 class="modal-title font-weight-bold mb-0 text-dark">{{ __('Crop Cover Image') }}</h5>
@@ -780,19 +822,25 @@
 
         // Profile Image Cropper
         $(document).ready(function() {
-            var cropper;
+            var profileCropper = null;
             $('#cropModal').on('shown.bs.modal', function() {
-                cropper = new Cropper(document.getElementById('croppedImage'), {
+                if (profileCropper) {
+                    profileCropper.destroy();
+                    profileCropper = null;
+                }
+                profileCropper = new Cropper(document.getElementById('croppedImage'), {
                     aspectRatio: 1,
                     viewMode: 1,
-                    autoCropArea: 0.9,
+                    autoCropArea: 1,
                     responsive: true,
                     restore: false
                 });
             }).on('hidden.bs.modal', function() {
-                if (cropper) {
-                    cropper.destroy();
+                if (profileCropper) {
+                    profileCropper.destroy();
+                    profileCropper = null;
                 }
+                $('#croppedImage').attr('src', '');
                 $('#logo').val('');
             });
 
@@ -816,12 +864,17 @@
 
             // Profile Image Crop & Upload
             $('#crop').click(function() {
+                if (!profileCropper) return;
                 var $btn = $(this).prop('disabled', true).text('Uploading...');
-                var canvas = cropper.getCroppedCanvas({
+                var canvas = profileCropper.getCroppedCanvas({
                     width: 512,
                     height: 512,
                     imageSmoothingQuality: 'high'
                 });
+                if (!canvas) {
+                    $btn.prop('disabled', false).text('Apply Crop');
+                    return;
+                }
                 canvas.toBlob(function(blob) {
                     var formData = new FormData();
                     formData.append('croppedImage', blob);
@@ -829,7 +882,8 @@
                         url: '{{ route('user.vcard.cropped.image') }}',
                         method: 'POST',
                         headers: {
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json'
                         },
                         data: formData,
                         processData: false,
@@ -861,10 +915,14 @@
             var coverRatioButtons = $('#cropCoverModal .cover-ratio');
 
             $('#cropCoverModal').on('shown.bs.modal', function() {
+                if (cropper) {
+                    cropper.destroy();
+                    cropper = null;
+                }
                 cropper = new Cropper(document.getElementById('croppedCoverImage'), {
                     aspectRatio: 16 / 9,
                     viewMode: 1,
-                    autoCropArea: 0.9,
+                    autoCropArea: 1,
                     responsive: true,
                     restore: false
                 });
@@ -875,6 +933,7 @@
                     cropper = null;
                 }
                 $('#cover').val('');
+                $('#croppedCoverImage').attr('src', '');
             });
 
             coverRatioButtons.on('click', function() {
@@ -916,7 +975,8 @@
                     url: '{{ route('user.vcard.cropped.image') }}',
                     method: 'POST',
                     headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
                     },
                     data: formData,
                     processData: false,
@@ -952,6 +1012,10 @@
                     maxHeight: 4096,
                     imageSmoothingQuality: 'high'
                 });
+                if (!canvas) {
+                    $btn.prop('disabled', false).text(label);
+                    return;
+                }
                 canvas.toBlob(function(blob) {
                     uploadCover(blob, keepPng ? 'cover.png' : 'cover.jpg',
                         canvas.toDataURL(keepPng ? 'image/png' : 'image/jpeg', 0.9), $btn, label);
@@ -1118,6 +1182,7 @@
         // Function to check link availability via AJAX
         function checkLink() {
             var plink = $('#plink').val().trim();
+            var linkError = $('#personalized-link-error').text('');
 
             // If the input value matches the original link, show success icon
             if (plink === originalCardUrl) {
@@ -1137,6 +1202,8 @@
                         link: plink
                     },
                 }).done(function(res) {
+                    if (plink !== $('#plink').val().trim()) return;
+                    linkError.text(res.message || '');
                     if (res.status == 'success') {
                         $('#status').html(
                             '<span class="text-success"><svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2l4 -4"/></svg></span>'

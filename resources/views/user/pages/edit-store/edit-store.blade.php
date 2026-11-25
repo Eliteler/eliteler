@@ -7,6 +7,46 @@
 
     {{-- Cropper CSS --}}
     <link href="{{ asset('css/cropper.min.css') }}" rel="stylesheet">
+
+    <style>
+        /* CRITICAL CROP FIX: Protect Cropper.js internal images from squishing / distortion */
+        .cropper-modal-container {
+            width: 100%;
+            max-height: 450px;
+            min-height: 260px;
+            overflow: hidden;
+            background-color: var(--tblr-dark, #0f172a);
+            border-radius: var(--tblr-border-radius-lg, 10px);
+            position: relative;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+            text-align: center;
+        }
+        .cropper-modal-container > img {
+            display: block;
+            max-width: 100%;
+            max-height: 450px;
+            margin: 0 auto;
+        }
+        .cropper-modal-container .cropper-container {
+            margin: 0 auto;
+            touch-action: none;
+        }
+        .cropper-modal-container .cropper-container img,
+        .cropper-container .cropper-view-box img,
+        .cropper-container .cropper-canvas img {
+            display: block !important;
+            max-width: none !important;
+            max-height: none !important;
+            min-width: 0 !important;
+            min-height: 0 !important;
+        }
+        .cropper-view-box,
+        .cropper-face {
+            border-radius: 0;
+        }
+    </style>
 @endsection
 
 @php
@@ -286,6 +326,7 @@
                                                                     placeholder="{{ __('my-store-link') }}"
                                                                     value="{{ $business_card->card_url }}"
                                                                     autocomplete="off" minlength="3" readonly
+                                                                    aria-describedby="personalized-link-error"
                                                                     @if (!$plan_details->personalized_link) data-bs-toggle="tooltip"
                 data-bs-placement="top"
                 title="{{ __('Personalized Link is not available in your subscribed plan.') }}" @endif
@@ -330,6 +371,7 @@
                                                                 @endif
                                                             </div>
 
+                                                            <div id="personalized-link-error" class="small text-danger" aria-live="polite"></div>
                                                             <small class="form-hint">
                                                                 {{ __('Public Link: ') }}
                                                                 <a href="{{ url($business_card->card_url) }}"
@@ -730,22 +772,23 @@
     </div>
 
     {{-- Logo Crop Modal --}}
-    <div id="cropLogoModal" class="modal modal-bg fade" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-md modal-dialog-centered" role="document">
-            <div class="modal-content border-0 shadow-lg">
-                <div class="modal-header">
-                    <h5 class="modal-title">{{ __('Crop Store Logo') }}</h5>
+    <div id="cropLogoModal" class="modal modal-bg fade" tabindex="-1" role="dialog" aria-hidden="true"
+        data-bs-backdrop="static">
+        <div class="modal-dialog modal-md modal-dialog-centered modal-dialog-scrollable" role="document">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+                <div class="modal-header border-bottom py-3 px-4">
+                    <h5 class="modal-title font-weight-bold mb-0 text-dark">{{ __('Crop Store Logo') }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body p-0">
-                    <div class="cropper-wrapper w-100"
-                        style="max-height: 420px; overflow: hidden; background: var(--tblr-bg-surface-secondary);">
-                        <img id="logoCropperImage" style="max-width: 100%; display: block;" alt="Logo crop image">
+                <div class="modal-body p-3">
+                    <div class="cropper-modal-container">
+                        <img id="logoCropperImage" alt="Crop Store Logo">
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
-                    <button type="button" class="btn btn-primary" id="applyLogoCrop">
+                <div class="modal-footer border-top py-3 px-4">
+                    <button type="button" class="btn btn-danger me-auto text-decoration-none fw-semibold"
+                        data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+                    <button type="button" class="btn btn-primary fw-semibold px-4" id="applyLogoCrop">
                         {{ __('Crop & Apply') }}
                     </button>
                 </div>
@@ -754,35 +797,34 @@
     </div>
 
     {{-- Banner Crop Modal --}}
-    <div id="cropBannerModal" class="modal modal-bg fade" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
-            <div class="modal-content border-0 shadow-lg">
-                <div class="modal-header">
-                    <h5 class="modal-title">{{ __('Crop Store Banner') }}</h5>
+    <div id="cropBannerModal" class="modal modal-bg fade" tabindex="-1" role="dialog" aria-hidden="true"
+        data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" role="document">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+                <div class="modal-header border-bottom py-3 px-4">
+                    <h5 class="modal-title font-weight-bold mb-0 text-dark">{{ __('Crop Store Banner') }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body p-0">
-                    <div class="px-3 pt-3">
-                        <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
-                            <span class="text-secondary small fw-semibold">{{ __('Aspect ratio') }}:</span>
-                            <div class="btn-group btn-group-sm" role="group" aria-label="{{ __('Aspect ratio') }}">
-                                <button type="button" class="btn btn-outline-secondary banner-ratio active" data-ratio="16:9">16:9</button>
-                                <button type="button" class="btn btn-outline-secondary banner-ratio" data-ratio="4:3">4:3</button>
-                                <button type="button" class="btn btn-outline-secondary banner-ratio" data-ratio="3:1">3:1</button>
-                                <button type="button" class="btn btn-outline-secondary banner-ratio" data-ratio="1:1">1:1</button>
-                                <button type="button" class="btn btn-outline-secondary banner-ratio" data-ratio="free">{{ __('Free ratio') }}</button>
-                            </div>
+                <div class="modal-body p-3">
+                    <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                        <span class="text-secondary small fw-semibold">{{ __('Aspect ratio') }}:</span>
+                        <div class="btn-group btn-group-sm" role="group" aria-label="{{ __('Aspect ratio') }}">
+                            <button type="button" class="btn btn-outline-secondary banner-ratio active" data-ratio="16:9">16:9</button>
+                            <button type="button" class="btn btn-outline-secondary banner-ratio" data-ratio="4:3">4:3</button>
+                            <button type="button" class="btn btn-outline-secondary banner-ratio" data-ratio="3:1">3:1</button>
+                            <button type="button" class="btn btn-outline-secondary banner-ratio" data-ratio="1:1">1:1</button>
+                            <button type="button" class="btn btn-outline-secondary banner-ratio" data-ratio="free">{{ __('Free ratio') }}</button>
                         </div>
                     </div>
-                    <div class="cropper-wrapper w-100"
-                        style="max-height: 460px; overflow: hidden; background: var(--tblr-bg-surface-secondary);">
-                        <img id="bannerCropperImage" style="max-width: 100%; display: block;" alt="Banner crop image">
+                    <div class="cropper-modal-container">
+                        <img id="bannerCropperImage" alt="Crop Store Banner">
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">{{ __('Cancel') }}</button>
-                    <button type="button" class="btn btn-outline-primary" id="skipBannerCrop">{{ __('Skip crop (use original size)') }}</button>
-                    <button type="button" class="btn btn-primary" id="applyBannerCrop">
+                <div class="modal-footer border-top py-3 px-4">
+                    <button type="button" class="btn btn-danger me-auto text-decoration-none fw-semibold"
+                        data-bs-dismiss="modal">{{ __('Cancel') }}</button>
+                    <button type="button" class="btn btn-outline-primary fw-semibold" id="skipBannerCrop">{{ __('Skip crop (use original size)') }}</button>
+                    <button type="button" class="btn btn-primary fw-semibold px-4" id="applyBannerCrop">
                         {{ __('Crop & Add') }}
                     </button>
                 </div>
@@ -899,11 +941,16 @@
         });
 
         logoModalEl.addEventListener('shown.bs.modal', function() {
+            if (logoCropper) {
+                logoCropper.destroy();
+                logoCropper = null;
+            }
             logoCropper = new Cropper(document.getElementById('logoCropperImage'), {
                 aspectRatio: 1,
                 viewMode: 1,
                 autoCropArea: 1,
-                background: false
+                responsive: true,
+                restore: false
             });
         });
 
@@ -912,6 +959,9 @@
                 logoCropper.destroy();
                 logoCropper = null;
             }
+            const img = document.getElementById('logoCropperImage');
+            if (img) img.src = '';
+            logoInput.value = '';
         });
 
         document.getElementById('applyLogoCrop').addEventListener('click', function() {
@@ -923,8 +973,14 @@
 
             const canvas = logoCropper.getCroppedCanvas({
                 width: 512,
-                height: 512
+                height: 512,
+                imageSmoothingQuality: 'high'
             });
+            if (!canvas) {
+                btn.disabled = false;
+                btn.innerHTML = `{{ __('Crop & Apply') }}`;
+                return;
+            }
             canvas.toBlob(function(blob) {
                 const formData = new FormData();
                 formData.append('croppedImage', blob);
@@ -932,13 +988,21 @@
                 fetch("{{ route('user.vcard.cropped.image') }}", {
                         method: 'POST',
                         headers: {
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json'
                         },
                         body: formData
                     })
                     .then(response => response.ok ? response.json() : response.json().catch(() => ({})).then(j => Promise.reject(Object.assign({ status: response.status }, j))))
                     .then(data => {
                         document.getElementById('logo_payload').value = data.imageUrl;
+
+                        // FIX: Remove 'required' attribute and reset custom validity so form submits smoothly
+                        $('#logoInput').prop('required', false);
+                        if (document.getElementById('logoInput')) {
+                            document.getElementById('logoInput').setCustomValidity('');
+                        }
+
                         const previewContainer = document.getElementById('logoPreviewContainer');
                         previewContainer.classList.remove('d-none');
                         previewContainer.innerHTML = `
@@ -1008,11 +1072,16 @@
         }
 
         bannerModalEl.addEventListener('shown.bs.modal', function() {
+            if (bannerCropper) {
+                bannerCropper.destroy();
+                bannerCropper = null;
+            }
             bannerCropper = new Cropper(document.getElementById('bannerCropperImage'), {
                 aspectRatio: 16 / 9,
-                viewMode: 2,
+                viewMode: 1,
                 autoCropArea: 1,
-                responsive: true
+                responsive: true,
+                restore: false
             });
             document.querySelectorAll('#cropBannerModal .banner-ratio').forEach(function(x) { x.classList.toggle('active', x.dataset.ratio === '16:9'); });
         });
@@ -1022,6 +1091,9 @@
                 bannerCropper.destroy();
                 bannerCropper = null;
             }
+            const img = document.getElementById('bannerCropperImage');
+            if (img) img.src = '';
+            coverInput.value = '';
         });
 
         function uploadBannerBlob(blob, fileName, btn, label) {
@@ -1031,7 +1103,8 @@
             fetch("{{ route('user.store.cropped.images') }}", {
                     method: 'POST',
                     headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
                     },
                     body: formData
                 })
@@ -1040,6 +1113,12 @@
                                 uploadedBanners.push(data.imageUrl);
                                 document.getElementById('banner_payload').value = JSON.stringify(
                                     uploadedBanners);
+
+                                // FIX: Remove 'required' attribute and reset custom validity so form submits smoothly
+                                $('#coverInput').prop('required', false);
+                                if (document.getElementById('coverInput')) {
+                                    document.getElementById('coverInput').setCustomValidity('');
+                                }
 
                                 const previewContainer = document.getElementById('bannerPreviewContainer');
                                 previewContainer.classList.remove('d-none');
@@ -1105,6 +1184,11 @@
                 maxHeight: 4096,
                 imageSmoothingQuality: 'high'
             });
+            if (!canvas) {
+                btn.disabled = false;
+                btn.innerHTML = label;
+                return;
+            }
             canvas.toBlob(function(blob) {
                 uploadBannerBlob(blob, `banner_${bannerIndex}.${keepPng ? 'png' : 'jpg'}`, btn, label);
             }, keepPng ? 'image/png' : 'image/jpeg', 0.92);
@@ -1166,6 +1250,7 @@
         // Function to check store link availability via AJAX
         function checkLink() {
             var plink = $('#plink').val().trim();
+            var linkError = $('#personalized-link-error').text('');
 
             // If input matches original store URL, mark success immediately
             if (plink === originalCardUrl) {
@@ -1185,6 +1270,8 @@
                         link: plink
                     },
                 }).done(function(res) {
+                    if (plink !== $('#plink').val().trim()) return;
+                    linkError.text(res.message || '');
                     if (res.status == 'success') {
                         $('#status').html(
                             '<span class="text-success"><svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2l4 -4"/></svg></span>'

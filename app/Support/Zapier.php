@@ -146,14 +146,15 @@ class Zapier
      *
      * @param  mixed  $bankDetails  as stored (JSON or text); sent as plain text
      */
-    public static function referralWithdraw(?object $user, string $withdrawId, float $amount, mixed $bankDetails, string $status = 'Pending Approval'): void
+    public static function referralWithdraw(?object $user, string $withdrawId, float $amount, mixed $bankDetails, string $status = 'Pending Approval', ?string $currency = null): void
     {
         self::send('referral_withdraw', [
             'requested_at'        => now()->toDateTimeString(),
             'withdraw_id'         => $withdrawId,
             ...self::customer($user),
             'user_name'           => $user->name ?? 'Affiliate User',
-            'withdrawal_currency' => self::currency(),
+            // The request's own currency (it may predate a base currency change)
+            'withdrawal_currency' => $currency ?: self::currency(),
             'amount'              => $amount,
             'bank_details'        => self::plainText($bankDetails),
             'transfer_status'     => $status,

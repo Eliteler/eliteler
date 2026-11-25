@@ -13,16 +13,21 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\NfcCardDesign;
 use App\NfcCardKey;
 use App\NfcCardOrder;
 use App\NfcCardOrderTransaction;
 use App\Services\Admin\Nfc\NfcKeyService;
 use App\Services\Admin\Nfc\NfcOrderService;
+use App\Services\SmartProducts\OrderAssets;
 use App\Support\Admin\AdminPermissions;
 use App\Support\Admin\AdminSharedProps;
+use App\Support\SmartProducts\OrderHistory;
+use App\Support\SmartProducts\SmartProductCatalog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
@@ -70,8 +75,8 @@ class NfcCardOrderController extends Controller
             ->when(self::TABS[$tab], fn ($q, $statuses) => $q->whereIn('nfc_card_orders.order_status', $statuses))
             ->select([
                 'nfc_card_orders.nfc_card_order_id', 'nfc_card_orders.order_details', 'nfc_card_orders.order_status',
-                'nfc_card_orders.nfc_card_logo', 'nfc_card_orders.created_at',
-                'nfc_card_order_transactions.amount', 'nfc_card_order_transactions.payment_status', 'nfc_card_order_transactions.payment_method',
+                'nfc_card_orders.nfc_card_logo', 'nfc_card_orders.created_at', 'nfc_card_orders.nfc_card_id',
+                'nfc_card_order_transactions.amount', 'nfc_card_order_transactions.currency', 'nfc_card_order_transactions.payment_status', 'nfc_card_order_transactions.payment_method',
                 'nfc_card_designs.nfc_card_name', 'nfc_card_designs.nfc_card_front_image',
                 'users.user_id as customer_id', 'users.name as customer_name', 'users.email as customer_email',
             ])
@@ -88,10 +93,13 @@ class NfcCardOrderController extends Controller
                     'image'    => $row->nfc_card_front_image ? asset($row->nfc_card_front_image) : null,
                     'quantity' => max((int) ($details['order_quantity'] ?? 1), 1),
                     'amount'   => AdminPermissions::amount((float) $row->amount),
+                    'currency' => $row->currency,
                     'payment'  => $row->payment_status,
                     'method'   => $row->payment_method,
                     'delivery' => $row->order_status,
                     'hasLogo'  => ! empty($row->nfc_card_logo),
+                    // Image assets: uploaded / asked for, and required ones still missing
+                    'files'    => OrderAssets::summary($row),
                     'customer' => $row->customer_id ? ['id' => $row->customer_id, 'name' => $row->customer_name, 'email' => $row->customer_email] : null,
                 ];
             });
@@ -125,7 +133,8 @@ class NfcCardOrderController extends Controller
         }
 
         $transaction = NfcCardOrderTransaction::where('nfc_card_order_id', $order->nfc_card_order_id)->first();
-        $design      = DB::table('nfc_card_designs')->where('nfc_card_id', $order->nfc_card_id)->first();
+        $design      = NfcCardDesign::where('nfc_card_id', $order->nfc_card_id)->first();
+        $generates   = $design?->generates_keys !== false;
         $customer    = DB::table('users')->where('id', $order->user_id)->first(['user_id', 'name', 'email']);
         $details     = NfcOrderService::details($order);
         $address     = json_decode($order->delivery_address ?? '', true) ?: [];
@@ -134,7 +143,7 @@ class NfcCardOrderController extends Controller
 
         $keyRows = NfcCardKey::whereIn('unqiue_key', NfcOrderService::orderKeys($order))
             ->leftJoin('business_cards', 'business_cards.card_id', '=', 'nfc_card_keys.card_id')
-            ->get(['nfc_card_keys.unqiue_key', 'nfc_card_keys.link_status', 'business_cards.title', 'business_cards.card_url'])
+            ->get(['nfc_card_keys.unqiue_key', 'nfc_card_keys.link_status', 'nfc_card_keys.link_type', 'nfc_card_keys.link_target', 'nfc_card_keys.label', 'nfc_card_keys.scan_count', 'business_cards.title', 'business_cards.card_url'])
             ->keyBy('unqiue_key');
 
         $pick = fn (string $prefix) => array_filter([
@@ -144,7 +153,6 @@ class NfcCardOrderController extends Controller
             'email'   => $address["{$prefix}_email"] ?? null,
         ]);
 
-        $beforeCoupon = (float) ($details['discounted_price'] ?? 0);
         $total        = (float) ($details['invoice_amount'] ?? $transaction?->amount ?? 0);
 
         return Inertia::render('nfc/order', [
@@ -163,7 +171,8 @@ class NfcCardOrderController extends Controller
                 'item' => [
                     'name'        => $details['order_item'] ?? $design?->nfc_card_name,
                     'description' => $details['order_description'] ?? null,
-                    'image'       => $design?->nfc_card_front_image ? asset($design->nfc_card_front_image) : null,
+                    'image'       => ($design?->photos()[0] ?? null) ? asset($design->photos()[0]) : null,
+                    'type'        => $design ? SmartProductCatalog::typeLabel($design->product_type) : null,
                     'price'       => AdminPermissions::amount((float) ($details['price'] ?? $design?->nfc_card_price ?? 0)),
                     'quantity'    => NfcOrderService::quantity($order),
                 ],
@@ -173,8 +182,10 @@ class NfcCardOrderController extends Controller
                     'taxName'   => $details['tax_name'] ?? null,
                     'taxRate'   => $details['tax_value'] ?? null,
                     'tax'       => (float) ($details['tax_amount'] ?? 0),
+                    'shipping'  => (float) ($details['shipping_amount'] ?? 0),
                     'coupon'    => $details['applied_coupon'] ?? null,
-                    'discount'  => ! empty($details['applied_coupon']) ? max(0, $beforeCoupon - $total) : 0,
+                    // discounted_price holds the discount amount
+                    'discount'  => ! empty($details['applied_coupon']) ? (float) ($details['discounted_price'] ?? 0) : 0,
                     'total'     => $total,
                 ],
                 'payment' => $transaction ? [
@@ -195,14 +206,77 @@ class NfcCardOrderController extends Controller
                     'url'      => $this->keys->readUrl($key),
                     'linked'   => ($keyRows[$key]->link_status ?? null) === 'linked',
                     'card'     => isset($keyRows[$key]) && $keyRows[$key]->card_url ? ['title' => $keyRows[$key]->title, 'url' => url($keyRows[$key]->card_url)] : null,
+                    'linkType' => $keyRows[$key]->link_type ?? 'vcard',
+                    'target'   => ($keyRows[$key]->link_type ?? 'vcard') === 'url' ? ($keyRows[$key]->link_target ?? null) : null,
+                    'label'    => $keyRows[$key]->label ?? null,
+                    'scans'    => (int) ($keyRows[$key]->scan_count ?? 0),
                     'greeting' => route('admin.key.greeting.letter', $key),
                 ])->values(),
-                'missingKeys' => $paid ? max(0, NfcOrderService::quantity($order) - count(NfcOrderService::orderKeys($order))) : 0,
+                'assets'      => $this->assetsFor($order),
+                'assetsZip'   => route('admin.order.assets.zip', $order->nfc_card_order_id),
+                'missingKeys' => $paid && $generates ? max(0, NfcOrderService::quantity($order) - count(NfcOrderService::orderKeys($order))) : 0,
+                'generatesKeys' => $generates,
+                'timeline'    => OrderHistory::timeline($order),
+                'shippedAt'   => $order->shipped_at?->toIso8601String(),
+                'deliveredAt' => $order->delivered_at?->toIso8601String(),
                 'paid'        => $paid,
             ],
             'statuses'   => NfcOrderService::DELIVERY_STATUSES,
+            'linkTypes'  => collect(SmartProductCatalog::LINK_TYPES)->map(fn ($label) => __($label)),
             'openDialog' => $request->query('dialog') === 'delivery' ? 'delivery' : null,
         ]);
+    }
+
+    // All uploaded image assets of an order as one zip
+    public function assetsZip($orderId)
+    {
+        $order = NfcCardOrder::where('nfc_card_order_id', $orderId)->firstOrFail();
+        $names = collect(OrderAssets::requirements($order))->pluck('name', 'key');
+        $files = OrderAssets::files($order);
+
+        abort_if(! $files || ! class_exists(\ZipArchive::class), 404);
+
+        $zipPath = storage_path('app/' . $order->nfc_card_order_id . '-assets-' . Str::random(6) . '.zip');
+        $zip     = new \ZipArchive();
+        $zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+
+        foreach ($files as $key => $file) {
+            $label  = (Str::slug($names[$key] ?? $key) ?: $key) . '.' . strtolower(pathinfo($file['path'], PATHINFO_EXTENSION));
+            $source = public_path($file['path']);
+
+            if (is_file($source)) {
+                $zip->addFile($source, $label);
+                continue;
+            }
+
+            // Cloud storage (S3 / R2): same path rule as StorageHelper::deleteFile()
+            $relative = preg_replace('/^storage\//', '', ltrim((string) parse_url($file['path'], PHP_URL_PATH), '/'));
+
+            if (\Illuminate\Support\Facades\Storage::disk('public')->exists($relative)) {
+                $zip->addFromString($label, \Illuminate\Support\Facades\Storage::disk('public')->get($relative));
+            }
+        }
+
+        $zip->close();
+
+        return response()->download($zipPath, $order->nfc_card_order_id . '-image-assets.zip')->deleteFileAfterSend();
+    }
+
+    /** Asked-for image assets with the uploaded file of each (null when missing). */
+    private function assetsFor(NfcCardOrder $order): array
+    {
+        $files = OrderAssets::files($order);
+
+        return array_map(fn ($asset) => $asset + [
+            'file' => isset($files[$asset['key']]) ? [
+                'url'      => \App\Helpers\StorageHelper::url($files[$asset['key']]['path']),
+                'type'     => $files[$asset['key']]['type'],
+                'name'     => $files[$asset['key']]['name'],
+                'uploaded' => $files[$asset['key']]['uploaded'],
+                // SVG is never shown inline (it can carry scripts)
+                'preview'  => $files[$asset['key']]['type'] === 'image' && ! str_ends_with(strtolower($files[$asset['key']]['path']), '.svg'),
+            ] : null,
+        ], OrderAssets::requirements($order));
     }
 
     // Old tracking page: open the delivery dialog on the order page

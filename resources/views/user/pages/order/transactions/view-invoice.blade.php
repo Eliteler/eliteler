@@ -6,6 +6,21 @@
             .container {
                 max-width: 100% !important;
             }
+
+            #gobiz-support-widget {
+                display: none !important;
+            }
+
+            #invoice-card,
+            #invoice-card.card,
+            #invoice-card #invoice,
+            #invoice-card .card-body {
+                border: none !important;
+                border-radius: 0 !important;
+                box-shadow: none !important;
+                outline: none !important;
+                background: transparent !important;
+            }
         }
     </style>
 
@@ -105,21 +120,19 @@
                     </div>
                 @endif
 
-                <div class="card card-lg border-0 shadow-sm">
+                <div class="card card-lg border-0 shadow-sm" id="invoice-card">
                     {{-- Invoice parameters --}}
                     @php
                         // Decode JSON strings for invoice and order details
                         $invoiceData = json_decode($transaction_details->invoice_details);
                         $orderData = json_decode($transaction_details->order_details);
-                        $currencySymbol =
-                            $currencies->firstWhere('iso_code', $transaction_details->currency)->symbol ?? '';
 
                         // Construct dynamic item title
                         $itemTitle =
                             __($transaction_details->nfc_card_name) .
                             ' - ' .
-                            $currencySymbol .
-                            ($orderData->price ?? 0) .
+                            // Price in the currency the order was paid in
+                            formatMoney($orderData->price ?? 0, $transaction_details->currency ?? null) .
                             '/' .
                             __('One time');
                     @endphp
@@ -131,7 +144,7 @@
                         'currencies' => $currencies,
                         'transaction' => $transaction_details,
                         'paymentTerms' => __('One time'),
-                    
+
                         // Sender details (From)
                         'fromName' => $invoiceData->from_billing_name ?? '',
                         'fromAddress' => $invoiceData->from_billing_address ?? null,
@@ -141,7 +154,7 @@
                         'fromEmail' => $invoiceData->from_billing_email ?? '',
                         'fromPhone' => $invoiceData->from_billing_phone ?? null,
                         'fromVat' => $invoiceData->from_vat_number ?? null,
-                    
+
                         // Customer details (To / Bill To)
                         'toName' => $invoiceData->to_billing_name ?? '',
                         'toAddress' => $invoiceData->to_billing_address ?? null,
@@ -151,7 +164,7 @@
                         'toEmail' => $invoiceData->to_billing_email ?? '',
                         'toPhone' => $invoiceData->to_billing_phone ?? null,
                         'toVat' => $invoiceData->to_vat_number ?? null,
-                    
+
                         // Line item details
                         'itemTitle' => $itemTitle,
                         'itemQty' => $orderData->order_quantity ?? 1,
@@ -163,7 +176,7 @@
                             'quantity' => $orderData->order_quantity ?? 1,
                             'plan_price' => $orderData->price ?? 0,
                         ],
-                    
+
                         // Billing summary
                         'billing' => [
                             'subtotal' => $invoiceData->subtotal ?? 0,
@@ -172,6 +185,7 @@
                             'tax_amount' => $invoiceData->tax_amount ?? 0,
                             'applied_coupon' => $invoiceData->applied_coupon ?? null,
                             'discounted_price' => $invoiceData->discounted_price ?? 0,
+                            'shipping_amount' => $invoiceData->shipping_amount ?? 0,
                             'invoice_amount' => $invoiceData->invoice_amount ?? 0,
                         ],
                     ])

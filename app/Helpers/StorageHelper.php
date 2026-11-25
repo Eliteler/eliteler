@@ -102,7 +102,36 @@ class StorageHelper
     }
 
     /**
-     * Delete a file from any storage disk using relative path.
+     * Get the public URL for a stored asset path.
+     *
+     * @param  string|null  $path
+     * @return string|null
+     */
+    public static function url(?string $path): ?string
+    {
+        if (!$path) {
+            return null;
+        }
+
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+
+        $clean = ltrim(preg_replace('/^storage\//', '', $path), '/');
+        $driver = config('filesystems.disks.public.driver') ?: config('filesystems.default', 'local');
+
+        if (in_array($driver, ['s3', 'r2'], true)) {
+            $base = rtrim((string) config('filesystems.disks.public.url'), '/');
+            if ($base !== '') {
+                return "{$base}/{$clean}";
+            }
+        }
+
+        return asset($path);
+    }
+
+    /**
+     * Delete a file from any storage disk using relative path or full URL.
      *
      * @param  string|null  $path
      * @param  string  $disk
@@ -114,7 +143,15 @@ class StorageHelper
             return false;
         }
 
-        $normalizedPath = ltrim($path, '/');
+        $normalizedPath = $path;
+
+        // If a full CDN or site URL was passed, extract just the path portion
+        if (str_starts_with($normalizedPath, 'http://') || str_starts_with($normalizedPath, 'https://')) {
+            $parsed = parse_url($normalizedPath, PHP_URL_PATH);
+            $normalizedPath = $parsed !== false ? $parsed : $normalizedPath;
+        }
+
+        $normalizedPath = ltrim($normalizedPath, '/');
 
         if ($disk === 'public') {
             $normalizedPath = preg_replace('/^storage\//', '', $normalizedPath);

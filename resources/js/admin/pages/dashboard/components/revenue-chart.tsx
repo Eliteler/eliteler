@@ -13,15 +13,16 @@ import {
 } from "@admin/components/ui/chart";
 import { formatCompact, formatCurrency } from "@admin/lib/format";
 
-import type { RevenuePoint } from "../types";
+import type { CurrencyTotal, RevenuePoint } from "../types";
+import { OtherCurrencies } from "./other-currencies";
 
-export function RevenueChart({ data }: { data: RevenuePoint[] }) {
+export function RevenueChart({ data, others = [] }: { data: RevenuePoint[]; others?: CurrencyTotal[] }) {
     const { t } = useTranslation();
     const { currency, features } = usePage().props;
 
     const config: ChartConfig = {
         plans: { label: t("Plans"), color: "var(--chart-1)" },
-        ...(features.nfc ? { nfc: { label: t("NFC cards"), color: "var(--chart-2)" } } : {}),
+        ...(features.nfc ? { nfc: { label: t("Smart Products"), color: "var(--chart-2)" } } : {}),
         ...(features.aibuilder ? { ai: { label: t("AI credits"), color: "var(--chart-4)" } } : {}),
     };
     const keys = Object.keys(config) as (keyof RevenuePoint)[];
@@ -35,7 +36,10 @@ export function RevenueChart({ data }: { data: RevenuePoint[] }) {
         <Card className="lg:col-span-2">
             <CardHeader>
                 <CardTitle>{t("Revenue")}</CardTitle>
-                <CardDescription>{t("Collected payments by source")}</CardDescription>
+                <CardDescription>
+                    {t("Collected payments by source")}
+                    {others.length > 0 && ` · ${t(":code payments only").replace(":code", currency.code)}`}
+                </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
                 <div className="flex flex-wrap gap-x-6 gap-y-2">
@@ -69,6 +73,7 @@ export function RevenueChart({ data }: { data: RevenuePoint[] }) {
                         ))}
                     </BarChart>
                 </ChartContainer>
+                <OtherCurrencies others={others} />
             </CardContent>
         </Card>
     );

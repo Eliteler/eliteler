@@ -14,6 +14,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\AiCreditsPlan;
 use App\Http\Controllers\Controller;
+use App\Services\Admin\DashboardMetricsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -34,7 +35,8 @@ class AiCreditsPlanController extends Controller
     {
         $sales = DB::table('ai_credits_transactions')
             ->where('payment_status', 'paid')
-            ->selectRaw('ai_credits_plan_id, COUNT(*) as orders, SUM(amount) as revenue')
+            // Revenue adds up base-currency payments only (no exchange rates); orders counts them all
+            ->selectRaw('ai_credits_plan_id, COUNT(*) as orders, SUM(CASE WHEN ' . DashboardMetricsService::baseCurrencySql('currency') . ' THEN amount ELSE 0 END) as revenue')
             ->groupBy('ai_credits_plan_id')
             ->get()
             ->keyBy('ai_credits_plan_id');

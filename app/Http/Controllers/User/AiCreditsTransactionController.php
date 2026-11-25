@@ -55,11 +55,6 @@ class AiCreditsTransactionController extends Controller
                 ->pluck('plan_name', 'ai_credits_plan_id')
                 ->toArray();
 
-            // Pre-fetch currencies into a map to prevent dynamic row-level lookups
-            $currencies = Currency::where('status', 1)
-                ->pluck('symbol', 'iso_code')
-                ->toArray();
-
             return DataTables::of($transactions)
                 ->addIndexColumn()
                 ->addColumn('created_at', function ($transaction) {
@@ -85,7 +80,8 @@ class AiCreditsTransactionController extends Controller
                     return '<span class="fw-medium">' . e(__($transaction->payment_method) ?? __('N/A')) . '</span>';
                 })
                 ->addColumn('amount', function ($transaction) {
-                    return '<span class="fw-bold text-dark">' . formatCurrency($transaction->amount) . '</span>';
+                    // In the currency it was paid in, not today's base currency
+                    return '<span class="fw-bold text-dark">' . e(formatMoney($transaction->amount, $transaction->currency)) . '</span>';
                 })
                 ->addColumn('payment_status', function ($transaction) {
                     switch ($transaction->payment_status) {

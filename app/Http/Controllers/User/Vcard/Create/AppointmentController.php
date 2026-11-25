@@ -42,7 +42,7 @@ class AppointmentController extends Controller
     public function Appointment(Request $request, $id)
     {
         // Queries
-        $business_card = BusinessCard::where('card_id', $id)->first();
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
         $settings = Setting::where('status', 1)->first();
 
         // Check business card
@@ -69,7 +69,7 @@ class AppointmentController extends Controller
     public function saveAppointment(Request $request, $id)
     {
         // Queries
-        $business_card = BusinessCard::where('card_id', $id)->first();
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
 
         // Check business card
         $plan = DB::table('users')->where('user_id', Auth::user()->user_id)->where('status', 1)->first();
@@ -81,7 +81,7 @@ class AppointmentController extends Controller
         } else {
 
             // Update Enquiy Email
-            BusinessCard::where('card_id', $id)->update([
+            BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->update([
                 'appointment_receive_email' => $request->appointment_receive_email ?? null,
             ]);
 

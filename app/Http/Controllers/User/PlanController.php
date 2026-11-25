@@ -429,6 +429,8 @@ class PlanController extends Controller
     private function expireNfcKey(NfcCardKey $nfcKey): void
     {
         $nfcKey->key_status = 'expired';
+        // Smart Products: the customer who redeems the voucher owns the NFC key
+        $nfcKey->user_id ??= \Illuminate\Support\Facades\Auth::id();
         $nfcKey->save();
     }
 

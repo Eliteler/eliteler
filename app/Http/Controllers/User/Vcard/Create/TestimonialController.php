@@ -59,7 +59,7 @@ class TestimonialController extends Controller
     public function saveTestimonial(Request $request, $id)
     {
         // Queries
-        $business_card = BusinessCard::where('card_id', $id)->first();
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
 
         // Check business card
         if ($business_card == null) {
@@ -68,13 +68,13 @@ class TestimonialController extends Controller
 
             // Get plan details
             $plan = DB::table('users')->where('user_id', Auth::user()->user_id)->where('status', 1)->first();
-            $plan_details = json_decode($plan->plan_details);
+            $plan_details = !empty($plan->plan_details) ? json_decode($plan->plan_details) : null;
 
             // Check Testimonial review
-            if ($request->review != null) {
+            if (is_array($request->review)) {
 
                 // Check Testimonial limit
-                if (count($request->review) <= $plan_details->no_testimonials) {
+                if (count($request->review) <= ($plan_details->no_testimonials ?? 0)) {
 
                     // Delete previous Testimonials
                     Testimonial::where('card_id', $id)->delete();

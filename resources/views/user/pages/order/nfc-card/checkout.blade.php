@@ -109,20 +109,49 @@
 
                     {{-- Order Details --}}
                     <div class="col-lg-4 mb-3">
+                        {{-- Product photos and description --}}
+                        @php
+                            $photos = $nfcCardDetails->photos();
+                        @endphp
+                        <div class="card mb-3">
+                            @if (count($photos))
+                                <div class="ratio ratio-4x3 bg-light">
+                                    <img src="{{ asset($photos[0]) }}" id="productMainPhoto"
+                                        alt="{{ $nfcCardDetails->nfc_card_name }}" class="card-img-top object-cover">
+                                </div>
+                            @endif
+                            <div class="card-body">
+                                @if (count($photos) > 1)
+                                    <div class="d-flex flex-wrap gap-2 mb-3">
+                                        @foreach ($photos as $i => $photo)
+                                            <button type="button" class="p-0 border rounded overflow-hidden js-product-thumb {{ $i === 0 ? 'border-primary' : '' }}"
+                                                data-src="{{ asset($photo) }}" style="width: 52px; height: 52px;">
+                                                <img src="{{ asset($photo) }}" alt="" class="w-100 h-100" style="object-fit: cover;">
+                                            </button>
+                                        @endforeach
+                                    </div>
+                                @endif
+                                <h3 class="card-title mb-1">{{ $nfcCardDetails->nfc_card_name }}</h3>
+                                @if ($nfcCardDetails->nfc_card_description)
+                                    <div class="text-secondary small">{!! nl2br(e($nfcCardDetails->nfc_card_description)) !!}</div>
+                                @endif
+                            </div>
+                        </div>
+
                         <div class="card">
                             <div class="card-body">
 
                                 @php
                                     $price = $nfcCardDetails->nfc_card_price;
                                     $taxPercentage = (float) $config[25]->config_value;
-                                    $taxAmount = ($price * $taxPercentage) / 100;
-                                    $grandTotal = $price + $taxAmount;
+                                    $taxAmount = $quote->tax;
+                                    $grandTotal = $quote->total;
                                 @endphp
 
                                 <h3 class="card-title">{{ __('Order Details') }}</h3>
 
                                 <div class="card-table table-responsive">
-                                    <table class="table table-vcenter border">
+                                    <table class="table table-vcenter">
                                         <thead>
                                             <tr>
                                                 <th>{{ __('Description') }}</th>
@@ -134,7 +163,7 @@
 
                                             {{-- NFC Card Name --}}
                                             <tr>
-                                                <td>{{ __('NFC Card Name') }}</td>
+                                                <td>{{ __('Product') }}</td>
                                                 <td class="fw-bold text-end">
                                                     {{ $nfcCardDetails->nfc_card_name }}
                                                 </td>
@@ -182,6 +211,16 @@
                                                     </td>
                                                 </tr>
                                             @endif
+
+                                            {{-- Shipping (flat fee per order) --}}
+                                            <tr class="{{ $shippingFee > 0 ? '' : 'd-none' }}" id="shippingRow">
+                                                <td>{{ __('Shipping') }}</td>
+                                                <td class="fw-bold text-end">
+                                                    <span id="shippingAmount">
+                                                        {{ $quote->shipping > 0 ? formatCurrency($quote->shipping) : __('Free') }}
+                                                    </span>
+                                                </td>
+                                            </tr>
 
                                             {{-- Applied Coupon --}}
                                             <tr class="d-none" id="appliedCoupon"></tr>
@@ -568,6 +607,18 @@
     <script>
         "use strict";
         document.addEventListener('DOMContentLoaded', function() {
+            // Product photo thumbnails
+            document.querySelectorAll('.js-product-thumb').forEach((thumb) => {
+                thumb.addEventListener('click', () => {
+                    document.getElementById('productMainPhoto').src = thumb.dataset.src;
+                    document.querySelectorAll('.js-product-thumb').forEach((t) => t.classList.toggle('border-primary', t === thumb));
+                });
+            });
+        });
+    </script>
+    <script>
+        "use strict";
+        document.addEventListener('DOMContentLoaded', function() {
 
             const quantityInput = document.getElementById('quantity');
             const finalQuantity = document.getElementById('final_quantity');
@@ -577,6 +628,23 @@
             const gatewayAmount = document.getElementById('payment_gateway_amount');
             const unitPrice = {{ $price }};
             const taxPercentage = {{ $taxPercentage }};
+            const shippingFee = {{ (float) $shippingFee }};
+            const freeShippingAbove = {{ (float) $freeShippingAbove }};
+            const shippingElement = document.getElementById('shippingAmount');
+
+            // Same rule as App\Services\SmartProducts\OrderQuote::shippingFor()
+            function shippingFor(subtotal) {
+                if (shippingFee <= 0 || (freeShippingAbove > 0 && subtotal >= freeShippingAbove)) {
+                    return 0;
+                }
+                return shippingFee;
+            }
+
+            function showShipping(amount) {
+                if (shippingElement) {
+                    shippingElement.innerText = amount > 0 ? formatCurrency(amount) : '{{ __('Free') }}';
+                }
+            }
 
             // UPDATE AMOUNT
             function updateAmount() {
@@ -587,9 +655,18 @@
                 }
 
                 finalQuantity.value = quantity;
+
+                // With a coupon applied, the server recalculates the discount for the new quantity
+                if (document.getElementById('applied_coupon').value) {
+                    document.getElementById('couponForm').requestSubmit();
+                    return;
+                }
+
                 const subtotal = unitPrice * quantity;
                 const tax = (subtotal * taxPercentage) / 100;
-                const total = subtotal + tax;
+                const shipping = shippingFor(subtotal);
+                const total = subtotal + tax + shipping;
+                showShipping(shipping);
 
                 // SUBTOTAL
                 subtotalElement.innerText = formatCurrency(subtotal);
@@ -669,6 +746,9 @@
                                 taxElement.innerHTML = formatCurrency(data.taxAmount);
                             }
 
+                            // SHIPPING
+                            showShipping(parseFloat(data.shipping) || 0);
+
                             // TOTAL
                             totalElement.innerHTML = formatCurrency(data.total);
 
@@ -706,7 +786,11 @@
 
                             const tax = (subtotal * taxPercentage) / 100;
 
-                            const total = subtotal + tax;
+                            const shipping = shippingFor(subtotal);
+
+                            const total = subtotal + tax + shipping;
+
+                            showShipping(shipping);
 
                             // SUBTOTAL
                             subtotalElement.innerHTML = formatCurrency(subtotal);

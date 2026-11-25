@@ -232,7 +232,8 @@ class CustomerController extends Controller
                     'description' => $t->desciption,
                     'gateway'     => $t->payment_gateway_name,
                     'amount'      => (float) $t->transaction_amount,
-                    'status'      => strtolower($t->payment_status),
+                    'currency'    => $t->transaction_currency,
+                    'status'      => strtolower((string) $t->payment_status),
                     'date'        => $date($t->created_at),
                     'invoice'     => ($permissions['transactions'] ?? false)
                     && $t->payment_status === 'SUCCESS'
@@ -244,6 +245,12 @@ class CustomerController extends Controller
                 ]),
 
             'nfc_orders'   => NfcCardOrder::where('user_id', $user->id)
+                // Currency the order was paid in (from its payment row)
+                ->select('nfc_card_orders.*')
+                ->addSelect(['payment_currency' => NfcCardOrderTransaction::select('currency')
+                    ->whereColumn('nfc_card_order_transactions.nfc_card_order_id', 'nfc_card_orders.nfc_card_order_id')
+                    ->orderByDesc('id')
+                    ->limit(1)])
                 ->orderByDesc('id')
                 ->paginate($perPage, ['*'], 'page', $page)
                 ->through(function ($order) use ($date) {
@@ -261,6 +268,7 @@ class CustomerController extends Controller
                         'amount'   => AdminPermissions::amount((float) (
                             $details['invoice_amount'] ?? 0
                         )),
+                        'currency' => $order->payment_currency,
                         'status'   => $order->order_status,
                         'date'     => $date($order->created_at),
                     ];
@@ -286,6 +294,7 @@ class CustomerController extends Controller
                     'reference' => $t->payment_transaction_id,
                     'gateway'   => $t->payment_method,
                     'amount'    => (float) $t->amount,
+                    'currency'  => $t->currency,
                     'status'    => $t->payment_status,
                     'date'      => $date($t->created_at),
                 ]),
@@ -317,6 +326,7 @@ class CustomerController extends Controller
                         : null,
                     'gateway' => $t->payment_method,
                     'amount'  => (float) $t->amount,
+                    'currency' => $t->currency,
                     'status'  => $t->payment_status,
                     'date'    => $date($t->created_at),
                 ]),
@@ -520,7 +530,7 @@ class CustomerController extends Controller
         $data = $request->validate([
             'full_name'      => 'required|string|max:255',
             'email'          => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
-            'password'       => 'nullable|string|min:6',
+            'password'       => 'nullable|string|min:6|max:100',
             'status'         => 'required|in:0,1',
             'welcome_email'  => 'boolean',
             'reset_password' => 'boolean',

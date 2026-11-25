@@ -50,6 +50,7 @@ class AdminNavigation
         'admin.custom.domain.requests',
         'admin.plans',
         'admin.designs',
+        'admin.smart-product-types.index',
         'admin.orders',
         'admin.key.generations',
         'admin.transactions',
@@ -103,8 +104,9 @@ class AdminNavigation
                         $can('custom_domain') ? self::item(__('Custom Domains'), 'admin.custom.domain.requests', ['status' => 'all']) : null,
                     ]),
                     $can('plans') ? self::item(__('Plans'), 'admin.plans', [], 'package', ['admin/plans', 'admin/add-plan', 'admin/edit-plan/*']) : null,
-                    $features['nfc'] ? self::group(__('NFC Sales'), 'nfc', ['admin/nfc-card-design', 'admin/nfc-card*', 'admin/nfc-card-order-transactions'], [
-                        $can('nfc_card_design') ? self::item(__('NFC Cards'), 'admin.designs') : null,
+                    $features['nfc'] ? ['tag' => __('New')] + self::group(__('Smart Products'), 'nfc', ['admin/nfc-card-design', 'admin/nfc-card*', 'admin/nfc-card-order-transactions'], [
+                        $can('nfc_card_design') ? self::item(__('Products'), 'admin.designs') : null,
+                        $can('nfc_card_design') ? self::item(__('Product Types'), 'admin.smart-product-types.index') : null,
                         $can('nfc_card_orders') ? self::item(__('Orders'), 'admin.orders') : null,
                         $can('nfc_card_key_generations') ? self::item(__('Activation Keys'), 'admin.key.generations') : null,
                         $can('nfc_card_order_transactions') ? self::item(__('Transactions'), 'admin.transactions') : null,
@@ -163,7 +165,7 @@ class AdminNavigation
                 'items' => [
                     $can('plugins') ? self::item(__('Plugins'), 'admin.plugins', [], 'puzzle', $onApp ? ['admin/plugins', 'admin/plugins/*'] : ['admin/plugins', 'admin/plugin*']) : null,
                     self::group(__('System Utilities'), 'settings', ['admin/settings*', 'admin/cron*', 'admin/visitor-analytics*', 'admin/sitemap*', 'admin/currencies*', 'admin/create-currency', 'admin/edit-currency*', 'admin/users*', 'admin/create-user', 'admin/edit-user*', 'admin/email-templates*', 'admin/translations*', 'admin/backups*', 'admin/clear-cache*', 'admin/software-update*'], [
-                        $can('general_settings') ? self::item(__('General Settings'), 'admin.settings') : null,
+                        $can('general_settings') ? self::item(__('General Settings'), 'admin.settings', [], null, ['admin/settings', 'admin/settings/personalized-links']) : null,
                         $can('general_settings') ? self::item(__('Cron Jobs'), 'admin.cron.jobs') : null,
                         $can('general_settings') ? self::item(__('Visitor Analytics'), 'admin.visitor.analytics') : null,
                         $can('sitemap') ? self::item(__('Generate Sitemap'), 'admin.sitemap') : null,
@@ -218,6 +220,7 @@ class AdminNavigation
                 'icon'     => $item['icon'],
                 'svg'      => $item['svg'] ?? null,
                 'badge'    => $item['badge'] ?? 0,
+                'tag'      => $item['tag'] ?? null,
                 'inertia'  => $item['inertia'] ?? in_array($item['route'], self::INERTIA, true),
                 'action'   => self::ACTIONS[$item['route']] ?? null,
                 'isActive' => $item['active']
@@ -244,6 +247,7 @@ class AdminNavigation
                             'title'    => $entry['title'],
                             'icon'     => $entry['icon'],
                             'isActive' => $request->is(...$entry['active']),
+                            'tag'      => $entry['tag'] ?? null,
                             'items'    => $children,
                         ];
                     }

@@ -69,7 +69,7 @@ class ProductController extends Controller
     public function saveVProducts(Request $request, $id)
     {
         // Queries
-        $business_card = BusinessCard::where('card_id', $id)->first();
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
 
         // Check business card
         if ($business_card == null) {
@@ -78,13 +78,13 @@ class ProductController extends Controller
 
             // Get plan details
             $plan = DB::table('users')->where('user_id', Auth::user()->user_id)->where('status', 1)->first();
-            $plan_details = json_decode($plan->plan_details);
+            $plan_details = !empty($plan->plan_details) ? json_decode($plan->plan_details) : null;
 
             // Check icon
-            if ($request->badge != null) {
+            if (is_array($request->badge)) {
 
                 // Check products (vcard) limit
-                if (count($request->badge) <= $plan_details->no_of_vcard_products) {
+                if (count($request->badge) <= ($plan_details->no_of_vcard_products ?? 0)) {
                     // Delete previous products
                     VcardProduct::where('card_id', $id)->delete();
 

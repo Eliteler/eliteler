@@ -15,7 +15,10 @@ namespace App\Http\Controllers\Admin;
 use App\Currency;
 use App\Helpers\StorageHelper;
 use App\Http\Controllers\Controller;
+use App\PersonalizedLinkExclude;
+use App\Services\Security\ReservedEmailService;
 use App\Setting;
+use App\Support\BaseCurrency;
 use DateTimeZone;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -61,8 +64,25 @@ class SettingsController extends Controller
     private const LOGO_EXTENSIONS = ['jpeg', 'jpg', 'png', 'gif', 'svg', 'webp'];
 
     // General settings
-    public function settings()
+    public function settings(Request $request)
     {
+        $tab = $request->query('keyword_tab') === 'admin' ? 'admin' : 'default';
+        $search = $request->query('keyword_search');
+        $search = is_string($search) ? Str::lower(trim($search)) : '';
+        $pattern = '%' . strtr($search, ['!' => '!!', '%' => '!%', '_' => '!_']) . '%';
+        $exclusions = PersonalizedLinkExclude::query()
+            ->where('is_default', $tab === 'default')
+            ->when($search !== '', fn($query) => $query->whereRaw("keyword LIKE ? ESCAPE '!'", [$pattern]))
+            ->when($tab === 'admin', fn($query) => $query->latest('id'), fn($query) => $query->orderBy('keyword'))
+            ->paginate(10, ['id', 'keyword', 'is_default'], 'keyword_page')
+            ->withQueryString()
+            ->fragment('personalized-link-settings');
+
+        if ($exclusions->currentPage() > $exclusions->lastPage()) {
+            return to_route('admin.settings', array_replace($request->query(), ['keyword_page' => $exclusions->lastPage()]))
+                ->withFragment('personalized-link-settings');
+        }
+
         $config   = DB::table('config')->whereIn('config_key', self::GENERAL_KEYS)->pluck('config_value', 'config_key');
         $settings = Setting::first();
 
@@ -102,6 +122,11 @@ class SettingsController extends Controller
                 'languages'       => collect(config('app.availableLanguages', []))->map(fn($name, $code) => ['value' => (string) $code, 'label' => $name])->values(),
             ],
             'maxUploadKb' => (int) env('SIZE_LIMIT', 2048),
+            'personalizedLinks' => [
+                'exclusions' => $exclusions,
+                'search' => $search,
+                'tab' => $tab,
+            ],
         ]);
     }
 
@@ -171,8 +196,16 @@ class SettingsController extends Controller
             'site_name'                          => $data['site_name'],
         ];
 
+        // Changing the base currency: referral earnings and withdrawal requests
+        // without a recorded currency were made in the old one, so write it
+        // down first (payments already record theirs). See BaseCurrency.
+        $oldCurrency = BaseCurrency::code();
+        if (strtoupper((string) $data['currency']) !== $oldCurrency) {
+            BaseCurrency::stampReferrals($oldCurrency);
+        }
+
         foreach ($updates as $key => $value) {
-            DB::table('config')->where('config_key', $key)->update(['config_value' => $value]);
+            DB::table('config')->updateOrInsert(['config_key' => $key], ['config_value' => $value, 'updated_at' => now()]);
         }
 
         $this->updateLanguages($data['languages'], $data['default_language']);
@@ -415,7 +448,7 @@ class SettingsController extends Controller
 
         // config/app.php changed, so drop cached config (and the rest, as before)
         try {
-            Artisan::call('optimize:clear');
+            Artisan::call('config:clear');
         } catch (\Throwable $e) {
             report($e);
         }

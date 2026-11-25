@@ -21,6 +21,7 @@ use App\CardAppointmentTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -45,6 +46,12 @@ class AppointmentController extends Controller
     //  Get all booked appointments in the vcard
     public function bookedAppointments(Request $request, $id)
     {
+        // Check card ownership
+        $businessCard = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
+        if (!$businessCard) {
+            return redirect()->route('user.cards')->with('failed', trans('Card not found!'));
+        }
+
         // Get all appointments
         $bookedAppointments = BookedAppointment::where('card_id', $id)->orderBy('id', 'desc')->get();
 
@@ -61,8 +68,18 @@ class AppointmentController extends Controller
         $date = $request->date;
         $time = $request->time;
 
-        // Find the appointment and update its date and time
+        // Find the appointment
         $bookedAppointment = BookedAppointment::where('booked_appointment_id', $appointmentId)->first();
+        if (!$bookedAppointment) {
+            return redirect()->back()->with('failed', trans('Appointment not found!'));
+        }
+
+        // Business name with vcard URL from business_cards table (enforce ownership)
+        $businessDetails = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $bookedAppointment->card_id)->first();
+        if (!$businessDetails) {
+            return redirect()->back()->with('failed', trans('Card not found!'));
+        }
+
         $bookedAppointment->booking_date = $date;
         $bookedAppointment->booking_time = $time;
         $bookedAppointment->booking_status = 1;
@@ -82,8 +99,6 @@ class AppointmentController extends Controller
         $startDateTime = Carbon::parse("{$appointmentDate} {$appointmentTime}")->format('Ymd\THis');
         $endDateTime = Carbon::parse("{$appointmentDate} {$endTime}")->format('Ymd\THis');
 
-        // Business name with vcard URL from business_cards table
-        $businessDetails = BusinessCard::where('card_id', $bookedAppointment->card_id)->first();
         $businessName = $businessDetails->title;
         $businessVcardUrl = url($businessDetails->card_url); 
 
@@ -132,11 +147,19 @@ class AppointmentController extends Controller
         $appointmentId = $request->query('id');
 
         $bookedAppointment = BookedAppointment::where('booked_appointment_id', $appointmentId)->first();
+        if (!$bookedAppointment) {
+            return redirect()->back()->with('failed', trans('Appointment not found!'));
+        }
+
+        // Business name with vcard URL from business_cards table (enforce ownership)
+        $businessDetails = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $bookedAppointment->card_id)->first();
+        if (!$businessDetails) {
+            return redirect()->back()->with('failed', trans('Card not found!'));
+        }
+
         $bookedAppointment->booking_status = 1;
         $bookedAppointment->save();
 
-        // Business name with vcard URL from business_cards table
-        $businessDetails = BusinessCard::where('card_id', $bookedAppointment->card_id)->first();
         $businessName = $businessDetails->title;
         $businessVcardUrl = url($businessDetails->card_url);
 
@@ -202,11 +225,19 @@ class AppointmentController extends Controller
         $appointmentId = $request->query('id');
 
         $bookedAppointment = BookedAppointment::where('booked_appointment_id', $appointmentId)->first();
+        if (!$bookedAppointment) {
+            return redirect()->back()->with('failed', trans('Appointment not found!'));
+        }
+
+        // Business name with vcard URL from business_cards table (enforce ownership)
+        $businessDetails = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $bookedAppointment->card_id)->first();
+        if (!$businessDetails) {
+            return redirect()->back()->with('failed', trans('Card not found!'));
+        }
+
         $bookedAppointment->booking_status = -1;
         $bookedAppointment->save();
 
-        // Business name with vcard URL from business_cards table
-        $businessDetails = BusinessCard::where('card_id', $bookedAppointment->card_id)->first();
         $businessName = $businessDetails->title;
         $businessVcardUrl = url($businessDetails->card_url);
 
@@ -247,11 +278,19 @@ class AppointmentController extends Controller
         $appointmentId = $request->query('id');
 
         $bookedAppointment = BookedAppointment::where('booked_appointment_id', $appointmentId)->first();
+        if (!$bookedAppointment) {
+            return redirect()->back()->with('failed', trans('Appointment not found!'));
+        }
+
+        // Business name with vcard URL from business_cards table (enforce ownership)
+        $businessDetails = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $bookedAppointment->card_id)->first();
+        if (!$businessDetails) {
+            return redirect()->back()->with('failed', trans('Card not found!'));
+        }
+
         $bookedAppointment->booking_status = 2;
         $bookedAppointment->save();
 
-        // Business name with vcard URL from business_cards table
-        $businessDetails = BusinessCard::where('card_id', $bookedAppointment->card_id)->first();
         $businessName = $businessDetails->title;
         $businessVcardUrl = url($businessDetails->card_url);
 
@@ -297,8 +336,8 @@ class AppointmentController extends Controller
             return redirect()->back()->with('failed', trans('Appointment not found.'));
         }
 
-        // Business name with vCard URL from business_cards table
-        $businessDetails = BusinessCard::where('card_id', $bookedAppointment->card_id)->first();
+        // Business name with vCard URL from business_cards table (enforce ownership)
+        $businessDetails = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $bookedAppointment->card_id)->first();
         if (!$businessDetails) {
             return redirect()->back()->with('failed', trans('Business details not found.'));
         }

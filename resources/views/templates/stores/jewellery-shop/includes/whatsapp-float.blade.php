@@ -7,7 +7,7 @@
         : (!empty($business_card_details->profile)
             ? url($business_card_details->profile)
             : '');
-    $defaultMsg = urlencode(__('Hi, I am interested in your luxury jewellery collection.'));
+    $defaultMsg = rawurlencode(__('Hi, I am interested in your luxury jewellery collection.'));
 @endphp
 
 @if (!empty($waPhone))
@@ -63,15 +63,15 @@
                 <!-- Interactive Quick Query Chips -->
                 <div class="wa-quick-chips-wrap">
                     <button type="button" class="wa-chip-btn"
-                        onclick="sendQuickWaQuery('{{ urlencode(__('Hi, I have an inquiry about a product.')) }}')">
+                        onclick="sendQuickWaQuery('{{ rawurlencode(__('Hi, I have an inquiry about a product.')) }}')">
                         <span>💍 {{ __('Product Inquiry') }}</span>
                     </button>
                     <button type="button" class="wa-chip-btn"
-                        onclick="sendQuickWaQuery('{{ urlencode(__('Hi, I would like to track my order status.')) }}')">
+                        onclick="sendQuickWaQuery('{{ rawurlencode(__('Hi, I would like to track my order status.')) }}')">
                         <span>📦 {{ __('Order Status') }}</span>
                     </button>
                     <button type="button" class="wa-chip-btn"
-                        onclick="sendQuickWaQuery('{{ urlencode(__('Hi, I want to inquire about custom jewellery designs.')) }}')">
+                        onclick="sendQuickWaQuery('{{ rawurlencode(__('Hi, I want to inquire about custom jewellery designs.')) }}')">
                         <span>✨ {{ __('Custom Design') }}</span>
                     </button>
                 </div>

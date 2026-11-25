@@ -46,7 +46,7 @@ class MediaController extends Controller
     public function media(Request $request)
     {
         // Check active plan
-        $active_plan = json_decode(Auth::user()->plan_details);
+        $active_plan = !empty(Auth::user()->plan_details) ? json_decode(Auth::user()->plan_details) : null;
         if ($active_plan == null) {
             return redirect()->route('user.plans');
         }
@@ -140,12 +140,12 @@ class MediaController extends Controller
         $imageSize = $image->getSize();
 
         // Check user storage limit
-        $active_plan = json_decode(Auth::user()->plan_details);
+        $active_plan = !empty(Auth::user()->plan_details) ? json_decode(Auth::user()->plan_details) : null;
 
         // Total
         $totalStorage = round(($totalUsedStorage + $imageSize) / 1024 / 1024, 2);
 
-        $storageLimit = (int) ($active_plan->storage ?? 0);
+        $storageLimit = (int) ($active_plan?->storage ?? 0);
         $isUnlimited = $storageLimit === 999 || $storageLimit === -1;
 
         if (!$isUnlimited && $active_plan?->storage !== null && $totalStorage > $storageLimit) {
@@ -212,7 +212,7 @@ class MediaController extends Controller
         $totalUsedStorage = Medias::where('user_id', Auth::user()->user_id)->sum('size');
 
         // Get plan
-        $active_plan = json_decode(Auth::user()->plan_details);
+        $active_plan = !empty(Auth::user()->plan_details) ? json_decode(Auth::user()->plan_details) : null;
 
         // Get image size
         $imageSize = $image->getSize();
@@ -220,7 +220,7 @@ class MediaController extends Controller
         // Calculate new total in MB
         $totalStorage = round(($totalUsedStorage + $imageSize) / 1024 / 1024, 2);
 
-        $storageLimit = (int) ($active_plan->storage ?? 0);
+        $storageLimit = (int) ($active_plan?->storage ?? 0);
         $isUnlimited = $storageLimit === 999 || $storageLimit === -1;
 
         // Check storage limit

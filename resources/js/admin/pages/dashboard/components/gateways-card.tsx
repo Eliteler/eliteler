@@ -4,11 +4,11 @@ import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@admin/components/ui/card";
 import { formatCurrency } from "@admin/lib/format";
 
-import type { Gateway } from "../types";
+import type { CurrencyTotal, Gateway } from "../types";
 
 const TOP = 6;
 
-export function GatewaysCard({ gateways }: { gateways: Gateway[] }) {
+export function GatewaysCard({ gateways, others = [] }: { gateways: Gateway[]; others?: CurrencyTotal[] }) {
     const { t } = useTranslation();
     const { currency } = usePage().props;
     const total = gateways.reduce((sum, row) => sum + row.revenue, 0);
@@ -27,7 +27,11 @@ export function GatewaysCard({ gateways }: { gateways: Gateway[] }) {
         <Card className="gap-4">
             <CardHeader>
                 <CardTitle>{t("Payment gateways")}</CardTitle>
-                <CardDescription>{t("Plan revenue by gateway")}</CardDescription>
+                <CardDescription>
+                    {t("Plan revenue by gateway")}
+                    {/* Amounts count base-currency payments only; the payment counts include all */}
+                    {others.length > 0 && ` · ${t(":code payments only").replace(":code", currency.code)}`}
+                </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
                 {rows.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">{t("No payments in this period")}</p>}

@@ -14,6 +14,8 @@ namespace App\Http\Controllers\User;
 
 use App\Currency;
 use App\Http\Controllers\Controller;
+use App\Support\BaseCurrency;
+use App\Support\ReferralWallet;
 use App\Plan;
 use App\Referral;
 use App\ReferralWithdrawRequest;
@@ -70,20 +72,10 @@ class ReferralController extends Controller
             // Minimum Withdrawal Amount
             $minWithdrawalAmount = $config[83]->config_value;
 
-            // Referral Amount
-            $earnings = Referral::where('is_registered', 1)->where('is_subscribed', 1)->where('referred_user_id', Auth::user()->user_id)->get();
-
-            // Default Earning
-            $overAllEarning = 0;
-            $currentBalance = 0;
-            foreach ($earnings as $earning) {
-                $overAllEarning += (float) json_decode($earning->referral_scheme)->referral_amount;
-            }
-
-            // Withdrawals
-            $withdrawals = ReferralWithdrawRequest::where('payment_status', 2)->where('user_id', Auth::user()->user_id)->sum('amount');
-
-            $currentBalance = $overAllEarning - $withdrawals;
+            // Earnings and paid-out withdrawals in the current base currency
+            // (amounts from before a currency change aren't converted)
+            $overAllEarning = ReferralWallet::earned(Auth::user()->user_id);
+            $currentBalance = $overAllEarning - ReferralWallet::transferred(Auth::user()->user_id);
 
             if ($request->ajax()) {
                 // Passed builder reference directly instead of executing memory-heavy ->get() array collections
@@ -135,7 +127,8 @@ class ReferralController extends Controller
                         if ($referral->is_registered == 1 && $referral->is_subscribed == 1) {
                             // Referral amount details
                             $jsonDecode = json_decode($referral->referral_scheme);
-                            return "<span class='fw-bold text-dark'>" . formatCurrency($jsonDecode->referral_amount) . '</span>';
+                            // In the currency it was earned in
+                            return "<span class='fw-bold text-dark'>" . e(formatMoney($jsonDecode->referral_amount ?? 0, ReferralWallet::earningCurrency($jsonDecode))) . '</span>';
                         } else {
                             return '<span class="badge bg-red-100 text-red-700 text-capitalize fw-semibold">' . __("Plan not subscribed") . '</span>';
                         }
@@ -194,6 +187,7 @@ class ReferralController extends Controller
                         'referral_withdraw_requests.referral_withdraw_request_id',
                         'referral_withdraw_requests.bank_details',
                         'referral_withdraw_requests.amount',
+                        'referral_withdraw_requests.currency',
                         'referral_withdraw_requests.payment_status',
                         'referral_withdraw_requests.created_at',
                         'referral_withdraw_transactions.transfer_id',
@@ -218,7 +212,8 @@ class ReferralController extends Controller
                         }
                     })
                     ->editColumn('amount', function ($withdrawalRequest) {
-                        return '<span class="fw-bold text-dark">' . formatCurrency($withdrawalRequest->amount) . '</span>';
+                        // In the currency it was requested in
+                        return '<span class="fw-bold text-dark">' . e(formatMoney($withdrawalRequest->amount, $withdrawalRequest->currency)) . '</span>';
                     })
                     ->editColumn('bank_details', function ($withdrawalRequest) {
                         $bankDetails = $withdrawalRequest->bank_details ?? '-';
@@ -298,20 +293,9 @@ class ReferralController extends Controller
         // Minimum Withdrawal Amount
         $minWithdrawalAmount = $config[83]->config_value;
 
-        // Referral Amount
-        $earnings = Referral::where('is_registered', 1)->where('is_subscribed', 1)->where('referred_user_id', Auth::user()->user_id)->get();
-
-        // Default Earning
-        $overAllEarning = 0;
-        $currentBalance = 0;
-        foreach ($earnings as $earning) {
-            $overAllEarning += (float) json_decode($earning->referral_scheme)->referral_amount;
-        }
-
-        // Withdrawals
-        $withdrawals = ReferralWithdrawRequest::where('payment_status', 2)->where('user_id', Auth::user()->user_id)->sum('amount');
-
-        $currentBalance = $overAllEarning - $withdrawals;
+        // Earnings and paid-out withdrawals in the current base currency
+        $overAllEarning = ReferralWallet::earned(Auth::user()->user_id);
+        $currentBalance = $overAllEarning - ReferralWallet::transferred(Auth::user()->user_id);
 
         // Check minimum balance
         if ($currentBalance < $minWithdrawalAmount) {
@@ -359,12 +343,8 @@ class ReferralController extends Controller
 
         // Amount must be within the balance (earnings minus requests that are not rejected) and above the minimum
         $amount = round((float) $request->amount, 2);
-        $earned = 0;
-        foreach (Referral::where('is_registered', 1)->where('is_subscribed', 1)->where('referred_user_id', Auth::user()->user_id)->get() as $earning) {
-            $earned += (float) (json_decode($earning->referral_scheme)->referral_amount ?? 0);
-        }
-        $requested = ReferralWithdrawRequest::where('payment_status', '!=', '-1')->where('user_id', Auth::user()->user_id)->sum('amount');
-        $balance = round($earned - (float) $requested, 2);
+        // (current base currency only, see ReferralWallet)
+        $balance = ReferralWallet::available(Auth::user()->user_id);
 
         if ($amount <= 0 || $amount > $balance) {
             return redirect()->route('user.referrals.withdrawal.request')->with('failed', __('Withdrawal amount is greater than your current balance!'));
@@ -381,6 +361,7 @@ class ReferralController extends Controller
         $withdrawalRequest->referral_withdraw_request_id = $requestId;
         $withdrawalRequest->user_id = Auth::user()->user_id;
         $withdrawalRequest->amount = $amount;
+        $withdrawalRequest->currency = BaseCurrency::code();
         $withdrawalRequest->bank_details = json_encode($request->bank_details);
         $withdrawalRequest->notes = $request->notes ?? '-';
         $withdrawalRequest->payment_status = 0;

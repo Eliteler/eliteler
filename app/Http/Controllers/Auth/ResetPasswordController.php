@@ -74,4 +74,17 @@ class ResetPasswordController extends Controller
         return view('auth.passwords.reset', compact('config', 'token', 'settings'));
     }
 
+    /**
+     * Get the password reset validation rules.
+     *
+     * @return array
+     */
+    protected function rules()
+    {
+        return [
+            'token'    => 'required',
+            'email'    => 'required|email',
+            'password' => 'required|confirmed|min:6|max:100',
+        ];
+    }
 }

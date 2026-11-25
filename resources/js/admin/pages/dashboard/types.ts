@@ -2,8 +2,14 @@ export type Period = "7d" | "30d" | "90d" | "12m";
 
 export type Comparison = { current: number; previous: number };
 
+/** Payments in one non-base currency (not converted). */
+export type CurrencyTotal = { code: string; total: number };
+
+/** Revenue in the base currency; other currencies are listed separately. */
+export type RevenueComparison = Comparison & { currency: string; others: CurrencyTotal[] };
+
 export type Kpis = {
-    revenue?: Comparison; // left out when revenue is hidden
+    revenue?: RevenueComparison; // left out when revenue is hidden
     signups: Comparison;
     subscriptions: Comparison;
     activeSubscribers: { paid: number; free: number; total: number };
@@ -31,6 +37,7 @@ export type RecentPayment = {
     plan: string;
     gateway: string;
     amount: number;
+    currency: string | null;
     date: string;
 };
 
@@ -58,12 +65,18 @@ export type SystemNotice = {
     supportExpired: boolean;
 };
 
+export type MarketplaceNotice = {
+    plugins: { count: number; url: string } | null;
+    templates: { count: number; url: string } | null;
+};
+
 export type DashboardProps = {
     period: Period;
     periods: Period[];
     hideRevenue: boolean;
     // License server status; null without the Software updates permission or when it can't be confirmed
     systemNotice: SystemNotice | null;
+    marketplaceNotice: MarketplaceNotice | null;
     kpis: Kpis;
     // Revenue and payment widgets are not sent when hideRevenue is true
     revenueSeries?: RevenuePoint[];

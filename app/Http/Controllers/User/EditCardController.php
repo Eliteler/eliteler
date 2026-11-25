@@ -14,6 +14,7 @@ namespace App\Http\Controllers\User;
 
 use App\BusinessCard;
 use App\Services\ReservedLinks;
+use App\Support\PersonalizedLink;
 use App\Http\Controllers\Controller;
 use App\Plan;
 use App\Setting;
@@ -158,62 +159,21 @@ class EditCardController extends Controller
         $user_details = User::where('user_id', Auth::user()->user_id)->first();
         $plan_details = json_decode($user_details->plan_details, true);
 
-        // Personalized Link
-        if (!empty($plan_details['personalized_link'])) {
-            // Personalized Link is available in the plan
-            $personalized_link = $request->link ?: $business_card->card_url;
-        } else {
-            // Personalized Link is not available in the plan
-            // Always keep the existing card URL
-            $personalized_link = $business_card->card_url;
+        $card_url = $business_card->card_url;
+        if (! empty($plan_details['personalized_link']) && $request->link && $request->link !== $card_url) {
+            $card_url = PersonalizedLink::normalize($request->link);
         }
 
-        // Remove spaces
-        $personalized_link = trim($personalized_link);
-
-        // Remove https:// or http://
-        $personalized_link = str_replace(
-            ['https://', 'http://'],
-            '',
-            $personalized_link
-        );
-
-        // Remove www.
-        $personalized_link = str_replace('www.', '', $personalized_link);
-
-        // Convert accented characters to ASCII
-        $personalized_link = iconv(
-            'UTF-8',
-            'ASCII//TRANSLIT//IGNORE',
-            $personalized_link
-        );
-
-        // Remove all characters except letters, numbers, and hyphens
-        $personalized_link = preg_replace(
-            '/[^a-zA-Z0-9-]/',
-            '',
-            $personalized_link
-        );
-
-        // Convert to lowercase
-        $personalized_link = strtolower($personalized_link);
-
-        // Card URL
-        $card_url = $personalized_link;
-
-        // a page of the site already uses this link (login, user, admin, ...)
         if ($card_url !== $business_card->card_url && ReservedLinks::contains($card_url)) {
             return redirect()->route('user.edit.card', $id)->with('failed', trans(ReservedLinks::MESSAGE));
         }
 
         // Check if card URL already exists
         // Exclude the current card from the check
-        $current_card = BusinessCard::where('card_url', $card_url)
+        if ($card_url !== $business_card->card_url && BusinessCard::where('card_url', $card_url)
             ->where('card_id', '!=', $id)
             ->where('card_status', '!=', 'deleted')
-            ->count();
-
-        if ($current_card > 0) {
+            ->exists()) {
             return redirect()
                 ->route('user.edit.card', $id)
                 ->with('failed', trans('Sorry, the personalized link was already registered.'));
@@ -291,7 +251,7 @@ class EditCardController extends Controller
         // Update
         $copyright_url = trim((string) $request->copyright_url) !== '' ? (preg_match('~^(https?://|mailto:|tel:)~i', trim($request->copyright_url)) ? trim($request->copyright_url) : 'https://' . trim($request->copyright_url)) : null;
 
-        BusinessCard::where('card_id', $id)->update([
+        BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->update([
             'profile'     => $request->logo,
             'cover_type'  => $cover_type,
             'cover'       => $cover,

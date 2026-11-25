@@ -1,4 +1,4 @@
-import { Head, Link, usePage } from "@inertiajs/react";
+import { Head, Link } from "@inertiajs/react";
 import { ArrowLeft, Printer } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -7,7 +7,7 @@ import { Card, CardContent } from "@admin/components/ui/card";
 import { Separator } from "@admin/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@admin/components/ui/table";
 import { formatDate } from "@admin/lib/date";
-import { formatCurrency } from "@admin/lib/format";
+import { useMoney } from "@admin/hooks/use-money";
 
 import { PaymentBadge } from "../nfc/components/status-badges";
 
@@ -21,7 +21,8 @@ type Invoice = {
     date: string | null;
     status: string;
     method: string;
-    currency: string;
+    /** ISO code the invoice was paid in (null: base currency). */
+    currency: string | null;
     logo: string | null;
     from: Party;
     to: Party;
@@ -33,6 +34,7 @@ type Invoice = {
     tax: number;
     coupon: string | null;
     discount: number;
+    shipping?: number;
     total: number;
 };
 
@@ -56,8 +58,8 @@ function PartyBlock({ title, party }: { title: string; party: Party }) {
 
 export default function Invoice({ invoice, back }: { invoice: Invoice; back: { label: string; href: string } }) {
     const { t } = useTranslation();
-    const { currency } = usePage().props;
-    const money = (value: number) => formatCurrency(value, currency);
+    const format = useMoney();
+    const money = (value: number) => format(value, invoice.currency);
 
     return (
         <>
@@ -158,6 +160,12 @@ export default function Invoice({ invoice, back }: { invoice: Invoice; back: { l
                                         {t("Coupon")} {invoice.coupon}
                                     </span>
                                     <span className="tabular-nums">−{money(invoice.discount)}</span>
+                                </div>
+                            )}
+                            {!!invoice.shipping && invoice.shipping > 0 && (
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">{t("Shipping")}</span>
+                                    <span className="tabular-nums">{money(invoice.shipping)}</span>
                                 </div>
                             )}
                             <Separator />

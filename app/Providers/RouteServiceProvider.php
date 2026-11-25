@@ -90,9 +90,13 @@ class RouteServiceProvider extends ServiceProvider
      */
     protected function configureRateLimiting(): void
     {
+        // Per customer once an API middleware has identified them (the mobile app's check.user
+        // runs before the limits), otherwise per IP (sign-in, registration, app settings)
         RateLimiter::for('api', function (Request $request) {
+            $user = $request->user();
+
             return [
-                Limit::perMinute(60)->by($request->ip())
+                Limit::perMinute(60)->by($user ? 'user:' . $user->getAuthIdentifier() : 'ip:' . $request->ip()),
             ];
         });
     }

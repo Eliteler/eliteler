@@ -1,4 +1,4 @@
-import { Head, Link, router, usePage } from "@inertiajs/react";
+import { Head, Link, router } from "@inertiajs/react";
 import { Ban, CheckCircle2, Clock, FileText, MoreHorizontal, Receipt, XCircle } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -15,7 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@admin/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@admin/components/ui/table";
 import { formatDate, fromNow } from "@admin/lib/date";
-import { formatCurrency } from "@admin/lib/format";
+import { useMoney } from "@admin/hooks/use-money";
 import { cn } from "@admin/lib/utils";
 import type { Paginated } from "@admin/types";
 
@@ -27,6 +27,7 @@ type Row = {
     plan: string;
     gateway: string;
     amount: number;
+    currency: string | null;
     status: Status;
     date: string | null;
     customer: { id: string; name: string; email: string } | null;
@@ -43,7 +44,7 @@ const STYLES: Record<Status, string> = {
 
 export default function Transactions({ transactions, filters, counts }: Props) {
     const { t } = useTranslation();
-    const { currency } = usePage().props;
+    const money = useMoney();
     const [pending, setPending] = useState<{ row: Row; status: Action } | null>(null);
     const [processing, setProcessing] = useState(false);
     const labels: Record<Status, string> = { success: t("Paid"), pending: t("Pending"), failed: t("Failed"), cancelled: t("Cancelled") };
@@ -146,7 +147,7 @@ export default function Transactions({ transactions, filters, counts }: Props) {
                                             )}
                                         </TableCell>
                                         <TableCell className="hidden sm:table-cell">{row.gateway}</TableCell>
-                                        <TableCell className="text-end font-medium tabular-nums">{formatCurrency(row.amount, currency)}</TableCell>
+                                        <TableCell className="text-end font-medium tabular-nums">{money(row.amount, row.currency)}</TableCell>
                                         <TableCell>
                                             <Badge variant="outline" className={cn(STYLES[row.status])}>{labels[row.status] ?? row.status}</Badge>
                                         </TableCell>

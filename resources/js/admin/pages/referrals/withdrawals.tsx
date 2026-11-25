@@ -31,7 +31,7 @@ import {
 } from "@admin/components/ui/table";
 import { Textarea } from "@admin/components/ui/textarea";
 import { fromNow } from "@admin/lib/date";
-import { formatCurrency } from "@admin/lib/format";
+import { useMoney } from "@admin/hooks/use-money";
 import { cn } from "@admin/lib/utils";
 import type { Paginated } from "@admin/types";
 
@@ -39,6 +39,8 @@ type Status = "pending" | "accepted" | "transferred" | "rejected";
 type Row = {
     id: string;
     amount: number;
+    /** Currency the request was made in (base currency when null). */
+    currency: string | null;
     details: string;
     notes: string | null;
     status: Status;
@@ -64,7 +66,9 @@ const STYLES: Record<Status, string> = {
 export default function Withdrawals({ requests, tab, search, counts }: Props) {
     const { t } = useTranslation();
     const { currency } = usePage().props;
-    const money = (value: number) => formatCurrency(value, currency);
+    const money = useMoney();
+    // A request from before a currency change can't be compared with the balance (base currency only)
+    const inBase = (row: Row) => !row.currency || row.currency.toUpperCase() === currency.code.toUpperCase();
 
     // Safely extract requests array whether paginated or plain array
     const requestList: Row[] = Array.isArray(requests)
@@ -172,6 +176,7 @@ export default function Withdrawals({ requests, tab, search, counts }: Props) {
                                 {requestList.map((row) => {
                                     const overBalance =
                                         row.status !== "transferred" &&
+                                        inBase(row) &&
                                         row.amount > row.balance;
                                     return (
                                         <TableRow key={row.id}>
@@ -200,7 +205,7 @@ export default function Withdrawals({ requests, tab, search, counts }: Props) {
                                             <TableCell className="pe-6 text-end">
                                                 <div className="flex flex-col items-end">
                                                     <span className="font-medium tabular-nums">
-                                                        {money(row.amount)}
+                                                        {money(row.amount, row.currency)}
                                                     </span>
                                                     <span
                                                         className={cn(
@@ -389,7 +394,7 @@ export default function Withdrawals({ requests, tab, search, counts }: Props) {
                         ? pending.status === "accepted"
                             ? t(
                                   "Approving doesn't send money. Send :amount to the referrer, then mark the request as paid.",
-                              ).replace(":amount", money(pending.row.amount))
+                              ).replace(":amount", money(pending.row.amount, pending.row.currency))
                             : t(
                                   "The referrer keeps the commission and can request a payout again.",
                               )
@@ -409,7 +414,7 @@ export default function Withdrawals({ requests, tab, search, counts }: Props) {
 
 function PayDialog({ row, onClose }: { row: Row | null; onClose: () => void }) {
     const { t } = useTranslation();
-    const { currency } = usePage().props;
+    const money = useMoney();
     const form = useForm({
         request_id: "",
         transfer_transaction_id: "",
@@ -440,7 +445,7 @@ function PayDialog({ row, onClose }: { row: Row | null; onClose: () => void }) {
                         <DialogTitle>{t("Record payout")}</DialogTitle>
                         <DialogDescription>
                             {row &&
-                                `${formatCurrency(row.amount, currency)} → ${row.customer?.name ?? ""}`}
+                                `${money(row.amount, row.currency)} → ${row.customer?.name ?? ""}`}
                         </DialogDescription>
                     </DialogHeader>
                     {row?.details && (

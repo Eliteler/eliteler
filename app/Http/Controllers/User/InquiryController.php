@@ -14,6 +14,7 @@ namespace App\Http\Controllers\User;
 
 use App\Setting;
 use App\ContactForm;
+use App\BusinessCard;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
@@ -40,6 +41,12 @@ class InquiryController extends Controller
     // Enquiries
     public function index(Request $request, $id)
     {
+        // Check card ownership
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
+        if (!$business_card) {
+            return redirect()->route('user.cards')->with('failed', trans('Card not found!'));
+        }
+
         // Queries
         $settings = Setting::where('status', 1)->first();
 

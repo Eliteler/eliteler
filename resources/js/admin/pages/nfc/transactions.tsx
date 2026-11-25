@@ -1,4 +1,4 @@
-import { Head, Link, router, usePage } from "@inertiajs/react";
+import { Head, Link, router } from "@inertiajs/react";
 import { CheckCircle2, Clock, FileText, MoreHorizontal, Receipt, XCircle } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -18,7 +18,7 @@ import {
 } from "@admin/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@admin/components/ui/table";
 import { formatDate, fromNow } from "@admin/lib/date";
-import { formatCurrency } from "@admin/lib/format";
+import { useMoney } from "@admin/hooks/use-money";
 import type { Paginated } from "@admin/types";
 
 import { ListToolbar } from "@admin/components/list-toolbar";
@@ -31,6 +31,7 @@ type Transaction = {
     invoice: string | null;
     method: string;
     amount: number;
+    currency: string | null;
     status: "success" | "pending" | "failed";
     orderId: string;
     delivery: string;
@@ -43,7 +44,7 @@ type Action = "success" | "pending" | "failed";
 
 export default function NfcTransactions({ transactions, tab, search, counts }: Props) {
     const { t } = useTranslation();
-    const { currency } = usePage().props;
+    const money = useMoney();
     const [pending, setPending] = useState<{ transaction: Transaction; status: Action } | null>(null);
     const [processing, setProcessing] = useState(false);
 
@@ -94,12 +95,12 @@ export default function NfcTransactions({ transactions, tab, search, counts }: P
 
     return (
         <>
-            <Head title={t("NFC payments")} />
+            <Head title={t("Smart Product payments")} />
             <div className="flex flex-1 flex-col gap-6 p-4 lg:p-6">
                 <PageHeader
-                    title={t("NFC payments")}
-                    description={t("Payments for NFC card orders. Confirm offline payments here.")}
-                    breadcrumbs={[{ label: t("Dashboard"), href: route("admin.dashboard") }, { label: t("NFC payments") }]}
+                    title={t("Smart Product payments")}
+                    description={t("Payments for Smart Product orders. Confirm offline payments here.")}
+                    breadcrumbs={[{ label: t("Dashboard"), href: route("admin.dashboard") }, { label: t("Smart Product payments") }]}
                 />
 
                 <ListToolbar
@@ -165,7 +166,7 @@ export default function NfcTransactions({ transactions, tab, search, counts }: P
                                             )}
                                         </TableCell>
                                         <TableCell className="hidden sm:table-cell">{transaction.method}</TableCell>
-                                        <TableCell className="text-end font-medium tabular-nums">{formatCurrency(transaction.amount, currency)}</TableCell>
+                                        <TableCell className="text-end font-medium tabular-nums">{money(transaction.amount, transaction.currency)}</TableCell>
                                         <TableCell>
                                             <PaymentBadge status={transaction.status} />
                                         </TableCell>

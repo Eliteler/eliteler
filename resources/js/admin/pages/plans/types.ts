@@ -28,7 +28,7 @@ export const VCARD_FEATURES = [
 
 export const COMMON_FEATURES = [
     ["custom_domain", "Custom domain"],
-    ["nfc_card", "Order NFC cards"],
+    ["nfc_card", "Smart Products"],
     ["pwa", "Installable app (PWA)"],
     ["advanced_settings", "Advanced settings"],
     ["personalized_link", "Personalized link"],
@@ -70,6 +70,7 @@ export type Plan = {
     trialAiCredits: number;
     googleWallet: boolean;
     googleWallets: number;
+    showSmartProducts: boolean;
     limits: Record<LimitKey, number | null>;
     features: Record<FeatureKey, boolean>;
     integrations: Record<IntegrationKey, string | null>;

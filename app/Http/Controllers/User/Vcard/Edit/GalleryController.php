@@ -45,7 +45,7 @@ class GalleryController extends Controller
         // Queries
         $plan = DB::table('users')->where('user_id', Auth::user()->user_id)->where('status', 1)->first();
         $plan_details = json_decode($plan->plan_details);
-        $business_card = BusinessCard::where('card_id', $id)->first();
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
 
         // Check business card
         if ($business_card == null) {
@@ -71,7 +71,7 @@ class GalleryController extends Controller
     public function updateGalleries(Request $request, $id)
     {
         // Queries
-        $business_card = BusinessCard::where('card_id', $id)->first();
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
 
         // Check business card
         if ($business_card == null) {
@@ -80,13 +80,13 @@ class GalleryController extends Controller
 
             // Get plan details
             $plan = DB::table('users')->where('user_id', Auth::user()->user_id)->where('status', 1)->first();
-            $plan_details = json_decode($plan->plan_details);
+            $plan_details = !empty($plan->plan_details) ? json_decode($plan->plan_details) : null;
 
             // Check gallery caption
-            if ($request->caption != null) {
+            if (is_array($request->caption)) {
 
                 // Check gallery limit
-                if (count($request->caption) <= $plan_details->no_of_galleries) {
+                if (count($request->caption) <= ($plan_details->no_of_galleries ?? 0)) {
 
                     // Get temporary title before delete
                     $temp_title = Gallery::where('card_id', $id)->first();

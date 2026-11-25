@@ -1,3 +1,4 @@
+@if (!empty($plan_details) && $plan_details['pwa'] == 1 && $business_card_details->is_enable_pwa == 1)
 <style>
     /* Force Center Overlay */
     #pwaModal {
@@ -87,107 +88,108 @@
 {{-- Custom JS from Backend --}}
 @push('custom-js')
     <script>
-        let deferredPwaPrompt = null;
-        window._pwaShownThisSession = false;
+        (function() {
+            "use strict";
 
-        // Global show function with duplicate prevention
-        window.showPwaModal = function() {
-            if (window._pwaShownThisSession) return;
-
-            // Check if 5-minute cooldown is active
-            const dismissUntil = localStorage.getItem('pwa_dismiss_until');
-            if (dismissUntil && Date.now() < Number(dismissUntil)) {
+            // If already installed and running in standalone mode, never display install modal
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+            if (isStandalone) {
                 return;
             }
 
-            const modal = document.getElementById('pwaModal');
-            if (modal && !modal.classList.contains('pwa-visible')) {
-                modal.classList.add('pwa-visible');
-                window._pwaShownThisSession = true;
-            }
-        };
+            let deferredPwaPrompt = window.deferredPwaPrompt || window.deferredPrompt || null;
+            window._pwaShownThisSession = false;
 
-        // Global close function with 5-minute timer set
-        window.closePwaModal = function() {
-            const modal = document.getElementById('pwaModal');
-            if (modal) {
-                modal.classList.remove('pwa-visible');
+            // Global show function with duplicate prevention
+            window.showPwaModal = function() {
+                if (window._pwaShownThisSession) return;
 
-                // Set 5 minutes cooldown (5 minutes * 60 seconds * 1000 ms)
-                const cooldownTime = Date.now() + (5 * 60 * 1000);
-                localStorage.setItem('pwa_dismiss_until', cooldownTime);
-            }
-        };
+                // Check if 5-minute cooldown is active
+                const dismissUntil = localStorage.getItem('pwa_dismiss_until');
+                if (dismissUntil && Date.now() < Number(dismissUntil)) {
+                    return;
+                }
 
-        function handlePwaBackdropClick(e) {
-            if (e.target && e.target.id === 'pwaModal') {
-                window.closePwaModal();
-            }
-        }
+                const modal = document.getElementById('pwaModal');
+                if (modal && !modal.classList.contains('pwa-visible')) {
+                    modal.classList.add('pwa-visible');
+                    window._pwaShownThisSession = true;
+                }
+            };
 
-        // Capture install prompt event if supported
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPwaPrompt = e;
-        });
+            // Global close function with 5-minute timer set
+            window.closePwaModal = function() {
+                const modal = document.getElementById('pwaModal');
+                if (modal) {
+                    modal.classList.remove('pwa-visible');
 
-        // Guaranteed Show after Preloader finishes (2.5 seconds)
-        function schedulePwaLaunch() {
-            if (window._pwaShownThisSession) return;
-            setTimeout(() => {
-                window.showPwaModal();
-            }, 2500);
-        }
+                    // Set 5 minutes cooldown (5 minutes * 60 seconds * 1000 ms)
+                    const cooldownTime = Date.now() + (5 * 60 * 1000);
+                    localStorage.setItem('pwa_dismiss_until', cooldownTime);
+                }
+            };
 
-        // Trigger after page load & preloader exit
-        window.addEventListener('load', () => {
-            const preloader = document.getElementById('site-preloader');
-            if (!preloader || preloader.style.display === 'none') {
-                schedulePwaLaunch();
-            } else {
-                const observer = new MutationObserver(() => {
-                    if (preloader.style.display === 'none' || preloader.classList.contains('hidden')) {
-                        observer.disconnect();
-                        schedulePwaLaunch();
-                    }
-                });
-                observer.observe(preloader, {
-                    attributes: true,
-                    attributeFilter: ['style', 'class']
-                });
+            window.handlePwaBackdropClick = function(e) {
+                if (e.target && e.target.id === 'pwaModal') {
+                    window.closePwaModal();
+                }
+            };
 
-                // Fallback timer
+            function schedulePwaLaunch() {
+                if (window._pwaShownThisSession) return;
                 setTimeout(() => {
-                    schedulePwaLaunch();
-                }, 4000);
+                    window.showPwaModal();
+                }, 2000);
             }
-        });
 
-        // Handle Install Click
-        document.addEventListener("DOMContentLoaded", function() {
-            const pwaInstallBtn = document.getElementById('pwaInstallBtn');
-            if (pwaInstallBtn) {
-                pwaInstallBtn.addEventListener('click', async () => {
-                    if (deferredPwaPrompt) {
-                        deferredPwaPrompt.prompt();
-                        const {
-                            outcome
-                        } = await deferredPwaPrompt.userChoice;
-                        deferredPwaPrompt = null;
-                        window.closePwaModal();
-                    } else {
-                        alert(
-                            "{{ __('To install, tap the Share or Menu icon in your browser and select Add to Home Screen.') }}"
-                        );
-                        window.closePwaModal();
-                    }
-                });
+            // Capture install prompt event if supported (Chrome, Edge on Windows/Android)
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPwaPrompt = e;
+                window.deferredPwaPrompt = e;
+                window.deferredPrompt = e;
+
+                schedulePwaLaunch();
+            });
+
+            // If prompt was already captured earlier on window
+            if (deferredPwaPrompt) {
+                schedulePwaLaunch();
             }
-        });
 
-        window.addEventListener('appinstalled', () => {
-            window.closePwaModal();
-            deferredPwaPrompt = null;
-        });
+            // Handle Install Click
+            document.addEventListener("DOMContentLoaded", function() {
+                const pwaInstallBtn = document.getElementById('pwaInstallBtn');
+                if (pwaInstallBtn) {
+                    pwaInstallBtn.addEventListener('click', async () => {
+                        const promptEvent = deferredPwaPrompt || window.deferredPwaPrompt || window.deferredPrompt;
+                        if (promptEvent) {
+                            promptEvent.prompt();
+                            try {
+                                const { outcome } = await promptEvent.userChoice;
+                                if (outcome === 'accepted') {
+                                    window.closePwaModal();
+                                }
+                            } catch (err) {}
+                            deferredPwaPrompt = null;
+                            window.deferredPwaPrompt = null;
+                            window.deferredPrompt = null;
+                            window.closePwaModal();
+                        } else {
+                            // Smoothly close the modal on Windows/desktop without showing any alert
+                            window.closePwaModal();
+                        }
+                    });
+                }
+            });
+
+            window.addEventListener('appinstalled', () => {
+                window.closePwaModal();
+                deferredPwaPrompt = null;
+                window.deferredPwaPrompt = null;
+                window.deferredPrompt = null;
+            });
+        })();
     </script>
 @endpush
+@endif

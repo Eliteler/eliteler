@@ -225,7 +225,7 @@
                     {{ __('Hello! How can we assist you with our store products today?') }}
                 </div>
 
-                <a href="https://api.whatsapp.com/send?phone={{ $waNumber }}&text={{ urlencode('Hello, I would like to inquire about your store products.') }}"
+                <a href="https://api.whatsapp.com/send?phone={{ $waNumber }}&text={{ rawurlencode('Hello, I would like to inquire about your store products.') }}"
                     target="_blank" class="wa-start-chat-btn">
                     <i class="ti ti-brand-whatsapp fs-2"></i>
                     <span>{{ __('Start WhatsApp Chat') }}</span>

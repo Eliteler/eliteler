@@ -48,7 +48,7 @@ class AdvancedSettingController extends Controller
         $plan = DB::table('users')->where('user_id', Auth::user()->user_id)->where('status', 1)->first();
         $plan_details = json_decode($plan->plan_details);
 
-        $business_card = BusinessCard::where('card_id', $id)->first();
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
 
         if ($plan_details->advanced_settings == 1 || $plan_details->password_protected == 1) {
             return view('user.pages.cards.advanced-settings', compact('plan_details', 'settings', 'business_card'));
@@ -61,7 +61,7 @@ class AdvancedSettingController extends Controller
     public function saveAdvancedSetting(Request $request, $id)
     {
         // Queries
-        $business_card = BusinessCard::where('card_id', $id)->first();
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
 
         // Check business card
         if ($business_card == null) {
@@ -83,6 +83,12 @@ class AdvancedSettingController extends Controller
             if (strlen($request->meta_keywords) > 70) {
                 return redirect()->route('user.edit.advanced.setting', $id)
                     ->with('failed', trans('Meta keywords must not exceed 70 characters.'));
+            }
+
+            // Password length check
+            if (!empty($request->password) && strlen($request->password) > 100) {
+                return redirect()->route('user.edit.advanced.setting', $id)
+                    ->with('failed', trans('Password must not exceed 100 characters.'));
             }
 
             // Favicon
@@ -115,7 +121,7 @@ class AdvancedSettingController extends Controller
             }
 
             // Update
-            BusinessCard::where('card_id', $id)->update([
+            BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->update([
                 'password' => $request->password,
                 'custom_css' => $request->custom_css,
                 'custom_js' => $request->custom_js,

@@ -50,27 +50,29 @@ class TranslationManagerController extends Controller
 
     public function index(Request $request)
     {
-        $source     = $this->sourceLocale();
-        $sourceKeys = $this->reader->readTranslations($source, "{$source}.json", 'json');
-        $enabled    = array_keys(config('app.languages', []));
-        $search     = trim((string) $request->query('search', ''));
+        $source        = $this->sourceLocale();
+        $sourceKeys    = $this->reader->readTranslations($source, "{$source}.json", 'json');
+        $enabled       = array_keys(config('app.languages', []));
+        $defaultLocale = \Illuminate\Support\Facades\DB::table('config')->where('config_key', 'default_language')->value('config_value') ?: config('app.locale', 'en');
+        $search        = trim((string) $request->query('search', ''));
 
         // Retrieve and format all languages
-        $languages = collect($this->languageService->getLanguages())->map(function ($language) use ($source, $sourceKeys, $enabled) {
+        $languages = collect($this->languageService->getLanguages())->map(function ($language) use ($source, $sourceKeys, $enabled, $defaultLocale) {
             $code   = $language['code'];
             $target = $code === $source ? $sourceKeys : $this->reader->readTranslations($code, "{$code}.json", 'json');
             $done   = count(array_filter(array_intersect_key($target, $sourceKeys), fn($value) => trim((string) $value) !== ''));
 
             return [
-                'code'     => $code,
-                'name'     => __($language['name']),
-                'isSource' => $code === $source,
-                'enabled'  => in_array($code, $enabled, true),
-                'total'    => count($sourceKeys),
-                'done'     => $done,
-                'sync'     => $this->syncState($code),
+                'code'      => $code,
+                'name'      => __($language['name']),
+                'isSource'  => $code === $source,
+                'isDefault' => $code === $defaultLocale,
+                'enabled'   => in_array($code, $enabled, true),
+                'total'     => count($sourceKeys),
+                'done'      => $done,
+                'sync'      => $this->syncState($code),
             ];
-        })->sortBy([['isSource', 'desc'], ['name', 'asc']])->values();
+        })->sortBy([['isDefault', 'desc'], ['isSource', 'desc'], ['name', 'asc']])->values();
 
         // Filter results by search keyword
         if ($search !== '') {
@@ -113,12 +115,20 @@ class TranslationManagerController extends Controller
         if (array_key_exists($data['code'], $this->languageService->getLanguages())) {
             return back()->withErrors(['code' => __('This language already exists.')]);
         }
-        $this->ensureLanguage($data['copy_from']);
 
-        $this->languageService->createLanguage($data['name'], $data['code'], $data['copy_from']);
+        $copyFrom = $data['copy_from'] ?? 'none';
+        if ($copyFrom !== 'none' && !empty($copyFrom)) {
+            $this->ensureLanguage($copyFrom);
+        }
+
+        $this->languageService->createLanguage($data['name'], $data['code'], $copyFrom);
+
+        $message = ($copyFrom === 'none' || empty($copyFrom))
+            ? __(':name added. Translation keys are ready with blank values.', ['name' => $data['name']])
+            : __(':name added. Its text starts as a copy of the language you chose.', ['name' => $data['name']]);
 
         return redirect()->route('translation-manager.edit', $data['code'])
-            ->with('success', __(':name added. Its text starts as a copy of the language you chose.', ['name' => $data['name']]));
+            ->with('success', $message);
     }
 
     public function edit(Request $request, string $locale)
@@ -256,6 +266,8 @@ class TranslationManagerController extends Controller
         $this->ensureLanguage($locale);
         abort_if($locale === $this->sourceLocale(), 422);
 
+        SyncMissingTranslationsJob::clearStopRequest($locale);
+
         $source = $this->sourceLocale();
         Cache::put(SyncMissingTranslationsJob::statusCacheKey($locale), ['state' => 'queued', 'message' => __('Waiting to start…')], now()->addHour());
         SyncMissingTranslationsJob::dispatch($source, $locale);
@@ -265,6 +277,36 @@ class TranslationManagerController extends Controller
         }
 
         return back()->with('success', __('Translating missing text in the background. You can keep working; this page updates when it finishes.'));
+    }
+
+    /** Stop/cancel machine-translating missing texts for a locale. */
+    public function stopSync(Request $request, string $locale)
+    {
+        $this->ensureLanguage($locale);
+
+        SyncMissingTranslationsJob::requestStop($locale);
+
+        Cache::put(
+            SyncMissingTranslationsJob::statusCacheKey($locale),
+            [
+                'state' => 'stopped',
+                'message' => __('Auto-translate stopped by user.'),
+            ],
+            now()->addHour()
+        );
+
+        return back()->with('success', __('Auto-translate stopped.'));
+    }
+
+    /** Dismiss/clear sync status notification for a locale. */
+    public function dismissSync(string $locale)
+    {
+        $this->ensureLanguage($locale);
+
+        Cache::forget(SyncMissingTranslationsJob::statusCacheKey($locale));
+        SyncMissingTranslationsJob::clearStopRequest($locale);
+
+        return back();
     }
 
     protected function startQueueWorker(): void
@@ -403,6 +445,19 @@ class TranslationManagerController extends Controller
     {
         $status = Cache::get(SyncMissingTranslationsJob::statusCacheKey($locale));
 
-        return $status && in_array($status['state'] ?? '', ['queued', 'running', 'completed', 'failed'], true) ? $status : null;
+        if (!$status) {
+            return null;
+        }
+
+        $state = $status['state'] ?? '';
+
+        // Finished/stopped statuses should not persist across full page reloads
+        if (in_array($state, ['stopped', 'completed'], true)) {
+            Cache::forget(SyncMissingTranslationsJob::statusCacheKey($locale));
+            SyncMissingTranslationsJob::clearStopRequest($locale);
+            return null;
+        }
+
+        return in_array($state, ['queued', 'running', 'failed'], true) ? $status : null;
     }
 }

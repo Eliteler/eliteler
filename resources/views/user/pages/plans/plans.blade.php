@@ -711,13 +711,13 @@
                                                         class="badge badge-new bg-green text-white">{{ __('New') }}</span>
                                                 </li>
 
-                                                @if ($config[76]->config_value == '1')
+                                                @if ($config[76]->config_value == '1' && (int) ($plan->show_nfc_card_feature ?? 1) === 1)
                                                     <li>
                                                         <div class="feature-left">
-                                                            <span class="feature-icon is-on">
-                                                                @include('user.pages.plans.includes.icon-check')
+                                                            <span class="feature-icon {{ $plan->nfc_card == 1 ? 'is-on' : 'is-off' }}">
+                                                                @include('user.pages.plans.includes.icon-' . ($plan->nfc_card == 1 ? 'check' : 'x'))
                                                             </span>
-                                                            <span>{{ __('Order NFC Card') }}</span>
+                                                            <span>{{ __('Smart Products') }}</span>
                                                         </div>
                                                         <span
                                                             class="badge badge-new bg-green text-white">{{ __('New') }}</span>

@@ -50,8 +50,10 @@ use App\Http\Controllers\Admin\ReferralSystemConfigurationController;
 use App\Http\Controllers\Admin\ReferralWithdrawalRequestController;
 use App\Http\Controllers\Admin\SearchController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\PersonalizedLinkSettingsController;
 use App\Http\Controllers\Admin\VisitorAnalyticsController;
 use App\Http\Controllers\Admin\SitemapController;
+use App\Http\Controllers\Admin\SmartProductTypeController;
 use App\Http\Controllers\Admin\SubdomainSettingController;
 use App\Http\Controllers\Admin\TaxSettingController;
 use App\Http\Controllers\Admin\ThemeController;
@@ -63,6 +65,7 @@ use App\Http\Controllers\Admin\WebTemplateController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PublicVerificationController;
 use App\Http\Controllers\BlogController;
+use App\Http\Controllers\StorageRedirectController;
 use App\Http\Controllers\BookAppointmentController;
 use App\Http\Controllers\BookServiceController;
 use App\Http\Controllers\CustomDomainController;
@@ -215,6 +218,9 @@ use Illuminate\Support\Facades\Route;
 | contains the "web" middleware group. Now create something great!
 |
  */
+
+// Cloud storage public asset redirect (active when cloud driver is enabled)
+Route::get('storage/{path}', StorageRedirectController::class)->where('path', '.*');
 
 // Installer Middleware
 Route::group(['middleware' => 'Installer'], function () {
@@ -528,7 +534,7 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::post('roles/delete', [UserController::class, 'deleteRole'])->name('roles.delete')->middleware(['user.page.permission:users', 'demo.mode']);
 
         // Custom domains
-        Route::get('custom-domain-requests/{status}', [CustomDomainRequestsController::class, 'customDomainRequests'])->name('custom.domain.requests')->middleware('user.page.permission:custom_domain');
+        Route::get('custom-domain-requests/{status?}', [CustomDomainRequestsController::class, 'customDomainRequests'])->name('custom.domain.requests')->middleware('user.page.permission:custom_domain');
 
         // Update custom domain status
         Route::post('process-custom-domain-requests', [CustomDomainRequestsController::class, 'processCustomDomainRequests'])->name('process.custom.domain.requests')->middleware(['user.page.permission:custom_domain', 'demo.mode']);
@@ -602,9 +608,19 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::post('nfc-card/update-design-stock', [NfcCardDesignController::class, "updateStock"])->name('update.design.stock')->middleware(['user.page.permission:nfc_card_design', 'demo.mode']);
         Route::post('nfc-card/action-design', [NfcCardDesignController::class, "action"])->name('action.design')->middleware(['user.page.permission:nfc_card_design', 'demo.mode']);
 
+        Route::prefix('nfc-card/product-types')->name('smart-product-types.')->middleware('user.page.permission:nfc_card_design')->group(function () {
+            Route::get('/', [SmartProductTypeController::class, 'index'])->name('index');
+            Route::middleware('demo.mode')->group(function () {
+                Route::post('/', [SmartProductTypeController::class, 'store'])->name('store');
+                Route::patch('{type}', [SmartProductTypeController::class, 'update'])->whereNumber('type')->name('update');
+                Route::delete('{type}', [SmartProductTypeController::class, 'destroy'])->whereNumber('type')->name('destroy');
+            });
+        });
+
         // NFC card orders
         Route::get('nfc-card/orders', [NfcCardOrderController::class, 'index'])->name('orders')->middleware('user.page.permission:nfc_card_orders');
         Route::get('nfc-card/order/{order}', [NfcCardOrderController::class, 'show'])->name('order.show')->middleware('user.page.permission:nfc_card_orders');
+        Route::get('nfc-card/order/{order}/assets.zip', [NfcCardOrderController::class, 'assetsZip'])->name('order.assets.zip')->middleware('user.page.permission:nfc_card_orders');
         Route::get('nfc-card/write-in-nfc-card/{order}', [NfcCardOrderController::class, 'writeToNfcCard'])->name('write.to.nfc.card')->middleware(['user.page.permission:nfc_card_orders']);
         Route::post('nfc-card/write-in-nfc-card/{order}', [NfcCardOrderController::class, 'generateKeys'])->name('generate.nfc.keys')->middleware(['user.page.permission:nfc_card_orders', 'demo.mode']);
         Route::get('nfc-card/update-order/{order}', [NfcCardOrderController::class, 'updateOrder'])->name('update.order')->middleware(['user.page.permission:nfc_card_orders']);
@@ -686,6 +702,14 @@ Route::group(['middleware' => 'Installer'], function () {
 
         // Settings
         Route::get('settings', [SettingsController::class, 'settings'])->name('settings')->middleware('user.page.permission:general_settings');
+        Route::prefix('settings/personalized-links')->middleware('user.page.permission:general_settings')->group(function () {
+            Route::get('/', [PersonalizedLinkSettingsController::class, 'index'])->name('personalized-link-settings');
+            Route::middleware('demo.mode')->name('personalized-link-settings.')->group(function () {
+                Route::post('/', [PersonalizedLinkSettingsController::class, 'store'])->name('store');
+                Route::patch('{exclusion}', [PersonalizedLinkSettingsController::class, 'update'])->whereNumber('exclusion')->name('update');
+                Route::delete('{exclusion}', [PersonalizedLinkSettingsController::class, 'destroy'])->whereNumber('exclusion')->name('destroy');
+            });
+        });
         Route::post('change-general-settings', [SettingsController::class, "changeGeneralSettings"])->name('change.general.settings')->middleware(['user.page.permission:general_settings', 'demo.mode']);
         Route::post('change-website-settings', [WebsiteSettingController::class, "index"])->name('change.website.settings')->middleware(['user.page.permission:general_settings', 'demo.mode']);
         Route::post('change-google-settings', [GoogleSettingController::class, "index"])->name('change.google.settings')->middleware(['user.page.permission:general_settings', 'demo.mode']);
@@ -1061,12 +1085,14 @@ Route::group(['middleware' => 'Installer'], function () {
         Route::get('order/{id}', [ManageOrderNfcCardController::class, 'viewOrder'])->name('order.nfc.card.view');
         Route::get('upload-nfc-card-logo/{id}', [ManageOrderNfcCardController::class, 'uploadNfcCardLogo'])->name('upload.nfc.card.logo');
         Route::post('update-nfc-card-logo/{id}', [ManageOrderNfcCardController::class, 'updateNfcCardLogo'])->name('update.nfc.card.logo')->middleware('demo.mode');
+        Route::post('order/{id}/assets/{key}', [ManageOrderNfcCardController::class, 'uploadAsset'])->name('order.nfc.card.asset.upload')->middleware('demo.mode');
 
         // Manage NFC Cards
         Route::get('manage-nfc-cards', [ManageNfcCardController::class, 'index'])->name('manage.nfc.cards');
         Route::get('link-nfc-card/{id}', [ManageNfcCardController::class, 'linkNfcCard'])->name('link.nfc.card');
         Route::post('nfc-cards/update-link-key', [ManageNfcCardController::class, 'updateCardLink'])->name('update.card.link')->middleware('demo.mode');
-        Route::get('nfc-cards/action-key-generation', [ManageNfcCardController::class, 'action'])->name('action.key.generation')->middleware('demo.mode');
+        // Unlink an NFC tag: POST (with CSRF) so it can't be triggered by just opening a URL
+        Route::post('nfc-cards/action-key-generation', [ManageNfcCardController::class, 'action'])->name('action.key.generation')->middleware('demo.mode');
 
         // Redirect NFC Card Transactions to Unified Transactions
         Route::get('nfc-cards/transactions', function () {
@@ -1229,75 +1255,75 @@ Route::group(['middleware' => 'Installer'], function () {
 
     // NFC Card
     // PayPal Payment Gateway
-    Route::get('nfc/payment-paypal/{nfcId}/{couponId}/{quantity}', [NFCPaypalController::class, 'nfcPaywithpaypal'])->name('nfcpaywithpaypal');
+    Route::get('nfc/payment-paypal/{nfcId}/{couponId}/{quantity}', [NFCPaypalController::class, 'nfcPaywithpaypal'])->middleware('smart-product.checkout')->name('nfcpaywithpaypal');
     Route::get('nfc/payment/status', [NFCPaypalController::class, 'nfcPaypalPaymentStatus'])->name('nfcpaypalPaymentStatus');
 
     // RazorPay
-    Route::get('nfc/payment-razorpay/{nfcId}/{couponId}/{quantity}', [NFCRazorpayController::class, 'nfcPrepareRazorpay'])->name('nfcpaywithrazorpay');
+    Route::get('nfc/payment-razorpay/{nfcId}/{couponId}/{quantity}', [NFCRazorpayController::class, 'nfcPrepareRazorpay'])->middleware('smart-product.checkout')->name('nfcpaywithrazorpay');
     Route::get('nfc/razorpay-payment-status/{oid}/{paymentId}', [NFCRazorpayController::class, 'nfcRazorpayPaymentStatus'])->name('nfc.razorpay.payment.status');
 
     // Phonepe
-    Route::get('nfc/payment-phonepe/{nfcId}/{couponId}/{quantity}', [NFCPhonepeController::class, 'nfcPreparePhonpe'])->name('nfcpaywithphonepe');
+    Route::get('nfc/payment-phonepe/{nfcId}/{couponId}/{quantity}', [NFCPhonepeController::class, 'nfcPreparePhonpe'])->middleware('smart-product.checkout')->name('nfcpaywithphonepe');
     Route::any('nfc/phonepe-payment-status', [NFCPhonepeController::class, 'nfcPhonepePaymentStatus'])->name('nfc.phonepe.payment.status');
 
     // Stripe
-    Route::get('nfc/payment-stripe/{nfcId}/{couponId}/{quantity}', [NFCStripeController::class, 'nfcStripeCheckout'])->name('nfcpaywithstripe');
+    Route::get('nfc/payment-stripe/{nfcId}/{couponId}/{quantity}', [NFCStripeController::class, 'nfcStripeCheckout'])->middleware('smart-product.checkout')->name('nfcpaywithstripe');
     Route::get('nfc/stripe-payment-status/{paymentId}', [NFCStripeController::class, 'nfcStripePaymentStatus'])->name('nfc.stripe.payment.status');
     Route::get('nfc/stripe-payment-cancel/{paymentId}', [NFCStripeController::class, 'nfcStripePaymentCancel'])->name('nfc.stripe.payment.cancel');
 
     // Paystack
-    Route::get('nfc/payment-paystack/{nfcId}/{couponId}/{quantity}', [NFCPaystackController::class, "nfcPaystackCheckout"])->name('nfcpaywithpaystack');
+    Route::get('nfc/payment-paystack/{nfcId}/{couponId}/{quantity}', [NFCPaystackController::class, "nfcPaystackCheckout"])->middleware('smart-product.checkout')->name('nfcpaywithpaystack');
     Route::get('nfc/paystack-payment/callback', [NFCPaystackController::class, 'nfcPaystackHandleGatewayCallback'])->name('nfc.paystack.handle.gateway.callback');
 
     // Mollie
-    Route::get('nfc/payment-mollie/{nfcId}/{couponId}/{quantity}', [NFCMollieController::class, "nfcPrepareMollie"])->name('nfcpaywithmollie');
+    Route::get('nfc/payment-mollie/{nfcId}/{couponId}/{quantity}', [NFCMollieController::class, "nfcPrepareMollie"])->middleware('smart-product.checkout')->name('nfcpaywithmollie');
     Route::get('nfc/mollie-payment-status', [NFCMollieController::class, "nfcMolliePaymentStatus"])->name('nfc.mollie.payment.status');
 
     // Mercado Pago
-    Route::get('nfc/payment-mercadopago/{nfcId}/{couponId}/{quantity}', [NFCMercadoPagoController::class, "nfcPrepareMercadoPago"])->name('nfcpaywithmercadopago');
+    Route::get('nfc/payment-mercadopago/{nfcId}/{couponId}/{quantity}', [NFCMercadoPagoController::class, "nfcPrepareMercadoPago"])->middleware('smart-product.checkout')->name('nfcpaywithmercadopago');
     Route::get('nfc/mercadopago-payment-status', [NFCMercadoPagoController::class, "nfcMercadoPagoPaymentStatus"])->name('nfc.mercadopago.payment.status');
     Route::get('nfc/mercadopago-payment-failure', [NFCMercadoPagoController::class, "nfcMercadoPagoPaymentFailure"])->name('nfc.mercadopago.payment.failure');
     Route::get('nfc/mercadopago-payment-pending', [NFCMercadoPagoController::class, "nfcMercadoPagoPaymentPending"])->name('nfc.mercadopago.payment.pending');
     Route::get('nfc/mercadopago-callback', [NFCMercadoPagoController::class, "nfcMercadoPagoCallback"])->name('nfc.mercadopago.callback');
 
     // Toyyibpay
-    Route::get('nfc/payment-toyyibpay/{nfcId}/{couponId}/{quantity}', [NFCToyyibpayController::class, "nfcPrepareToyyibpay"])->name('nfc.prepare.toyyibpay');
+    Route::get('nfc/payment-toyyibpay/{nfcId}/{couponId}/{quantity}', [NFCToyyibpayController::class, "nfcPrepareToyyibpay"])->middleware('smart-product.checkout')->name('nfc.prepare.toyyibpay');
     Route::get('nfc/toyyibpay-payment-status', [NFCToyyibpayController::class, "nfcToyyibpayPaymentStatus"])->name('nfc.toyyibpay.payment.status');
     Route::get('nfc/toyyibpay-payment-success', [NFCToyyibpayController::class, 'nfcToyyibpayPaymentSuccess'])->name('nfc.toyyibpay.payment.success');
 
     // Flutterwave
-    Route::get('nfc/payment-flutterwave/{nfcId}/{couponId}/{quantity}', [NFCFlutterwaveController::class, "nfcPrepareFlutterwave"])->name('nfc.prepare.flutterwave');
+    Route::get('nfc/payment-flutterwave/{nfcId}/{couponId}/{quantity}', [NFCFlutterwaveController::class, "nfcPrepareFlutterwave"])->middleware('smart-product.checkout')->name('nfc.prepare.flutterwave');
     Route::get('nfc/flutterwave-payment-status', [NFCFlutterwaveController::class, "nfcFlutterwavePaymentStatus"])->name('nfc.flutterwave.payment.status');
     Route::get('nfc/flutterwave-callback', [NFCFlutterwaveController::class, 'nfcFlutterwaveCallback'])->name('nfc.flutterwave.callback')->withoutMiddleware('auth');
 
     // Paddle
-    Route::get('nfc/paddle/generate-payment-link/{nfcId}/{couponId}/{quantity}', [NFCPaddleController::class, 'nfcGeneratePaymentLink'])->name('nfc.prepare.paddle');
+    Route::get('nfc/paddle/generate-payment-link/{nfcId}/{couponId}/{quantity}', [NFCPaddleController::class, 'nfcGeneratePaymentLink'])->middleware('smart-product.checkout')->name('nfc.prepare.paddle');
     Route::get('nfc/paddle-payment-status', [NFCPaddleController::class, 'nfPaddlePaymentStatus'])->name('nfc.paddle.payment.status');
     Route::get('nfc/paddle-payment-webhook', [NFCPaddleController::class, 'nfPaddlePaymentWebhook'])->name('nfc.paddle.payment.webhook');
 
     // Paytr
-    Route::get('nfc/paytr/generate-payment-link/{nfcId}/{couponId}/{quantity}', [NFCPaytrController::class, 'nfcGeneratePaymentLink'])->name('nfc.prepare.paytr');
+    Route::get('nfc/paytr/generate-payment-link/{nfcId}/{couponId}/{quantity}', [NFCPaytrController::class, 'nfcGeneratePaymentLink'])->middleware('smart-product.checkout')->name('nfc.prepare.paytr');
     Route::match(['get', 'post'], '/nfc/paytr-payment-status', [NFCPaytrController::class, 'nfcPaytrPaymentStatus'])->name('nfc.paytr.payment.status');
     Route::match(['get', 'post'], '/nfc/paytr-payment-failure', [NFCPaytrController::class, 'nfcPaytrPaymentFailure'])->name('nfc.paytr.payment.failure');
     Route::post('nfc/paytr-payment-webhook', [NFCPaytrController::class, 'nfcPaytrPaymentWebhook'])->name('nfc.paytr.payment.webhook');
 
     // Xendit
-    Route::get('nfc/xendit/generate-payment-link/{nfcId}/{couponId}/{quantity}', [NFCXenditController::class, 'nfcGeneratePaymentLink'])->name('nfc.prepare.xendit');
+    Route::get('nfc/xendit/generate-payment-link/{nfcId}/{couponId}/{quantity}', [NFCXenditController::class, 'nfcGeneratePaymentLink'])->middleware('smart-product.checkout')->name('nfc.prepare.xendit');
     Route::get('nfc/xendit-payment-status/{transactionId}', [NFCXenditController::class, 'nfcXenditPaymentStatus'])->name('nfc.xendit.payment.status');
     Route::get('nfc/xendit-payment-failure/{transactionId}', [NFCXenditController::class, "nfcXenditPaymentFailure"])->name('nfc.xendit.payment.failure');
     Route::get('nfc/xendit-payment-webhook', [NFCXenditController::class, 'nfcXenditPaymentWebhook'])->name('nfc.xendit.payment.webhook');
 
     // Cashfree
-    Route::get('nfc/cashfree/generate-payment-link/{nfcId}/{couponId}/{quantity}', [NFCCashfreeController::class, 'nfcGeneratePaymentLink'])->name('nfc.prepare.cashfree');
+    Route::get('nfc/cashfree/generate-payment-link/{nfcId}/{couponId}/{quantity}', [NFCCashfreeController::class, 'nfcGeneratePaymentLink'])->middleware('smart-product.checkout')->name('nfc.prepare.cashfree');
     Route::get('nfc/cashfree-payment-status', [NFCCashfreeController::class, 'nfcCashfreePaymentStatus'])->name('nfc.cashfree.payment.status');
 
     // Iyzipay
-    Route::get('nfc/iyzipay/generate-payment-link/{nfcId}/{couponId}/{quantity}', [NFCIyzipayController::class, 'nfcGeneratePaymentLink'])->name('nfc.prepare.iyzipay');
+    Route::get('nfc/iyzipay/generate-payment-link/{nfcId}/{couponId}/{quantity}', [NFCIyzipayController::class, 'nfcGeneratePaymentLink'])->middleware('smart-product.checkout')->name('nfc.prepare.iyzipay');
     Route::post('nfc/iyzipay-payment-status', [NFCIyzipayController::class, 'nfcIyzipayPaymentStatus'])->name('nfc.iyzipay.payment.status');
 
     // Offline
-    Route::get('nfc/payment-offline/{nfcId}/{couponId}/{quantity}', [NFCOfflineController::class, 'nfcOfflineCheckout'])->name('nfcpaywithoffline');
-    Route::post('nfc/mark-offline-payment', [NFCOfflineController::class, 'nfcMarkOfflinePayment'])->name('nfc.mark.payment.payment');
+    Route::get('nfc/payment-offline/{nfcId}/{couponId}/{quantity}', [NFCOfflineController::class, 'nfcOfflineCheckout'])->middleware('smart-product.checkout')->name('nfcpaywithoffline');
+    Route::post('nfc/mark-offline-payment', [NFCOfflineController::class, 'nfcMarkOfflinePayment'])->middleware('smart-product.checkout')->name('nfc.mark.payment.payment');
 
     // AI Credits PayPal Payment Gateway
     Route::get('/ai-credits/payment-paypal/{planId}/{couponId}', [AICreditsPaypalController::class, 'paywithpaypal'])->name('ai.credits.paywithpaypal');
@@ -1442,7 +1468,7 @@ Route::group(['middleware' => 'Installer'], function () {
 
     /*
     |--------------------------------------------------------------------------
-    | Master Domain Routes (vado.ng/{id}/...)
+    | Master Domain Routes
     |--------------------------------------------------------------------------
     */
 
@@ -1503,5 +1529,6 @@ Route::group(['middleware' => 'Installer'], function () {
     // Public activate theme
     Route::get('public/activate-theme/{theme_id}', [PublicThemeController::class, 'publicActivateTheme'])->name('public.activate.theme');
 });
+
 
 

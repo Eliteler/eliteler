@@ -212,7 +212,7 @@
                                         class="relative p-px border border-{{ $template_config->template_color }}-400 focus:border-{{ $template_config->template_color }}-500 focus:outline-none focus:ring-0 focus:ring-{{ $template_config->template_color }}-500 sm:text-sm rounded-t-md">
                                         <input
                                             class="w-full px-6 py-4 pr-36 placeholder-gray-500 text-base outline-none focus:ring-4 focus:ring-{{ $template_config->template_color }}-300 rounded-lg @error('password') is-invalid @enderror"
-                                            type="password" placeholder="********" name="password" id="password" required
+                                            type="password" placeholder="********" name="password" id="password" required maxlength="100"
                                             autocomplete="current-password">
                                     </div>
                                     {{-- Show/Hide Password Button --}}
@@ -236,7 +236,7 @@
                                     <div
                                         class="p-px border border-{{ $template_config->template_color }}-400 focus:border-{{ $template_config->template_color }}-500 focus:outline-none focus:ring-0 focus:ring-{{ $template_config->template_color }}-500 sm:text-sm rounded-md">
                                         <input type="password" name="password_confirmation" id="password_confirmation"
-                                            required autocomplete="new-password" placeholder="********"
+                                            required autocomplete="new-password" placeholder="********" maxlength="100"
                                             class="w-full px-6 py-4 placeholder-gray-500 text-base outline-none rounded-lg">
                                     </div>
                                 </div>

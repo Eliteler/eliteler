@@ -79,28 +79,33 @@ class PlanExpiryCron extends Command
             }
 
             foreach ($users as $user) {
+                $userPlan = !empty($user->plan_details) ? json_decode($user->plan_details) : null;
+                $planId    = $userPlan->plan_id ?? '';
+                $planName  = $userPlan->plan_name ?? '';
+                $planPrice = $userPlan->plan_price ?? 0;
+
                 $expiredPlanDetails = [
                     'status'          => "",
-                    'emailSubject'    => $expiredEmailTemplateDetails->email_template_subject,
-                    'emailContent'    => $expiredEmailTemplateDetails->email_template_content,
+                    'emailSubject'    => $expiredEmailTemplateDetails?->email_template_subject ?? '',
+                    'emailContent'    => $expiredEmailTemplateDetails?->email_template_content ?? '',
                     'registeredName'  => $user->name,
                     'registeredEmail' => $user->email,
                     'expiryDate'      => Carbon::parse($user->plan_validity)->format('Y-m-d'),
-                    'planCode'        => json_decode($user->plan_details)->plan_id,
-                    'planName'        => json_decode($user->plan_details)->plan_name,
-                    'planPrice'       => json_decode($user->plan_details)->plan_price,
+                    'planCode'        => $planId,
+                    'planName'        => $planName,
+                    'planPrice'       => $planPrice,
                 ];
 
                 $expiryPlanDetails = [
                     'status'          => "",
-                    'emailSubject'    => $expiryEmailTemplateDetails->email_template_subject,
-                    'emailContent'    => $expiryEmailTemplateDetails->email_template_content,
+                    'emailSubject'    => $expiryEmailTemplateDetails?->email_template_subject ?? '',
+                    'emailContent'    => $expiryEmailTemplateDetails?->email_template_content ?? '',
                     'registeredName'  => $user->name,
                     'registeredEmail' => $user->email,
                     'expiryDate'      => Carbon::parse($user->plan_validity)->format('Y-m-d'),
-                    'planCode'        => json_decode($user->plan_details)->plan_id,
-                    'planName'        => json_decode($user->plan_details)->plan_name,
-                    'planPrice'       => json_decode($user->plan_details)->plan_price,
+                    'planCode'        => $planId,
+                    'planName'        => $planName,
+                    'planPrice'       => $planPrice,
                 ];
 
                 try {
@@ -153,7 +158,7 @@ class PlanExpiryCron extends Command
         }
 
         $twilio_notification_details = DB::table('twilio_whatsapp_notification_settings')->first();
-        $phone_code                  = ltrim($user->billing_country_code, '+');
+        $phone_code                  = ltrim((string) ($user->billing_country_code ?? ''), '+');
 
         $sid   = $twilio_notification_details->account_sid;
         $token = $twilio_notification_details->auth_token;
@@ -187,7 +192,7 @@ class PlanExpiryCron extends Command
         }
 
         $twilio_notification_details = DB::table('twilio_sms_notification_settings')->first();
-        $phone_code                  = ltrim($user->billing_country_code, '+');
+        $phone_code                  = ltrim((string) ($user->billing_country_code ?? ''), '+');
 
         $sid   = $twilio_notification_details->account_sid;
         $token = $twilio_notification_details->auth_token;
@@ -275,7 +280,7 @@ class PlanExpiryCron extends Command
         }
 
         $msg91_notification_details = DB::table('msg91_sms_notification_settings')->first();
-        $phone_code                 = ltrim($user->billing_country_code, '+');
+        $phone_code                 = ltrim((string) ($user->billing_country_code ?? ''), '+');
 
         $auth_key  = $msg91_notification_details->auth_key;
         $sender_id = $msg91_notification_details->sender_id;
@@ -315,7 +320,7 @@ class PlanExpiryCron extends Command
      */
     private function buildComponents($templateVariablesJson, array $valueMap)
     {
-        $variables  = json_decode($templateVariablesJson, true) ?: [];
+        $variables  = !empty($templateVariablesJson) ? (json_decode($templateVariablesJson, true) ?: []) : [];
         $components = [];
 
         foreach ($variables as $index => $variable) {

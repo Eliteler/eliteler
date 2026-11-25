@@ -18,7 +18,11 @@ use App\NfcCardKey;
 use App\Plan;
 use App\Providers\RouteServiceProvider;
 use App\Referral;
+use App\Rules\NotDisposableEmail;
+use App\Rules\NotReservedEmail;
 use App\Services\GoBizCommonService;
+use App\Services\Security\DisposableEmailService;
+use App\Services\Security\ReservedEmailService;
 use App\Transaction;
 use App\Support\Zapier;
 use App\User;
@@ -52,10 +56,10 @@ class RegisterController extends Controller
     {
         $rules = [
             'name'          => ['required', 'string', 'min:2', 'max:100'],
-            'email'         => ['required', 'string', 'email', 'max:191', 'unique:users'],
+            'email'         => ['required', 'string', 'email', 'max:191', 'unique:users', new NotReservedEmail(), new NotDisposableEmail()],
             'country_code'  => ['nullable', 'string', 'max:10'],
             'mobile_number' => ['nullable', 'string', 'max:20'],
-            'password'      => ['required', 'string', 'min:6', 'confirmed'],
+            'password'      => ['required', 'string', 'min:6', 'max:100', 'confirmed'],
             'terms'         => ['required'],
             'referral_code' => ['nullable', 'string', 'max:50', 'exists:users,user_id'],
         ];
@@ -140,6 +144,23 @@ class RegisterController extends Controller
         $config = DB::table('config')->pluck('config_value', 'config_key');
 
         $rawEmail     = $data['email'];
+
+        // Defense-in-depth check: reject privileged and reserved email addresses
+        $reservedCheck = ReservedEmailService::checkEmail($rawEmail);
+        if (! $reservedCheck['allowed']) {
+            throw ValidationException::withMessages([
+                'email' => $reservedCheck['message'] ?? __('This email prefix is reserved. Please use a different email address.'),
+            ]);
+        }
+
+        // Defense-in-depth check: reject disposable/bot email domains
+        $disposableCheck = DisposableEmailService::checkEmail($rawEmail);
+        if (! $disposableCheck['allowed']) {
+            throw ValidationException::withMessages([
+                'email' => $disposableCheck['message'] ?? __('Disposable or temporary email addresses are not allowed. Please use a valid email address.'),
+            ]);
+        }
+
         $deletedEmail = $rawEmail . 'deleted';
 
         // First check the deleted version in DB

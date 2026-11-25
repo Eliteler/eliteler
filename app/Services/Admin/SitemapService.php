@@ -45,7 +45,7 @@ class SitemapService
             ['id' => 'vcards', 'label' => __('Business cards'), 'description' => __('Active business cards, including custom domains.'), 'count' => $cardUrls('vcard')],
             ['id' => 'store', 'label' => __('Stores'), 'description' => __('Active WhatsApp stores, including custom domains.'), 'count' => $cardUrls('store')],
             $this->plugin('WebTools') ? ['id' => 'webtools', 'label' => __('Web tools'), 'description' => __('Free tools such as the QR maker and password generator.'), 'count' => count($this->existing(self::WEB_TOOLS))] : null,
-            $this->plugin('OrderNFCSystem') ? ['id' => 'plugin_nfc', 'label' => __('NFC cards'), 'description' => __('The NFC card shop page.'), 'count' => count($this->existing(['/nfc-cards']))] : null,
+            $this->plugin('OrderNFCSystem') ? ['id' => 'plugin_nfc', 'label' => __('Smart Products'), 'description' => __('The Smart Products shop page.'), 'count' => count($this->existing(['/nfc-cards']))] : null,
             $this->plugin('Directory') ? ['id' => 'plugin_directory', 'label' => __('Directory'), 'description' => __('The business directory and its listings.'), 'count' => count($this->existing(['/directory'])) + $cardUrls('directory')] : null,
         ]));
     }

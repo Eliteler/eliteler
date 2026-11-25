@@ -136,7 +136,7 @@ class ShareController extends Controller
         $description = $blogDetails->description;
         $image = asset($blogDetails->cover_image);
 
-        $whatsAppShareLink = "https://wa.me/?text=" . urlencode(trans("Check out this post: {$title} - {$description} - {$url}"));
+        $whatsAppShareLink = "https://wa.me/?text=" . rawurlencode(trans("Check out this post: {$title} - {$description} - {$url}"));
 
         return redirect()->away($whatsAppShareLink);
     }

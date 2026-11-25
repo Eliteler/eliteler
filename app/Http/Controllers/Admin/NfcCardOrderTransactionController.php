@@ -56,7 +56,7 @@ class NfcCardOrderTransactionController extends Controller
             ->when(self::TABS[$tab], fn ($q, $status) => $q->where('nfc_card_order_transactions.payment_status', $status))
             ->select([
                 'nfc_card_order_transactions.nfc_card_order_transaction_id', 'nfc_card_order_transactions.payment_transaction_id',
-                'nfc_card_order_transactions.payment_method', 'nfc_card_order_transactions.amount', 'nfc_card_order_transactions.payment_status',
+                'nfc_card_order_transactions.payment_method', 'nfc_card_order_transactions.amount', 'nfc_card_order_transactions.currency', 'nfc_card_order_transactions.payment_status',
                 'nfc_card_order_transactions.invoice_prefix', 'nfc_card_order_transactions.invoice_number', 'nfc_card_order_transactions.created_at',
                 'nfc_card_orders.nfc_card_order_id', 'nfc_card_orders.order_status',
                 'users.user_id as customer_id', 'users.name as customer_name', 'users.email as customer_email',
@@ -70,6 +70,7 @@ class NfcCardOrderTransactionController extends Controller
                 'invoice'   => $row->invoice_number ? $row->invoice_prefix . $row->invoice_number : null,
                 'method'    => $row->payment_method,
                 'amount'    => (float) $row->amount,
+                'currency'  => $row->currency,
                 'status'    => $row->payment_status,
                 'orderId'   => $row->nfc_card_order_id,
                 'delivery'  => $row->order_status,
@@ -132,10 +133,12 @@ class NfcCardOrderTransactionController extends Controller
                 'taxType'  => $invoice['tax_type'] ?? null,
                 'tax'      => (float) ($invoice['tax_amount'] ?? 0),
                 'coupon'   => $invoice['applied_coupon'] ?? null,
-                'discount' => ! empty($invoice['applied_coupon']) ? max(0, (float) ($invoice['discounted_price'] ?? 0) - (float) ($invoice['invoice_amount'] ?? 0)) : 0,
+                // discounted_price holds the discount amount
+                'discount' => ! empty($invoice['applied_coupon']) ? (float) ($invoice['discounted_price'] ?? 0) : 0,
+                'shipping' => (float) ($invoice['shipping_amount'] ?? 0),
                 'total'    => (float) ($invoice['invoice_amount'] ?? $row->amount),
             ],
-            'back' => ['label' => __('NFC payments'), 'href' => route('admin.transactions')],
+            'back' => ['label' => __('Smart Product payments'), 'href' => route('admin.transactions')],
         ]);
     }
 

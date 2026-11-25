@@ -41,7 +41,7 @@ class ContactFormController extends Controller
     public function editContactForm(Request $request, $id)
     {
         // Queries
-        $business_card = BusinessCard::where('card_id', $id)->first();
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
         $plan          = DB::table('users')->where('user_id', Auth::user()->user_id)->where('status', 1)->first();
         $plan_details  = json_decode($plan->plan_details);
         $settings      = Setting::where('status', 1)->first();
@@ -68,7 +68,7 @@ class ContactFormController extends Controller
     public function updateContactForm(Request $request, $id)
     {
         // Queries
-        $business_card = BusinessCard::where('card_id', $id)->first();
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
 
         // Check business card
         $plan         = DB::table('users')->where('user_id', Auth::user()->user_id)->where('status', 1)->first();
@@ -86,7 +86,7 @@ class ContactFormController extends Controller
             }
 
             // Update Enquiy Email
-            BusinessCard::where('card_id', $id)->update([
+            BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->update([
                 'enquiry_email' => $receiveEmail,
             ]);
 

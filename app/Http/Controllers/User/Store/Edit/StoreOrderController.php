@@ -184,6 +184,22 @@ class StoreOrderController extends Controller
     }
 
     /**
+     * Resolve store order owned by authenticated user.
+     *
+     * @param  string  $orderNumber
+     * @return \App\StoreOrder|false|null
+     */
+    private function ownedStoreOrder($orderNumber)
+    {
+        $order = StoreOrder::where('order_number', $orderNumber)->first();
+        if (!$order) {
+            return null;
+        }
+        $isOwner = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $order->store_id)->exists();
+        return $isOwner ? $order : false;
+    }
+
+    /**
      * View detailed order parameters.
      *
      * @param  \Illuminate\Http\Request  $request
@@ -192,7 +208,13 @@ class StoreOrderController extends Controller
      */
     public function viewOrder(Request $request, $id)
     {
-        $storeOrder = StoreOrder::where('order_number', $id)->first();
+        $storeOrder = $this->ownedStoreOrder($id);
+        if ($storeOrder === null) {
+            return response()->json(['success' => false, 'message' => trans('Order not found.')], 404);
+        }
+        if ($storeOrder === false) {
+            return response()->json(['success' => false, 'message' => trans('Unauthorized action!')], 403);
+        }
         return response()->json(['success' => true, 'data' => $storeOrder]);
     }
 
@@ -205,7 +227,13 @@ class StoreOrderController extends Controller
      */
     public function viewInvoice(Request $request, $id)
     {
-        $storeOrder = StoreOrder::where('order_number', $id)->first();
+        $storeOrder = $this->ownedStoreOrder($id);
+        if ($storeOrder === null) {
+            return response()->json(['success' => false, 'message' => trans('Order not found.')], 404);
+        }
+        if ($storeOrder === false) {
+            return response()->json(['success' => false, 'message' => trans('Unauthorized action!')], 403);
+        }
         return response()->json(['success' => true, 'data' => $storeOrder]);
     }
 
@@ -220,6 +248,14 @@ class StoreOrderController extends Controller
     {
         if (empty($orderId)) {
             return response()->json(['success' => false, 'message' => 'Order ID is required.']);
+        }
+
+        $order = $this->ownedStoreOrder($orderId);
+        if ($order === null) {
+            return response()->json(['success' => false, 'message' => trans('Order not found.')], 404);
+        }
+        if ($order === false) {
+            return response()->json(['success' => false, 'message' => trans('Unauthorized action!')], 403);
         }
 
         StoreOrder::where('order_number', $orderId)->update([
@@ -296,6 +332,14 @@ class StoreOrderController extends Controller
      */
     public function markAsPaid(Request $request, $orderId)
     {
+        $order = $this->ownedStoreOrder($orderId);
+        if ($order === null) {
+            return response()->json(['success' => false, 'message' => trans('Order not found.')], 404);
+        }
+        if ($order === false) {
+            return response()->json(['success' => false, 'message' => trans('Unauthorized action!')], 403);
+        }
+
         StoreOrder::where('order_number', $orderId)->update([
             'payment_status' => $request->payment_status ?? '',
         ]);

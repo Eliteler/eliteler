@@ -28,6 +28,12 @@ class TemplateServiceProvider extends ServiceProvider
 
     public function boot()
     {
+        // Empty database (installer, first `php artisan migrate`): templates set up
+        // their own tables from core tables, so they wait until those exist
+        if (! \App\Support\CoreDatabase::ready()) {
+            return;
+        }
+
         $templateManager = app(TemplateManager::class);
 
         foreach ($templateManager->getTemplates() as $template) {

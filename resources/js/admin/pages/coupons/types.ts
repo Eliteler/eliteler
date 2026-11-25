@@ -22,6 +22,6 @@ export type ItemOption = { id: string; name: string; price: number };
 
 export const USED_FOR_LABELS: Record<UsedFor, string> = {
     plan: "Plans",
-    nfc: "NFC cards",
+    nfc: "Smart Products",
     ai_credits: "AI credit packs",
 };

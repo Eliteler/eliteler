@@ -1,6 +1,7 @@
 @extends('GoBizOriginal::Website.layouts.index', ['nav' => true, 'banner' => true, 'footer' => true, 'cookie' => true, 'setting' => true, 'config' => $config])
 
 @php
+    use App\NfcCardDesign;
     use App\Services\GoBizCommonService;
     use Illuminate\Support\Facades\DB;
 
@@ -9,6 +10,9 @@
 
     // aibuilder settings
     $aibuilder_settings = DB::table('aibuilder_settings')->first();
+
+    $showSmartProducts = $config->firstWhere('config_key', 'nfc_order_system')?->config_value == '1'
+        && $config->firstWhere('config_key', 'enable_disable_nfc_card_order_website')?->config_value == '1';
 @endphp
 
 
@@ -512,13 +516,13 @@
                                         <span
                                             class="bg-green-100 text-green-800 text-xs font-medium mx-1 me-2 px-2 py-0.5 rounded dark:bg-green-900 dark:text-green-300">{{ __('New') }}</span>
                                     </li>
-                                    {{-- NFC Card --}}
-                                    @if ($config[76]->config_value == '1')
+                                    {{-- Smart Products (module on, listed by the plan) --}}
+                                    @if ($config[76]->config_value == '1' && (int) ($plan->show_nfc_card_feature ?? 1) === 1)
                                         <li class="flex items-center font-heading font-medium text-base text-gray-400">
-                                            <i class="ti ti-check mr-2.5 text-{{ $plan->recommended == 1 ? 'green-500' : 'green-500' }}"
+                                            <i class="ti ti-{{ $plan->nfc_card == '1' ? 'check' : 'x' }} mr-2.5 text-{{ $plan->nfc_card == '1' || $plan->recommended == 1 ? 'green-500' : 'gray-400' }}"
                                                 style="font-size: 20px;"></i>
                                             <p class="text-{{ $plan->recommended == 1 ? 'white' : 'black' }}">
-                                                {{ __('Order NFC Card') }}</p>
+                                                {{ __('Smart Products') }}</p>
                                             <span
                                                 class="bg-green-100 text-green-800 text-xs font-medium mx-1 me-2 px-2 py-0.5 rounded dark:bg-green-900 dark:text-green-300">{{ __('New') }}</span>
                                         </li>
@@ -628,6 +632,41 @@
             </div>
         </div>
     </section>
+
+    @if ($showSmartProducts)
+        @php
+            $smartProductCopy = $homePage->where('section_name', 'smart_products')
+                ->pluck('section_content', 'section_title');
+            $availableNfcCards = NfcCardDesign::where('status', 1)->orderBy('sort_order')->orderBy('id')->limit(3)->get();
+        @endphp
+
+        <section class="pt-8 pb-28" id="smart-products" aria-labelledby="smart-products-heading">
+            <div class="container mx-auto px-4">
+                <div class="flex justify-center mb-6">
+                    <div class="bg-{{ $template_config->template_color }}-100 text-{{ $template_config->template_color }}-600 px-2 py-1 text-xs font-bold inline-block rounded">
+                        {{ __($smartProductCopy->get('badge') ?? '') }}
+                    </div>
+                </div>
+                <h2 id="smart-products-heading" class="font-heading text-center text-4xl lg:text-5xl font-bold mb-4 max-w-3xl mx-auto">
+                    {{ __($smartProductCopy->get('title') ?? '') }}
+                </h2>
+                <p class="text-gray-600 text-center mb-12 max-w-2xl mx-auto">
+                    {{ __($smartProductCopy->get('desc') ?? '') }}
+                </p>
+
+                @include('GoBizOriginal::Website.includes.smart-product-grid')
+
+                @if ($availableNfcCards->count() === 3)
+                    <div class="mt-10 text-center">
+                        <a href="{{ route('nfc.cards') }}"
+                            class="inline-block px-8 py-3 rounded-md bg-{{ $template_config->template_color }}-500 hover:bg-{{ $template_config->template_color }}-600 text-sm font-semibold text-white">
+                            {{ __('View More') }}
+                        </a>
+                    </div>
+                @endif
+            </div>
+        </section>
+    @endif
 
     {{-- Mobile Application Action --}}
     @if (

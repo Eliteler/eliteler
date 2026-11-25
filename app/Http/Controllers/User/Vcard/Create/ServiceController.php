@@ -69,7 +69,7 @@ class ServiceController extends Controller
     public function saveServices(Request $request, $id)
     {
         // Queries
-        $business_card = BusinessCard::where('card_id', $id)->first();
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
 
         // Check business card
         if ($business_card == null) {
@@ -77,13 +77,13 @@ class ServiceController extends Controller
         } else {
             // Get plan details
             $plan = DB::table('users')->where('user_id', Auth::user()->user_id)->where('status', 1)->first();
-            $plan_details = json_decode($plan->plan_details);
+            $plan_details = !empty($plan->plan_details) ? json_decode($plan->plan_details) : null;
 
             // Check dynamic fields
-            if ($request->service_name != null) {
+            if (is_array($request->service_name)) {
 
                 // Check services limit
-                if (count($request->service_name) <= $plan_details->no_of_services) {
+                if (count($request->service_name) <= ($plan_details->no_of_services ?? 0)) {
 
                     // Check dynamic fields foreach
                     for ($i = 0; $i < count($request->service_name); $i++) {

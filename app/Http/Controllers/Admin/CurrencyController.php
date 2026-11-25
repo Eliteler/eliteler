@@ -103,15 +103,15 @@ class CurrencyController extends Controller
     public function updateCurrency(Request $request)
     {
         $currency = Currency::where('id', $request->input('id'))->where('status', 1)->firstOrFail();
-        $data     = $this->validated($request, $currency);
-        $wasDefault = $currency->iso_code === $this->defaultCode();
+
+        // The ISO code can't change once created: payments, invoices and
+        // referral rows record it, and a renamed code would orphan them
+        // (they would then count as the base currency). Whatever is sent,
+        // the existing code is kept.
+        $request->merge(['iso_code' => $currency->iso_code]);
+        $data = $this->validated($request, $currency);
 
         $this->fill($currency, $data)->save();
-
-        // Keep the default pointing at this currency if its code changed
-        if ($wasDefault && $currency->iso_code !== $this->defaultCode()) {
-            DB::table('config')->where('config_key', 'currency')->update(['config_value' => $currency->iso_code]);
-        }
 
         return back()->with('success', __(':code saved.', ['code' => $currency->iso_code]));
     }
@@ -139,7 +139,8 @@ class CurrencyController extends Controller
 
         return $request->validate([
             'name'               => 'required|string|max:100',
-            'iso_code'           => ['required', 'alpha', 'size:3', Rule::unique('currencies', 'iso_code')->where('status', 1)->ignore($current?->id)],
+            // On edit the stored code is kept as is (it can't change), so only new codes are checked
+            'iso_code'           => $current ? ['required'] : ['required', 'alpha', 'size:3', Rule::unique('currencies', 'iso_code')->where('status', 1)],
             'symbol'             => 'required|string|max:10',
             'symbol_first'       => 'required|boolean',
             'priority'           => 'nullable|integer|min:0|max:1000',

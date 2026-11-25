@@ -17,6 +17,7 @@ use App\BusinessCard;
 use App\BusinessCardIntro;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class IntroScreenController extends Controller
@@ -41,7 +42,7 @@ class IntroScreenController extends Controller
     public function introScreen(Request $request, $id)
     {
         // Queries
-        $business_card = BusinessCard::where('card_id', $id)->first();
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
         $intro_screens = BusinessCardIntro::where('status', 1)->get();
 
         // Check business card
@@ -65,7 +66,7 @@ class IntroScreenController extends Controller
         }
 
         // Queries
-        $business_card = BusinessCard::where('card_id', $id)->first();
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
 
         // Check business card
         if ($business_card == null) {

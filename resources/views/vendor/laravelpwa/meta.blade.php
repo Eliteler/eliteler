@@ -9,34 +9,17 @@
     (function() {
         "use strict";
 
-        // 1. Initialize Service Worker safely
+        // 1. Initialize Service Worker safely with full root scope
         if ('serviceWorker' in navigator) {
-            fetch('/generate-service-worker')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    const swUrl = data?.serviceWorkerUrl;
-
-                    // Validate that the URL is not empty and does not end with just '/.js'
-                    if (swUrl && !swUrl.endsWith('/.js')) {
-                        navigator.serviceWorker.register(swUrl)
-                            .then(registration => {
-                                console.log('Service Worker registered with scope:', registration.scope);
-                            })
-                            .catch(error => {
-                                console.warn('Service Worker registration failed:', error);
-                            });
-                    } else {
-                        console.warn('Invalid Service Worker URL received:', swUrl);
-                    }
-                })
-                .catch(error => {
-                    console.warn('Could not fetch service worker configuration:', error);
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/serviceworker.js', {
+                    scope: '/'
+                }).then(function(registration) {
+                    console.log('PWA: Service Worker registered with scope:', registration.scope);
+                }).catch(function(error) {
+                    console.warn('PWA: Service Worker registration failed:', error);
                 });
+            });
         }
 
         // 2. Handle PWA Installation using Bootstrap Offcanvas
@@ -53,6 +36,8 @@
         window.addEventListener('beforeinstallprompt', function(event) {
             event.preventDefault();
             deferredPrompt = event;
+            window.deferredPwaPrompt = event;
+            window.deferredPrompt = event;
 
             // Trigger Bootstrap Offcanvas smoothly
             if (pwaModalEl && window.bootstrap && window.bootstrap.Offcanvas) {

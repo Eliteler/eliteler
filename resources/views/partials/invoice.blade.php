@@ -1,3 +1,15 @@
+@php
+    // Amounts are shown in the currency the payment was made in (all currencies,
+    // disabled ones too), not today's base currency. See formatMoney().
+    $money = fn($value) => formatMoney((float) $value, $transaction->currency ?? null);
+
+    // Item row: callers pass itemTitle / itemQty / itemRate / itemAmount;
+    // older callers only pass $planDetails (AI credit packs).
+    $invoiceItemTitle = $itemTitle ?? trim(__($planDetails->plan_name ?? '') . (!empty($planDetails->no_of_ai_credits) ? ' - ' . $planDetails->no_of_ai_credits . ' ' . __('AI Credit') : ''));
+    $invoiceItemQty = max((int) ($itemQty ?? ($planDetails->quantity ?? 1)), 1);
+    $invoiceItemRate = (float) ($itemRate ?? ($planDetails->plan_price ?? 0));
+    $invoiceItemAmount = (float) ($itemAmount ?? $invoiceItemRate * $invoiceItemQty);
+@endphp
 <div class="p-2" id="invoice">
     <div class="card-body">
 
@@ -79,7 +91,7 @@
                 <p><strong>{{ __('Payment Terms') }}</strong>:
                     {{ __('-') }}</p>
                 <h5><strong>{{ __('Balance Due') }}</strong>:
-                    {{ $currencies->firstWhere('iso_code', $transaction->currency)->symbol ?? '' }}0.00
+                    {{ $money(0) }}
                 </h5>
             </div>
         </div>
@@ -96,16 +108,10 @@
 
             <tbody>
                 <tr class="fw-bold">
-                    <td>{{ __($planDetails->plan_name) }} -
-                        {{ $planDetails->no_of_ai_credits }} {{ __('AI Credit') }}
-                    </td>
-                    <td class="text-end">1</td>
-                    <td class="text-end">
-                        {{ $currencies->firstWhere('iso_code', $transaction->currency)->symbol ?? '' }}{{ $planDetails->plan_price }}
-                    </td>
-                    <td class="text-end">
-                        {{ $currencies->firstWhere('iso_code', $transaction->currency)->symbol ?? '' }}{{ $planDetails->plan_price }}
-                    </td>
+                    <td>{{ $invoiceItemTitle }}</td>
+                    <td class="text-end">{{ $invoiceItemQty }}</td>
+                    <td class="text-end">{{ $money($invoiceItemRate) }}</td>
+                    <td class="text-end">{{ $money($invoiceItemAmount) }}</td>
                 </tr>
             </tbody>
 
@@ -114,7 +120,7 @@
                 <tr>
                     <td colspan="3" class="text-end">{{ __('Subtotal') }}</td>
                     <td class="text-end">
-                        {{ $currencies->firstWhere('iso_code', $transaction->currency)->symbol ?? '' }}{{ $billing['subtotal'] ?? 0 }}
+                        {{ $money($billing['subtotal'] ?? 0) }}
                     </td>
                 </tr>
 
@@ -123,7 +129,7 @@
                         <td colspan="3" class="text-end">{{ __($billing['tax_name'] ?? '') }}
                             ({{ $billing['tax_value'] ?? 0 }}%)</td>
                         <td class="text-end">
-                            {{ $currencies->firstWhere('iso_code', $transaction->currency)->symbol ?? '' }}{{ $billing['tax_amount'] ?? 0 }}
+                            {{ $money($billing['tax_amount'] ?? 0) }}
                         </td>
                     </tr>
                 @endif
@@ -132,8 +138,7 @@
                     <tr>
                         <td colspan="3" class="text-end">{{ __('Before Discount') }}</td>
                         <td class="text-end">
-                            {{ $currencies->firstWhere('iso_code', $transaction->currency)->symbol ?? '' }}
-                            {{ ($billing['subtotal'] ?? 0) + ($billing['tax_amount'] ?? 0) }}
+                            {{ $money(($billing['subtotal'] ?? 0) + ($billing['tax_amount'] ?? 0)) }}
                         </td>
                     </tr>
 
@@ -144,15 +149,23 @@
                         </td>
                         <td class="font-weight-bold text-end">
                             -
-                            {{ $currencies->firstWhere('iso_code', $transaction->currency)->symbol ?? '' }}{{ $billing['discounted_price'] ?? 0 }}
+                            {{ $money($billing['discounted_price'] ?? 0) }}
                         </td>
                     </tr>
                 @else
                     <tr>
                         <td colspan="3" class="text-end">{{ __('After Tax') }}</td>
                         <td class="text-end">
-                            {{ $currencies->firstWhere('iso_code', $transaction->currency)->symbol ?? '' }}
-                            {{ ($billing['subtotal'] ?? 0) + ($billing['tax_amount'] ?? 0) }}
+                            {{ $money(($billing['subtotal'] ?? 0) + ($billing['tax_amount'] ?? 0)) }}
+                        </td>
+                    </tr>
+                @endif
+
+                @if (($billing['shipping_amount'] ?? 0) > 0)
+                    <tr>
+                        <td colspan="3" class="text-end">{{ __('Shipping') }}</td>
+                        <td class="text-end">
+                            {{ $money($billing['shipping_amount']) }}
                         </td>
                     </tr>
                 @endif
@@ -160,14 +173,14 @@
                 <tr>
                     <td colspan="3" class="text-end"><strong>{{ __('Total') }}</strong></td>
                     <td class="text-end">
-                        <strong>{{ $currencies->firstWhere('iso_code', $transaction->currency)->symbol ?? '' }}{{ $billing['invoice_amount'] ?? 0 }}</strong>
+                        <strong>{{ $money($billing['invoice_amount'] ?? 0) }}</strong>
                     </td>
                 </tr>
 
                 <tr>
                     <td colspan="3" class="text-end">{{ __('Amount Paid') }}</td>
                     <td class="text-end">
-                        {{ $currencies->firstWhere('iso_code', $transaction->currency)->symbol ?? '' }}{{ $billing['invoice_amount'] ?? 0 }}
+                        {{ $money($billing['invoice_amount'] ?? 0) }}
                     </td>
                 </tr>
 

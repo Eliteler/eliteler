@@ -2,7 +2,7 @@
 
 Let customers order NFC business cards from your website.
 
-- Version: 1.2.0
+- Version: 1.3.0
 - Requires: GoBiz SaaS 28.0.0 or later
 - Documentation: https://gobizsaas.com/docs/gobiz/user-manual/nfc-sales.html
 

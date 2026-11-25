@@ -563,6 +563,9 @@ function CurrencyForm({
                     maxLength: 3,
                     className: "font-mono uppercase",
                     required: true,
+                    // Payments are recorded with the code, so it can't change once created
+                    disabled: !!currency,
+                    title: currency ? t("The code can't be changed: payments are recorded with it.") : undefined,
                 })}
             </div>
 

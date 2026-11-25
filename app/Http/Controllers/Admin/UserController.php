@@ -254,7 +254,7 @@ class UserController extends Controller
             'role'     => ['required', Rule::in(AdminRoles::staffIds())],
             'name'     => 'required|string|min:2|max:191',
             'email'    => ['required', 'email', 'max:191', Rule::unique('users', 'email')->ignore($user?->id)],
-            'password' => [$user ? 'nullable' : 'required', 'string', 'min:8', 'max:191'],
+            'password' => [$user ? 'nullable' : 'required', 'string', 'min:8', 'max:100'],
         ], [
             'email.unique' => __('Another account already uses this email.'),
         ]);

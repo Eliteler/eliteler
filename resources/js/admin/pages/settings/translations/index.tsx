@@ -9,6 +9,7 @@ import {
     Pencil,
     Plus,
     Search,
+    Square,
     Trash2,
     Upload,
 } from "lucide-react";
@@ -61,7 +62,7 @@ import {
 import { cn } from "@admin/lib/utils";
 
 export type SyncState = {
-    state: "queued" | "running" | "completed" | "failed";
+    state: "queued" | "running" | "completed" | "failed" | "stopped";
     message?: string;
 } | null;
 
@@ -69,6 +70,7 @@ type Language = {
     code: string;
     name: string;
     isSource: boolean;
+    isDefault?: boolean;
     enabled: boolean;
     total: number;
     done: number;
@@ -89,6 +91,10 @@ type Props = {
     languages: PaginatedResponse<Language>;
     source: string;
     search?: string;
+};
+
+const isValidLocale = (code?: string): boolean => {
+    return typeof code === "string" && /^[a-z]{2,3}(_[A-Za-z]{2,4})?$/.test(code);
 };
 
 export default function Translations({
@@ -176,7 +182,7 @@ export default function Translations({
     };
 
     const remove = () => {
-        if (!deleting) return;
+        if (!deleting || !isValidLocale(deleting.code)) return;
         router.delete(route("translation-manager.destroy", deleting.code), {
             preserveScroll: true,
             onStart: () => setProcessing(true),
@@ -259,14 +265,14 @@ export default function Translations({
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="ps-4">
+                                    <TableHead className="ps-3 sm:ps-4">
                                         {t("Language")}
                                     </TableHead>
-                                    <TableHead className="w-64">
+                                    <TableHead className="w-24 sm:w-60">
                                         {t("Translated")}
                                     </TableHead>
-                                    <TableHead>{t("Status")}</TableHead>
-                                    <TableHead className="pe-4 text-end">
+                                    <TableHead className="w-28 sm:w-36">{t("Status")}</TableHead>
+                                    <TableHead className="pe-3 sm:pe-4 text-end">
                                         <span className="sr-only">
                                             {t("Actions")}
                                         </span>
@@ -299,23 +305,29 @@ export default function Translations({
                                             );
                                         return (
                                             <TableRow key={language.code}>
-                                                <TableCell className="ps-4">
+                                                <TableCell className="ps-3 sm:ps-4">
                                                     <Link
-                                                        href={route(
-                                                            "translation-manager.edit",
-                                                            language.code,
-                                                        )}
-                                                        className="flex items-center gap-2 font-medium hover:underline"
+                                                        href={
+                                                            isValidLocale(language.code)
+                                                                ? route(
+                                                                      "translation-manager.edit",
+                                                                      language.code,
+                                                                  )
+                                                                : "#"
+                                                        }
+                                                        className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2 font-medium hover:underline"
                                                     >
-                                                        {language.name}
-                                                        <span className="font-mono text-xs font-normal text-muted-foreground">
+                                                        <span className="text-xs sm:text-sm font-medium leading-tight">
+                                                            {language.name}
+                                                        </span>
+                                                        <span className="font-mono text-[10px] sm:text-xs font-normal text-muted-foreground">
                                                             {language.code}
                                                         </span>
                                                     </Link>
                                                 </TableCell>
                                                 <TableCell>
                                                     {language.isSource ? (
-                                                        <span className="text-sm text-muted-foreground">
+                                                        <span className="text-[11px] sm:text-sm text-muted-foreground whitespace-nowrap">
                                                             {t(
                                                                 ":count texts",
                                                             ).replace(
@@ -324,40 +336,55 @@ export default function Translations({
                                                             )}
                                                         </span>
                                                     ) : (
-                                                        <div className="flex items-center gap-3">
+                                                        <div className="flex items-center gap-1.5 sm:gap-3">
                                                             <Progress
                                                                 value={percent}
                                                                 className={cn(
-                                                                    "h-1.5 w-32",
+                                                                    "h-1.5 w-12 sm:w-32",
                                                                     percent ===
                                                                         100 &&
                                                                         "[&>div]:bg-success",
                                                                 )}
                                                             />
-                                                            <span className="text-xs text-muted-foreground tabular-nums">
+                                                            <span className="text-[10px] sm:text-xs text-muted-foreground tabular-nums">
                                                                 {percent}%
                                                             </span>
                                                         </div>
                                                     )}
                                                 </TableCell>
                                                 <TableCell>
-                                                    <div className="flex flex-wrap items-center gap-1">
-                                                        {language.isSource && (
-                                                            <Badge>
+                                                    <div className="flex items-center gap-1 sm:gap-1.5 flex-nowrap whitespace-nowrap">
+                                                        {language.isDefault && (
+                                                            <Badge className="px-1.5 py-0 text-[10px] sm:px-2.5 sm:py-0.5 sm:text-xs">
+                                                                {t("Default")}
+                                                            </Badge>
+                                                        )}
+                                                        {language.isSource && !language.isDefault && (
+                                                            <Badge variant="secondary" className="px-1.5 py-0 text-[10px] sm:px-2.5 sm:py-0.5 sm:text-xs">
                                                                 {t("Source")}
                                                             </Badge>
                                                         )}
-                                                        {!language.enabled &&
-                                                            !language.isSource && (
-                                                                <Badge variant="outline">
-                                                                    {t(
-                                                                        "Not offered",
-                                                                    )}
-                                                                </Badge>
-                                                            )}
+                                                        {language.enabled ? (
+                                                            <Badge
+                                                                variant="outline"
+                                                                className="border-success/30 text-success px-1.5 py-0 text-[10px] sm:px-2.5 sm:py-0.5 sm:text-xs"
+                                                            >
+                                                                {t("Active")}
+                                                            </Badge>
+                                                        ) : (
+                                                            <Badge
+                                                                variant="outline"
+                                                                className="text-muted-foreground px-1.5 py-0 text-[10px] sm:px-2.5 sm:py-0.5 sm:text-xs"
+                                                            >
+                                                                {t(
+                                                                    "Inactive",
+                                                                )}
+                                                            </Badge>
+                                                        )}
                                                         {busy && (
                                                             <Badge
                                                                 variant="secondary"
+                                                                className="px-1.5 py-0 text-[10px] sm:px-2.5 sm:py-0.5 sm:text-xs"
                                                                 title={
                                                                     language
                                                                         .sync
@@ -375,6 +402,7 @@ export default function Translations({
                                                             "failed" && (
                                                             <Badge
                                                                 variant="destructive"
+                                                                className="px-1.5 py-0 text-[10px] sm:px-2.5 sm:py-0.5 sm:text-xs"
                                                                 title={
                                                                     language
                                                                         .sync
@@ -386,23 +414,40 @@ export default function Translations({
                                                                 )}
                                                             </Badge>
                                                         )}
+                                                        {language.sync
+                                                            ?.state ===
+                                                            "stopped" && (
+                                                            <Badge
+                                                                variant="outline"
+                                                                className="px-1.5 py-0 text-[10px] sm:px-2.5 sm:py-0.5 sm:text-xs text-muted-foreground"
+                                                            >
+                                                                {t("Stopped")}
+                                                            </Badge>
+                                                        )}
                                                     </div>
                                                 </TableCell>
-                                                <TableCell className="pe-4 text-end">
+                                                <TableCell className="pe-3 sm:pe-4 text-end">
                                                     <div className="flex items-center justify-end gap-1">
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
+                                                            className="h-7 px-2 text-xs sm:h-8 sm:px-3 sm:text-sm"
                                                             asChild
                                                         >
                                                             <Link
-                                                                href={route(
-                                                                    "translation-manager.edit",
-                                                                    language.code,
-                                                                )}
+                                                                href={
+                                                                    isValidLocale(language.code)
+                                                                        ? route(
+                                                                              "translation-manager.edit",
+                                                                              language.code,
+                                                                          )
+                                                                        : "#"
+                                                                }
                                                             >
-                                                                <Pencil />
-                                                                {t("Edit")}
+                                                                <Pencil className="size-3.5 sm:size-4" />
+                                                                <span className="hidden sm:inline">
+                                                                    {t("Edit")}
+                                                                </span>
                                                             </Link>
                                                         </Button>
                                                         <DropdownMenu>
@@ -412,22 +457,50 @@ export default function Translations({
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="icon-sm"
+                                                                    className="h-7 w-7 sm:h-8 sm:w-8"
                                                                     aria-label={t(
                                                                         "Actions",
                                                                     )}
                                                                 >
-                                                                    <MoreHorizontal />
+                                                                    <MoreHorizontal className="size-3.5 sm:size-4" />
                                                                 </Button>
                                                             </DropdownMenuTrigger>
                                                             <DropdownMenuContent align="end">
+                                                                {busy && (
+                                                                    <>
+                                                                        <DropdownMenuItem
+                                                                            variant="destructive"
+                                                                            onSelect={() =>
+                                                                                router.post(
+                                                                                    route(
+                                                                                        "translation-manager.stop-sync",
+                                                                                        language.code,
+                                                                                    ),
+                                                                                    {},
+                                                                                    { preserveScroll: true },
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            <Square />
+                                                                            {t(
+                                                                                "Stop auto-translate",
+                                                                            )}
+                                                                        </DropdownMenuItem>
+                                                                        <DropdownMenuSeparator />
+                                                                    </>
+                                                                )}
                                                                 <DropdownMenuItem
                                                                     asChild
                                                                 >
                                                                     <a
-                                                                        href={route(
-                                                                            "translation-manager.export",
-                                                                            language.code,
-                                                                        )}
+                                                                        href={
+                                                                            isValidLocale(language.code)
+                                                                                ? route(
+                                                                                      "translation-manager.export",
+                                                                                      language.code,
+                                                                                  )
+                                                                                : "#"
+                                                                        }
                                                                     >
                                                                         <Download />
                                                                         {t(
@@ -447,7 +520,7 @@ export default function Translations({
                                                                         "Import .zip",
                                                                     )}
                                                                 </DropdownMenuItem>
-                                                                {!language.isSource && (
+                                                                {!language.isSource && !language.isDefault && (
                                                                     <>
                                                                         <DropdownMenuSeparator />
                                                                         <DropdownMenuItem
@@ -604,7 +677,7 @@ function AddLanguage({
     onClose: () => void;
 }) {
     const { t } = useTranslation();
-    const form = useForm({ name: "", code: "", copy_from: source });
+    const form = useForm({ name: "", code: "", copy_from: "none" });
 
     const submit = (event: React.FormEvent) => {
         event.preventDefault();
@@ -630,7 +703,7 @@ function AddLanguage({
                         onChange={(event) =>
                             form.setData("name", event.target.value)
                         }
-                        placeholder={t("e.g., Tamil")}
+                        placeholder={t("e.g., English UK")}
                         aria-invalid={!!form.errors.name}
                         required
                     />
@@ -644,7 +717,7 @@ function AddLanguage({
                         onChange={(event) =>
                             form.setData("code", event.target.value.trim())
                         }
-                        placeholder="ta"
+                        placeholder={t("e.g., en_GB")}
                         className="font-mono"
                         aria-invalid={!!form.errors.code}
                         required
@@ -656,15 +729,18 @@ function AddLanguage({
                 {t("Use the 2-letter code, or a regional code like pt_BR.")}
             </p>
             <div className="flex flex-col gap-2">
-                <Label>{t("Start from")}</Label>
+                <Label>{t("Duplicate words from")}</Label>
                 <Select
                     value={form.data.copy_from}
                     onValueChange={(value) => form.setData("copy_from", value)}
                 >
                     <SelectTrigger className="w-full">
-                        <SelectValue />
+                        <SelectValue placeholder={t("Don't duplicate from any language")} />
                     </SelectTrigger>
                     <SelectContent>
+                        <SelectItem value="none">
+                            {t("Don't duplicate from any language")}
+                        </SelectItem>
                         {languages.map((language) => (
                             <SelectItem
                                 key={language.code}

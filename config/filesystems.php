@@ -49,11 +49,13 @@ return [
             'throw' => false,
         ],
 
-        // Dynamic 'public' disk: Switches between local and Cloudflare R2 based on .env
+        // Dynamic 'public' disk: Switches between local, AWS S3, and Cloudflare R2 based on .env
         'public' => [
-            'driver' => env('FILESYSTEM_DRIVER', 'local'),
+            'driver' => in_array(env('FILESYSTEM_DRIVER'), ['s3', 'r2'], true) ? 's3' : env('FILESYSTEM_DRIVER', 'local'),
             'root' => storage_path('app/public'),
-            'url' => env('FILESYSTEM_DRIVER') === 's3' ? env('AWS_URL') : env('APP_URL') . '/storage',
+            'url' => in_array(env('FILESYSTEM_DRIVER'), ['s3', 'r2'], true)
+                ? rtrim(env('AWS_URL', ''), '/')
+                : rtrim(env('APP_URL', ''), '/') . '/storage',
             'visibility' => 'public',
 
             // Cloudflare R2 / S3 Configuration
@@ -75,6 +77,18 @@ return [
             'url' => env('AWS_URL'),
             'endpoint' => env('AWS_ENDPOINT'),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+            'throw' => false,
+        ],
+
+        'r2' => [
+            'driver' => 's3',
+            'key' => env('AWS_ACCESS_KEY_ID'),
+            'secret' => env('AWS_SECRET_ACCESS_KEY'),
+            'region' => env('AWS_DEFAULT_REGION', 'auto'),
+            'bucket' => env('AWS_BUCKET'),
+            'url' => env('AWS_URL'),
+            'endpoint' => env('AWS_ENDPOINT'),
+            'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', true),
             'throw' => false,
         ],
 

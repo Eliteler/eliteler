@@ -50,7 +50,11 @@ class SocialLinkController extends Controller
         // Check plan details
         if($plan_details->no_of_links > 0) {
             // Get business card details
-            $card_details = BusinessCard::where('card_id', $request->segment(3))->first();
+            $card_details = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $request->segment(3))->first();
+
+            if ($card_details == null) {
+                return redirect()->route('user.cards')->with('failed', trans('Card not found!'));
+            }
 
             return view('user.pages.cards.social-links', compact('card_details', 'plan_details', 'settings'));
         } else if($plan_details->no_of_payments > 0) {
@@ -72,24 +76,24 @@ class SocialLinkController extends Controller
     public function saveSocialLinks(Request $request, $id)
     {
         // Queries
-        $business_card = BusinessCard::where('card_id', $id)->first();
+        $business_card = BusinessCard::where('user_id', Auth::user()->user_id)->where('card_id', $id)->first();
 
         // Check business card
         if ($business_card == null) {
             return redirect()->route('user.cards')->with('failed', trans('Card not found!'));
         } else {
             // Check icon
-            if ($request->icon != null) {
+            if (is_array($request->icon)) {
 
                 // Delete previous links
                 BusinessField::where('card_id', $id)->delete();
 
                 // Get plan details
                 $plan = DB::table('users')->where('user_id', Auth::user()->user_id)->where('status', 1)->first();
-                $plan_details = json_decode($plan->plan_details);
+                $plan_details = !empty($plan->plan_details) ? json_decode($plan->plan_details) : null;
 
                 // Check social links limit
-                if (count($request->icon) <= $plan_details->no_of_links) {
+                if (count($request->icon) <= ($plan_details->no_of_links ?? 0)) {
 
                     // Check dynamic fields foreach
                     // Link types accept a bare domain (example.com, www.example.com/page): add https://

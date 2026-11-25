@@ -6,10 +6,16 @@ import { buttonVariants } from "@admin/components/ui/button";
 import { cn } from "@admin/lib/utils";
 import type { Paginated } from "@admin/types";
 
+type PaginationOptions = { preserveState?: boolean; only?: string[] };
+
 /**
  * Pagination for a Laravel LengthAwarePaginator passed as an Inertia prop.
  */
-export function Pagination({ data, className }: { data: Paginated<unknown>; className?: string }) {
+export function Pagination({
+    data,
+    className,
+    ...options
+}: { data: Paginated<unknown>; className?: string } & PaginationOptions) {
     const { t } = useTranslation();
 
     if (data.last_page <= 1) return null;
@@ -23,7 +29,7 @@ export function Pagination({ data, className }: { data: Paginated<unknown>; clas
                 {t("Showing")} {data.from}–{data.to} {t("of")} {data.total}
             </p>
             <nav className="flex items-center gap-1" aria-label="Pagination">
-                <PageLink href={data.prev_page_url} label={t("Previous")}>
+                <PageLink href={data.prev_page_url} label={t("Previous")} {...options}>
                     <ChevronLeft className="rtl:rotate-180" />
                 </PageLink>
                 {pages.map((link, i) =>
@@ -32,6 +38,7 @@ export function Pagination({ data, className }: { data: Paginated<unknown>; clas
                             key={i}
                             href={link.url}
                             preserveScroll
+                            {...options}
                             className={cn(
                                 buttonVariants({ variant: link.active ? "outline" : "ghost", size: "icon-sm" }),
                                 "hidden tabular-nums sm:inline-flex",
@@ -45,7 +52,7 @@ export function Pagination({ data, className }: { data: Paginated<unknown>; clas
                         </span>
                     ),
                 )}
-                <PageLink href={data.next_page_url} label={t("Next")}>
+                <PageLink href={data.next_page_url} label={t("Next")} {...options}>
                     <ChevronRight className="rtl:rotate-180" />
                 </PageLink>
             </nav>
@@ -53,7 +60,12 @@ export function Pagination({ data, className }: { data: Paginated<unknown>; clas
     );
 }
 
-function PageLink({ href, label, children }: { href: string | null; label: string; children: React.ReactNode }) {
+function PageLink({
+    href,
+    label,
+    children,
+    ...options
+}: { href: string | null; label: string; children: React.ReactNode } & PaginationOptions) {
     const classes = buttonVariants({ variant: "ghost", size: "icon-sm" });
 
     if (!href) {
@@ -65,7 +77,7 @@ function PageLink({ href, label, children }: { href: string | null; label: strin
     }
 
     return (
-        <Link href={href} preserveScroll className={classes} aria-label={label}>
+        <Link href={href} preserveScroll {...options} className={classes} aria-label={label}>
             {children}
         </Link>
     );

@@ -41,7 +41,7 @@ class CreateUsersTable extends Migration
             $table->longText('profile_image')->nullable();
             $table->string('plan_id')->nullable();
             $table->string('term')->nullable();
-            $table->int('trial')->default(0);
+            $table->integer('trial')->default(0);
             $table->longText('plan_details')->nullable();
             $table->dateTime('plan_validity')->nullable();
             $table->timestamp('plan_activation_date')->nullable();

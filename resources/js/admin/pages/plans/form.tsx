@@ -118,6 +118,7 @@ export default function PlanForm({
             plan?.integrations.in_app_purchase_type ?? "one_time",
         in_app_product_id: plan?.integrations.in_app_product_id ?? "",
         in_app_purchase_id: plan?.integrations.in_app_purchase_id ?? "",
+        show_nfc_card_feature: plan?.showSmartProducts ?? true,
     });
 
     const { data, setData, errors } = form;
@@ -569,6 +570,23 @@ export default function PlanForm({
                                         setData(key, value)
                                     }
                                 />
+                                {plugins.nfc && (
+                                    <ToggleRow
+                                        title={t(
+                                            "Show Smart Products in the pricing list",
+                                        )}
+                                        hint={t(
+                                            "Lists Smart Products (with a tick or a cross) among this plan's features on the website and in the customer dashboard.",
+                                        )}
+                                        checked={data.show_nfc_card_feature}
+                                        onChange={(value) =>
+                                            setData(
+                                                "show_nfc_card_feature",
+                                                value,
+                                            )
+                                        }
+                                    />
+                                )}
                             </CardContent>
                         </Card>
 

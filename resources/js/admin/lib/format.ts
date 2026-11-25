@@ -1,4 +1,4 @@
-import type { CurrencySettings } from "@admin/types";
+import type { CurrencyMap, CurrencySettings } from "@admin/types";
 
 // Group digits Indian style (12,34,567).
 function indianGroup(integer: string, separator: string) {
@@ -39,6 +39,19 @@ export function formatCurrency(amount: number, currency: CurrencySettings) {
     })();
 
     return currency.symbolFirst ? `${currency.symbol}${formatted}` : `${formatted}${currency.symbol}`;
+}
+
+/**
+ * A recorded payment in the currency it was paid in (mirrors formatMoney()
+ * in app/helpers.php). Number format and decimals follow the admin settings;
+ * only the symbol changes. Unknown or empty codes use the base currency.
+ * formatCurrency() is for current prices only.
+ */
+export function formatMoney(amount: number, code: string | null | undefined, base: CurrencySettings, currencies: CurrencyMap = {}) {
+    const iso = (code ?? "").trim().toUpperCase();
+    const match = iso ? currencies[iso] : undefined;
+
+    return formatCurrency(amount, match ? { ...base, code: iso, ...match } : base);
 }
 
 export function formatNumber(value: number) {

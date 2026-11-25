@@ -14,6 +14,7 @@ namespace App\Http\Controllers\User\Store\Edit;
 
 use App\BusinessCard;
 use App\Services\ReservedLinks;
+use App\Support\PersonalizedLink;
 use App\Currency;
 use App\Http\Controllers\Controller;
 use App\Plan;
@@ -99,56 +100,21 @@ class UpdateController extends Controller
         $user_details = User::where('user_id', Auth::user()->user_id)->first();
         $plan_details = json_decode($user_details->plan_details, true);
 
-        // Personalized Link
-        if (!empty($plan_details['personalized_link'])) {
-            // Personalized Link is available in the plan
-            $personalized_link = $request->link ?: $business_card->card_url;
-        } else {
-            // Personalized Link is not available in the plan
-            // Always keep the existing Store URL
-            $personalized_link = $business_card->card_url;
+        $personalized_link = $business_card->card_url;
+        if (! empty($plan_details['personalized_link']) && $request->link && $request->link !== $personalized_link) {
+            $personalized_link = PersonalizedLink::normalize($request->link);
         }
 
-        // Clean Personalized Link
-        $personalized_link = trim($personalized_link);
-
-        // Remove https://, http:// and www.
-        $personalized_link = str_replace(
-            ['https://', 'http://', 'www.'],
-            '',
-            $personalized_link
-        );
-
-        // Convert accented characters to ASCII
-        $personalized_link = iconv(
-            'UTF-8',
-            'ASCII//TRANSLIT//IGNORE',
-            $personalized_link
-        );
-
-        // Remove all characters except letters, numbers, and hyphens
-        $personalized_link = preg_replace(
-            '/[^a-zA-Z0-9-]/',
-            '',
-            $personalized_link
-        );
-
-        // Convert to lowercase
-        $personalized_link = strtolower($personalized_link);
-
-        // a page of the site already uses this link (login, user, admin, ...)
         if ($personalized_link !== $business_card->card_url && ReservedLinks::contains($personalized_link)) {
             return redirect()->route('user.edit.store', $id)->with('failed', trans(ReservedLinks::MESSAGE));
         }
 
         // Check if Store URL already exists
         // Exclude current store from duplicate check
-        $current_card = BusinessCard::where('card_url', $personalized_link)
+        if ($personalized_link !== $business_card->card_url && BusinessCard::where('card_url', $personalized_link)
             ->where('card_id', '!=', $id)
             ->where('card_status', '!=', 'deleted')
-            ->count();
-
-        if ($current_card > 0) {
+            ->exists()) {
             return redirect()
                 ->route('user.edit.store', $id)
                 ->with(

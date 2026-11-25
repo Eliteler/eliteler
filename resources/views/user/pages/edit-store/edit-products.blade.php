@@ -3,10 +3,66 @@
 {{-- Custom CSS --}}
 @section('css')
     {{-- Store CSS File --}}
-    <link href="{{ asset('css/store-products.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/store-products.css') }}?v={{ file_exists(public_path('css/store-products.css')) ? filemtime(public_path('css/store-products.css')) : time() }}" rel="stylesheet">
 
     {{-- Dropzone CSS --}}
     <link href="{{ asset('css/dropzone.min.css') }}" rel="stylesheet">
+
+    <style>
+        /* Responsive scrollable modal fix for desktop and mobile viewports */
+        .modal-dialog-scrollable {
+            height: calc(100% - 3.5rem) !important;
+        }
+
+        .modal-dialog-scrollable .modal-content {
+            max-height: calc(100vh - 3.5rem) !important;
+            height: 100% !important;
+            min-height: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            overflow: hidden !important;
+        }
+
+        .modal-dialog-scrollable .modal-header {
+            flex-shrink: 0 !important;
+        }
+
+        .modal-dialog-scrollable .modal-body {
+            overflow-y: auto !important;
+            flex: 1 1 auto !important;
+            min-height: 0 !important;
+            max-height: calc(100vh - 12rem) !important;
+        }
+
+        .modal-dialog-scrollable .modal-footer {
+            flex-shrink: 0 !important;
+            margin-top: auto !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            background-color: var(--tblr-bg-surface-secondary, #f8fafc) !important;
+            border-top: 1px solid var(--tblr-border-color, #e2e8f0) !important;
+            padding: 1rem 1.5rem !important;
+            z-index: 2 !important;
+        }
+
+        @media (max-width: 767.98px) {
+            .modal-dialog-scrollable .modal-footer {
+                flex-direction: column-reverse !important;
+                gap: 10px !important;
+                padding: 1.25rem !important;
+                width: 100% !important;
+            }
+
+            .modal-dialog-scrollable .modal-footer .btn,
+            .modal-dialog-scrollable .modal-footer button {
+                width: 100% !important;
+                margin: 0 !important;
+                text-align: center !important;
+                justify-content: center !important;
+            }
+        }
+    </style>
 @endsection
 
 @section('content')
@@ -717,7 +773,7 @@
     {{-- Product CSV Import Modal --}}
     <div class="modal modal-bg fade" id="modal-import" tabindex="-1" aria-labelledby="modal-import-label"
         aria-hidden="true" data-bs-backdrop="true">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold" id="modal-import-label">{{ __('Import Products Catalog') }}</h5>

@@ -56,7 +56,7 @@ class AiCreditsTransactionController extends Controller
             ->when(self::TABS[$tab], fn ($q, $statuses) => $q->whereIn('ai_credits_transactions.payment_status', $statuses))
             ->select([
                 'ai_credits_transactions.ai_credits_transaction_id', 'ai_credits_transactions.payment_transaction_id',
-                'ai_credits_transactions.payment_method', 'ai_credits_transactions.amount', 'ai_credits_transactions.payment_status',
+                'ai_credits_transactions.payment_method', 'ai_credits_transactions.amount', 'ai_credits_transactions.currency', 'ai_credits_transactions.payment_status',
                 'ai_credits_transactions.invoice_prefix', 'ai_credits_transactions.invoice_number', 'ai_credits_transactions.created_at',
                 'ai_credits_transactions.purchase_details',
                 'ai_credits_plans.plan_name', 'ai_credits_plans.no_of_ai_credits',
@@ -72,6 +72,7 @@ class AiCreditsTransactionController extends Controller
                 'credits'  => $row->no_of_ai_credits !== null ? (int) $row->no_of_ai_credits : null,
                 'method'   => $row->payment_method,
                 'amount'   => (float) $row->amount,
+                'currency' => $row->currency,
                 'status'   => $row->payment_status,
                 'date'     => $row->created_at ? Carbon::parse($row->created_at)->toIso8601String() : null,
                 'customer' => $row->customer_id ? ['id' => $row->customer_id, 'name' => $row->customer_name, 'email' => $row->customer_email] : null,
@@ -120,6 +121,7 @@ class AiCreditsTransactionController extends Controller
                 'date'      => $row->created_at?->toIso8601String(),
                 'status'    => $row->payment_status,
                 'method'    => $row->payment_method,
+                'currency'  => $row->currency,
                 'logo'      => $logo ? asset($logo) : null,
                 'from'      => $party('from'),
                 'to'        => $party('to'),
@@ -134,7 +136,8 @@ class AiCreditsTransactionController extends Controller
                 'taxRate'  => $invoice['tax_value'] ?? null,
                 'tax'      => (float) ($invoice['tax_amount'] ?? 0),
                 'coupon'   => $invoice['applied_coupon'] ?? null,
-                'discount' => ! empty($invoice['applied_coupon']) ? max(0, (float) ($invoice['discounted_price'] ?? 0) - (float) ($invoice['invoice_amount'] ?? 0)) : 0,
+                // discounted_price holds the discount amount
+                'discount' => ! empty($invoice['applied_coupon']) ? max(0, (float) ($invoice['discounted_price'] ?? 0)) : 0,
                 'total'    => (float) ($invoice['invoice_amount'] ?? $row->amount),
             ],
             'back' => ['label' => __('AI credit purchases'), 'href' => route('admin.ai.credits.transactions')],

@@ -50,6 +50,32 @@ if (!function_exists('formatCurrency')) {
     }
 }
 
+if (!function_exists('formatMoney')) {
+    /**
+     * Format a recorded payment in the currency it was paid in.
+     *
+     * Use this for anything already paid (transactions, orders, invoices,
+     * referral earnings). formatCurrency() is for current prices only: it
+     * always uses today's base currency, so old payments would change
+     * currency when the admin switches it. Falls back to the base currency
+     * when the stored code is empty or unknown.
+     */
+    function formatMoney($amount, ?string $currencyCode = null)
+    {
+        // currencies() runs a query on every call, so look the codes up once per request
+        static $known;
+        $known ??= GoBizCommonService::currencies()->pluck('iso_code')->flip();
+
+        $code = strtoupper(trim((string) $currencyCode));
+
+        if ($code === '' || ! isset($known[$code])) {
+            return formatCurrency($amount);
+        }
+
+        return formatCurrencyBase((float) $amount, $code, 'iso_code');
+    }
+}
+
 if (!function_exists('formatCurrencyVcard')) {
     function formatCurrencyVcard($amount, $currencyCode = 'USD')
     {

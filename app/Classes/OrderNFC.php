@@ -16,15 +16,15 @@ use App\AppliedCoupon;
 use App\Currency;
 use App\EmailTemplate;
 use App\NfcCardDesign;
-use App\NfcCardKey;
 use App\NfcCardOrder;
 use App\NfcCardOrderTransaction;
+use App\Services\Admin\Nfc\NfcOrderService;
+use App\Support\SmartProducts\OrderHistory;
 use App\Support\Zapier;
 use App\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Str;
 
 class OrderNFC
 {
@@ -88,33 +88,15 @@ class OrderNFC
         // Reduce NFC card stock by the ordered quantity
         NfcCardDesign::where('nfc_card_id', $nfcCardOrderDetails->nfc_card_id)->decrement('available_stocks', $quantity);
 
-        // Generate quantity wise NFC card key
-        $orderDetails = json_decode($nfcCardOrderDetails->order_details, true) ?? [];
+        // One NFC key per item (none for products without a chip), starting
+        // with the product's default link type
+        app(NfcOrderService::class)->ensureKeys($nfcCardOrderDetails);
+        $nfcCardOrderDetails->refresh();
 
-        // Ensure unique_key is always an array
-        $orderDetails['unique_key'] = $orderDetails['unique_key'] ?? [];
-
-        for ($i = 1; $i <= $quantity; $i++) {
-
-            // Generate NFC card key
-            $characterLimit = (int) $config[92]->config_value;
-            $unqiueKey = Str::random($characterLimit);
-
-            // Save NFC card key
-            $nfcCardKey = new NfcCardKey();
-            $nfcCardKey->nfc_card_key_id = uniqid();
-            $nfcCardKey->key_type = 'online';
-            $nfcCardKey->unqiue_key = $unqiueKey;
-            $nfcCardKey->save();
-
-            // Push unique key into array
-            $orderDetails['unique_key'][] = $unqiueKey;
-        }
-
-        // Update order once after loop
-        NfcCardOrder::where('nfc_card_order_id', $transactionDetails->nfc_card_order_id)->update([
-            'order_details' => json_encode($orderDetails),
-            'updated_at' => now(),
+        // Timeline
+        OrderHistory::record($nfcCardOrderDetails, 'processing', [
+            'message'    => __('Payment received (:method).', ['method' => $transactionDetails->payment_method ?: '-']),
+            'created_by' => null,
         ]);
 
         // Get customer details
@@ -136,7 +118,7 @@ class OrderNFC
             'cardprice' => $itemDetails['price'],
             'paymentstatus' => $transactionDetails->payment_status,
             'deliverystatus' => 'processing',
-            'quantity' => 1,
+            'quantity' => $quantity,
             'trackingnumber' => $itemDetails['tracking_number'] ?? '-',
             'courierpartner' => $itemDetails['courier_partner'] ?? '-',
             'orderpageurl' => route('user.order.nfc.card.view', $transactionDetails->nfc_card_order_id),
@@ -153,7 +135,7 @@ class OrderNFC
             'cardprice' => $itemDetails['price'],
             'paymentstatus' => $nfcCardOrderDetails->payment_status,
             'deliverystatus' => 'processing',
-            'quantity' => 1,
+            'quantity' => $quantity,
             'trackingnumber' => $itemDetails['tracking_number'] ?? '-',
             'courierpartner' => $itemDetails['courier_partner'] ?? '-',
             'orderpageurl' => route('admin.order.show', $nfcCardOrderDetails->nfc_card_order_id),
@@ -187,8 +169,17 @@ class OrderNFC
     // Failed
     public function paymentFailed($paymentId)
     {
+        $transaction = NfcCardOrderTransaction::where('payment_transaction_id', $paymentId)->first();
+
         NfcCardOrderTransaction::where('payment_transaction_id', $paymentId)->update([
             'payment_status' => 'failed',
         ]);
+
+        // Timeline (once; gateways can report a failure more than once)
+        $order = $transaction ? NfcCardOrder::where('nfc_card_order_id', $transaction->nfc_card_order_id)->first() : null;
+
+        if ($order && $transaction->payment_status !== 'failed') {
+            OrderHistory::record($order, 'pending', ['message' => __('Payment failed or was cancelled.'), 'created_by' => null]);
+        }
     }
 }

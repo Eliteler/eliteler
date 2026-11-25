@@ -1209,9 +1209,69 @@ div.table-responsive > div.dataTables_wrapper > div.row:last-child {
     margin: 1rem auto;
 }
 
+/* Universal Modal Content & Scrollable Fix to prevent footer cutoff across all modals */
+.modal-dialog-scrollable {
+    height: calc(100% - 3.5rem) !important;
+}
+
+.modal-dialog-scrollable .modal-content {
+    max-height: calc(100vh - 3.5rem) !important;
+    /* height: 100% !important; */
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+}
+
+.modal-dialog-scrollable .modal-header {
+    flex-shrink: 0 !important;
+}
+
+.modal-dialog-scrollable .modal-body {
+    overflow-y: auto !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+}
+
+.modal-dialog-scrollable .modal-footer {
+    flex-shrink: 0 !important;
+    margin-top: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    z-index: 2 !important;
+}
+
+@media (max-width: 767.98px) {
+    .modal-dialog-scrollable .modal-footer {
+        flex-direction: column-reverse !important;
+        gap: 10px !important;
+        padding: 1.25rem !important;
+        width: 100% !important;
+    }
+
+    .modal-dialog-scrollable .modal-footer .btn,
+    .modal-dialog-scrollable .modal-footer button {
+        width: 100% !important;
+        margin: 0 !important;
+        text-align: center !important;
+        justify-content: center !important;
+    }
+}
+
 @media (max-height: 700px) {
     .modal-content {
         max-height: calc(100vh - 2rem);
+        display: flex;
+        flex-direction: column;
+    }
+    .modal-dialog:not(.modal-dialog-scrollable) .modal-body {
+        overflow-y: auto;
+        max-height: calc(100vh - 11rem);
+    }
+    .modal-header,
+    .modal-footer {
+        flex-shrink: 0;
     }
 }
 

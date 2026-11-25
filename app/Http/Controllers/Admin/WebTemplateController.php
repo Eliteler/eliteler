@@ -13,6 +13,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\Admin\MarketplaceCatalog;
 use App\Services\GoBizCommonService;
 use App\Services\PackageZip;
 use App\Services\TemplateManager;
@@ -45,43 +46,69 @@ class WebTemplateController extends Controller
         $this->middleware('auth');
     }
 
-    public function index(Request $request)
+    public function index(Request $request, MarketplaceCatalog $marketplace)
     {
         $active = $this->activeId();
+        $manifests = $this->templates();
+        $catalog = $marketplace->read('templates');
+        $updates = $marketplace->availableUpdates('templates', $catalog['versions'] ?? null, $manifests);
+        $listings = $catalog['listings'] ?? [];
+        $tab = match ($request->query('tab')) {
+            'updates' => $updates === null ? 'installed' : 'updates',
+            'marketplace' => $listings === [] ? 'installed' : 'marketplace',
+            default => 'installed',
+        };
 
-        $allTemplates = collect($this->templates())->map(function ($template) use ($active) {
+        $allTemplates = collect($manifests)->map(function ($template) use ($active, $updates) {
             $id = (string) ($template['template_id'] ?? basename($template['path']));
 
             return [
-                'id'          => $id,
-                'name'        => __($template['name'] ?? $id),
-                'version'     => $template['version'] ?? null,
-                'image'       => ! empty($template['template_image']) ? asset($template['template_image']) : null,
-                'active'      => $id === $active,
-                'builtIn'     => $id === self::BUILT_IN,
-                'pagesUrl'    => $template['legacy']
+                'id'            => $id,
+                'name'          => __($template['name'] ?? $id),
+                'version'       => $template['version'] ?? null,
+                'updateVersion' => $updates[$id] ?? null,
+                'image'         => ! empty($template['template_image']) ? asset($template['template_image']) : null,
+                'active'        => $id === $active,
+                'builtIn'       => $id === self::BUILT_IN,
+                'pagesUrl'      => $template['legacy']
                     ? route('admin.web-template.update-required', $id)
                     : $this->routeUrl($template['main_route'] ?? null),
-                'settingsUrl' => $template['legacy'] ? null : $this->routeUrl($template['config_route'] ?? null),
-                'legacy'      => $template['legacy'],
+                'settingsUrl'   => $template['legacy'] ? null : $this->routeUrl($template['config_route'] ?? null),
+                'legacy'        => $template['legacy'],
             ];
         })->sortByDesc('active')->values();
 
-        // Paginate the collection manually for filesystem templates
-        $currentPage = Paginator::resolveCurrentPage() ?: 1;
-        $currentItems = $allTemplates->slice(($currentPage - 1) * self::PER_PAGE, self::PER_PAGE)->values();
+        $filtered = match ($tab) {
+            'updates' => $allTemplates->whereNotNull('updateVersion'),
+            'marketplace' => collect($listings),
+            default => $allTemplates,
+        };
 
-        $paginatedTemplates = new LengthAwarePaginator(
+        $currentPage = min(Paginator::resolveCurrentPage(), max(1, (int) ceil($filtered->count() / self::PER_PAGE)));
+        $currentItems = $filtered->forPage($currentPage, self::PER_PAGE)->values();
+        if ($tab === 'marketplace') {
+            $currentItems = $marketplace->listingsFor($currentItems, $allTemplates, 'pagesUrl');
+        }
+
+        $paginated = new LengthAwarePaginator(
             $currentItems,
-            $allTemplates->count(),
+            $filtered->count(),
             self::PER_PAGE,
             $currentPage,
             ['path' => Paginator::resolveCurrentPath(), 'query' => $request->query()]
         );
 
         return Inertia::render('website/templates', [
-            'templates'   => $paginatedTemplates,
-            'maxUploadKb' => (int) env('SIZE_LIMIT', 2048),
+            'templates'          => $tab === 'marketplace' ? null : $paginated,
+            'marketplace'        => $tab === 'marketplace' ? $paginated : null,
+            'counts'             => [
+                'installed'   => $allTemplates->count(),
+                'updates'     => $updates === null ? null : count($updates),
+                'marketplace' => count($listings),
+            ],
+            'activeTemplateName' => $allTemplates->firstWhere('active', true)['name'] ?? null,
+            'tab'                => $tab,
+            'maxUploadKb'        => (int) env('SIZE_LIMIT', 2048),
         ]);
     }
 

@@ -1,6 +1,10 @@
 @extends('user.layouts.index', ['header' => true, 'nav' => true, 'demo' => true])
 
 @section('content')
+    @php
+        $selectedType = old('link_type', $currentType);
+        $readUrl = route('read.nfc.card', $nfcCardKey->unqiue_key);
+    @endphp
     <div class="page-wrapper">
         <!-- Page header -->
         <div class="page-header d-print-none">
@@ -17,23 +21,23 @@
                                 </li>
                                 <li class="breadcrumb-item">
                                     <a href="{{ route('user.manage.nfc.cards') }}" class="text-secondary text-decoration-none">
-                                        {{ __('My NFC Cards') }}
+                                        {{ __('My Smart Products') }}
                                     </a>
                                 </li>
                                 <li class="breadcrumb-item active" aria-current="page">
-                                    {{ __('Link Card') }}
+                                    {{ __('Set destination') }}
                                 </li>
                             </ol>
                         </nav>
 
                         <!-- Page Title -->
                         <h2 class="page-title">
-                            {{ __('Link Card to NFC Card Key') }}
+                            {{ __('Where should this NFC tag open?') }}
                         </h2>
 
                         <!-- Descriptive Subtitle -->
                         <div class="text-muted mt-1">
-                            {{ __('Select a digital business card or store to link directly to this physical NFC card key.') }}
+                            {{ __('Change it any time. The tag itself never needs rewriting.') }}
                         </div>
                     </div>
                 </div>
@@ -43,19 +47,6 @@
         <!-- Page body -->
         <div class="page-body">
             <div class="container-fluid">
-                {{-- Success Alert --}}
-                @if (Session::has('success'))
-                    <div class="alert alert-important alert-success alert-dismissible mb-3 border-0 shadow-sm"
-                        role="alert">
-                        <div class="d-flex">
-                            <div>
-                                {{ Session::get('success') }}
-                            </div>
-                        </div>
-                        <a class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="close"></a>
-                    </div>
-                @endif
-
                 {{-- Failed Alert --}}
                 @if (Session::has('failed'))
                     <div class="alert alert-important alert-danger alert-dismissible mb-3 border-0 shadow-sm"
@@ -69,54 +60,118 @@
                     </div>
                 @endif
 
-                <div class="row row-deck row-cards">
-                    <div class="col-12">
-                        <div class="card border-0 shadow-sm">
-                            <form action="{{ route('user.update.card.link') }}" method="post" class="card border-0">
-                                @csrf
-                                <div class="card-body">
-                                    <div class="row">
-                                        <div class="col-xl-12">
-                                            <div class="row">
-                                                {{-- NFC Card Key ID --}}
-                                                <input type="hidden" class="form-control" name="key_id" id="key_id"
-                                                    value="{{ $nfcCardKey->nfc_card_key_id }}">
+                <div class="row row-cards">
+                    <div class="col-lg-8">
+                        <form action="{{ route('user.update.card.link') }}" method="post"
+                            class="card border-0 shadow-sm">
+                            @csrf
+                            <input type="hidden" name="key_id" value="{{ $nfcCardKey->nfc_card_key_id }}">
 
-                                                {{-- Cards --}}
-                                                <div class="col-md-6 col-xl-6 px-0">
-                                                    <div class="mb-3">
-                                                        <div class="form-label required">
-                                                            {{ __('Business Cards & Stores') }}</div>
-                                                        <select class="form-control cards" name="card_id" id="card_id"
-                                                            required>
-                                                            <option value="" selected disabled>{{ __('Select a business card/store') }}</option>
-                                                            @foreach ($businessCards as $businessCard)
-                                                                <option value="{{ $businessCard->card_id }}">
-                                                                    {{ $businessCard->title }}</option>
-                                                            @endforeach
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
+                            <div class="card-body">
+                                {{-- Destination type --}}
+                                <div class="mb-3">
+                                    <div class="form-label required">{{ __('Opens') }}</div>
+                                    <div class="form-selectgroup">
+                                        @foreach ($linkTypes as $type => $label)
+                                            <label class="form-selectgroup-item">
+                                                <input type="radio" name="link_type" value="{{ $type }}"
+                                                    class="form-selectgroup-input js-link-type"
+                                                    {{ $selectedType === $type ? 'checked' : '' }}>
+                                                <span class="form-selectgroup-label">{{ __($label) }}</span>
+                                            </label>
+                                        @endforeach
                                     </div>
                                 </div>
-                                <div class="card-footer text-end bg-transparent border-top-0 pt-0">
-                                    <button class="btn btn-primary btn-md d-inline-flex align-items-center" type="submit">
-                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                            class="icon icon-tabler icon-tabler-device-floppy me-2" width="24"
-                                            height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"
-                                            fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                            <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                                            <path
-                                                d="M6 4h10l4 4v10a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2" />
-                                            <circle cx="12" cy="14" r="2" />
-                                            <polyline points="14 4 14 8 8 8 8 4" />
-                                        </svg>
-                                        {{ __('Link Card') }}
-                                    </button>
+
+                                {{-- Business card --}}
+                                <div class="mb-3 js-target" data-type="vcard">
+                                    <label class="form-label required" for="card_id">{{ __('Business card') }}</label>
+                                    @if ($vcards->isEmpty())
+                                        <div class="text-secondary">{{ __('You have no active business cards yet.') }}</div>
+                                    @else
+                                        <select class="form-select" name="card_id" id="card_id">
+                                            <option value="">{{ __('Select a business card') }}</option>
+                                            @foreach ($vcards as $card)
+                                                <option value="{{ $card->card_id }}"
+                                                    {{ old('card_id', $currentType === 'vcard' ? $nfcCardKey->card_id : null) === $card->card_id ? 'selected' : '' }}>
+                                                    {{ $card->title }}</option>
+                                            @endforeach
+                                        </select>
+                                    @endif
+                                    @error('card_id')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                    @enderror
                                 </div>
-                            </form>
+
+                                {{-- Store --}}
+                                <div class="mb-3 js-target" data-type="store">
+                                    <label class="form-label required" for="store_id">{{ __('WhatsApp store') }}</label>
+                                    @if ($stores->isEmpty())
+                                        <div class="text-secondary">{{ __('You have no active stores yet.') }}</div>
+                                    @else
+                                        <select class="form-select" name="store_id" id="store_id">
+                                            <option value="">{{ __('Select a store') }}</option>
+                                            @foreach ($stores as $store)
+                                                <option value="{{ $store->card_id }}"
+                                                    {{ old('store_id', $currentType === 'store' ? $nfcCardKey->card_id : null) === $store->card_id ? 'selected' : '' }}>
+                                                    {{ $store->title }}</option>
+                                            @endforeach
+                                        </select>
+                                    @endif
+                                    @error('card_id')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                {{-- Custom URL --}}
+                                <div class="mb-3 js-target" data-type="url">
+                                    <label class="form-label required" for="link_target">{{ __('Link') }}</label>
+                                    <input type="text" class="form-control @error('link_target') is-invalid @enderror"
+                                        name="link_target" id="link_target" maxlength="2048" dir="ltr"
+                                        value="{{ old('link_target', $nfcCardKey->link_target) }}"
+                                        placeholder="https://g.page/r/your-business/review">
+                                    <small class="form-hint">
+                                        {{ __('For example your Google review link, a WhatsApp chat (https://wa.me/...), a booking page, or a UPI / payment link (upi:...).') }}
+                                    </small>
+                                    @error('link_target')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                {{-- Label --}}
+                                <div class="mb-0">
+                                    <label class="form-label" for="label">{{ __('Label') }}</label>
+                                    <input type="text" class="form-control" name="label" id="label" maxlength="100"
+                                        value="{{ old('label', $nfcCardKey->label) }}"
+                                        placeholder="{{ __('e.g., Front desk stand') }}">
+                                    <small class="form-hint">{{ __('Only you see this. Helps when you have several products.') }}</small>
+                                </div>
+                            </div>
+
+                            <div class="card-footer text-end bg-transparent">
+                                <a href="{{ route('user.manage.nfc.cards') }}" class="btn btn-link">{{ __('Cancel') }}</a>
+                                <button class="btn btn-primary" type="submit">{{ __('Save destination') }}</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body">
+                                <h3 class="card-title">{{ __('This NFC tag') }}</h3>
+                                <div class="text-secondary small mb-1">{{ __('Address on the chip') }}</div>
+                                <div class="font-monospace text-break mb-3" dir="ltr">{{ $readUrl }}</div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-secondary">{{ __('Taps') }}</span>
+                                    <span class="fw-bold">{{ number_format((int) $nfcCardKey->scan_count) }}</span>
+                                </div>
+                                @if ($nfcCardKey->last_scanned_at)
+                                    <div class="d-flex justify-content-between">
+                                        <span class="text-secondary">{{ __('Last tap') }}</span>
+                                        <span>{{ formatDateForUser($nfcCardKey->last_scanned_at) }}</span>
+                                    </div>
+                                @endif
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -128,64 +183,21 @@
     </div>
 @endsection
 
-{{-- Custom JS loaded cleanly inside script stack --}}
 @push('custom-js')
-    <script type="text/javascript" src="{{ asset('js/tom-select.base.min.js') }}"></script>
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             "use strict";
+            const radios = document.querySelectorAll('.js-link-type');
+            const targets = document.querySelectorAll('.js-target');
 
-            // Array of element selectors
-            var elementSelectors = ['card_id'];
-
-            // Function to initialize TomSelect and enforce the "required" attribute
-            function initializeTomSelectWithRequired(el) {
-                new TomSelect(el, {
-                    copyClassesToDropdown: false,
-                    dropdownClass: 'dropdown-menu ts-dropdown',
-                    optionClass: 'dropdown-item',
-                    controlInput: '<input>',
-                    maxOptions: null,
-                    render: {
-                        item: function(data, escape) {
-                            if (data.customProperties) {
-                                return '<div><span class="dropdown-item-indicator">' + data
-                                    .customProperties + '</span>' + escape(data.text) + '</div>';
-                            }
-                            return '<div>' + escape(data.text) + '</div>';
-                        },
-                        option: function(data, escape) {
-                            if (data.customProperties) {
-                                return '<div><span class="dropdown-item-indicator">' + data
-                                    .customProperties + '</span>' + escape(data.text) + '</div>';
-                            }
-                            return '<div>' + escape(data.text) + '</div>';
-                        },
-                    },
-                });
-
-                // Ensure the "required" attribute is enforced
-                el.addEventListener('change', function() {
-                    if (el.value) {
-                        el.setCustomValidity('');
-                    } else {
-                        el.setCustomValidity('This field is required');
-                    }
-                });
-
-                // Trigger validation on load
-                el.dispatchEvent(new Event('change'));
+            function show() {
+                const selected = document.querySelector('.js-link-type:checked');
+                const type = selected ? selected.value : 'vcard';
+                targets.forEach((el) => el.classList.toggle('d-none', el.dataset.type !== type));
             }
 
-            // Loop through each element ID
-            elementSelectors.forEach(function(id) {
-                // Check if the element exists
-                var el = document.getElementById(id);
-                if (el) {
-                    // Apply TomSelect and enforce the "required" attribute
-                    initializeTomSelectWithRequired(el);
-                }
-            });
+            radios.forEach((radio) => radio.addEventListener('change', show));
+            show();
         });
     </script>
 @endpush

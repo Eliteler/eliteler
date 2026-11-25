@@ -1,4 +1,4 @@
-import { Head, Link, usePage } from "@inertiajs/react";
+import { Head, Link } from "@inertiajs/react";
 import { ArrowRight, Gift } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -23,7 +23,7 @@ import {
 } from "@admin/components/ui/table";
 import { useHideRevenue } from "@admin/hooks/use-hide-revenue";
 import { formatDate } from "@admin/lib/date";
-import { formatCurrency } from "@admin/lib/format";
+import { useMoney } from "@admin/hooks/use-money";
 import { cn } from "@admin/lib/utils";
 import type { Paginated } from "@admin/types";
 
@@ -34,6 +34,8 @@ type Row = {
     referrer: Person;
     subscribed: boolean;
     commission: number | null;
+    /** Currency the commission was earned in (base currency when null). */
+    currency: string | null;
     date: string | null;
 };
 
@@ -81,9 +83,9 @@ export default function Referrals({
     stats,
 }: Props) {
     const { t } = useTranslation();
-    const { currency } = usePage().props;
     const hideRevenue = useHideRevenue();
-    const money = (value: number) => formatCurrency(value, currency);
+    // Totals are base currency only; each commission keeps its own currency
+    const money = useMoney();
     const rate = stats.referrals
         ? Math.round((stats.subscribed / stats.referrals) * 100)
         : 0;
@@ -242,7 +244,7 @@ export default function Referrals({
                                         {!hideRevenue && (
                                             <TableCell className="text-end font-medium tabular-nums">
                                                 {row.commission !== null ? (
-                                                    money(row.commission)
+                                                    money(row.commission, row.currency)
                                                 ) : (
                                                     <span className="text-muted-foreground">
                                                         —

@@ -258,24 +258,49 @@
     border-radius: var(--tblr-border-radius, 8px) !important;
 }
 
-/* Cropper */
+/* Cropper Modal Container */
 .cropper-modal-container {
     width: 100%;
-    max-height: 420px;
-    min-height: 250px;
+    max-height: 450px;
+    min-height: 260px;
     overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     background-color: var(--tblr-dark, #0f172a);
     border-radius: var(--tblr-border-radius-lg, 10px);
     position: relative;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    text-align: center;
 }
 
-.cropper-modal-container img {
+/* Initial image before Cropper initialization (direct child only) */
+.cropper-modal-container > img {
     display: block;
-    max-width: 100% !important;
-    max-height: 400px !important;
+    max-width: 100%;
+    max-height: 450px;
+    margin: 0 auto;
+}
+
+/* Cropper container styling & gesture support */
+.cropper-modal-container .cropper-container {
+    margin: 0 auto;
+    touch-action: none;
+}
+
+/*
+ * CRITICAL FIX: Cropper.js internal canvas & view-box images must NOT have max-width: 100%
+ * or max-height constraints. Constraining them squishes the cropped preview into a narrow
+ * distorted strip and breaks offset calculations.
+ */
+.cropper-modal-container .cropper-container img,
+.cropper-wrapper .cropper-container img,
+.cropper-container .cropper-view-box img,
+.cropper-container .cropper-canvas img {
+    display: block !important;
+    max-width: none !important;
+    max-height: none !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
 }
 
 .cropper-view-box,

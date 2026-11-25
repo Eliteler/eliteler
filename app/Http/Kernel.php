@@ -63,6 +63,7 @@ class Kernel extends HttpKernel
      */
     protected $routeMiddleware = [
         'auth' => \App\Http\Middleware\Authenticate::class,
+        'smart-product.checkout' => \App\Http\Middleware\SmartProductCheckout::class,
         'twofactor' => \App\Http\Middleware\TwoFactorAuthentication::class,
         'auth.basic' => \Illuminate\Auth\Middleware\AuthenticateWithBasicAuth::class,
         'bindings' => \Illuminate\Routing\Middleware\SubstituteBindings::class,
